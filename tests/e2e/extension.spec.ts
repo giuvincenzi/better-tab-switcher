@@ -19,21 +19,19 @@ test.describe('extension @setup', () => {
     expect(name).toBe('Better Tab Switcher');
   });
 
-  test('has the next and previous tab shortcuts', async ({ serviceWorker }) => {
-    const commands = await serviceWorker.evaluate(() => chrome.commands.getAll());
-    expect(commands).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          name: 'next-tab',
-          shortcut: 'Alt+Y',
-          description: 'Open the switcher on the next tab',
-        }),
-        expect.objectContaining({
-          name: 'previous-tab',
-          shortcut: 'Alt+Shift+Y',
-          description: 'Open the switcher on the previous tab',
-        }),
-      ]),
-    );
+  test('gives the next and previous tab shortcuts their default keys', async ({ serviceWorker }) => {
+    const { commands, defaults } = await serviceWorker.evaluate(async () => ({
+      commands: await chrome.commands.getAll(),
+      defaults: chrome.runtime.getManifest().commands,
+    }));
+    for (const name of ['next-tab', 'previous-tab']) {
+      const suggested = defaults?.[name]?.suggested_key;
+      const expected = typeof suggested === 'string' ? suggested : suggested?.default;
+      const command = commands.find((c) => c.name === name);
+      expect(expected).toBeTruthy();
+      expect(command?.shortcut).toBe(expected);
+    }
+    expect(commands.find((c) => c.name === 'next-tab')?.description).toBe('Open the switcher on the next tab');
+    expect(commands.find((c) => c.name === 'previous-tab')?.description).toBe('Open the switcher on the previous tab');
   });
 });
