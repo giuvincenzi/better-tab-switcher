@@ -1,0 +1,19 @@
+# Build output
+node_modules/
+.output/
+.wxt/
+dist/
+site-preview/
+_site/
+.worktrees/
+
+# Test output
+test-results/
+playwright-report/
+blob-report/
+coverage/
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+.idea/
