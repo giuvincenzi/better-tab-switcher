@@ -1,0 +1,8 @@
+# GLOBAL: the extension's name, the same in every language. Shown by Chrome and in the extension.
+Extension_Name: Better Tab Switcher
+
+# The shortcut that opens the switcher with the next tab selected, listed in chrome://extensions/shortcuts.
+Command_NextTab: Open the switcher on the next tab
+
+# The shortcut that opens the switcher with the previous tab selected, listed in chrome://extensions/shortcuts.
+Command_PreviousTab: Open the switcher on the previous tab
