@@ -30,7 +30,7 @@ export function TabRow(props: TabRowProps): JSX.Element {
   const address = () => hostOf(props.tab.url);
   const showSleeping = () => props.details.sleeping && props.tab.sleeping;
   const accessibleName = () =>
-    new Intl.ListFormat(props.language, { type: 'unit', style: 'narrow' }).format(
+    new Intl.ListFormat(props.language, { type: 'unit', style: 'short' }).format(
       [
         props.tab.title,
         props.details.address ? address() : '',
