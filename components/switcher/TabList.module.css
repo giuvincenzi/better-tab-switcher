@@ -1,0 +1,17 @@
+/* As many rows as the setting says (--rows), never taller than the screen leaves room for; then it scrolls. */
+.list {
+  --row: 50px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  max-height: min(calc(var(--rows) * var(--row)), calc(100vh - 160px));
+  overflow-y: auto;
+  scrollbar-width: thin;
+  outline: none;
+}
+
+.compact {
+  --row: 38px;
+}

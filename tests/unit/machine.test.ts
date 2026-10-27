@@ -49,6 +49,12 @@ describe('moving', () => {
     expect(step(firstTab, { type: 'previous' }).state.selected).toBe(FIELD);
   });
 
+  it('shows and selects the search field from the footer, also when Search is off', () => {
+    const state = run(list, { type: 'openSearch' }).state;
+    expect(state).toMatchObject({ hasField: true, selected: FIELD });
+    expect(step(state, { type: 'release' }).effect).toBeUndefined();
+  });
+
   it('stays on the search field when nothing matches', () => {
     expect(run(withSearch, { type: 'results', count: 0, filtered: true }, { type: 'next' }).state.selected).toBe(FIELD);
   });

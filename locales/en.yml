@@ -6,3 +6,38 @@ Command_NextTab: Open the switcher on the next tab
 
 # The shortcut that opens the switcher with the previous tab selected, listed in chrome://extensions/shortcuts.
 Command_PreviousTab: Open the switcher on the previous tab
+
+# The switcher's list of tabs, for screen readers.
+Switcher_Tabs: Open tabs, most recent first
+
+# The switcher's footer while a shortcut is held. $1: the next tab shortcut (Alt+Y); $2: the previous tab one.
+Switcher_HintKeys: $1 next, $2 back, Esc closes
+
+# The switcher's footer while a shortcut is held, when the previous tab shortcut has no keys. $1: the next tab shortcut.
+Switcher_HintNextOnly: $1 next, Esc closes
+
+# The switcher's footer when it stays open (Stay open, or opened from the toolbar icon).
+Switcher_HintStayOpen: Enter or a click opens the tab, Esc closes
+
+# The switcher's footer while the search field is selected. $1: the next tab shortcut (Alt+Y).
+Switcher_HintSearch: Type to search, $1 goes to the tabs, Esc closes
+
+# The search field's placeholder, and the footer's button that shows it.
+Switcher_Search: Search tabs
+
+# Under the search field when no tab matches what was typed.
+Switcher_NoMatch: No tabs match your search.
+
+# The footer's button that opens the settings page.
+Switcher_Settings: Settings
+
+# The button on a tab, shown under the mouse, that closes it.
+Switcher_CloseTab: Close tab
+
+# A tab's icons, for screen readers and as tooltips.
+Switcher_Pinned: Pinned
+Switcher_PlayingAudio: Playing audio
+Switcher_Sleeping: Sleeping
+
+# A tab's badge with "All windows": the number of the window it is in. $1: the number (2, 3…).
+Switcher_Window: Window $1

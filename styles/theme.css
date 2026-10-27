@@ -33,6 +33,17 @@
   --bts-switch-off: light-dark(#bdc1c6, #5f6368);
   --bts-switch-knob-off: light-dark(#ffffff, #bdc1c6);
 
+  /* Chrome's tab group colors. */
+  --bts-group-grey: light-dark(#5f6368, #bdc1c6);
+  --bts-group-blue: light-dark(#1a73e8, #8ab4f8);
+  --bts-group-red: light-dark(#d93025, #f28b82);
+  --bts-group-yellow: light-dark(#f9ab00, #fdd663);
+  --bts-group-green: light-dark(#188038, #81c995);
+  --bts-group-pink: light-dark(#d01884, #ff8bcb);
+  --bts-group-purple: light-dark(#a142f4, #d7aefb);
+  --bts-group-cyan: light-dark(#007b83, #78d9ec);
+  --bts-group-orange: light-dark(#fa903e, #fcad70);
+
   --bts-font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --bts-shadow: 0 20px 56px rgb(0 0 0 / 38%);
   --bts-radius-small: 6px;

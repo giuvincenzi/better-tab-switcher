@@ -2,7 +2,8 @@ import type { SwitcherEvent } from '../switcher/machine';
 
 /** What the switcher reads of a key press or release. */
 export interface Key {
-  type: 'keydown' | 'keyup';
+  /** "keydown" or "keyup". */
+  type: string;
   key: string;
   altKey: boolean;
   ctrlKey: boolean;

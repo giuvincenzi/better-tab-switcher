@@ -149,8 +149,9 @@ jobs:
       - name: install_chromium
         run: npx playwright install --with-deps chromium
 
+      # The test build: the published one plus the hook the tests open the switcher with.
       - name: build_extension
-        run: npx wxt build
+        run: npx wxt build --mode e2e
 
       # Every end-to-end test, as Playwright lists it: the same list on every machine.
       - name: list_e2e_tests

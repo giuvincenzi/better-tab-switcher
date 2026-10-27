@@ -1,8 +1,8 @@
 import { resolve } from 'node:path';
 import { type BrowserContext, test as base, chromium, type Worker } from '@playwright/test';
 
-/** The built extension, as `make build` and `npm run e2e` make it. */
-const extensionDir = resolve('.output/chrome-mv3');
+/** The extension's test build (`wxt build --mode e2e`): the published one plus the hook that opens the switcher. */
+const extensionDir = resolve('.output/chrome-mv3-e2e');
 
 interface ExtensionFixtures {
   context: BrowserContext;

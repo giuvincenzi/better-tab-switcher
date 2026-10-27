@@ -34,7 +34,9 @@ export type SwitcherEvent =
   /** What was typed changed which tabs are shown. */
   | { type: 'results'; count: number; filtered: boolean }
   /** A tab was closed from the switcher. */
-  | { type: 'removed'; index: number };
+  | { type: 'removed'; index: number }
+  /** The footer's search button: the search field shows, selected, also when Search is off in the settings. */
+  | { type: 'openSearch' };
 
 export type SwitcherEffect = { type: 'open'; index: number } | { type: 'close' };
 
@@ -80,6 +82,8 @@ export function step(state: SwitcherState, event: SwitcherEvent): Step {
       return { state: { ...state, count: event.count, filtered: event.filtered, selected: FIELD } };
     case 'removed':
       return removed(state, event.index);
+    case 'openSearch':
+      return { state: { ...state, hasField: true, selected: FIELD } };
   }
 }
 
