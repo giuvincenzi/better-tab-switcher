@@ -1,0 +1,19 @@
+{
+  // The files that run in Node: configs, scripts and the end-to-end tests. The extension's code can't see Node's APIs.
+  "compilerOptions": {
+    "lib": ["ES2024"],
+    "target": "ES2022",
+    "module": "Preserve",
+    "moduleResolution": "Bundler",
+    "moduleDetection": "force",
+    "verbatimModuleSyntax": true,
+    "types": ["node"],
+    "allowJs": true,
+    "checkJs": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noEmit": true,
+    "skipLibCheck": true
+  },
+  "include": ["tests/e2e/**/*.ts", "scripts/**/*.mjs", "*.config.ts"]
+}
