@@ -1,0 +1,27 @@
+# Build output
+node_modules/
+.output/
+.wxt/
+dist/
+site-preview/
+_site/
+.worktrees/
+
+# Logs and build stats
+*.log
+stats.html
+stats-*.json
+
+# Personal browser startup options (WXT)
+web-ext.config.ts
+
+# Test output
+test-results/
+playwright-report/
+blob-report/
+coverage/
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+.idea/
