@@ -87,7 +87,7 @@ The version lives only in `package.json` (`version`); the build writes it into t
 3. The user checks the pull request (version, CHANGELOG, screenshots) and approves the merge.
 4. **`publish_release`** starts with the merge: merging adds a commit to `main` (a push), and GitHub starts the
    workflow because that commit changes the version in `package.json`; for any other push it does nothing. It runs the
-   tests, builds the zip, uploads it to the stores, publishes the GitHub Release (GitHub creates the tag `vX.Y.Z` on the
+   tests, builds the zip, uploads it to the stores (`wxt submit`), publishes the GitHub Release (GitHub creates the tag `vX.Y.Z` on the
    merge commit), then the site (`docs.md`).
 
 A failed job is retried with **Re-run failed jobs** on its run.

@@ -2,7 +2,7 @@
 
 ## Unit tests: `make test`
 
-- `tests/unit`: Vitest. One test file per area, named `<area>.test.ts`. A large area splits by aspect into files named
+- `tests/unit`: Vitest with WXT's plugin (`WxtVitest`: the browser APIs faked in memory). One test file per area, named `<area>.test.ts`. A large area splits by aspect into files named
   `<area>-<aspect>.test.ts` next to it; a file that only builds test data has no `.test` in its name.
 - The unit tests run in English with en-US numbers whatever the PC's language; a test of another language sets it itself.
 - On GitHub they are the required check `unit_test` ("Which changes run the tests on GitHub" below), and

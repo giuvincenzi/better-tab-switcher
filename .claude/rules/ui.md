@@ -7,7 +7,7 @@
 
 ## Texts
 
-Every text of the UI comes from `_locales/en/messages.json` and is translated into every language in the same change
+Every text of the UI comes from `locales/en.yml` and is translated into every language in the same change
 (`i18n.md`). Layouts must hold longer texts (German, Russian) and right to left (Arabic): no fixed widths for text, let
 cards and buttons grow.
 

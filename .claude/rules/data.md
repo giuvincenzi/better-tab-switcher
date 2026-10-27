@@ -1,6 +1,7 @@
 # Data and compatibility
 
-- The settings are validated and **migrated** when they are read. When the settings format or a default changes for
+- The settings are saved with WXT's storage (`storage.defineItem`), which validates and **migrates** them when they are
+  read. When the settings format or a default changes for
   existing users, bump the settings' schema version and add the migration, with a test on old data. Never break existing
   user data. New installs get the defaults; existing settings keep theirs.
 - A value the extension does not know (a newer version's value, a damaged one) gives that setting its default instead of

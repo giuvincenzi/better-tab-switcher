@@ -1,6 +1,6 @@
 # Working rules
 
-- **English only in the project**: code, identifiers, comments, the English source texts in `_locales/en/messages.json`
+- **English only in the project**: code, identifiers, comments, the English source texts in `locales/en.yml`
   (translations follow `i18n.md`), README, CHANGELOG, rules.
 - **Ask before changing code.** Describe what you want to change and why, wait for an
   explicit OK, then write the code. This applies to small fixes and refactors too.

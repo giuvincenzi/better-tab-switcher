@@ -44,7 +44,7 @@ The extension and the home page are translated (`i18n.md`); the guide is only in
 In the same change as the code, for a new feature, changed behavior, new or renamed setting
 or UI text:
 
-- translate every new or changed UI text into every language (`_locales/<code>/messages.json`, `i18n.md`);
+- translate every new or changed UI text into every language (`locales/<code>.yml`, `i18n.md`);
 
 - update the matching file in `site/guide/` (new feature: new file and a line in
   `sections.txt`);
@@ -65,7 +65,7 @@ changes (`working-rules.md`).
 
 - Describe only what the code does. Check the code before writing a sentence about
   behavior, defaults or limits.
-- Use the exact UI texts from `_locales/en/messages.json` (button, setting and page names).
+- Use the exact UI texts from `locales/en.yml` (button, setting and page names).
 - Screenshots: taken only by the `create_release_pr` workflow, for every release, on a GitHub machine, and checked by
   the user in the release pull request: no pull request retakes them (`screenshots_test` only checks that they can be
   taken, `testing.md`) and there is no `make` for them. The screenshots script holds the list and takes them from the
