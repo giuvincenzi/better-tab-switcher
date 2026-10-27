@@ -32,20 +32,32 @@ function open(settings: Partial<Settings> = {}, more: Partial<SwitcherSnapshot &
     direction: 'next',
     fromClick: false,
     shortcuts: { next: 'Alt+Y', previous: 'Alt+Shift+Y' },
+    waitForPicture: false,
     ...more,
   };
   const [moves, setMoves] = createSignal<{ direction: Direction; count: number }>({ direction: 'next', count: 0 });
+  const [previews, setPreviews] = createSignal<Record<number, string>>({});
+  const [pictureTaken, setPictureTaken] = createSignal(false);
   const handlers = { onOpen: vi.fn(), onClose: vi.fn(), onCloseTab: vi.fn(), onSettings: vi.fn() };
   const host = document.createElement('div');
   document.body.append(host);
   dispose = render(
-    () => <Switcher snapshot={snapshot} moves={moves} canSeeRelease={more.canSeeRelease ?? true} {...handlers} />,
+    () => (
+      <Switcher
+        snapshot={snapshot}
+        moves={moves}
+        canSeeRelease={more.canSeeRelease ?? true}
+        previews={previews}
+        pictureTaken={pictureTaken}
+        {...handlers}
+      />
+    ),
     host,
   );
   const press = (key: string, type: 'keydown' | 'keyup' = 'keydown') =>
     window.dispatchEvent(new KeyboardEvent(type, { key, bubbles: true }));
   const move = (direction: Direction) => setMoves((m) => ({ direction, count: m.count + 1 }));
-  return { host, handlers, press, move };
+  return { host, handlers, press, move, setPreviews, takePicture: () => setPictureTaken(true) };
 }
 
 const selectedTitle = (host: HTMLElement) => host.querySelector('[aria-selected="true"]')?.getAttribute('aria-label');
@@ -155,5 +167,43 @@ describe('Switcher', () => {
     await vi.waitFor(() =>
       expect(getComputedStyle(later.host.firstElementChild as HTMLElement).visibility).toBe('visible'),
     );
+  });
+
+  it("stays hidden until the page's picture is taken, so it is not in it", async () => {
+    const { host, takePicture } = open({ view: 'grid' }, { waitForPicture: true });
+    const backdrop = host.firstElementChild as HTMLElement;
+    expect(getComputedStyle(backdrop).visibility).toBe('hidden');
+    takePicture();
+    await vi.waitFor(() => expect(getComputedStyle(backdrop).visibility).toBe('visible'));
+  });
+});
+
+describe('Switcher in the grid', () => {
+  it('moves along a row with left and right, between rows with up and down', () => {
+    const { host, press } = open({ view: 'grid', gridColumns: 2 });
+    expect(selectedTitle(host)).toBe('Inbox (3)');
+    press('ArrowDown');
+    expect(selectedTitle(host)).toBe('Running plan');
+    press('ArrowLeft');
+    expect(selectedTitle(host)).toBe('Q4 planning');
+    press('ArrowUp');
+    expect(selectedTitle(host)).toBe('Pull request #12');
+    press('ArrowRight');
+    expect(selectedTitle(host)).toBe('Inbox (3)');
+  });
+
+  it("shows the site's icon until the tab's picture arrives", () => {
+    const { host, setPreviews } = open({ view: 'grid' });
+    const tile = () => host.querySelector('[aria-label="Q4 planning"]') as HTMLElement;
+    expect(tile().querySelector('img[src^="data:"]')).toBeNull();
+    expect(tile().querySelectorAll('img[src*="_favicon"]')).toHaveLength(2);
+    setPreviews({ 3: 'data:image/webp;base64,UklGRg==' });
+    expect(tile().querySelector('img[src^="data:"]')).not.toBeNull();
+  });
+
+  it("shows only the sites' icons with Previews off", () => {
+    const { host, setPreviews } = open({ view: 'grid', previews: false });
+    setPreviews({ 3: 'data:image/webp;base64,UklGRg==' });
+    expect(host.querySelector('img[src^="data:"]')).toBeNull();
   });
 });

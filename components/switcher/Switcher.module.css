@@ -16,10 +16,10 @@
 .panel {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  width: 560px;
+  gap: var(--gap);
+  width: var(--panel-width);
   max-width: calc(100vw - 32px);
-  padding: 8px;
+  padding: var(--panel-padding);
   box-sizing: border-box;
   border: 1px solid var(--bts-border);
   border-radius: var(--bts-radius-panel);
@@ -28,8 +28,6 @@
 }
 
 .compact {
-  width: 440px;
-  padding: 6px;
   border-radius: var(--bts-radius-large);
 }
 

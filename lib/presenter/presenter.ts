@@ -1,7 +1,9 @@
 import { type Browser, browser, storage } from '#imports';
-import { type Direction, onMessage, type SwitcherSnapshot, sendMessage } from '../messages';
-import type { Settings } from '../settings/settings';
+import { type Direction, onMessage, type Preview, type SwitcherSnapshot, sendMessage } from '../messages';
+import { type Previews, wantsPreviews } from '../previews/service';
+import { loadPreviews } from '../previews/store';
 import { loadSettings } from '../settings/store';
+import { switcherSize } from '../switcher/sizes';
 import { readTabs } from '../tabs/chrome-tabs';
 import { switcherTabs } from '../tabs/tabs';
 import { canShowInPage, centerOn, type Rect } from './placement';
@@ -19,19 +21,43 @@ const SWITCHER_SCRIPT = '/content-scripts/switcher.js';
 const SWITCHER_PAGE = '/switcher-window.html';
 
 /** Opens the switcher, or moves its selection when it is already open (the shortcut pressed again). */
-export async function showSwitcher(direction: Direction, fromClick: boolean): Promise<void> {
+export async function showSwitcher(direction: Direction, fromClick: boolean, previews: Previews): Promise<void> {
   const open = await openSwitcher.getValue();
   if (open && (await moveOpenSwitcher(open, direction))) return;
   await openSwitcher.setValue(null);
 
   const [current] = await browser.tabs.query({ active: true, lastFocusedWindow: true });
   if (current?.id === undefined) return;
+  const tabId = current.id;
   const snapshot = await takeSnapshot(current, direction, fromClick);
-  if (canShowInPage(current.url) && (await showInPage(current.id, snapshot))) {
-    await openSwitcher.setValue({ in: 'page', tabId: current.id, fromWindowId: current.windowId });
-    return;
+  // The page's picture is taken first: a switcher shown in the page would be in it.
+  const picture =
+    wantsPreviews(snapshot.settings) && !current.incognito
+      ? previews.takeForSwitcher({ id: tabId, windowId: current.windowId })
+      : undefined;
+  if (canShowInPage(current.url)) {
+    // Known before the switcher shows: a preview that arrives meanwhile goes to it.
+    await openSwitcher.setValue({ in: 'page', tabId, fromWindowId: current.windowId });
+    if (await showInPage(tabId, { ...snapshot, waitForPicture: picture !== undefined })) {
+      if (picture) {
+        await picture;
+        await sendMessage('pictureTaken', undefined, tabId).catch(() => undefined);
+      }
+      return;
+    }
+    await openSwitcher.setValue(null);
   }
   await showInWindow(current.windowId, snapshot);
+}
+
+/** Gives a tab's new preview to the open switcher, if there is one. */
+export async function showPreview(tabId: number, picture: string): Promise<void> {
+  const open = await openSwitcher.getValue();
+  if (!open) return;
+  const preview: Preview = { tabId, picture };
+  const sent =
+    open.in === 'page' ? sendMessage('previewReady', preview, open.tabId) : sendMessage('previewReady', preview);
+  await sent.catch(() => undefined);
 }
 
 /** Answers the switcher's messages. */
@@ -54,6 +80,7 @@ export function listenToSwitcher(): void {
   onMessage('switcherClosed', async () => {
     await closeSwitcher(await openSwitcher.getValue());
   });
+  onMessage('getPreviews', ({ data: tabIds }) => loadPreviews(tabIds));
   onMessage('openSettings', async () => {
     await closeSwitcher(await openSwitcher.getValue());
     await browser.runtime.openOptionsPage();
@@ -78,6 +105,7 @@ async function takeSnapshot(current: Browser.tabs.Tab, direction: Direction, fro
     direction,
     fromClick,
     shortcuts: { next: shortcut('next-tab'), previous: shortcut('previous-tab') },
+    waitForPicture: false,
   } satisfies SwitcherSnapshot;
 }
 
@@ -113,7 +141,9 @@ async function showInWindow(fromWindowId: number, snapshot: SwitcherSnapshot): P
   const [from, displays] = await Promise.all([browser.windows.get(fromWindowId), browser.system.display.getInfo()]);
   const screens: Rect[] = displays.map((d) => d.workArea);
   const window: Rect = { left: from.left ?? 0, top: from.top ?? 0, width: from.width ?? 0, height: from.height ?? 0 };
-  const bounds = centerOn(window, switcherWindowSize(snapshot.settings, snapshot.tabs.length), screens);
+  const size = switcherSize(snapshot.settings, snapshot.tabs.length);
+  // Plus the window's own title bar and border.
+  const bounds = centerOn(window, { width: size.width + 16, height: size.height + 40 }, screens);
   const created = await browser.windows.create({
     url: browser.runtime.getURL(SWITCHER_PAGE),
     type: 'popup',
@@ -129,16 +159,4 @@ async function closeSwitcher(open: OpenSwitcher | null): Promise<void> {
     await browser.windows.remove(open.windowId).catch(() => undefined);
     await browser.windows.update(open.fromWindowId, { focused: true }).catch(() => undefined);
   }
-}
-
-/** The switcher's window: as big as the switcher it shows, plus the window's own title bar and border. */
-function switcherWindowSize(settings: Settings, count: number) {
-  const frame = { width: 16, height: 40 };
-  const rows = settings.listRows === 'all' ? count : Math.min(settings.listRows, count);
-  const row = settings.compact ? 38 : 50;
-  const extra = (settings.search ? 52 : 0) + 48;
-  return {
-    width: (settings.compact ? 440 : 560) + frame.width,
-    height: rows * row + extra + frame.height,
-  };
 }

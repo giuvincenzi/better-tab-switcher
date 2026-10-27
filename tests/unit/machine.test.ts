@@ -60,6 +60,26 @@ describe('moving', () => {
   });
 });
 
+describe('moving in the grid', () => {
+  const grid: Start = { ...list, count: 12 };
+
+  it('goes up and down a row without going round', () => {
+    expect(run(grid, { type: 'jump', by: 5 }).state.selected).toBe(6);
+    expect(run(grid, { type: 'jump', by: 5 }, { type: 'jump', by: 5 }).state.selected).toBe(11);
+    expect(run(grid, { type: 'jump', by: 5 }, { type: 'jump', by: 5 }, { type: 'jump', by: 5 }).state.selected).toBe(
+      11,
+    );
+    expect(run(grid, { type: 'jump', by: -5 }).state.selected).toBe(1);
+  });
+
+  it('goes up from the first row to the search field, and down from it to the tabs', () => {
+    const search = { ...grid, hasField: true };
+    expect(run(search, { type: 'jump', by: 5 }).state.selected).toBe(1);
+    expect(run(search, { type: 'jump', by: 5 }, { type: 'jump', by: -5 }).state.selected).toBe(FIELD);
+    expect(run(search, { type: 'jump', by: -5 }).state.selected).toBe(FIELD);
+  });
+});
+
 describe('opening a tab', () => {
   it('opens the selected tab when Alt is released', () => {
     expect(run(list, { type: 'next' }, { type: 'release' }).effect).toEqual({ type: 'open', index: 2 });

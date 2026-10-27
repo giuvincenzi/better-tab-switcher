@@ -13,6 +13,14 @@ export interface SwitcherSnapshot {
   fromClick: boolean;
   /** The shortcuts as Chrome writes them, "" when one has none. */
   shortcuts: { next: string; previous: string };
+  /** The page's picture is being taken: the switcher stays hidden until pictureTaken, so it isn't in the picture. */
+  waitForPicture: boolean;
+}
+
+/** A tab's new preview. */
+export interface Preview {
+  tabId: number;
+  picture: string;
 }
 
 /** The messages between the background and the switcher (in a page, or in its own window). */
@@ -31,6 +39,12 @@ interface Messages {
   switcherClosed(): void;
   /** Switcher → background: open the settings page. */
   openSettings(): void;
+  /** Switcher → background: the previews there are of these tabs, by tab id. */
+  getPreviews(tabIds: number[]): Record<number, string>;
+  /** Background → switcher: a tab's new preview, while the switcher is open. */
+  previewReady(preview: Preview): void;
+  /** Background → switcher in a page: the page's picture is taken, the switcher can show. */
+  pictureTaken(): void;
 }
 
 export const { sendMessage, onMessage } = defineExtensionMessaging<Messages>();

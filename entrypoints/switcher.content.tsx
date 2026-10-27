@@ -20,8 +20,8 @@ export default defineContentScript({
         position: 'modal',
         zIndex: 2147483647,
         isolateEvents: true,
-        onMount(container, _shadow, host) {
-          handle = mountSwitcher(container, host, snapshot, document.hasFocus(), () => remove?.());
+        onMount(container) {
+          handle = mountSwitcher(container, container, snapshot, document.hasFocus(), () => remove?.());
         },
         onRemove() {
           handle?.dispose();
@@ -39,5 +39,7 @@ export default defineContentScript({
       if (!handle) throw new Error('No switcher is open in this page.');
       handle.move(direction);
     });
+    onMessage('previewReady', ({ data: preview }) => handle?.showPreview(preview));
+    onMessage('pictureTaken', () => handle?.pictureTaken());
   },
 });

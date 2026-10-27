@@ -20,18 +20,31 @@ export function isRelease(key: Key): boolean {
   return key.type === 'keyup' && MODIFIERS.has(key.key) && !key.altKey && !key.ctrlKey && !key.metaKey;
 }
 
+/** How the tabs are laid out, for the arrows. */
+export interface Layout {
+  /** Tabs per row: 1 for the list, the grid's columns for the grid. */
+  columns: number;
+  /** The search field has the focus: left and right move its cursor. */
+  inField: boolean;
+}
+
 /**
  * The switcher's event for a key, or null when the switcher doesn't use it. The shortcut itself never gets here: Chrome
  * gives it to the extension, which tells the open switcher to go forward or back.
  */
-export function keyEvent(key: Key): SwitcherEvent | null {
+export function keyEvent(key: Key, layout: Layout = { columns: 1, inField: false }): SwitcherEvent | null {
   if (isRelease(key)) return { type: 'release' };
   if (key.type !== 'keydown') return null;
+  const grid = layout.columns > 1;
   switch (key.key) {
     case 'ArrowDown':
-      return { type: 'next' };
+      return grid ? { type: 'jump', by: layout.columns } : { type: 'next' };
     case 'ArrowUp':
-      return { type: 'previous' };
+      return grid ? { type: 'jump', by: -layout.columns } : { type: 'previous' };
+    case 'ArrowRight':
+      return grid && !layout.inField ? { type: 'next' } : null;
+    case 'ArrowLeft':
+      return grid && !layout.inField ? { type: 'previous' } : null;
     case 'Enter':
       return { type: 'confirm' };
     case 'Escape':

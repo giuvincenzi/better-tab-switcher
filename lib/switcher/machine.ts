@@ -25,8 +25,10 @@ export type SwitcherEvent =
   | { type: 'release' }
   /** Enter. */
   | { type: 'confirm' }
-  /** Esc, a click outside, or the shortcut pressed again while searching. */
+  /** Esc, or a click outside. */
   | { type: 'cancel' }
+  /** Up or down a row of the grid: `by` tabs, without going round; up from the first row goes to the search field. */
+  | { type: 'jump'; by: number }
   /** A click on a tab. */
   | { type: 'choose'; index: number }
   /** The auto-select line ran out. */
@@ -67,6 +69,8 @@ export function step(state: SwitcherState, event: SwitcherEvent): Step {
       return { state: { ...state, selected: following(state, 1) } };
     case 'previous':
       return { state: { ...state, selected: following(state, -1) } };
+    case 'jump':
+      return { state: { ...state, selected: jumped(state, event.by) } };
     case 'release':
       return state.stayOpen || state.selected === FIELD ? { state } : open(state, state.selected);
     case 'confirm':
@@ -102,6 +106,13 @@ function following(state: SwitcherState, by: 1 | -1): number {
   if (target >= state.count) return state.hasField ? FIELD : 0;
   if (target < 0) return state.hasField ? FIELD : state.count - 1;
   return target;
+}
+
+function jumped(state: SwitcherState, by: number): number {
+  if (state.selected === FIELD) return by > 0 ? following(state, 1) : FIELD;
+  const target = state.selected + by;
+  if (target < 0) return state.hasField ? FIELD : state.selected;
+  return target < state.count ? target : state.selected;
 }
 
 function removed(state: SwitcherState, index: number): Step {

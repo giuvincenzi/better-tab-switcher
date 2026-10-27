@@ -10,6 +10,7 @@ const container = document.getElementById('switcher');
 if (snapshot && container) {
   const handle = mountSwitcher(container, document.documentElement, snapshot, true, () => handle.dispose());
   onMessage('moveSwitcher', ({ data: direction }) => handle.move(direction));
+  onMessage('previewReady', ({ data: preview }) => handle.showPreview(preview));
   // Another window took the focus: the switcher closes, as a click outside it would close it.
   window.addEventListener('blur', () => void sendMessage('switcherClosed'));
 } else {

@@ -15,6 +15,7 @@ import { keyEvent } from '../../lib/keys/keys';
 import type { Direction, SwitcherSnapshot } from '../../lib/messages';
 import { matchTab } from '../../lib/search/search';
 import { FIELD, type SwitcherEvent, start, step } from '../../lib/switcher/machine';
+import { gridColumns, sizes, tileHeight, tileWidth, visibleRows } from '../../lib/switcher/sizes';
 import type { SwitcherTab } from '../../lib/tabs/tabs';
 import { SearchField } from './SearchField';
 import styles from './Switcher.module.css';
@@ -27,11 +28,18 @@ export interface SwitcherProps {
   moves: Accessor<{ direction: Direction; count: number }>;
   /** Releasing the shortcut's modifier can be seen here: this page has the keyboard focus. */
   canSeeRelease: boolean;
+  /** The tabs' pictures by tab id, as they arrive. */
+  previews: Accessor<Record<number, string>>;
+  /** The page's picture is taken (snapshot.waitForPicture): the switcher can show. */
+  pictureTaken: Accessor<boolean>;
   onOpen: (tab: SwitcherTab) => void;
   onClose: () => void;
   onCloseTab: (tab: SwitcherTab) => void;
   onSettings: () => void;
 }
+
+/** The longest the switcher waits for the page's picture before it shows. */
+const PICTURE_WAIT_MS = 1000;
 
 /** The switcher: its rules are the state machine's (lib/switcher/machine.ts); here they meet the keys and the UI. */
 export function Switcher(props: SwitcherProps): JSX.Element {
@@ -52,8 +60,13 @@ export function Switcher(props: SwitcherProps): JSX.Element {
       direction,
     }),
   );
-  // Shown after the delay: a quick tap opens the previous tab before the switcher ever appears.
-  const [visible, setVisible] = createSignal(fromClick || settings.delayMs === 0);
+  // Shown after the delay: a quick tap opens the previous tab before the switcher ever appears. Also not before the
+  // page's picture is taken, or the switcher would be in it; never later than PICTURE_WAIT_MS all the same.
+  const [delayOver, setDelayOver] = createSignal(fromClick || settings.delayMs === 0);
+  const [waitOver, setWaitOver] = createSignal(!props.snapshot.waitForPicture);
+  const visible = () => delayOver() && (waitOver() || props.pictureTaken());
+  const grid = settings.view === 'grid';
+  const columns = () => (grid ? gridColumns(settings, shown().length) : 1);
   const now = Date.now();
   const language = browser.i18n.getUILanguage();
 
@@ -82,7 +95,7 @@ export function Switcher(props: SwitcherProps): JSX.Element {
   }
 
   function onKey(event: KeyboardEvent) {
-    const switcherEvent = keyEvent(event);
+    const switcherEvent = keyEvent(event, { columns: columns(), inField: state().selected === FIELD });
     if (!switcherEvent) return;
     event.preventDefault();
     event.stopPropagation();
@@ -102,14 +115,34 @@ export function Switcher(props: SwitcherProps): JSX.Element {
     window.addEventListener('keydown', onKey, true);
     window.addEventListener('keyup', onKey, true);
     window.addEventListener('pointerdown', onPointerDown, true);
-    const timer = visible() ? undefined : setTimeout(() => setVisible(true), settings.delayMs);
+    const delay = delayOver() ? undefined : setTimeout(() => setDelayOver(true), settings.delayMs);
+    const wait = waitOver() ? undefined : setTimeout(() => setWaitOver(true), PICTURE_WAIT_MS);
     onCleanup(() => {
       window.removeEventListener('keydown', onKey, true);
       window.removeEventListener('keyup', onKey, true);
       window.removeEventListener('pointerdown', onPointerDown, true);
-      clearTimeout(timer);
+      clearTimeout(delay);
+      clearTimeout(wait);
     });
   });
+
+  const compact = !grid && settings.compact;
+  // The sizes of lib/switcher/sizes.ts, for the CSS: the switcher's own window is made with the same ones.
+  const panelSizes = () => {
+    const list = compact ? sizes.compactList : sizes.list;
+    return {
+      '--panel-width': grid ? 'auto' : `${list.width}px`,
+      '--panel-padding': `${grid ? sizes.grid.padding : list.padding}px`,
+      '--row': `${list.row}px`,
+      '--gap': `${sizes.gap}px`,
+      '--tile-width': `${tileWidth}px`,
+      '--tile-height': `${tileHeight(settings)}px`,
+      '--tile-gap': `${sizes.grid.tileGap}px`,
+      '--tile-padding': `${sizes.grid.tilePadding}px`,
+      '--tile-header': `${sizes.grid.tileHeader}px`,
+      '--tile-meta': `${sizes.grid.tileMeta}px`,
+    };
+  };
 
   const hint = () => {
     const { next, previous } = shortcuts;
@@ -120,22 +153,20 @@ export function Switcher(props: SwitcherProps): JSX.Element {
 
   return (
     <div class={styles.backdrop} classList={{ [styles.hidden as string]: !visible() }}>
-      <div ref={panel} class={styles.panel} classList={{ [styles.compact as string]: settings.compact }}>
+      <div ref={panel} class={styles.panel} classList={{ [styles.compact as string]: compact }} style={panelSizes()}>
         <Show when={state().hasField}>
-          <SearchField
-            value={query()}
-            selected={state().selected === FIELD}
-            compact={settings.compact}
-            onInput={search}
-          />
+          <SearchField value={query()} selected={state().selected === FIELD} compact={compact} onInput={search} />
         </Show>
         <TabList
+          view={settings.view}
           tabs={shown()}
           selected={state().selected}
           focused={state().selected !== FIELD}
-          compact={settings.compact}
-          rows={settings.listRows}
+          compact={compact}
+          columns={columns()}
+          rows={visibleRows(settings, shown().length)}
           details={settings.details}
+          previews={settings.previews ? props.previews() : undefined}
           now={now}
           language={language}
           autoSelectSeconds={settings.autoSelect ? settings.autoSelectSeconds : undefined}
@@ -148,7 +179,7 @@ export function Switcher(props: SwitcherProps): JSX.Element {
         </Show>
         <SwitcherFooter
           hint={hint()}
-          compact={settings.compact}
+          compact={compact}
           onSearch={() => dispatch({ type: 'openSearch' })}
           onSettings={() => props.onSettings()}
         />

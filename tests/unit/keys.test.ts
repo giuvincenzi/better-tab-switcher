@@ -44,6 +44,21 @@ describe('keyEvent', () => {
     expect(keyEvent(up('Alt'))).toEqual({ type: 'release' });
   });
 
+  it('in the grid, moves to the next tab with right and left, a row with down and up', () => {
+    const grid = { columns: 5, inField: false };
+    expect(keyEvent(down('ArrowRight'), grid)).toEqual({ type: 'next' });
+    expect(keyEvent(down('ArrowLeft'), grid)).toEqual({ type: 'previous' });
+    expect(keyEvent(down('ArrowDown'), grid)).toEqual({ type: 'jump', by: 5 });
+    expect(keyEvent(down('ArrowUp'), grid)).toEqual({ type: 'jump', by: -5 });
+  });
+
+  it('leaves left and right to the search field while it has the focus', () => {
+    const grid = { columns: 5, inField: true };
+    expect(keyEvent(down('ArrowRight'), grid)).toBeNull();
+    expect(keyEvent(down('ArrowLeft'), grid)).toBeNull();
+    expect(keyEvent(down('ArrowDown'), grid)).toEqual({ type: 'jump', by: 5 });
+  });
+
   it('ignores the other keys, which stay for typing in the search field', () => {
     expect(keyEvent(down('a'))).toBeNull();
     expect(keyEvent(down('ArrowLeft'))).toBeNull();

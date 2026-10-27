@@ -1,0 +1,113 @@
+import { type JSX, Show } from 'solid-js';
+import { i18n } from '#i18n';
+import { timeAgo } from '../../lib/i18n/time';
+import type { TitleParts } from '../../lib/search/search';
+import type { TabDetails } from '../../lib/settings/settings';
+import type { SwitcherTab } from '../../lib/tabs/tabs';
+import { Icon } from '../ui/Icon';
+import styles from './TabParts.module.css';
+
+// The parts of a tab that the list's rows and the grid's tiles both show. Their colors come from the row or tile
+// around them (--tab-muted, --tab-match, --tab-chip-border), which changes them on the selected tab.
+
+/** A tab's accessible name: what its row or tile shows, joined with the language's list format. */
+export function tabName(tab: SwitcherTab, details: TabDetails, language: string): string {
+  return new Intl.ListFormat(language, { type: 'unit', style: 'short' }).format(
+    [
+      tab.title,
+      details.address ? hostOf(tab.url) : '',
+      details.pinnedIcon && tab.pinned ? i18n.t('Switcher_Pinned') : '',
+      details.audioIcon && tab.audible ? i18n.t('Switcher_PlayingAudio') : '',
+      details.sleeping && tab.sleeping ? i18n.t('Switcher_Sleeping') : '',
+      tab.windowLabel ? i18n.t('Switcher_Window', [tab.windowLabel]) : '',
+    ].filter(Boolean),
+  );
+}
+
+export function hostOf(url: string): string {
+  try {
+    return new URL(url).host || url;
+  } catch {
+    return url;
+  }
+}
+
+/** The tab group's color, then the title with the searched text highlighted. */
+export function TabTitle(props: { tab: SwitcherTab; title: TitleParts; details: TabDetails }): JSX.Element {
+  return (
+    <span class={styles.titleLine}>
+      <Show when={props.details.groupColor && props.tab.groupColor}>
+        {(color) => <span class={styles.group} style={{ background: `var(--bts-group-${color()})` }} />}
+      </Show>
+      <span class={styles.title}>
+        {props.title.before}
+        <Show when={props.title.match}>
+          <mark class={styles.match}>{props.title.match}</mark>
+        </Show>
+        {props.title.after}
+      </span>
+    </span>
+  );
+}
+
+/**
+ * The website's address: cut with "…", or scrolling back and forth on the selected tab. It takes the width its place
+ * gives it, never its text's (it measures that width to scroll): `class` gives it its place.
+ */
+export function Address(props: { url: string; scrolls: boolean; side?: boolean; class?: string }): JSX.Element {
+  return (
+    <span
+      class={`${styles.address} ${props.class ?? ''}`}
+      classList={{ [styles.side as string]: props.side, [styles.scrolls as string]: props.scrolls }}
+    >
+      <span>{hostOf(props.url)}</span>
+    </span>
+  );
+}
+
+/** Pinned, playing audio, sleeping (each when its detail is on), then the tab's window when it is another one. */
+export function TabIcons(props: { tab: SwitcherTab; details: TabDetails }): JSX.Element {
+  return (
+    <>
+      <Show when={props.details.pinnedIcon && props.tab.pinned}>
+        <span class={styles.icon} title={i18n.t('Switcher_Pinned')}>
+          <Icon name="pin" size={14} />
+        </span>
+      </Show>
+      <Show when={props.details.audioIcon && props.tab.audible}>
+        <span class={styles.icon} title={i18n.t('Switcher_PlayingAudio')}>
+          <Icon name="audio" size={14} />
+        </span>
+      </Show>
+      <Show when={props.details.sleeping && props.tab.sleeping}>
+        <span class={styles.icon} title={i18n.t('Switcher_Sleeping')}>
+          <Icon name="sleep" size={14} />
+        </span>
+      </Show>
+      <Show when={props.tab.windowLabel}>
+        {(label) => (
+          <span class={styles.window} title={i18n.t('Switcher_Window', [label()])}>
+            <Icon name="window" size={12} />
+            {label()}
+          </span>
+        )}
+      </Show>
+    </>
+  );
+}
+
+/** When the tab was last used ("5 min ago"). */
+export function LastUsed(props: { tab: SwitcherTab; now: number; language: string }): JSX.Element {
+  return <span class={styles.age}>{timeAgo(props.tab.lastAccessed, props.now, props.language)}</span>;
+}
+
+/** Auto-select: a line at the bottom of the selected tab, full when it is selected and shrinking to nothing. */
+export function AutoSelectLine(props: { seconds: number; onEnd: () => void }): JSX.Element {
+  return (
+    <span
+      class={styles.autoSelect}
+      style={{ 'animation-duration': `${props.seconds}s` }}
+      onAnimationEnd={() => props.onEnd()}
+    />
+  );
+}

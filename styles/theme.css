@@ -1,10 +1,10 @@
 /*
  * The colors and sizes every component uses, for both themes. Each color is written once with light-dark(): the
- * theme comes from color-scheme, set by data-theme on the root (none: the device's theme).
+ * theme comes from color-scheme, set by data-theme on the element the extension's UI is in ("device": the device's
+ * theme). Not on :host: inside a page, WXT resets the shadow root's host with all: initial.
  * Sizes are in px, never rem: inside a page, rem follows the site's font size.
  */
-:root,
-:host {
+[data-theme] {
   color-scheme: light dark;
 
   --bts-accent: #0f766e;
@@ -52,12 +52,10 @@
   --bts-radius-panel: 16px;
 }
 
-:root[data-theme="light"],
-:host([data-theme="light"]) {
+[data-theme="light"] {
   color-scheme: light;
 }
 
-:root[data-theme="dark"],
-:host([data-theme="dark"]) {
+[data-theme="dark"] {
   color-scheme: dark;
 }

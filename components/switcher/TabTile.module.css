@@ -1,0 +1,117 @@
+/* The base rules first, then the sleeping and selected tiles. Sizes from lib/switcher/sizes.ts (--tile-*). */
+
+.tile {
+  --tab-muted: var(--bts-text-muted);
+  --tab-match: var(--bts-match);
+  --tab-chip-border: var(--bts-border);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: var(--tile-padding);
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 2px solid transparent;
+  border-radius: var(--bts-radius-large);
+  color: var(--bts-text);
+  cursor: default;
+}
+
+.tile:hover {
+  background: var(--bts-hover);
+}
+
+.header {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  height: var(--tile-header);
+  min-width: 0;
+  padding: 0 2px;
+}
+
+.favicon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+.title {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.meta {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: var(--tile-meta);
+  min-width: 0;
+  padding: 0 2px;
+}
+
+.address {
+  flex: 1;
+  min-width: 0;
+}
+
+.preview {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--bts-border);
+  border-radius: var(--bts-radius);
+  background: var(--bts-preview-empty);
+}
+
+/* The page as it was seen, from its top. */
+.picture {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+
+/* At its own size, never stretched: the size limit is set by the tile. */
+.siteIcon {
+  width: auto;
+  height: auto;
+}
+
+/* The close button shows under the mouse only. */
+.close {
+  visibility: hidden;
+}
+
+.tile:hover .close,
+.close:focus-visible {
+  visibility: visible;
+}
+
+.sleeping {
+  opacity: 0.55;
+}
+
+.selected,
+.selected:hover {
+  --tab-muted: var(--bts-selected-muted);
+  --tab-match: var(--bts-selected-text);
+  --tab-chip-border: var(--bts-selected-muted);
+  border-color: var(--bts-accent);
+  background: var(--bts-selected);
+  color: var(--bts-selected-text);
+}
+
+@media (forced-colors: active) {
+  .selected {
+    border-color: Highlight;
+  }
+}
