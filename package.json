@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "wxt",
+    "dev": "node scripts/dev.mjs",
     "build": "wxt build",
     "zip": "wxt zip",
     "compile": "tsc --noEmit",
@@ -21,7 +21,6 @@
     "typescript": "^7.0.2",
     "vite": "^8.3.5",
     "vitest": "^5.0.5",
-    "web-ext": "^10.8.0",
     "wxt": "^0.21.5"
   }
 }

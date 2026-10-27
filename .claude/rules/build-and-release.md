@@ -3,6 +3,7 @@
 ## Requirements
 
 - **Node.js** with npm, at the version in `.tool-versions` (asdf: `asdf install`).
+- **Playwright's Chromium**: installed by `make setup`; `make dev` and the end-to-end tests run in it.
 - **GNU make**: usually already in Linux, macOS and WSL; on Windows `winget install --id ezwinports.make --exact`.
 - **GitHub CLI** (`gh`), signed in: pull requests, starting workflows (`create_release_pr`, the tests on a branch).
 
@@ -11,9 +12,11 @@
 - `Makefile`, which runs the npm scripts. Options are make variables, lowercase
   (`make e2e category=<name>`): an option written `--category` would be taken by make itself (GNU make accepts
   abbreviations of its own options).
-  - `make dev`: builds the development build and starts it in a fresh browser profile.
-  - `make build`: the distribution in `dist/` (the zip for the stores) for the version in `package.json`. Nothing is
-    uploaded.
+  - `make setup`: installs the dependencies (`npm ci`) and Playwright's Chromium when it is missing. Run it after
+    cloning and whenever `package-lock.json` changes.
+  - `make dev`: builds the development build and starts it in Playwright's Chromium with a fresh browser profile
+    (`scripts/dev.mjs`); it rebuilds on every change.
+  - `make build`: the zip for the stores in `.output/`, for the version in `package.json`. Nothing is uploaded.
   - `make docs serve=1` serves the website preview as the real site (`docs.md`).
   - The other targets are in the `Makefile`.
 - There is no `make` for releases or screenshots: GitHub workflows do them (Releases below).
