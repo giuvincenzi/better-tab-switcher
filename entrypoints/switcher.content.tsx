@@ -6,7 +6,6 @@ import { onMessage } from '../lib/messages';
 // The switcher in a page: injected by the background only when the shortcut is pressed there (not listed in the
 // manifest), drawn in a shadow root so the page's styles never reach it, and removed when it closes.
 export default defineContentScript({
-  matches: ['<all_urls>'],
   registration: 'runtime',
   cssInjectionMode: 'ui',
   main(ctx) {

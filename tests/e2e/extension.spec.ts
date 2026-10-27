@@ -4,6 +4,17 @@ import { expect, test } from './fixtures';
 const pkg = JSON.parse(readFileSync('package.json', 'utf8')) as { version: string };
 
 test.describe('extension @setup', () => {
+  test('asks at install only for what it needs, and for no site', () => {
+    // The published build (.output/chrome-mv3): the test build adds the permission for all sites (wxt.config.ts).
+    const manifest = JSON.parse(readFileSync('.output/chrome-mv3/manifest.json', 'utf8'));
+    expect(manifest.host_permissions).toBeUndefined();
+    expect(manifest.content_scripts).toBeUndefined();
+    expect(manifest.optional_host_permissions).toEqual(['<all_urls>']);
+    expect(manifest.permissions.sort()).toEqual(
+      ['activeTab', 'favicon', 'scripting', 'storage', 'system.display', 'tabGroups', 'tabs'].sort(),
+    );
+  });
+
   test('starts its service worker', async ({ serviceWorker, extensionId }) => {
     expect(extensionId).toMatch(/^[a-p]{32}$/);
     expect(serviceWorker.url()).toBe(`chrome-extension://${extensionId}/background.js`);

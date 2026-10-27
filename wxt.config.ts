@@ -4,6 +4,18 @@ import { defineConfig } from 'wxt';
 export default defineConfig({
   modules: ['@wxt-dev/module-solid', '@wxt-dev/i18n/module'],
   imports: false,
+  hooks: {
+    // The switcher's content script has no matches: it is injected only where the user opens the switcher (activeTab),
+    // and WXT would turn a runtime content script's matches into host_permissions, asking for every site at install.
+    // Its styles still have to be readable from any page, where the switcher shows in a shadow root.
+    'build:manifestGenerated': (_wxt, manifest) => {
+      for (const entry of manifest.web_accessible_resources ?? []) {
+        if (typeof entry !== 'string' && entry.resources.includes('content-scripts/switcher.css')) {
+          entry.matches = ['<all_urls>'];
+        }
+      }
+    },
+  },
   manifest: ({ mode }) => ({
     default_locale: 'en',
     name: '__MSG_Extension_Name__',
