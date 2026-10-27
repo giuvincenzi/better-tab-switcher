@@ -23,7 +23,7 @@ permissions:
   contents: read
 
 env:
-  E2E_GROUPS: 2   # how many machines run the end-to-end tests at once: change only this (testing.md)
+  E2E_GROUPS: 2 # how many machines run the end-to-end tests at once: change only this (testing.md)
 
 jobs:
   decide_which_tests_run:
@@ -36,7 +36,7 @@ jobs:
       - name: checkout_code
         uses: actions/checkout@v7
         with:
-          fetch-depth: 0   # the changed files: the diff of the pull request or of the push
+          fetch-depth: 0 # the changed files: the diff of the pull request or of the push
 
       - name: choose_tests_from_changed_files
         id: decide
@@ -89,7 +89,7 @@ jobs:
       - name: checkout_code
         uses: actions/checkout@v7
         with:
-          fetch-depth: 0   # block_version_change compares with the pull request's base
+          fetch-depth: 0 # block_version_change compares with the pull request's base
 
       # Only a release pull request (branch release/X.Y.Z, opened by create_release_pr) changes the version: merging it
       # publishes the release (publish_release starts when the version in package.json changes on main).
@@ -127,7 +127,7 @@ jobs:
     needs: decide_which_tests_run
     if: needs.decide_which_tests_run.outputs.e2e == 'true'
     strategy:
-      fail-fast: false   # a failing group does not stop the others: every broken test shows
+      fail-fast: false # a failing group does not stop the others: every broken test shows
       matrix:
         group: ${{ fromJSON(needs.decide_which_tests_run.outputs.e2e_groups) }}
     runs-on: ubuntu-latest
@@ -242,7 +242,7 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           pattern: e2e_group_*
-          path: e2e_results   # one folder per artifact: e2e_group_<n>_attempt_<a>
+          path: e2e_results # one folder per artifact: e2e_group_<n>_attempt_<a>
 
       # For each group its newest attempt (a re-run group has a newer one, a passed group keeps its first), then:
       # (1) every group saw the same list, (2) every test ran exactly once (none missing, none twice), (3) every test
