@@ -9,11 +9,12 @@
 #   make e2e        build the extension and run the end-to-end tests in Chromium;
 #                   make e2e category=<name> runs one category, make e2e headed=1 shows the browser
 #   make build      create the zip for the stores in .output/, no upload
+#   make icons      draw the extension's icons (public/icon/) from assets/icon.svg, after changing it
 #
 # Releases are not made here: the create_release_pr workflow opens the release pull request, merging it publishes the
 # release (publish_release). See build-and-release.md.
 
-.PHONY: setup dev lint test e2e build
+.PHONY: setup dev lint test e2e build icons
 
 setup:
 	npm ci
@@ -33,3 +34,6 @@ e2e:
 
 build:
 	npm run zip
+
+icons:
+	npm run icons

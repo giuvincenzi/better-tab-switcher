@@ -1,3 +1,4 @@
+<p align="center"><img src="public/icon/128.png" width="96" height="96" alt=""></p>
 <h1 align="center">Better Tab Switcher</h1>
 <p align="center">
   <a href="LICENSE"><img src="https://badgen.net/badge/license/MIT/blue" alt="MIT license"></a>
