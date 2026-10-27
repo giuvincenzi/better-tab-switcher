@@ -1,7 +1,8 @@
 import { createSignal } from 'solid-js';
 import { render } from 'solid-js/web';
+import { applyLanguage } from '../../lib/i18n/direction';
 import { type Direction, type Preview, type SwitcherSnapshot, sendMessage } from '../../lib/messages';
-import type { Theme } from '../../lib/settings/settings';
+import { applyTheme } from '../ui/applyTheme';
 import { Switcher } from './Switcher';
 
 export interface SwitcherHandle {
@@ -16,7 +17,7 @@ export interface SwitcherHandle {
 
 /**
  * Shows the switcher in `container` and connects it to the background; the same in a page and in the switcher's
- * window. `themeRoot` gets the theme chosen in the settings; `onDone` removes the switcher once it is done.
+ * window. `themeRoot` gets the theme chosen in the settings and the language's direction; `onDone` removes the switcher once it is done.
  */
 export function mountSwitcher(
   container: HTMLElement,
@@ -26,6 +27,7 @@ export function mountSwitcher(
   onDone: () => void,
 ): SwitcherHandle {
   applyTheme(themeRoot, snapshot.settings.theme);
+  applyLanguage(themeRoot);
   const [moves, setMoves] = createSignal({ direction: snapshot.direction, count: 0 });
   const [previews, setPreviews] = createSignal<Record<number, string>>({});
   const [pictureTaken, setPictureTaken] = createSignal(false);
@@ -67,9 +69,4 @@ export function mountSwitcher(
     pictureTaken: () => setPictureTaken(true),
     dispose,
   };
-}
-
-/** The theme chosen in the settings (styles/theme.css). */
-function applyTheme(root: HTMLElement, theme: Theme) {
-  root.dataset.theme = theme;
 }

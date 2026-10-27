@@ -1,0 +1,48 @@
+.group {
+  display: flex;
+  flex: none;
+  height: 32px;
+  margin: 0;
+  padding: 2px;
+  box-sizing: border-box;
+  border: 1px solid var(--bts-settings-border);
+  border-radius: var(--bts-radius);
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  border-radius: var(--bts-radius-small);
+  color: var(--bts-text);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* The radio button itself is hidden: the option shows its state. It stays in the page for the keyboard. */
+.input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.option:has(.input:checked) {
+  background: var(--bts-accent);
+  color: var(--bts-on-accent);
+}
+
+.option:has(.input:focus-visible) {
+  outline: 2px solid var(--bts-accent-bright);
+  outline-offset: 1px;
+}
+
+@media (forced-colors: active) {
+  .option:has(.input:checked) {
+    background: Highlight;
+    color: HighlightText;
+  }
+}

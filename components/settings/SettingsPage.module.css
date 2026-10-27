@@ -1,0 +1,92 @@
+.page {
+  min-height: 100vh;
+  background: var(--bts-settings-page);
+  color: var(--bts-text);
+  font-family: var(--bts-font);
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 56px;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--bts-settings-border);
+  background: var(--bts-settings-page);
+}
+
+.logo {
+  flex: none;
+}
+
+.title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+/* The sidebar beside the sections; on a narrow window, above them. */
+.body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.sidebar {
+  flex: 1 1 200px;
+  max-width: 240px;
+}
+
+.links {
+  position: sticky;
+  top: 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 20px;
+  color: var(--bts-text);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.link:hover {
+  background: var(--bts-hover);
+}
+
+.link[aria-current="true"] {
+  background: var(--bts-selected);
+  color: var(--bts-selected-text);
+}
+
+.link:focus-visible {
+  outline: 2px solid var(--bts-accent-bright);
+  outline-offset: 1px;
+}
+
+.main {
+  display: flex;
+  flex: 999 1 560px;
+  flex-direction: column;
+  gap: 28px;
+  min-width: 0;
+  max-width: 720px;
+  margin: 0 auto;
+}

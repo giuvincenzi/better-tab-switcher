@@ -30,6 +30,7 @@
 
   --bts-settings-page: light-dark(#f8f9fa, #202124);
   --bts-settings-card: light-dark(#ffffff, #292a2d);
+  --bts-settings-border: light-dark(#dadce0, #3c4043);
   --bts-switch-off: light-dark(#bdc1c6, #5f6368);
   --bts-switch-knob-off: light-dark(#ffffff, #bdc1c6);
 

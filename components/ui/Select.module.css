@@ -1,0 +1,39 @@
+.wrap {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+}
+
+.select {
+  min-width: 160px;
+  height: 32px;
+  padding-block: 0;
+  padding-inline: 12px 32px;
+  border: 1px solid var(--bts-settings-border);
+  border-radius: var(--bts-radius);
+  background: var(--bts-field);
+  color: var(--bts-text);
+  font: inherit;
+  font-size: 13px;
+  appearance: none;
+  cursor: pointer;
+}
+
+.select:disabled {
+  cursor: default;
+}
+
+.select:focus-visible {
+  outline: 2px solid var(--bts-accent-bright);
+  outline-offset: 1px;
+}
+
+.chevron {
+  position: absolute;
+  inset-inline-end: 10px;
+  top: 50%;
+  display: inline-flex;
+  color: var(--bts-text-muted);
+  transform: translateY(-50%);
+  pointer-events: none;
+}

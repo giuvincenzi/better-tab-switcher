@@ -1,0 +1,23 @@
+.button {
+  flex: none;
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--bts-settings-border);
+  border-radius: 16px;
+  background: transparent;
+  color: var(--bts-link);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.button:hover {
+  background: var(--bts-hover);
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--bts-accent-bright);
+  outline-offset: 2px;
+}

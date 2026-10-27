@@ -41,3 +41,84 @@ Switcher_Sleeping: Sleeping
 
 # A tab's badge with "All windows": the number of the window it is in. $1: the number (2, 3…).
 Switcher_Window: Window $1
+
+# The settings page's title, in the browser tab and at the top of the page. "Better Tab Switcher" is the global name.
+Settings_Title: Better Tab Switcher settings
+
+# The settings page's sidebar, for screen readers.
+Settings_Sections: Settings sections
+
+# Section: how the switcher looks.
+Settings_Appearance: Appearance
+Settings_Theme: Theme
+Settings_ThemeDevice: Device theme
+Settings_ThemeLight: Light
+Settings_ThemeDark: Dark
+Settings_View: View
+Settings_ViewList: List
+Settings_ViewGrid: Grid
+# Grid only.
+Settings_Previews: Previews
+Settings_PreviewsNote: Pictures of the tabs. When it's off, each tab shows its site's icon instead.
+Settings_Columns: Columns
+Settings_GridRows: Rows shown before scrolling
+# List only.
+Settings_Compact: Compact
+Settings_CompactNote: Lower rows, so more tabs fit.
+Settings_ListRows: Tabs shown before scrolling
+# The choice of rows that shows them all, and its note.
+Settings_RowsAll: All
+Settings_RowsAllNote: All shows as many as fit on the screen.
+
+# Section: which tabs the switcher shows and how it opens them.
+Settings_Switching: Switching
+Settings_Scope: Show tabs from
+Settings_ScopeWindow: This window
+Settings_ScopeAll: All windows
+Settings_ScopeNote: With all windows, each tab from another window shows its window's number.
+Settings_ShowPinned: Show pinned tabs
+Settings_Delay: Delay before the switcher appears
+Settings_DelayNote: A quicker tap switches to the previous tab without showing it.
+Settings_StayOpen: Stay open until you choose a tab
+Settings_StayOpenNote: Releasing the shortcut's keys doesn't switch tabs. Choose a tab with Enter or a click.
+Settings_AutoSelect: Auto-select
+Settings_AutoSelectNote: The selected tab opens after a few seconds. A line shows the time left.
+Settings_AutoSelectTime: Auto-select time
+Settings_Search: Search
+Settings_SearchNote: A search field at the top, to find a tab by its title or its address.
+
+# Section: what each tab shows.
+Settings_TabDetails: Tab details
+Settings_Address: Website address
+Settings_LongAddress: Long website addresses
+Settings_LongAddressNote: Or scroll them on the selected tab.
+Settings_LongAddressCut: Cut short
+Settings_LongAddressScroll: Scroll
+Settings_PinnedIcon: Pinned tab icon
+Settings_AudioIcon: Playing audio icon
+Settings_Sleeping: Sleeping tabs
+Settings_SleepingNote: Sleeping tabs get an icon and are shown in grey.
+Settings_GroupColor: Tab group color
+Settings_LastUsed: Last used
+# $1: a time written as the switcher writes it, in the language in use ("15 min ago").
+Settings_LastUsedNote: For example, $1.
+
+# Section: the extension's shortcuts, changed in chrome://extensions/shortcuts.
+Settings_Shortcuts: Keyboard shortcuts
+Settings_ShortcutsNote: Chrome doesn't let extensions use Ctrl+Tab.
+# A link to the user guide, after Settings_ShortcutsNote.
+Settings_ShortcutsGuide: How to use Ctrl+Tab
+Settings_NextTab: Next tab
+Settings_NextTabNote: Opens the switcher and moves the selection to the next tab.
+Settings_PreviousTab: Previous tab
+Settings_PreviousTabNote: Opens the switcher and moves the selection to the previous tab.
+# The button that opens chrome://extensions/shortcuts.
+Settings_ChangeShortcut: Change shortcut
+# In place of the keys, when a shortcut has none.
+Settings_NoShortcut: Not set
+
+# Section: back to the default settings.
+Settings_Reset: Reset
+Settings_RestoreDefaults: Restore default settings
+# The button of Settings_RestoreDefaults.
+Settings_Restore: Restore

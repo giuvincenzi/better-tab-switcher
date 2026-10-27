@@ -1,0 +1,18 @@
+.shortcut {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Keys stay left to right, also in a right-to-left page. */
+.keys {
+  padding: 4px 8px;
+  border: 1px solid var(--bts-settings-border);
+  border-radius: var(--bts-radius-small);
+  background: var(--bts-field);
+  font-family: inherit;
+  font-size: 13px;
+  white-space: nowrap;
+  direction: ltr;
+}

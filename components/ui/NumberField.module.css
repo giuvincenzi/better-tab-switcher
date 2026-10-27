@@ -1,0 +1,39 @@
+.field {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 10px;
+  box-sizing: border-box;
+  border: 1px solid var(--bts-settings-border);
+  border-radius: var(--bts-radius);
+  background: var(--bts-field);
+  font-size: 13px;
+}
+
+.field:focus-within {
+  outline: 2px solid var(--bts-accent-bright);
+  outline-offset: 1px;
+}
+
+/* Numbers stay left to right, also in a right-to-left page. */
+.input {
+  width: 48px;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--bts-text);
+  font: inherit;
+  text-align: end;
+  direction: ltr;
+}
+
+.unit {
+  color: var(--bts-text-muted);
+}
+
+.disabled .input {
+  color: var(--bts-text-muted);
+}
