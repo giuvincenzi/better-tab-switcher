@@ -18,4 +18,13 @@ cards and buttons grow.
   proposal and approved by the user (`working-rules.md`).
 - The settings page looks like Chrome's own settings (`chrome://settings`).
 - Light and dark themes come from CSS custom properties, following the system or the user's choice.
-- Approved by the user (custom on purpose): none yet.
+- Approved by the user (custom on purpose):
+  - **The switcher** (approved: the Design canvas "Better Tab Switcher UI", boards 1–30): centered over the page, in
+    the theme in use, the selection in the primary color, a footer with the keys, Search and Settings.
+    - **List** (boards 1–18): favicon and title; **Compact**, on by default, lowers the rows.
+    - **Grid** (boards 19–30): tiles with the title above and the preview below; with **Previews** off, the site's
+      icon instead of the preview, never larger than its real size.
+    - Optional details: pinned, audio, sleeping (also greyed) and tab group icons on by default; the website address
+      off by default, long ones cut with "…" or scrolling on the selected tab; the last used time off by default.
+  - **The settings page** (boards 31–34): Chrome's settings look with a sidebar, in the theme in use; the options of
+    the list or the grid only for the view chosen.

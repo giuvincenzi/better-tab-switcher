@@ -13,3 +13,4 @@
   | What | Where | Kept |
   |---|---|---|
   | Settings | the extension's storage | until the user changes them or removes the extension |
+  | Previews of the tabs | `storage.session`: in memory, never on disk | until the tab closes, Previews is turned off or Chrome closes |
