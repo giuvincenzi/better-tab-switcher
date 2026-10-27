@@ -1,4 +1,7 @@
-/* The base rules first, then the sleeping and selected tiles. Sizes from lib/switcher/sizes.ts (--tile-*). */
+/*
+ * The base rules first, then the sleeping and selected tiles. The sizes come from lib/switcher/sizes.ts (--tile-*,
+ * --preview-*), which also makes the switcher's own window as big as the grid.
+ */
 
 .tile {
   --tab-muted: var(--bts-text-muted);
@@ -7,11 +10,12 @@
   position: relative;
   display: flex;
   flex-direction: column;
+  gap: var(--tile-space);
   min-width: 0;
   padding: var(--tile-padding);
   box-sizing: border-box;
   overflow: hidden;
-  border: 2px solid transparent;
+  border: var(--tile-border) solid transparent;
   border-radius: var(--bts-radius-large);
   color: var(--bts-text);
   cursor: default;
@@ -28,7 +32,6 @@
   gap: 6px;
   height: var(--tile-header);
   min-width: 0;
-  padding: 0 2px;
 }
 
 .favicon {
@@ -40,35 +43,34 @@
 .title {
   flex: 1;
   min-width: 0;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
 }
 
-.meta {
-  display: flex;
+/* Under the title, where the title's text starts: past the site's icon when there is one. */
+.address {
   flex: none;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  height: var(--tile-meta);
-  min-width: 0;
-  padding: 0 2px;
+  height: var(--tile-line);
+  margin-top: calc(-1 * var(--address-tuck));
+  padding-left: 22px;
+  font-size: 11px;
+  line-height: var(--tile-line);
 }
 
-.address {
-  flex: 1;
-  min-width: 0;
+.iconOnly .address {
+  padding-left: 0;
 }
 
 .preview {
   display: flex;
-  flex: 1;
+  flex: none;
   align-items: center;
   justify-content: center;
-  min-height: 0;
+  width: 100%;
+  max-width: var(--preview-width);
+  height: var(--preview-height);
   overflow: hidden;
-  border: 1px solid var(--bts-border);
-  border-radius: var(--bts-radius);
+  border-radius: var(--bts-radius-small);
   background: var(--bts-preview-empty);
 }
 
@@ -84,6 +86,17 @@
 .siteIcon {
   width: auto;
   height: auto;
+}
+
+.line {
+  display: flex;
+  flex: none;
+  align-items: center;
+  height: var(--tile-line);
+}
+
+.line > * {
+  font-size: 11px;
 }
 
 /* The close button shows under the mouse only. */
@@ -105,7 +118,7 @@
   --tab-muted: var(--bts-selected-muted);
   --tab-match: var(--bts-selected-text);
   --tab-chip-border: var(--bts-selected-muted);
-  border-color: var(--bts-accent);
+  border-color: var(--bts-accent-bright);
   background: var(--bts-selected);
   color: var(--bts-selected-text);
 }

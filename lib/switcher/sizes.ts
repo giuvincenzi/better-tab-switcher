@@ -9,8 +9,11 @@ export const sizes = {
   compactList: { width: 440, padding: 6, row: 36 },
   /** Between two rows or two tiles. */
   gap: 2,
-  /** A tile: its title line, and the line with the address or last used time when one of them is on. */
-  grid: { padding: 10, tileGap: 8, tilePadding: 6, tileHeader: 28, tileMeta: 18 },
+  /**
+   * A tile: its border and padding, its title line, the space between its lines, and the line of the address or of
+   * the last used time (each one when it is on).
+   */
+  grid: { padding: 14, tileGap: 8, tileBorder: 2, tilePadding: 8, tileHeader: 22, tileSpace: 6, tileLine: 14 },
   /** The preview in a tile; pictures are taken twice as big, for screens with twice the pixels. */
   preview: { width: 188, height: 118 },
   searchField: { height: 48, compactHeight: 36, below: 4 },
@@ -20,17 +23,20 @@ export const sizes = {
 /** The pictures of the tabs are this wide: the preview's width on a screen with twice the pixels. */
 export const PICTURE_WIDTH = sizes.preview.width * 2;
 
-export const tileWidth = sizes.preview.width + 2 * sizes.grid.tilePadding;
+const tileFrame = 2 * (sizes.grid.tileBorder + sizes.grid.tilePadding);
 
-/** A tile's height: taller with the address or the last used time. */
+export const tileWidth = sizes.preview.width + tileFrame;
+
+/** A tile's height: taller with the address (tucked under the title) and with the last used time. */
 export function tileHeight(settings: Settings): number {
-  const meta = hasTileMeta(settings) ? sizes.grid.tileMeta : 0;
-  return sizes.grid.tileHeader + meta + sizes.preview.height + 2 * sizes.grid.tilePadding;
+  const { tileHeader, tileSpace, tileLine } = sizes.grid;
+  const address = settings.details.address ? tileSpace + tileLine - ADDRESS_TUCK : 0;
+  const lastUsed = settings.details.lastUsed ? tileSpace + tileLine : 0;
+  return tileFrame + tileHeader + tileSpace + sizes.preview.height + address + lastUsed;
 }
 
-export function hasTileMeta(settings: Settings): boolean {
-  return settings.details.address || settings.details.lastUsed;
-}
+/** How far the address goes up under the title, in a tile. */
+export const ADDRESS_TUCK = 4;
 
 /** The grid's columns: as many as the setting says, fewer when there are fewer tabs. */
 export function gridColumns(settings: Settings, count: number): number {

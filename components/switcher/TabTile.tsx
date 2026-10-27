@@ -9,7 +9,7 @@ import { Address, AutoSelectLine, LastUsed, TabIcons, TabTitle, tabName } from '
 import { tabOptionId } from './TabRow';
 import styles from './TabTile.module.css';
 
-/** The site's icon in a tile without a preview: never shown larger than this. */
+/** The site's icon in a tile without a preview: never shown larger than this, nor than its own size. */
 const SITE_ICON_SIZE = 32;
 
 export interface TabTileProps {
@@ -19,7 +19,7 @@ export interface TabTileProps {
   details: TabDetails;
   /** The tab's picture; until there is one, the site's icon. */
   picture?: string;
-  /** Previews are off: the site's icon, never a picture. */
+  /** Previews are off: the site's icon in place of the preview, never a picture. */
   iconOnly: boolean;
   /** Now, for "last used", in milliseconds since 1970. */
   now: number;
@@ -46,11 +46,14 @@ export function TabTile(props: TabTileProps): JSX.Element {
       classList={{
         [styles.selected as string]: props.selected,
         [styles.sleeping as string]: props.details.sleeping && props.tab.sleeping,
+        [styles.iconOnly as string]: props.iconOnly,
       }}
       onClick={() => props.onChoose()}
     >
       <div class={styles.header}>
-        <img class={styles.favicon} src={faviconUrl(props.tab.url, 16)} alt="" />
+        <Show when={!props.iconOnly}>
+          <img class={styles.favicon} src={faviconUrl(props.tab.url, 16)} alt="" />
+        </Show>
         <span class={styles.title}>
           <TabTitle tab={props.tab} title={props.title} details={props.details} />
         </span>
@@ -66,19 +69,12 @@ export function TabTile(props: TabTileProps): JSX.Element {
           }}
         />
       </div>
-      <Show when={props.details.address || props.details.lastUsed}>
-        <div class={styles.meta}>
-          <Show when={props.details.address}>
-            <Address
-              url={props.tab.url}
-              scrolls={props.details.longAddress === 'scroll' && props.selected}
-              class={styles.address}
-            />
-          </Show>
-          <Show when={props.details.lastUsed}>
-            <LastUsed tab={props.tab} now={props.now} language={props.language} />
-          </Show>
-        </div>
+      <Show when={props.details.address}>
+        <Address
+          url={props.tab.url}
+          scrolls={props.details.longAddress === 'scroll' && props.selected}
+          class={styles.address}
+        />
       </Show>
       <div class={styles.preview}>
         <Show
@@ -95,6 +91,11 @@ export function TabTile(props: TabTileProps): JSX.Element {
           {(src) => <img class={styles.picture} src={src()} alt="" />}
         </Show>
       </div>
+      <Show when={props.details.lastUsed}>
+        <span class={styles.line}>
+          <LastUsed tab={props.tab} now={props.now} language={props.language} />
+        </span>
+      </Show>
       <Show when={props.selected && props.autoSelectSeconds}>
         {(seconds) => <AutoSelectLine seconds={seconds()} onEnd={props.onAutoSelect} />}
       </Show>

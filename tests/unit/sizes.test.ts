@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { defaultSettings, type Settings } from '../../lib/settings/settings';
-import { gridColumns, sizes, switcherSize, tileHeight, tileWidth, visibleRows } from '../../lib/switcher/sizes';
+import {
+  ADDRESS_TUCK,
+  gridColumns,
+  sizes,
+  switcherSize,
+  tileHeight,
+  tileWidth,
+  visibleRows,
+} from '../../lib/switcher/sizes';
 
 const settings = (change: Partial<Settings> = {}): Settings => ({ ...defaultSettings, ...change });
 
@@ -38,11 +46,18 @@ describe('switcherSize', () => {
     expect(height).toBeGreaterThan(3 * tileHeight(grid));
   });
 
-  it('makes tiles taller for the address or the last used time', () => {
+  it('makes tiles taller for the address and for the last used time', () => {
     const grid = settings({ view: 'grid' });
-    expect(tileHeight({ ...grid, details: { ...grid.details, lastUsed: true } })).toBe(
-      tileHeight(grid) + sizes.grid.tileMeta,
-    );
+    const { tileSpace, tileLine } = sizes.grid;
+    const withDetails = (address: boolean, lastUsed: boolean) =>
+      tileHeight({ ...grid, details: { ...grid.details, address, lastUsed } });
+    expect(withDetails(false, true)).toBe(tileHeight(grid) + tileSpace + tileLine);
+    expect(withDetails(true, false)).toBe(tileHeight(grid) + tileSpace + tileLine - ADDRESS_TUCK);
+    expect(withDetails(true, true)).toBe(tileHeight(grid) + 2 * (tileSpace + tileLine) - ADDRESS_TUCK);
+  });
+
+  it('makes a tile 208 px wide: the preview, its padding and its border', () => {
+    expect(tileWidth).toBe(208);
   });
 
   it('makes the compact list narrower and lower', () => {

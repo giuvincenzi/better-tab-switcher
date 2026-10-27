@@ -15,7 +15,7 @@ import { keyEvent } from '../../lib/keys/keys';
 import type { Direction, SwitcherSnapshot } from '../../lib/messages';
 import { matchTab } from '../../lib/search/search';
 import { FIELD, type SwitcherEvent, start, step } from '../../lib/switcher/machine';
-import { gridColumns, sizes, tileHeight, tileWidth, visibleRows } from '../../lib/switcher/sizes';
+import { ADDRESS_TUCK, gridColumns, sizes, tileHeight, tileWidth, visibleRows } from '../../lib/switcher/sizes';
 import type { SwitcherTab } from '../../lib/tabs/tabs';
 import { SearchField } from './SearchField';
 import styles from './Switcher.module.css';
@@ -138,9 +138,14 @@ export function Switcher(props: SwitcherProps): JSX.Element {
       '--tile-width': `${tileWidth}px`,
       '--tile-height': `${tileHeight(settings)}px`,
       '--tile-gap': `${sizes.grid.tileGap}px`,
+      '--tile-border': `${sizes.grid.tileBorder}px`,
       '--tile-padding': `${sizes.grid.tilePadding}px`,
       '--tile-header': `${sizes.grid.tileHeader}px`,
-      '--tile-meta': `${sizes.grid.tileMeta}px`,
+      '--tile-space': `${sizes.grid.tileSpace}px`,
+      '--tile-line': `${sizes.grid.tileLine}px`,
+      '--address-tuck': `${ADDRESS_TUCK}px`,
+      '--preview-width': `${sizes.preview.width}px`,
+      '--preview-height': `${sizes.preview.height}px`,
     };
   };
 
