@@ -1,0 +1,52 @@
+/*
+ * The colors and sizes every component uses, for both themes. Each color is written once with light-dark(): the
+ * theme comes from color-scheme, set by data-theme on the root (none: the device's theme).
+ * Sizes are in px, never rem: inside a page, rem follows the site's font size.
+ */
+:root,
+:host {
+  color-scheme: light dark;
+
+  --bts-accent: #0f766e;
+  --bts-accent-bright: #14b8a6;
+  --bts-on-accent: #ffffff;
+
+  --bts-text: light-dark(#202124, #e8eaed);
+  --bts-text-muted: light-dark(#5f6368, #a9aeb4);
+  --bts-border: light-dark(#dadce0, #45474c);
+  --bts-panel: light-dark(#ffffff, #2b2c2f);
+  --bts-field: light-dark(#ffffff, #202124);
+  --bts-hover: light-dark(#f1f3f4, #36373b);
+  --bts-close-button: light-dark(#dadce0, #55575c);
+
+  --bts-selected: light-dark(#d2f0eb, #0f4f49);
+  --bts-selected-text: light-dark(#0b3f3a, #ffffff);
+  --bts-selected-muted: light-dark(#2c5e58, #b7e4de);
+  --bts-match: light-dark(#0f766e, #5eead4);
+  --bts-link: light-dark(#0f766e, #5eead4);
+
+  --bts-preview-page: light-dark(#f8f9fa, #3a3b3f);
+  --bts-preview-empty: light-dark(#f1f3f4, #36373b);
+
+  --bts-settings-page: light-dark(#f8f9fa, #202124);
+  --bts-settings-card: light-dark(#ffffff, #292a2d);
+  --bts-switch-off: light-dark(#bdc1c6, #5f6368);
+  --bts-switch-knob-off: light-dark(#ffffff, #bdc1c6);
+
+  --bts-font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --bts-shadow: 0 20px 56px rgb(0 0 0 / 38%);
+  --bts-radius-small: 6px;
+  --bts-radius: 8px;
+  --bts-radius-large: 12px;
+  --bts-radius-panel: 16px;
+}
+
+:root[data-theme="light"],
+:host([data-theme="light"]) {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"],
+:host([data-theme="dark"]) {
+  color-scheme: dark;
+}

@@ -6,6 +6,8 @@ export default defineConfig({
   imports: false,
   manifest: {
     default_locale: 'en',
+    // light-dark() in styles/theme.css needs Chrome 123.
+    minimum_chrome_version: '123',
     name: '__MSG_Extension_Name__',
     commands: {
       'next-tab': {
