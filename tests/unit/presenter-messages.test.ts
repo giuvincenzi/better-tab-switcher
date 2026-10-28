@@ -1,0 +1,213 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { browser, fakeBrowser } from '#imports';
+import { listenToSwitcher, requestSwitcher } from '../../lib/presenter/presenter';
+import { savePreview } from '../../lib/previews/store';
+import {
+  deliverTo,
+  FIRST_POPUP_ID,
+  fakeChrome,
+  newWorld,
+  normalWindow,
+  settle,
+  tab,
+  type World,
+} from './background-world';
+
+// What the background does when the switcher it opened talks to it, and when Chrome closes or activates tabs and
+// windows under it.
+
+const messages = await vi.hoisted(async () => (await import('./background-world')).fakeMessages());
+vi.mock('../../lib/messages', () => ({ sendMessage: messages.sendMessage, onMessage: messages.onMessage }));
+
+let world: World;
+const previews = { takeForSwitcher: async () => undefined };
+const shortcut = () => requestSwitcher({ direction: 'next', from: 'shortcut' }, previews);
+const received = (type: string) => world.received.filter((m) => m.type === type).map((m) => m.tabId);
+
+/** Opens the switcher in the page of tab 11 (window 1). */
+async function openInPage() {
+  await shortcut();
+}
+
+/** Opens the switcher in its own window, from a browser page in window 1. */
+async function openInWindow() {
+  world.tabs[0] = tab(11, 1, { url: 'chrome://settings/' });
+  await shortcut();
+}
+
+beforeEach(() => {
+  fakeBrowser.reset();
+  messages.sendMessage.mockClear();
+  messages.handlers.clear();
+  world = newWorld({
+    windows: [normalWindow(1), normalWindow(2)],
+    tabs: [tab(11, 1), tab(12, 1), tab(21, 2)],
+    currentTabId: 11,
+    injected: new Set([11, 12, 21]),
+  });
+  messages.state.receive = deliverTo(world);
+  fakeChrome(world);
+  listenToSwitcher();
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
+describe('opening a tab', () => {
+  it('activates the tab and focuses its window when it is in another window', async () => {
+    await openInPage();
+    await messages.ask('openTab', { id: 21, windowId: 2 });
+    expect(browser.tabs.update).toHaveBeenCalledWith(21, { active: true });
+    expect(browser.windows.update).toHaveBeenCalledWith(2, { focused: true });
+  });
+
+  it('does not focus the window again when the tab is in the window of the switcher', async () => {
+    await openInPage();
+    await messages.ask('openTab', { id: 12, windowId: 1 });
+    expect(browser.tabs.update).toHaveBeenCalledWith(12, { active: true });
+    expect(browser.windows.update).not.toHaveBeenCalled();
+  });
+
+  it("closes the switcher's window and focuses the window of the tab", async () => {
+    await openInWindow();
+    await messages.ask('openTab', { id: 12, windowId: 1 });
+    expect(browser.windows.remove).toHaveBeenCalledWith(FIRST_POPUP_ID);
+    expect(browser.tabs.update).toHaveBeenCalledWith(12, { active: true });
+    expect(browser.windows.update).toHaveBeenCalledWith(1, { focused: true });
+  });
+
+  it('leaves no switcher open: the next shortcut opens a new one', async () => {
+    await openInPage();
+    await messages.ask('openTab', { id: 12, windowId: 1 });
+    world.currentTabId = 12;
+    await shortcut();
+    expect(received('closeSwitcher')).toEqual([]);
+    expect(received('showSwitcher')).toEqual([11, 12]);
+  });
+});
+
+describe('closing a tab from the switcher', () => {
+  it('closes the tab and keeps the switcher open', async () => {
+    await openInPage();
+    await messages.ask('closeTab', 12);
+    expect(browser.tabs.remove).toHaveBeenCalledWith(12);
+    await shortcut();
+    expect(received('moveSwitcher')).toEqual([11]);
+  });
+});
+
+describe('the switcher closed without a tab chosen', () => {
+  it('closes its window and gives the focus back to the window it came from', async () => {
+    await openInWindow();
+    await messages.ask('switcherClosed');
+    expect(browser.windows.remove).toHaveBeenCalledWith(FIRST_POPUP_ID);
+    expect(browser.windows.update).toHaveBeenCalledWith(1, { focused: true });
+  });
+
+  it('focuses no window when it was in a page', async () => {
+    await openInPage();
+    await messages.ask('switcherClosed');
+    expect(browser.windows.update).not.toHaveBeenCalled();
+    expect(browser.windows.remove).not.toHaveBeenCalled();
+  });
+
+  it('is forgotten: the next shortcut opens a new one', async () => {
+    await openInPage();
+    await messages.ask('switcherClosed');
+    await shortcut();
+    expect(received('moveSwitcher')).toEqual([]);
+    expect(received('showSwitcher')).toEqual([11, 11]);
+  });
+
+  it('closes quietly when the window it came from has closed meanwhile', async () => {
+    await openInWindow();
+    vi.mocked(browser.windows.update).mockRejectedValue(new Error('No window with id: 1.'));
+    await expect(messages.ask('switcherClosed')).resolves.toBeUndefined();
+  });
+});
+
+describe('the settings', () => {
+  it("open from the switcher, and the switcher's window closes", async () => {
+    await openInWindow();
+    await messages.ask('openSettings');
+    expect(browser.windows.remove).toHaveBeenCalledWith(FIRST_POPUP_ID);
+    expect(browser.runtime.openOptionsPage).toHaveBeenCalled();
+  });
+});
+
+describe('the previews asked by the switcher', () => {
+  it('are those kept of the tabs asked, by tab id', async () => {
+    await savePreview(12, 'data:image/webp;base64,BBB');
+    await savePreview(21, 'data:image/webp;base64,CCC');
+    expect(await messages.ask('getPreviews', [11, 12, 21])).toEqual({
+      12: 'data:image/webp;base64,BBB',
+      21: 'data:image/webp;base64,CCC',
+    });
+    expect(await messages.ask('getPreviews', [12])).toEqual({ 12: 'data:image/webp;base64,BBB' });
+  });
+});
+
+describe('tabs and windows closed or activated under the switcher', () => {
+  it('forgets the switcher whose tab closed: nothing is sent to that tab any more', async () => {
+    await openInPage();
+    await fakeBrowser.tabs.onRemoved.trigger(11, { windowId: 1, isWindowClosing: false });
+    world.injected.delete(11);
+    world.currentTabId = 12;
+    messages.sendMessage.mockClear();
+    await shortcut();
+    expect(messages.sendMessage.mock.calls.filter(([, , tabId]) => tabId === 11)).toEqual([]);
+    expect(received('showSwitcher')).toEqual([11, 12]);
+  });
+
+  it('keeps the switcher when another tab closes', async () => {
+    await openInPage();
+    await fakeBrowser.tabs.onRemoved.trigger(12, { windowId: 1, isWindowClosing: false });
+    await shortcut();
+    expect(received('moveSwitcher')).toEqual([11]);
+  });
+
+  it('forgets the switcher whose window the user closed', async () => {
+    await openInWindow();
+    world.windows = world.windows.filter((w) => w.id !== FIRST_POPUP_ID);
+    world.windowListening = false;
+    await fakeBrowser.windows.onRemoved.trigger(FIRST_POPUP_ID);
+    world.tabs[0] = tab(11, 1);
+    world.currentTabId = 11;
+    await shortcut();
+    expect(browser.windows.remove).not.toHaveBeenCalled();
+    expect(received('showSwitcher')).toEqual([11]);
+  });
+
+  it('keeps the switcher when another window closes', async () => {
+    await openInPage();
+    await fakeBrowser.windows.onRemoved.trigger(2);
+    await shortcut();
+    expect(received('moveSwitcher')).toEqual([11]);
+  });
+
+  it('closes the switcher when another tab comes to the front of its window', async () => {
+    await openInPage();
+    await fakeBrowser.tabs.onActivated.trigger({ tabId: 12, windowId: 1 });
+    await settle();
+    expect(received('closeSwitcher')).toEqual([11]);
+    await shortcut();
+    expect(received('moveSwitcher')).toEqual([]);
+  });
+
+  it('keeps the switcher open when a tab comes to the front of another window', async () => {
+    await openInPage();
+    await fakeBrowser.tabs.onActivated.trigger({ tabId: 21, windowId: 2 });
+    await settle();
+    expect(received('closeSwitcher')).toEqual([]);
+    await shortcut();
+    expect(received('moveSwitcher')).toEqual([11]);
+  });
+
+  it('keeps the switcher open when its own tab is activated again', async () => {
+    await openInPage();
+    await fakeBrowser.tabs.onActivated.trigger({ tabId: 11, windowId: 1 });
+    await settle();
+    expect(received('closeSwitcher')).toEqual([]);
+  });
+});

@@ -55,6 +55,19 @@ describe('switcherTabs', () => {
     expect(ids(switcherTabs(tabs, [1], here, { scope: 'window', showPinned: false }))).toEqual([1, 3]);
   });
 
+  it('shows the other incognito windows with All windows, from an incognito window', () => {
+    const tabs = [tab(1, 1), tab(2, 9, { windowId: 2, incognito: true }), tab(3, 5, { windowId: 3, incognito: true })];
+    const fromIncognito: Here = { tabId: 2, windowId: 2, incognito: true };
+    const shown = switcherTabs(tabs, [1, 2, 3], fromIncognito, { scope: 'all', showPinned: true });
+    expect(ids(shown)).toEqual([2, 3]);
+  });
+
+  it("numbers the windows by Chrome's order, also counting the windows that have no tab shown", () => {
+    const tabs = [tab(1, 1), tab(2, 5, { windowId: 7 })];
+    const shown = switcherTabs(tabs, [1, 5, 7], here, { scope: 'all', showPinned: true });
+    expect(shown.map((t) => t.windowLabel)).toEqual([undefined, '3']);
+  });
+
   it('does not change the list it is given', () => {
     const tabs = [tab(1, 1), tab(2, 5)];
     switcherTabs(tabs, [1], here, thisWindow);

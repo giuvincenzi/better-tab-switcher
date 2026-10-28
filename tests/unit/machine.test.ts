@@ -64,6 +64,24 @@ describe('moving', () => {
     expect(step(firstTab, { type: 'previous' }).state.selected).toBe(FIELD);
   });
 
+  it('never passes through the search field when the user only works in the switcher (no search)', () => {
+    expect(run(list, { type: 'hold' }, { type: 'previous' }, { type: 'previous' }).state.selected).toBe(4);
+    const last = run(list, { type: 'hold' }, { type: 'previous' }, { type: 'previous' }).state;
+    expect(step(last, { type: 'next' }).state.selected).toBe(0);
+  });
+
+  it('selects the search field again when what was typed changes the tabs shown', () => {
+    const typed = { type: 'results', count: 2, filtered: true } as const;
+    const state = searching(list, { type: 'next' }, { type: 'next' }, typed).state;
+    expect(state).toMatchObject({ count: 2, selected: FIELD, filtered: true });
+  });
+
+  it('goes from the search field to the previous tab again once what was typed is erased', () => {
+    const typed = { type: 'results', count: 2, filtered: true } as const;
+    const erased = { type: 'results', count: 5, filtered: false } as const;
+    expect(searching(list, typed, erased, { type: 'next' }).state.selected).toBe(1);
+  });
+
   it('stays on the search field when nothing matches', () => {
     const typed = { type: 'results', count: 0, filtered: true } as const;
     expect(searching(list, typed, { type: 'next' }).state.selected).toBe(FIELD);
@@ -86,6 +104,12 @@ describe('moving in the grid', () => {
     expect(searching(grid, { type: 'jump', by: 5 }).state.selected).toBe(1);
     expect(searching(grid, { type: 'jump', by: 5 }, { type: 'jump', by: -5 }).state.selected).toBe(FIELD);
     expect(run(grid, { type: 'jump', by: -5 }).state.selected).toBe(1);
+  });
+
+  it('stays on the search field going up from it, and goes down to the first result once something is typed', () => {
+    expect(searching(grid, { type: 'jump', by: -5 }).state.selected).toBe(FIELD);
+    const typed = { type: 'results', count: 8, filtered: true } as const;
+    expect(searching(grid, typed, { type: 'jump', by: 4 }).state.selected).toBe(0);
   });
 });
 
@@ -130,6 +154,13 @@ describe('opening a tab', () => {
   it('ignores a click outside the tabs shown', () => {
     expect(run(list, { type: 'choose', index: 9 }).effect).toBeUndefined();
   });
+
+  it('opens a clicked tab from the first to the last, and ignores one past the last or the search field', () => {
+    expect(run(list, { type: 'choose', index: 0 }).effect).toEqual({ type: 'open', index: 0 });
+    expect(run(list, { type: 'choose', index: 4 }).effect).toEqual({ type: 'open', index: 4 });
+    expect(run(list, { type: 'choose', index: 5 }).effect).toBeUndefined();
+    expect(run(list, { type: 'choose', index: FIELD }).effect).toBeUndefined();
+  });
 });
 
 describe('closing', () => {
@@ -150,5 +181,50 @@ describe('closing', () => {
 
   it('closes when the last tab shown is closed', () => {
     expect(run({ ...list, count: 1 }, { type: 'removed', index: 0 }).effect).toEqual({ type: 'close' });
+  });
+
+  it('closes on Esc also while searching or with Stay open', () => {
+    expect(searching(list, { type: 'cancel' }).effect).toEqual({ type: 'close' });
+    expect(run({ ...list, stayOpen: true }, { type: 'cancel' }).effect).toEqual({ type: 'close' });
+  });
+
+  it('keeps the same tab selected when a tab below it is closed', () => {
+    const state = run(list, { type: 'next' }, { type: 'removed', index: 4 }).state;
+    expect(state).toMatchObject({ count: 4, selected: 2 });
+  });
+
+  it('stays open on the search field when the last result is closed while searching', () => {
+    const typed = { type: 'results', count: 1, filtered: true } as const;
+    const fromField = searching(list, typed, { type: 'removed', index: 0 });
+    expect(fromField.effect).toBeUndefined();
+    expect(fromField.state).toMatchObject({ count: 0, selected: FIELD });
+    const fromTab = searching(list, typed, { type: 'next' }, { type: 'removed', index: 0 });
+    expect(fromTab.effect).toBeUndefined();
+    expect(fromTab.state).toMatchObject({ count: 0, selected: FIELD });
+  });
+});
+
+describe('state', () => {
+  it('never changes the state it is given', () => {
+    const events: SwitcherEvent[] = [
+      { type: 'next' },
+      { type: 'previous' },
+      { type: 'release' },
+      { type: 'confirm' },
+      { type: 'cancel' },
+      { type: 'jump', by: 5 },
+      { type: 'choose', index: 2 },
+      { type: 'autoSelect' },
+      { type: 'results', count: 2, filtered: true },
+      { type: 'removed', index: 0 },
+      { type: 'openSearch' },
+      { type: 'hold' },
+    ];
+    for (const event of events) {
+      const state = Object.freeze(start(list));
+      const before = { ...state };
+      step(state, event);
+      expect(state, event.type).toEqual(before);
+    }
   });
 });

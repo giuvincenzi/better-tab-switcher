@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { browserName, isKeptOutPage, shortcutsPageUrl } from '../../lib/browser';
 
 const CHROME =
@@ -25,5 +25,26 @@ describe('isKeptOutPage', () => {
     expect(isKeptOutPage(new URL('https://chrome.google.com/webstore/detail/x'))).toBe(true);
     expect(isKeptOutPage(new URL('https://chrome.google.com/other'))).toBe(false);
     expect(isKeptOutPage(new URL('https://example.com/'))).toBe(false);
+  });
+
+  it('knows the store by its whole host, not by a path or a look-alike host', () => {
+    expect(isKeptOutPage(new URL('https://example.com/webstore/detail/x'))).toBe(false);
+    expect(isKeptOutPage(new URL('https://chromewebstore.google.com.example.com/'))).toBe(false);
+    expect(isKeptOutPage(new URL('https://example.com/?u=chromewebstore.google.com'))).toBe(false);
+  });
+});
+
+describe('the browser the extension runs in', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('is read from the user agent when no browser is named', () => {
+    vi.stubGlobal('navigator', { userAgent: EDGE });
+    expect(browserName()).toBe('edge');
+    expect(shortcutsPageUrl()).toBe('edge://extensions/shortcuts');
+    vi.stubGlobal('navigator', { userAgent: CHROME });
+    expect(browserName()).toBe('chrome');
+    expect(shortcutsPageUrl()).toBe('chrome://extensions/shortcuts');
   });
 });

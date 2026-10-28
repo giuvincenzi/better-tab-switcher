@@ -30,4 +30,45 @@ describe('matchTab', () => {
   it('does not match when neither the title nor the address has it', () => {
     expect(matchTab('passport', 'Inbox', 'https://mail.example.com')).toBeNull();
   });
+
+  it('takes what was typed literally, never as a pattern', () => {
+    expect(matchTab('a.c', 'abc', 'https://x.example')).toBeNull();
+    expect(matchTab('c++', 'Learn C++ today', 'https://x.example')).toEqual({
+      before: 'Learn ',
+      match: 'C++',
+      after: ' today',
+    });
+    expect(matchTab('(draft', 'Plan (draft)', 'https://x.example')?.match).toBe('(draft');
+  });
+
+  it('highlights the first place it appears in the title', () => {
+    expect(matchTab('ab', 'xab yab', 'https://x.example')).toEqual({ before: 'x', match: 'ab', after: ' yab' });
+  });
+
+  it('highlights the title also when the address matches too', () => {
+    expect(matchTab('git', 'GitHub', 'https://github.com')?.match).toBe('Git');
+  });
+
+  it('matches the address ignoring case', () => {
+    expect(matchTab('docs/plan', 'Untitled', 'https://example.com/Docs/Plan')).not.toBeNull();
+  });
+
+  it('ignores tabs and line breaks around what was typed, but not the spaces inside it', () => {
+    expect(matchTab('\tq4 plan\n', 'Q4 planning', 'https://x.example')?.match).toBe('Q4 plan');
+    expect(matchTab('q4  plan', 'Q4 planning', 'https://x.example')).toBeNull();
+  });
+
+  it('keeps the title whole around the match, with emoji and right to left scripts', () => {
+    expect(matchTab('party', '🎉🎉 Party time', 'https://x.example')).toEqual({
+      before: '🎉🎉 ',
+      match: 'Party',
+      after: ' time',
+    });
+    expect(matchTab('بالعالم', 'مرحبا بالعالم!', 'https://x.example')).toEqual({
+      before: 'مرحبا ',
+      match: 'بالعالم',
+      after: '!',
+    });
+    expect(matchTab('🎉', 'a🎉b', 'https://x.example')).toEqual({ before: 'a', match: '🎉', after: 'b' });
+  });
 });

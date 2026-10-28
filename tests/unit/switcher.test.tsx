@@ -5,6 +5,7 @@ import { page } from 'vitest/browser';
 import { Switcher, type SwitcherProps } from '../../components/switcher/Switcher';
 import type { Direction, SwitcherSnapshot } from '../../lib/messages';
 import { defaultSettings, type Settings } from '../../lib/settings/settings';
+import { DEFAULT_EM_PX, sizes } from '../../lib/switcher/sizes';
 import type { SwitcherTab } from '../../lib/tabs/tabs';
 
 const tab = (id: number, title: string): SwitcherTab => ({
@@ -253,15 +254,16 @@ describe('Switcher list width', () => {
     await page.viewport(1280, 800);
   });
 
-  it('takes 40% of the page in the list, between 500 and 768 px', async () => {
+  it('takes its share of the page in the list, between its narrowest and its widest', async () => {
+    const { share, min, max } = sizes.listWidth;
     await page.viewport(1280, 800);
-    expect(panelWidth(open().host)).toBe(512);
+    expect(panelWidth(open().host)).toBe((1280 * share) / 100);
     dispose?.();
     await page.viewport(2560, 800);
-    expect(panelWidth(open().host)).toBe(768);
+    expect(panelWidth(open().host)).toBe(max * DEFAULT_EM_PX);
     dispose?.();
     await page.viewport(1000, 800);
-    expect(panelWidth(open().host)).toBe(500);
+    expect(panelWidth(open().host)).toBe(min * DEFAULT_EM_PX);
   });
 
   it('shows a short address whole beside the title, in the compact list', async () => {
@@ -276,18 +278,18 @@ describe('Switcher list width', () => {
     }
   });
 
-  it('is never wider than the page', async () => {
+  it('is never wider than the page, its margins left', async () => {
     await page.viewport(380, 800);
-    expect(panelWidth(open().host)).toBe(348);
+    expect(panelWidth(open().host)).toBe(380 - 2 * sizes.margin * DEFAULT_EM_PX);
   });
 
-  it('is as wide as its columns in the grid, never narrower than 500 px', async () => {
+  it('is as wide as its columns in the grid, never narrower than the narrowest switcher', async () => {
     await page.viewport(1920, 800);
     const { host } = open({ view: 'grid' });
     const grid = host.querySelector('[role="listbox"]') as HTMLElement;
     // Four tabs: two columns of tiles, in the middle of the narrowest switcher, with no tile cut.
     expect(getComputedStyle(grid).gridTemplateColumns.split(' ')).toHaveLength(2);
-    expect(panelWidth(host)).toBe(500);
+    expect(panelWidth(host)).toBe(sizes.listWidth.min * DEFAULT_EM_PX);
     expect(grid.scrollWidth).toBe(grid.clientWidth);
   });
 

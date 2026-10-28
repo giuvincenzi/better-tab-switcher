@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { defaultSettings, type Settings } from '../../lib/settings/settings';
+import { defaultSettings, type RowCount, type Settings } from '../../lib/settings/settings';
 import {
   ADDRESS_TUCK,
   DEFAULT_EM_PX,
@@ -61,6 +61,11 @@ describe('gridColumns', () => {
     expect(gridColumns(icons, 3, 1280, emPx)).toBe(3);
     expect(gridColumns(grid, 3, 1280, emPx)).toBe(2);
   });
+
+  it('keeps one column on a page narrower than a tile, and with no tabs', () => {
+    expect(gridColumns(grid, 30, 100, emPx)).toBe(1);
+    expect(gridColumns(grid, 0, 2560, emPx)).toBe(1);
+  });
 });
 
 describe('firstWindowSize', () => {
@@ -79,6 +84,44 @@ describe('firstWindowSize', () => {
 
   it('opens it as wide as the grid of icons, at least 500 px', () => {
     expect(firstWindowSize(settings({ view: 'grid', gridShow: 'icons' }), 4, page).width).toBe(500);
+  });
+
+  it('never opens the list wider than its largest width, nor wider than the page', () => {
+    expect(firstWindowSize(settings(), 30, { width: 4000, height: 800 }).width).toBe(
+      sizes.listWidth.max * DEFAULT_EM_PX,
+    );
+    expect(firstWindowSize(settings(), 30, { width: 400, height: 800 }).width).toBe(400);
+    expect(firstWindowSize(settings({ view: 'grid' }), 30, { width: 400, height: 800 }).width).toBe(400);
+  });
+
+  it('adds one row of the list per row shown, lower rows with Compact', () => {
+    const height = (compact: boolean, listRows: RowCount) =>
+      firstWindowSize(settings({ compact, listRows }), 30, page).height;
+    expect(height(true, 10) - height(true, 6)).toBe(4 * (sizes.compactList.row + sizes.gap) * DEFAULT_EM_PX);
+    expect(height(false, 10) - height(false, 6)).toBe(4 * (sizes.list.row + sizes.gap) * DEFAULT_EM_PX);
+  });
+
+  it('opens the list only as tall as its tabs when there are fewer tabs than rows', () => {
+    expect(firstWindowSize(settings({ listRows: 10 }), 6, page)).toEqual(
+      firstWindowSize(settings({ listRows: 6 }), 6, page),
+    );
+  });
+
+  it('opens it lower without the toolbar', () => {
+    const withToolbar = firstWindowSize(settings(), 30, page).height;
+    expect(firstWindowSize(settings({ toolbar: false }), 30, page).height).toBeLessThan(withToolbar);
+  });
+
+  it('opens it as wide as the columns of tiles, and a row of tiles taller per row', () => {
+    const grid = settings({ view: 'grid' });
+    const big = { width: 2560, height: 1600 };
+    const { tileGap, padding } = sizes.grid;
+    expect(firstWindowSize(grid, 9, big).width).toBe(
+      (3 * (tileWidth + tileGap) - tileGap + 2 * padding) * DEFAULT_EM_PX,
+    );
+    expect(firstWindowSize(grid, 3, big).height - firstWindowSize(grid, 2, big).height).toBe(
+      (tileHeight(grid) + tileGap) * DEFAULT_EM_PX,
+    );
   });
 });
 

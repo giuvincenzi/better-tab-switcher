@@ -1,0 +1,185 @@
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { page, userEvent } from 'vitest/browser';
+import { button, closeAll, names, openSwitcher, option, selectedName, tabs, typeInSearch } from './switcher-harness';
+
+// Every test starts on the same page size, also when it runs alone.
+beforeEach(async () => {
+  await page.viewport(1280, 800);
+});
+
+afterEach(async () => {
+  closeAll();
+  await page.viewport(1280, 800);
+});
+
+const pointerDown = (target: Element) =>
+  target.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, composed: true }));
+
+describe('Switcher with the mouse', () => {
+  it('opens the tab that is clicked', () => {
+    const { host, handlers } = openSwitcher();
+    option(host, 'Running plan').click();
+    expect(handlers.onOpen).toHaveBeenCalledWith(tabs[3]);
+  });
+
+  it('opens the tile that is clicked, in the grid', () => {
+    const { host, handlers } = openSwitcher({ view: 'grid' });
+    option(host, 'Pull request #12').click();
+    expect(handlers.onOpen).toHaveBeenCalledWith(tabs[0]);
+  });
+
+  it('closes on a click outside the panel', () => {
+    const { host, handlers } = openSwitcher();
+    pointerDown(host.firstElementChild as HTMLElement);
+    expect(handlers.onClose).toHaveBeenCalledOnce();
+    expect(handlers.onOpen).not.toHaveBeenCalled();
+  });
+
+  it('stays open on a press inside the panel', () => {
+    const { host, handlers } = openSwitcher();
+    pointerDown(option(host, 'Q4 planning'));
+    pointerDown(host.querySelector('[role="toolbar"]') as HTMLElement);
+    expect(handlers.onClose).not.toHaveBeenCalled();
+  });
+
+  it('closes a tab with the middle button, without opening it, and stays open', () => {
+    for (const view of ['list', 'grid'] as const) {
+      const { host, handlers } = openSwitcher({ view });
+      option(host, 'Q4 planning').dispatchEvent(new MouseEvent('auxclick', { button: 1, bubbles: true }));
+      expect(handlers.onCloseTab).toHaveBeenCalledWith(tabs[2]);
+      expect(handlers.onOpen).not.toHaveBeenCalled();
+      expect(handlers.onClose).not.toHaveBeenCalled();
+      expect(names(host)).not.toContain('Q4 planning');
+    }
+  });
+
+  it("keeps the browser's auto-scroll from starting on a middle press over a tab, never on a left press", () => {
+    const { host } = openSwitcher();
+    const middle = new MouseEvent('mousedown', { button: 1, bubbles: true, cancelable: true });
+    const left = new MouseEvent('mousedown', { button: 0, bubbles: true, cancelable: true });
+    option(host, 'Q4 planning').dispatchEvent(middle);
+    option(host, 'Q4 planning').dispatchEvent(left);
+    expect(middle.defaultPrevented).toBe(true);
+    expect(left.defaultPrevented).toBe(false);
+  });
+
+  it('shows the close button only under the mouse', async () => {
+    const { host } = openSwitcher();
+    const row = option(host, 'Q4 planning');
+    const close = row.querySelector('button[aria-label="Close tab"]') as HTMLElement;
+    expect(getComputedStyle(close).visibility).toBe('hidden');
+    await userEvent.hover(row);
+    expect(getComputedStyle(close).visibility).toBe('visible');
+  });
+
+  it('shows the close button only under the mouse, in the grid', async () => {
+    const { host } = openSwitcher({ view: 'grid' });
+    const tile = option(host, 'Q4 planning');
+    const close = tile.querySelector('button[aria-label="Close tab"]') as HTMLElement;
+    expect(getComputedStyle(close).visibility).toBe('hidden');
+    await userEvent.hover(tile);
+    expect(getComputedStyle(close).visibility).toBe('visible');
+  });
+});
+
+describe('Switcher closing tabs', () => {
+  const closeButton = (host: HTMLElement, name: string) =>
+    option(host, name).querySelector('button[aria-label="Close tab"]') as HTMLButtonElement;
+
+  it('selects the tab after the selected one when it is closed', () => {
+    const { host } = openSwitcher();
+    closeButton(host, 'Inbox (3)').click();
+    expect(selectedName(host)).toBe('Q4 planning');
+  });
+
+  it('selects the tab before when the selected one is closed and was the last', () => {
+    const { host } = openSwitcher({}, { direction: 'previous' });
+    closeButton(host, 'Running plan').click();
+    expect(selectedName(host)).toBe('Q4 planning');
+  });
+
+  it('keeps the same tab selected when a tab above it is closed', () => {
+    const { host } = openSwitcher();
+    closeButton(host, 'Pull request #12').click();
+    expect(selectedName(host)).toBe('Inbox (3)');
+  });
+
+  it('opens the right tab after one is closed', () => {
+    const { host, press, handlers } = openSwitcher();
+    closeButton(host, 'Pull request #12').click();
+    press('Enter');
+    expect(handlers.onOpen).toHaveBeenCalledWith(tabs[1]);
+  });
+
+  it('closes the switcher with the last tab', () => {
+    const { host, handlers } = openSwitcher({}, { tabs: [tabs[0] as (typeof tabs)[0]] });
+    closeButton(host, 'Pull request #12').click();
+    expect(handlers.onCloseTab).toHaveBeenCalledWith(tabs[0]);
+    expect(handlers.onClose).toHaveBeenCalledOnce();
+  });
+
+  it('stays open while searching when the last match is closed, and says nothing matches', () => {
+    const { host, handlers } = openSwitcher();
+    typeInSearch(host, 'Inbox');
+    closeButton(host, 'Inbox (3)').click();
+    expect(handlers.onClose).not.toHaveBeenCalled();
+    expect(host.textContent).toContain('No tabs match your search.');
+  });
+
+  it('closes a tab from the search results, leaving the other matches', () => {
+    const { host, handlers } = openSwitcher();
+    typeInSearch(host, 'plan');
+    closeButton(host, 'Running plan').click();
+    expect(handlers.onCloseTab).toHaveBeenCalledWith(tabs[3]);
+    expect(names(host)).toEqual(['Q4 planning']);
+  });
+});
+
+describe('Switcher auto-select', () => {
+  /** The auto-select line's animation, on the selected tab. */
+  const line = (host: HTMLElement) =>
+    (host.querySelector('[aria-selected="true"]') as HTMLElement).getAnimations({ subtree: true })[0] as Animation;
+
+  it('opens the selected tab when its time runs out', async () => {
+    const { handlers } = openSwitcher({ autoSelect: true, autoSelectSeconds: 0.05 });
+    await expect.poll(() => handlers.onOpen.mock.calls.length).toBe(1);
+    expect(handlers.onOpen).toHaveBeenCalledWith(tabs[1]);
+  });
+
+  it('runs no line with Auto-select off', () => {
+    const { host } = openSwitcher({ autoSelect: false });
+    expect((host.querySelector('[aria-selected="true"]') as HTMLElement).getAnimations({ subtree: true })).toEqual([]);
+  });
+
+  it('starts the line again when the mouse moves onto another tab, not onto the selected one', () => {
+    const { host } = openSwitcher({ autoSelect: true, autoSelectSeconds: 10 });
+    const animation = line(host);
+    animation.currentTime = 4000;
+    option(host, 'Inbox (3)').dispatchEvent(new PointerEvent('pointerenter'));
+    expect(Number(animation.currentTime)).toBeGreaterThanOrEqual(4000);
+    option(host, 'Q4 planning').dispatchEvent(new PointerEvent('pointerenter'));
+    expect(Number(animation.currentTime)).toBeLessThan(1000);
+  });
+
+  it('moves the line with the selection', () => {
+    const { host, press } = openSwitcher({ autoSelect: true, autoSelectSeconds: 10 });
+    press('ArrowDown');
+    expect(selectedName(host)).toBe('Q4 planning');
+    expect(line(host)).toBeDefined();
+    expect(option(host, 'Inbox (3)').getAnimations({ subtree: true })).toEqual([]);
+  });
+
+  it('stops while the search field is selected', () => {
+    const { host } = openSwitcher({ autoSelect: true, autoSelectSeconds: 10 });
+    typeInSearch(host, 'plan');
+    expect(host.querySelector('[role="listbox"]')?.getAnimations({ subtree: true })).toEqual([]);
+  });
+
+  it('keeps the switcher open after a toolbar button, but auto-select still opens the selected tab', async () => {
+    const { host, handlers, press } = openSwitcher({ autoSelect: true, autoSelectSeconds: 0.2 });
+    button(host, 'Compact').click();
+    press('Alt', 'keyup');
+    expect(handlers.onOpen).not.toHaveBeenCalled();
+    await expect.poll(() => handlers.onOpen.mock.calls.length).toBe(1);
+  });
+});

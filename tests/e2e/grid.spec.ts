@@ -110,3 +110,66 @@ test.describe('grid @grid', () => {
       .toBe('grid');
   });
 });
+
+test.describe('grid of icons @grid', () => {
+  test('moves with the arrows by tab and by row, naming the selected tab, and opens it with Enter', async ({
+    context,
+    serviceWorker,
+  }) => {
+    await useSettings(serviceWorker, { view: 'grid', gridShow: 'icons' });
+    const names = Array.from({ length: 12 }, (_, i) => `tab${String(i + 1).padStart(2, '0')}`);
+    const pages = await openPages(context, names);
+    const page = pages[11] as Page;
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    await expect(rows(page)).toHaveCount(12);
+    // Most recent first: tab12, tab11… tab01.
+    const order = [...names].reverse();
+    const grid = page.locator('better-tab-switcher [role="listbox"]');
+    const columns = await grid.evaluate((list) => getComputedStyle(list).gridTemplateColumns.split(' ').length);
+    expect(columns).toBeGreaterThanOrEqual(2);
+    // At least two rows, so that down has a row to go to from the first one.
+    expect(columns).toBeLessThanOrEqual(9);
+    // The selected tab's name, under the icons.
+    const name = page.locator('better-tab-switcher [aria-hidden="true"]', { hasText: /^\w+$/ });
+    await expect(selected(page)).toHaveAccessibleName('tab11');
+    await expect(name).toHaveText('tab11');
+    await page.keyboard.press('ArrowRight');
+    await expect(selected(page)).toHaveAccessibleName(order[2] as string);
+    await page.keyboard.press('ArrowDown');
+    await expect(selected(page)).toHaveAccessibleName(order[2 + columns] as string);
+    await expect(name).toHaveText(order[2 + columns] as string);
+    await page.keyboard.press('ArrowLeft');
+    await expect(selected(page)).toHaveAccessibleName(order[1 + columns] as string);
+    await page.keyboard.press('Enter');
+    await expect.poll(() => activeTitle(serviceWorker)).toBe(order[1 + columns]);
+  });
+});
+
+test.describe('grid tiles @grid', () => {
+  test("forgets a tab's picture when the tab closes", async ({ context, serviceWorker }) => {
+    await useSettings(serviceWorker, { view: 'grid' });
+    const pages = await openPages(context, ['alpha', 'beta', 'gamma']);
+    await useEach(serviceWorker, pages);
+    const alphaId = await serviceWorker.evaluate(async () => (await chrome.tabs.query({ title: 'alpha' }))[0]?.id);
+    await (pages[0] as Page).close();
+    await expect.poll(() => savedPictures(serviceWorker)).toHaveLength(2);
+    expect(await savedPictures(serviceWorker)).not.toContain(`preview-${alphaId}`);
+    const page = pages[2] as Page;
+    await showSwitcher(serviceWorker);
+    await expect(rows(page)).toHaveCount(2);
+    await expect(pictures(page)).toHaveCount(2);
+  });
+
+  test('closes a tab with a middle click on its tile', async ({ context, serviceWorker }) => {
+    await useSettings(serviceWorker, { view: 'grid' });
+    const [, , current] = await openPages(context, ['alpha', 'beta', 'gamma']);
+    const page = current as Page;
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    await rows(page).filter({ hasText: 'alpha' }).click({ button: 'middle' });
+    await expect(rows(page)).toHaveCount(2);
+    await expect(selected(page)).toHaveAccessibleName('beta');
+    await expect
+      .poll(() => serviceWorker.evaluate(async () => (await chrome.tabs.query({})).map((t) => t.title).sort()))
+      .toEqual(['beta', 'gamma']);
+  });
+});

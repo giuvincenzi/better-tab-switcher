@@ -75,3 +75,12 @@ export function shortcutText(keys: string): string {
 export function useSettings(worker: Worker, settings: Partial<Settings>) {
   return worker.evaluate((saved) => chrome.storage.local.set({ settings: saved }), settings);
 }
+
+/** A new browser window, the last focused one, with one page of the test site in it. */
+export async function openWindow(context: BrowserContext, worker: Worker, title: string): Promise<Page> {
+  const opened = context.waitForEvent('page');
+  await worker.evaluate(() => chrome.windows.create({}));
+  const page = await opened;
+  await page.goto(`https://bts.test/${title}`);
+  return page;
+}

@@ -59,3 +59,126 @@ describe('parseSettings', () => {
     expect(settings.details).toEqual({ ...defaultSettings.details, address: true });
   });
 });
+
+/** Every setting with a valid value that is not its default, so a value falling back to its default shows. */
+const notDefaults = {
+  theme: 'dark',
+  view: 'grid',
+  compact: false,
+  listRows: 6,
+  gridShow: 'icons',
+  scope: 'all',
+  showPinned: false,
+  delayMs: 400,
+  stayOpen: true,
+  autoSelect: true,
+  autoSelectSeconds: 7,
+  toolbar: false,
+  chromePagesWindow: false,
+  details: {
+    address: true,
+    longAddress: 'scroll',
+    pinnedIcon: false,
+    audioIcon: false,
+    sleeping: false,
+    groupColor: false,
+    lastUsed: true,
+  },
+} as const;
+
+describe('parseSettings with settings saved by another version', () => {
+  it('gives each damaged setting its own default and keeps all the others', () => {
+    const topKeys = Object.keys(notDefaults).filter((key) => key !== 'details') as Exclude<
+      keyof typeof notDefaults,
+      'details'
+    >[];
+    for (const key of topKeys) {
+      for (const damaged of [undefined, null, 'unknown', 12.5, {}, [true]]) {
+        const settings = parseSettings({ ...notDefaults, [key]: damaged });
+        expect(settings, `${key} saved as ${JSON.stringify(damaged)}`).toEqual({
+          ...notDefaults,
+          [key]: defaultSettings[key],
+        });
+      }
+    }
+  });
+
+  it('gives each damaged tab detail its own default and keeps all the others', () => {
+    for (const key of Object.keys(notDefaults.details) as (keyof typeof notDefaults.details)[]) {
+      for (const damaged of [undefined, null, 'unknown', 1, {}]) {
+        const settings = parseSettings({ ...notDefaults, details: { ...notDefaults.details, [key]: damaged } });
+        expect(settings, `details.${key} saved as ${JSON.stringify(damaged)}`).toEqual({
+          ...notDefaults,
+          details: { ...notDefaults.details, [key]: defaultSettings.details[key] },
+        });
+      }
+    }
+  });
+
+  it('gives the default tab details when they are damaged, keeping the other settings', () => {
+    for (const damaged of ['address', [true, false], null, 3]) {
+      expect(parseSettings({ ...notDefaults, details: damaged })).toEqual({
+        ...notDefaults,
+        details: defaultSettings.details,
+      });
+    }
+  });
+
+  it('gives the defaults to the settings an older version did not save, keeping the saved ones', () => {
+    const older = { theme: 'dark', view: 'grid', delayMs: 400, details: { address: true } };
+    expect(parseSettings(older)).toEqual({
+      ...defaultSettings,
+      theme: 'dark',
+      view: 'grid',
+      delayMs: 400,
+      details: { ...defaultSettings.details, address: true },
+    });
+  });
+
+  it('drops the settings a newer version added and keeps the known ones', () => {
+    const newer = { ...notDefaults, sortBy: 'title', details: { ...notDefaults.details, favicon: false } };
+    expect(parseSettings(newer)).toEqual(notDefaults);
+  });
+
+  it('refuses numbers just outside their limits, not numbers and numbers written as text', () => {
+    const delays = [limits.delayMs.min - 1, limits.delayMs.max + 1, Number.NaN, Number.POSITIVE_INFINITY, '400'];
+    for (const delayMs of delays) {
+      expect(parseSettings({ ...notDefaults, delayMs }).delayMs).toBe(defaultSettings.delayMs);
+    }
+    const { min, max } = limits.autoSelectSeconds;
+    for (const autoSelectSeconds of [min - 1, max + 1, 2.5, '7']) {
+      expect(parseSettings({ ...notDefaults, autoSelectSeconds }).autoSelectSeconds).toBe(
+        defaultSettings.autoSelectSeconds,
+      );
+    }
+    expect(parseSettings({ autoSelectSeconds: min }).autoSelectSeconds).toBe(min);
+    expect(parseSettings({ autoSelectSeconds: max }).autoSelectSeconds).toBe(max);
+  });
+
+  it('reads a switch only from true or false, never from a value that looks like one', () => {
+    for (const looksLikeOne of [0, 1, 'true', 'false']) {
+      expect(parseSettings({ compact: looksLikeOne }).compact).toBe(defaultSettings.compact);
+      expect(parseSettings({ stayOpen: looksLikeOne }).stayOpen).toBe(defaultSettings.stayOpen);
+    }
+  });
+});
+
+describe('defaultSettings', () => {
+  it('can never be changed by the code that reads it', () => {
+    const before = structuredClone(defaultSettings);
+    expect(() => {
+      (defaultSettings as { theme: string }).theme = before.theme === 'dark' ? 'light' : 'dark';
+    }).toThrow();
+    expect(() => {
+      (defaultSettings.details as { address: boolean }).address = !before.details.address;
+    }).toThrow();
+    expect(defaultSettings).toEqual(before);
+  });
+
+  it('gives settings that can be changed without changing the defaults', () => {
+    const settings = parseSettings(undefined);
+    settings.details.address = true;
+    settings.theme = 'dark';
+    expect(parseSettings(undefined)).toEqual(defaultSettings);
+  });
+});

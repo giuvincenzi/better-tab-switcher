@@ -32,7 +32,7 @@ export default defineConfig({
         define: { __ENGLISH_MESSAGES__: JSON.stringify(englishMessages) },
         // Prepared before the tests start: one Vite found while they ran would reload them, and they would fail on a
         // machine without Vite's cache (GitHub's).
-        optimizeDeps: { include: ['wxt/browser'] },
+        optimizeDeps: { include: ['wxt/browser', '@webext-core/messaging', 'wxt/utils/storage'] },
         test: {
           name: 'browser',
           include: ['tests/unit/**/*.test.tsx', 'tests/unit/**/*.browser.test.ts'],

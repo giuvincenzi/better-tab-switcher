@@ -1,7 +1,16 @@
 import type { BrowserContext, Page } from '@playwright/test';
 import { shortcutsPageUrl } from '../../lib/browser';
 import { expect, test } from './fixtures';
-import { defaultShortcuts, openPages, rows, shortcutText, showSwitcher, testBrowser } from './helpers';
+import {
+  activeTitle,
+  defaultShortcuts,
+  openPages,
+  rows,
+  selected,
+  shortcutText,
+  showSwitcher,
+  testBrowser,
+} from './helpers';
 
 async function openSettings(context: BrowserContext, extensionId: string): Promise<Page> {
   const page = await context.newPage();
@@ -59,5 +68,49 @@ test.describe('settings page @settings', () => {
     await expect(compact).not.toBeChecked();
     await settings.getByRole('button', { name: 'Restore' }).click();
     await expect(compact).toBeChecked();
+  });
+
+  test("takes the switcher's toolbar away from the next switcher with Show toolbar off", async ({
+    context,
+    serviceWorker,
+    extensionId,
+  }) => {
+    const settings = await openSettings(context, extensionId);
+    const toolbar = settings.getByRole('switch', { name: 'Show toolbar' });
+    await expect(toolbar).toBeChecked();
+    await toolbar.click();
+    await expect(toolbar).not.toBeChecked();
+    const [, current] = await openPages(context, ['alpha', 'beta']);
+    const page = current as Page;
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    await expect(rows(page)).toHaveCount(2);
+    const switcher = page.locator('better-tab-switcher');
+    await expect(switcher.getByRole('toolbar')).toHaveCount(0);
+    await expect(switcher.getByRole('searchbox')).toHaveCount(0);
+  });
+});
+
+test.describe("the switcher's toolbar @settings", () => {
+  test('shows the website addresses from the toolbar, and keeps them for the next opening', async ({
+    context,
+    serviceWorker,
+  }) => {
+    const [, current] = await openPages(context, ['alpha', 'beta']);
+    const page = current as Page;
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    const address = page.locator('better-tab-switcher').getByRole('button', { name: 'Website address' });
+    await expect(address).toHaveAttribute('aria-pressed', 'false');
+    await expect(selected(page)).toHaveAccessibleName('alpha');
+    await address.click();
+    await expect(address).toHaveAttribute('aria-pressed', 'true');
+    await expect(selected(page)).toHaveAccessibleName('alpha, bts.test');
+    await expect(rows(page).getByText('bts.test')).toHaveCount(2);
+    // The click left the keyboard on the tabs: Esc closes without opening one.
+    await page.keyboard.press('Escape');
+    await expect(rows(page)).toHaveCount(0);
+    expect(await activeTitle(serviceWorker)).toBe('beta');
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    await expect(selected(page)).toHaveAccessibleName('alpha, bts.test');
+    await expect(address).toHaveAttribute('aria-pressed', 'true');
   });
 });

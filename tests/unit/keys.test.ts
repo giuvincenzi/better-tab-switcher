@@ -22,6 +22,11 @@ describe('isRelease', () => {
     expect(isRelease(up('Alt', { ctrlKey: true }))).toBe(false);
   });
 
+  it('waits for the last of Alt, Ctrl and Cmd, whichever is still held', () => {
+    expect(isRelease(up('Control', { metaKey: true }))).toBe(false);
+    expect(isRelease(up('Meta', { altKey: true }))).toBe(false);
+  });
+
   it('is not the release of Shift or of a letter', () => {
     expect(isRelease(up('Shift'))).toBe(false);
     expect(isRelease(up('y'))).toBe(false);
@@ -63,5 +68,11 @@ describe('keyEvent', () => {
     expect(keyEvent(down('a'))).toBeNull();
     expect(keyEvent(down('ArrowLeft'))).toBeNull();
     expect(keyEvent(up('Enter'))).toBeNull();
+  });
+
+  it('treats two columns already as a grid', () => {
+    const grid = { columns: 2, inField: false };
+    expect(keyEvent(down('ArrowRight'), grid)).toEqual({ type: 'next' });
+    expect(keyEvent(down('ArrowUp'), grid)).toEqual({ type: 'jump', by: -2 });
   });
 });
