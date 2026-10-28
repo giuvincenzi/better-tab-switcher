@@ -1,4 +1,5 @@
 import type { BrowserContext, Page, Worker } from '@playwright/test';
+import type { BrowserName } from '../../lib/browser';
 import type { Settings } from '../../lib/settings/settings';
 
 /**
@@ -41,6 +42,22 @@ export function activeTitle(worker: Worker) {
 
 export const rows = (page: Page) => page.locator('better-tab-switcher [role="option"]');
 export const selected = (page: Page) => page.locator('better-tab-switcher [role="option"][aria-selected="true"]');
+
+/**
+ * The browser the tests run in (E2E_BROWSER, launched by tests/e2e/fixtures.ts), as lib/browser.ts names it: the tests
+ * ask lib/browser.ts what differs in it (its values are checked by tests/unit/browser.test.ts).
+ */
+export const testBrowser: BrowserName = process.env.E2E_BROWSER === 'msedge' ? 'edge' : 'chrome';
+
+/** The next and previous tab shortcuts' default keys, as the extension's manifest suggests them (wxt.config.ts). */
+export async function defaultShortcuts(worker: Worker): Promise<{ next: string; previous: string }> {
+  const commands = await worker.evaluate(() => chrome.runtime.getManifest().commands);
+  const keys = (name: string) => {
+    const suggested = commands?.[name]?.suggested_key;
+    return (typeof suggested === 'string' ? suggested : suggested?.default) ?? '';
+  };
+  return { next: keys('next-tab'), previous: keys('previous-tab') };
+}
 
 /**
  * A shortcut as Chrome writes it on the system the tests run on: "Alt+Shift+Y" on Linux and Windows, the Mac's symbols

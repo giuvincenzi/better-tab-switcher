@@ -1,6 +1,13 @@
 # GLOBAL: the extension's name, the same in every language. Shown by Chrome and in the extension.
 Extension_Name: Better Tab Switcher
 
+# GLOBAL: the browser's name, the same in every language, in the sentences that name the browser the extension runs in
+# (lib/browser.ts, BROWSER_NAME_TEXT).
+Browser_Chrome: Chrome
+
+# GLOBAL: as Browser_Chrome, in Microsoft Edge.
+Browser_Edge: Microsoft Edge
+
 # The shortcut that opens the switcher with the next tab selected, listed in chrome://extensions/shortcuts.
 Command_NextTab: Open the switcher on the next tab
 
@@ -75,8 +82,11 @@ Settings_Delay: Delay before the switcher appears
 Settings_DelayNote: A quicker tap switches to the previous tab without showing it.
 Settings_StayOpen: Stay open until you choose a tab
 Settings_StayOpenNote: Releasing the shortcut's keys doesn't switch tabs. Choose a tab with Enter or a click.
-Settings_ChromePagesWindow: Use a window on Chrome's pages
-Settings_ChromePagesWindowNote: Chrome doesn't let extensions into its own pages, like Settings, or into the Chrome Web Store. There the switcher opens in a small window of its own.
+# A setting: the switcher in a window of its own where the browser keeps extensions out. $1: the browser's name
+# (Browser_Chrome, Browser_Edge).
+Settings_ChromePagesWindow: Use a window on $1's pages
+# Under Settings_ChromePagesWindow. $1: the browser's name (Browser_Chrome, Browser_Edge).
+Settings_ChromePagesWindowNote: $1 doesn't let extensions into its own pages, like Settings, or into its web store. There the switcher opens in a small window of its own.
 Settings_AutoSelect: Auto-select
 Settings_AutoSelectNote: The selected tab opens after a few seconds. A line shows the time left.
 Settings_AutoSelectTime: Auto-select time
@@ -99,7 +109,8 @@ Settings_LastUsedNote: For example, $1.
 
 # Section: the extension's shortcuts, changed in chrome://extensions/shortcuts.
 Settings_Shortcuts: Keyboard shortcuts
-Settings_ShortcutsNote: Chrome doesn't let extensions use Ctrl+Tab.
+# Under the section's title. $1: the browser's name (Browser_Chrome, Browser_Edge).
+Settings_ShortcutsNote: $1 doesn't let extensions use Ctrl+Tab.
 # A link to the user guide, after Settings_ShortcutsNote.
 Settings_ShortcutsGuide: How to use Ctrl+Tab
 Settings_NextTab: Next tab

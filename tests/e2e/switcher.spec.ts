@@ -103,8 +103,10 @@ test.describe("Chrome's own pages @switcher", () => {
     const chromePage = await context.newPage();
     await chromePage.goto('chrome://version');
     await chromePage.bringToFront();
+    // The page stays the current tab, whatever the browser calls it.
+    const title = await activeTitle(serviceWorker);
     await showSwitcher(serviceWorker);
-    expect(await activeTitle(serviceWorker)).toBe('About Version');
+    expect(await activeTitle(serviceWorker)).toBe(title);
     expect(context.pages().map((page) => page.url())).not.toContainEqual(
       expect.stringContaining('chrome-extension://'),
     );

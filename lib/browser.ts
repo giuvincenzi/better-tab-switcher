@@ -9,6 +9,9 @@ export function browserName(userAgent: string = navigator.userAgent): BrowserNam
   return /\bEdg\//.test(userAgent) ? 'edge' : 'chrome';
 }
 
+/** The text (locales/en.yml, a GLOBAL word) with each browser's name, for the sentences that name the browser. */
+export const BROWSER_NAME_TEXT = { chrome: 'Browser_Chrome', edge: 'Browser_Edge' } as const;
+
 /** The browser's page where the extensions' shortcuts are changed. */
 export function shortcutsPageUrl(name: BrowserName = browserName()): string {
   return name === 'edge' ? 'edge://extensions/shortcuts' : 'chrome://extensions/shortcuts';

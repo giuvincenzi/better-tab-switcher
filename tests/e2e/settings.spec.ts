@@ -1,6 +1,7 @@
 import type { BrowserContext, Page } from '@playwright/test';
+import { shortcutsPageUrl } from '../../lib/browser';
 import { expect, test } from './fixtures';
-import { openPages, rows, shortcutText, showSwitcher } from './helpers';
+import { defaultShortcuts, openPages, rows, shortcutText, showSwitcher, testBrowser } from './helpers';
 
 async function openSettings(context: BrowserContext, extensionId: string): Promise<Page> {
   const page = await context.newPage();
@@ -42,10 +43,11 @@ test.describe('settings page @settings', () => {
     await expect(settings.locator('html')).toHaveCSS('color-scheme', 'light');
   });
 
-  test("opens Chrome's shortcuts page to change a shortcut", async ({ context, extensionId }) => {
+  test("opens the browser's shortcuts page to change a shortcut", async ({ context, extensionId, serviceWorker }) => {
     const settings = await openSettings(context, extensionId);
-    await expect(settings.locator('kbd')).toHaveText([shortcutText('Alt+Y'), shortcutText('Alt+Shift+Y')]);
-    const opened = context.waitForEvent('page', (tab) => tab.url() === 'chrome://extensions/shortcuts');
+    const defaults = await defaultShortcuts(serviceWorker);
+    await expect(settings.locator('kbd')).toHaveText([shortcutText(defaults.next), shortcutText(defaults.previous)]);
+    const opened = context.waitForEvent('page', (tab) => tab.url() === shortcutsPageUrl(testBrowser));
     await settings.getByRole('button', { name: 'Change shortcut' }).first().click();
     await opened;
   });

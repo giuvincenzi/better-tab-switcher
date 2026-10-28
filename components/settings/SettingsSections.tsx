@@ -1,5 +1,6 @@
 import { type JSX, Show } from 'solid-js';
 import { i18n } from '#i18n';
+import { BROWSER_NAME_TEXT, browserName } from '../../lib/browser';
 import { timeAgo } from '../../lib/i18n/time';
 import { limits, ROW_CHOICES, type RowCount, type Settings, type TabDetails } from '../../lib/settings/settings';
 import type { SettingsChange } from '../../lib/settings/store';
@@ -156,8 +157,8 @@ export function SwitchingSection(props: SectionProps): JSX.Element {
         onChange={(stayOpen) => props.save({ stayOpen })}
       />
       <ToggleRow
-        label={i18n.t('Settings_ChromePagesWindow')}
-        note={i18n.t('Settings_ChromePagesWindowNote')}
+        label={i18n.t('Settings_ChromePagesWindow', [browserTitle()])}
+        note={i18n.t('Settings_ChromePagesWindowNote', [browserTitle()])}
         checked={props.settings.chromePagesWindow}
         onChange={(chromePagesWindow) => props.save({ chromePagesWindow })}
       />
@@ -254,7 +255,7 @@ export function ShortcutsSection(props: ShortcutsSectionProps): JSX.Element {
       title={sectionTitle('shortcuts')}
       note={
         <>
-          {i18n.t('Settings_ShortcutsNote')}{' '}
+          {i18n.t('Settings_ShortcutsNote', [browserTitle()])}{' '}
           <a href={props.guideUrl} target="_blank" rel="noopener">
             {i18n.t('Settings_ShortcutsGuide')}
           </a>
@@ -315,6 +316,11 @@ function RowsRow(props: { label: string; value: RowCount; language: string; onCh
       )}
     />
   );
+}
+
+/** The name of the browser the extension runs in, for the sentences that name it (lib/browser.ts). */
+function browserTitle(): string {
+  return i18n.t(BROWSER_NAME_TEXT[browserName()]);
 }
 
 /** A unit as the language writes it after a number, short ("ms", "s"). */
