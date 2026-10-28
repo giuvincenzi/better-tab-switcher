@@ -53,6 +53,13 @@ describe('gridColumns', () => {
   it('makes the same rectangle of icons', () => {
     expect(gridColumns({ ...grid, gridShow: 'icons' }, 30, 1280, emPx)).toBe(6);
   });
+
+  it('has at least as many columns as fill the narrowest switcher, never more than the tabs', () => {
+    const icons = { ...grid, gridShow: 'icons' } as const;
+    expect(gridColumns(icons, 11, 1280, emPx)).toBe(5);
+    expect(gridColumns(icons, 3, 1280, emPx)).toBe(3);
+    expect(gridColumns(grid, 3, 1280, emPx)).toBe(2);
+  });
 });
 
 describe('tiles', () => {

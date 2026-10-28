@@ -253,12 +253,12 @@ describe('Switcher list width', () => {
     await page.viewport(1280, 800);
   });
 
-  it('takes 40% of the page in the list, between 500 and 1000 px', async () => {
+  it('takes 40% of the page in the list, between 500 and 768 px', async () => {
     await page.viewport(1280, 800);
     expect(panelWidth(open().host)).toBe(512);
     dispose?.();
     await page.viewport(2560, 800);
-    expect(panelWidth(open().host)).toBe(1000);
+    expect(panelWidth(open().host)).toBe(768);
     dispose?.();
     await page.viewport(1000, 800);
     expect(panelWidth(open().host)).toBe(500);
@@ -277,6 +277,23 @@ describe('Switcher list width', () => {
     expect(getComputedStyle(grid).gridTemplateColumns.split(' ')).toHaveLength(2);
     expect(panelWidth(host)).toBe(500);
     expect(grid.scrollWidth).toBe(grid.clientWidth);
+  });
+
+  it('fills the narrowest switcher with icons: the room left is shared evenly around them, no empty sides', async () => {
+    await page.viewport(1920, 800);
+    const { host } = open({ view: 'grid', gridShow: 'icons' });
+    const grid = host.querySelector('[role="listbox"]') as HTMLElement;
+    // Four tabs: one row of four icons, where a square would make two rows of two in the middle.
+    expect(getComputedStyle(grid).gridTemplateColumns.split(' ')).toHaveLength(4);
+    const box = grid.getBoundingClientRect();
+    const cells = [...grid.querySelectorAll('[role="option"]')].map((cell) => cell.getBoundingClientRect());
+    const first = cells[0] as DOMRect;
+    const second = cells[1] as DOMRect;
+    const last = cells[3] as DOMRect;
+    const gap = Number.parseFloat(getComputedStyle(grid).columnGap);
+    const between = second.left - first.right - gap;
+    expect(first.left - box.left).toBeCloseTo(between, 0);
+    expect(box.right - last.right).toBeCloseTo(between, 0);
   });
 });
 

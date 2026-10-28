@@ -8,10 +8,10 @@ export const sizes = {
   list: { padding: 0.5, row: 3 },
   compactList: { padding: 0.375, row: 2.25 },
   /**
-   * The list's width: its share of the page (%), between min and max (500 and 1000 px at the default text size), never
-   * wider than the page. min is also the narrowest the grid ever is (then its tiles are in the middle).
+   * The list's width: its share of the page (%), between min and max (500 and 768 px at the default text size), never
+   * wider than the page. min is also the narrowest the grid ever is: its columns fill it (gridColumns).
    */
-  listWidth: { share: 40, min: 31.25, max: 62.5 },
+  listWidth: { share: 40, min: 31.25, max: 48 },
   /** The grid is as wide as its columns, never wider than this share of the page (%). */
   gridMaxShare: 85,
   /** Between two rows or two tiles. */
@@ -70,16 +70,19 @@ export const ADDRESS_TUCK = 0.25;
 
 /**
  * The grid's columns: about as many as its rows, so that the tiles make a rectangle a little wider than tall (4 tabs:
- * 2 by 2, 12 tabs: 4 by 3, 30 tabs: 6 by 5); never more than fit in its share of the page, nor more than the tabs. The
- * page's width is in pixels, and so is an em of the switcher (emPx): the user's text size. The grid's height is the
- * CSS's: never taller than the page, then it scrolls.
+ * 2 by 2, 12 tabs: 4 by 3, 30 tabs: 6 by 5), yet at least as many as fill the narrowest switcher (11 icons make 5
+ * columns, not 4 with an empty band on each side); never more than fit in the grid's share of the page, nor more than
+ * the tabs. The page's width is in pixels, and so is an em of the switcher (emPx): the user's text size. The grid's
+ * height is the CSS's: never taller than the page, then it scrolls.
  */
 export function gridColumns(settings: Settings, count: number, pageWidth: number, emPx: number): number {
   const { cell, gap } = settings.gridShow === 'icons' ? sizes.icons : { cell: tileWidth, gap: sizes.grid.tileGap };
   const page = pageWidth / emPx;
-  const room = Math.min((page * sizes.gridMaxShare) / 100, page - 2 * sizes.margin) - 2 * sizes.grid.padding;
-  const fit = Math.floor((room + gap) / (cell + gap));
-  return Math.max(1, Math.min(count, fit, Math.ceil(Math.sqrt(count))));
+  const room = (width: number) => Math.min(width, page - 2 * sizes.margin) - 2 * sizes.grid.padding;
+  const columnsIn = (width: number) => Math.floor((room(width) + gap) / (cell + gap));
+  const widest = columnsIn((page * sizes.gridMaxShare) / 100);
+  const narrowest = columnsIn(sizes.listWidth.min);
+  return Math.max(1, Math.min(count, widest, Math.max(narrowest, Math.ceil(Math.sqrt(count)))));
 }
 
 /** The list's rows shown before it scrolls: the setting's, or all of them to fit the page (then it scrolls). */

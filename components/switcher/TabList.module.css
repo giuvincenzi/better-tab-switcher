@@ -20,11 +20,14 @@
   gap: var(--gap);
 }
 
-/* As many columns as fit the page (--columns): the tiles keep their size, never squeezed. */
+/*
+ * As many columns as lib/switcher/sizes.ts says (--columns): the tiles keep their size, never squeezed. The room the
+ * switcher has left, less than a column, is shared evenly around the columns.
+ */
 .previews {
   display: grid;
   grid-template-columns: repeat(var(--columns), var(--tile-width));
-  justify-content: center;
+  justify-content: space-evenly;
   grid-auto-rows: var(--tile-height);
   gap: var(--tile-gap);
 }
@@ -33,7 +36,7 @@
   display: grid;
   grid-template-columns: repeat(var(--columns), var(--icon-cell));
   grid-auto-rows: var(--icon-cell);
-  justify-content: center;
+  justify-content: space-evenly;
   gap: var(--icon-gap);
 }
 
