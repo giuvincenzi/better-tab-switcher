@@ -7,8 +7,9 @@ import { browser } from '#imports';
 import { SettingsPage } from '../../components/settings/SettingsPage';
 import { applyTheme } from '../../components/ui/applyTheme';
 import { registerEmUnit } from '../../components/ui/emUnit';
+import { shortcutsPageUrl } from '../../lib/browser';
 import { applyLanguage } from '../../lib/i18n/direction';
-import { CTRL_TAB_GUIDE_URL, SHORTCUTS_PAGE_URL } from '../../lib/links';
+import { CTRL_TAB_GUIDE_URL } from '../../lib/links';
 import { loadSettings, restoreDefaultSettings, saveSettings, watchSettings } from '../../lib/settings/store';
 
 // The settings page: every change is saved at once, and the page follows changes made elsewhere (another settings
@@ -44,7 +45,7 @@ render(
       now={Date.now()}
       iconUrl={browser.runtime.getURL('/icon/128.png')}
       guideUrl={CTRL_TAB_GUIDE_URL}
-      onChangeShortcut={() => void browser.tabs.create({ url: SHORTCUTS_PAGE_URL })}
+      onChangeShortcut={() => void browser.tabs.create({ url: shortcutsPageUrl() })}
       onRestore={() => void restoreDefaultSettings()}
     />
   ),

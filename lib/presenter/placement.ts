@@ -1,6 +1,8 @@
+import { isKeptOutPage } from '../browser';
+
 /**
- * Whether the switcher can be drawn over this page. Chrome lets no extension into its own pages (chrome://, the new
- * tab page, other extensions) nor the Chrome Web Store.
+ * Whether the switcher can be drawn over this page: a web page (http, https) the browser doesn't keep extensions out
+ * of. The browser's own pages (chrome://, edge://, the new tab page, other extensions) and local files never.
  */
 export function canShowInPage(url: string | undefined): boolean {
   if (!url) return false;
@@ -11,8 +13,7 @@ export function canShowInPage(url: string | undefined): boolean {
     return false;
   }
   if (address.protocol !== 'http:' && address.protocol !== 'https:') return false;
-  if (address.hostname === 'chromewebstore.google.com') return false;
-  return !(address.hostname === 'chrome.google.com' && address.pathname.startsWith('/webstore'));
+  return !isKeptOutPage(address);
 }
 
 /** A window's place and size on the screen, in pixels. */
