@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { expect, test } from './fixtures';
+import { shortcutText } from './helpers';
 
 const pkg = JSON.parse(readFileSync('package.json', 'utf8')) as { version: string };
 
@@ -40,7 +41,7 @@ test.describe('extension @setup', () => {
       const expected = typeof suggested === 'string' ? suggested : suggested?.default;
       const command = commands.find((c) => c.name === name);
       expect(expected).toBeTruthy();
-      expect(command?.shortcut).toBe(expected);
+      expect(command?.shortcut).toBe(shortcutText(expected as string));
     }
     expect(commands.find((c) => c.name === 'next-tab')?.description).toBe('Open the switcher on the next tab');
     expect(commands.find((c) => c.name === 'previous-tab')?.description).toBe('Open the switcher on the previous tab');

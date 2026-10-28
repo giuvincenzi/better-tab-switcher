@@ -42,6 +42,18 @@ export function activeTitle(worker: Worker) {
 export const rows = (page: Page) => page.locator('better-tab-switcher [role="option"]');
 export const selected = (page: Page) => page.locator('better-tab-switcher [role="option"][aria-selected="true"]');
 
+/**
+ * A shortcut as Chrome writes it on the system the tests run on: "Alt+Shift+Y" on Linux and Windows, the Mac's symbols
+ * on macOS ("⌥⇧Y"), in the order Chrome puts them (⌃ ⌥ ⇧ ⌘).
+ */
+export function shortcutText(keys: string): string {
+  if (process.platform !== 'darwin') return keys;
+  const symbols: Record<string, string> = { Ctrl: '⌃', MacCtrl: '⌃', Alt: '⌥', Shift: '⇧', Command: '⌘' };
+  const parts = keys.split('+');
+  const key = parts.pop() ?? '';
+  return parts.map((part) => symbols[part] ?? part).join('') + key;
+}
+
 /** Saves these settings as the settings page would, before the switcher opens. */
 export function useSettings(worker: Worker, settings: Partial<Settings>) {
   return worker.evaluate((saved) => chrome.storage.local.set({ settings: saved }), settings);

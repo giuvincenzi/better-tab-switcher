@@ -1,6 +1,6 @@
 import type { BrowserContext, Page } from '@playwright/test';
 import { expect, test } from './fixtures';
-import { openPages, rows, showSwitcher } from './helpers';
+import { openPages, rows, shortcutText, showSwitcher } from './helpers';
 
 async function openSettings(context: BrowserContext, extensionId: string): Promise<Page> {
   const page = await context.newPage();
@@ -44,7 +44,7 @@ test.describe('settings page @settings', () => {
 
   test("opens Chrome's shortcuts page to change a shortcut", async ({ context, extensionId }) => {
     const settings = await openSettings(context, extensionId);
-    await expect(settings.locator('kbd')).toHaveText(['Alt+Y', 'Alt+Shift+Y']);
+    await expect(settings.locator('kbd')).toHaveText([shortcutText('Alt+Y'), shortcutText('Alt+Shift+Y')]);
     const opened = context.waitForEvent('page', (tab) => tab.url() === 'chrome://extensions/shortcuts');
     await settings.getByRole('button', { name: 'Change shortcut' }).first().click();
     await opened;
