@@ -26,25 +26,33 @@ export interface Layout {
   columns: number;
   /** The search field has the focus: left and right move its cursor. */
   inField: boolean;
+  /**
+   * The direction the tabs are laid out in (the page's dir): right to left, the grid starts on the right, so the left
+   * arrow goes to the next tab. The arrows always move the way they point.
+   */
+  direction: 'ltr' | 'rtl';
 }
 
 /**
  * The switcher's event for a key, or null when the switcher doesn't use it. The shortcut itself never gets here: Chrome
  * gives it to the extension, which tells the open switcher to go forward or back.
  */
-export function keyEvent(key: Key, layout: Layout = { columns: 1, inField: false }): SwitcherEvent | null {
+export function keyEvent(
+  key: Key,
+  layout: Layout = { columns: 1, inField: false, direction: 'ltr' },
+): SwitcherEvent | null {
   if (isRelease(key)) return { type: 'release' };
   if (key.type !== 'keydown') return null;
   const grid = layout.columns > 1;
+  const forward = layout.direction === 'rtl' ? 'ArrowLeft' : 'ArrowRight';
   switch (key.key) {
     case 'ArrowDown':
       return grid ? { type: 'jump', by: layout.columns } : { type: 'next' };
     case 'ArrowUp':
       return grid ? { type: 'jump', by: -layout.columns } : { type: 'previous' };
     case 'ArrowRight':
-      return grid && !layout.inField ? { type: 'next' } : null;
     case 'ArrowLeft':
-      return grid && !layout.inField ? { type: 'previous' } : null;
+      return grid && !layout.inField ? { type: key.key === forward ? 'next' : 'previous' } : null;
     case 'Enter':
       return { type: 'confirm' };
     case 'Escape':

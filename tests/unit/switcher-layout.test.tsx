@@ -12,6 +12,7 @@ import {
   option,
   options,
   panel,
+  selectedName,
   tab,
   tabs,
   typeInSearch,
@@ -227,5 +228,69 @@ describe('Switcher right to left', () => {
     const first = option(host, 'Pull request #12').getBoundingClientRect();
     const second = option(host, 'Inbox (3)').getBoundingClientRect();
     expect(first.left).toBeGreaterThan(second.right);
+  });
+
+  it('moves the selection the way the arrow points in a right-to-left grid', () => {
+    document.body.dir = 'rtl';
+    const { host, press } = openSwitcher({ view: 'grid' });
+    const place = () => option(host, selectedName(host) as string).getBoundingClientRect();
+    // The selected tab (the previous one) ends the first row; the right arrow goes back to its start.
+    press('ArrowRight');
+    const start = place();
+    expect(start.right).toBeGreaterThan(place().left);
+    press('ArrowLeft');
+    const left = place();
+    expect(left.top).toBe(start.top);
+    expect(left.left).toBeLessThan(start.left);
+    press('ArrowRight');
+    expect(place().left).toBe(start.left);
+  });
+
+  it("starts a tile's address past the site's icon, on the side the text starts", () => {
+    for (const dir of ['ltr', 'rtl'] as const) {
+      document.body.dir = dir;
+      const { host } = openSwitcher({ view: 'grid', details: { ...defaultSettings.details, address: true } });
+      const tile = option(host, 'Inbox (3), example.com');
+      const icon = (tile.querySelector('img') as HTMLElement).getBoundingClientRect();
+      const address = [...tile.querySelectorAll('span')]
+        .find((span) => span.children.length === 0 && span.textContent === 'example.com')
+        ?.getBoundingClientRect() as DOMRect;
+      if (dir === 'ltr') expect(address.left, dir).toBeGreaterThanOrEqual(icon.right);
+      else expect(address.right, dir).toBeLessThanOrEqual(icon.left);
+      closeAll();
+    }
+  });
+
+  it('keeps a website address left to right: a long one shows its start, a short one sits where the text starts', () => {
+    document.body.dir = 'rtl';
+    const host = 'mail.workspace.example-international-holdings-and-subsidiaries-worldwide-operations-department.com';
+    const long = tab(5, 'Mail', { url: `https://${host}/inbox` });
+    const { host: switcher } = openSwitcher(
+      { compact: false, details: { ...defaultSettings.details, address: true } },
+      { tabs: [...tabs, long] },
+    );
+    const text = (name: string, address: string) =>
+      [...option(switcher, `${name}, ${address}`).querySelectorAll('span')].find(
+        (span) => span.childElementCount === 0 && span.textContent === address,
+      ) as HTMLElement;
+    const longText = text('Mail', host);
+    const longPlace = (longText.parentElement as HTMLElement).getBoundingClientRect();
+    expect(longText.getBoundingClientRect().width).toBeGreaterThan(longPlace.width);
+    expect(longText.getBoundingClientRect().left).toBeCloseTo(longPlace.left, 0);
+    const shortText = text('Inbox (3)', 'example.com');
+    const shortPlace = (shortText.parentElement as HTMLElement).getBoundingClientRect();
+    expect(shortText.getBoundingClientRect().right).toBeCloseTo(shortPlace.right, 0);
+  });
+
+  it('runs the auto-select line out from the side the text starts: the right', () => {
+    document.body.dir = 'rtl';
+    const { host } = openSwitcher({ autoSelect: true, autoSelectSeconds: 10 });
+    const selected = host.querySelector('[aria-selected="true"]') as HTMLElement;
+    const animation = selected.getAnimations({ subtree: true })[0] as Animation;
+    animation.pause();
+    animation.currentTime = 5000;
+    const line = ((animation.effect as KeyframeEffect).target as HTMLElement).getBoundingClientRect();
+    expect(line.width).toBeLessThan(selected.getBoundingClientRect().width);
+    expect(line.right).toBeCloseTo(selected.getBoundingClientRect().right, 0);
   });
 });

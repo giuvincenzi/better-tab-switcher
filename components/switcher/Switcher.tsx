@@ -167,7 +167,9 @@ export function Switcher(props: SwitcherProps): JSX.Element {
 
   function onKey(event: KeyboardEvent) {
     if (inToolbarControls(event) && event.key !== 'Escape') return;
-    const switcherEvent = keyEvent(event, { columns: columns(), inField: state().selected === FIELD });
+    // The direction the tabs are laid out in: the page's dir, as the panel has it.
+    const direction = panel && getComputedStyle(panel).direction === 'rtl' ? 'rtl' : 'ltr';
+    const switcherEvent = keyEvent(event, { columns: columns(), inField: state().selected === FIELD, direction });
     if (!switcherEvent) return;
     event.preventDefault();
     event.stopPropagation();

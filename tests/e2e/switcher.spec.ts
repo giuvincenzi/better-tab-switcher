@@ -93,6 +93,28 @@ test.describe('switcher theme @switcher', () => {
   }
 });
 
+test.describe('switcher motion @switcher', () => {
+  for (const reducedMotion of ['no-preference', 'reduce'] as const) {
+    test(`scrolls the selected tab's address ${reducedMotion === 'reduce' ? 'never when the system asks for less motion' : 'when it is set to scroll'}`, async ({
+      context,
+      serviceWorker,
+    }) => {
+      await useSettings(serviceWorker, { details: { address: true, longAddress: 'scroll' } as never });
+      const [, current] = await openPages(context, ['alpha', 'beta']);
+      const page = current as Page;
+      await page.emulateMedia({ reducedMotion });
+      await showSwitcher(serviceWorker);
+      await expect(selected(page)).toContainText('alpha');
+      const scrolling = () =>
+        selected(page).evaluate(
+          (row) => row.getAnimations({ subtree: true }).filter((a) => a.playState === 'running').length,
+        );
+      if (reducedMotion === 'reduce') expect(await scrolling()).toBe(0);
+      else await expect.poll(scrolling).toBeGreaterThan(0);
+    });
+  }
+});
+
 test.describe("Chrome's own pages @switcher", () => {
   test("does nothing on a page Chrome keeps extensions out of, with Use a window on Chrome's pages off", async ({
     context,

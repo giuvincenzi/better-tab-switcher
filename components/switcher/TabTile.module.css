@@ -52,7 +52,7 @@
   flex: none;
   height: var(--tile-line);
   margin-top: calc(-1 * var(--address-tuck));
-  padding-left: calc(1.375 * var(--bts-em));
+  padding-inline-start: calc(1.375 * var(--bts-em));
   font-size: calc(0.6875 * var(--bts-em));
   line-height: var(--tile-line);
 }

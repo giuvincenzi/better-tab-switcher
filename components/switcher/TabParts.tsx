@@ -52,7 +52,8 @@ export function TabTitle(props: { tab: SwitcherTab; title: TitleParts; details: 
 
 /**
  * The website's address: cut with "…", or scrolling back and forth on the selected tab. It takes the width its place
- * gives it, never its text's (it measures that width to scroll): `class` gives it its place.
+ * gives it, never its text's (it measures that width to scroll): `class` gives it its place. Its place follows the
+ * page's direction; the address itself always reads left to right (.claude/rules/i18n.md), so a long one shows its start.
  */
 export function Address(props: { url: string; scrolls: boolean; side?: boolean; class?: string }): JSX.Element {
   return (
@@ -60,7 +61,9 @@ export function Address(props: { url: string; scrolls: boolean; side?: boolean; 
       class={`${styles.address} ${props.class ?? ''}`}
       classList={{ [styles.side as string]: props.side, [styles.scrolls as string]: props.scrolls }}
     >
-      <span>{hostOf(props.url)}</span>
+      <span class={styles.addressText} dir="ltr">
+        <span>{hostOf(props.url)}</span>
+      </span>
     </span>
   );
 }

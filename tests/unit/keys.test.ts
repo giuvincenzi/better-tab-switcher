@@ -50,15 +50,23 @@ describe('keyEvent', () => {
   });
 
   it('in the grid, moves to the next tab with right and left, a row with down and up', () => {
-    const grid = { columns: 5, inField: false };
+    const grid = { columns: 5, inField: false, direction: 'ltr' } as const;
     expect(keyEvent(down('ArrowRight'), grid)).toEqual({ type: 'next' });
     expect(keyEvent(down('ArrowLeft'), grid)).toEqual({ type: 'previous' });
     expect(keyEvent(down('ArrowDown'), grid)).toEqual({ type: 'jump', by: 5 });
     expect(keyEvent(down('ArrowUp'), grid)).toEqual({ type: 'jump', by: -5 });
   });
 
+  it('in a right-to-left grid, moves the way the arrow points: left to the next tab, right to the previous', () => {
+    const grid = { columns: 5, inField: false, direction: 'rtl' } as const;
+    expect(keyEvent(down('ArrowLeft'), grid)).toEqual({ type: 'next' });
+    expect(keyEvent(down('ArrowRight'), grid)).toEqual({ type: 'previous' });
+    expect(keyEvent(down('ArrowDown'), grid)).toEqual({ type: 'jump', by: 5 });
+    expect(keyEvent(down('ArrowUp'), grid)).toEqual({ type: 'jump', by: -5 });
+  });
+
   it('leaves left and right to the search field while it has the focus', () => {
-    const grid = { columns: 5, inField: true };
+    const grid = { columns: 5, inField: true, direction: 'ltr' } as const;
     expect(keyEvent(down('ArrowRight'), grid)).toBeNull();
     expect(keyEvent(down('ArrowLeft'), grid)).toBeNull();
     expect(keyEvent(down('ArrowDown'), grid)).toEqual({ type: 'jump', by: 5 });
@@ -71,7 +79,7 @@ describe('keyEvent', () => {
   });
 
   it('treats two columns already as a grid', () => {
-    const grid = { columns: 2, inField: false };
+    const grid = { columns: 2, inField: false, direction: 'ltr' } as const;
     expect(keyEvent(down('ArrowRight'), grid)).toEqual({ type: 'next' });
     expect(keyEvent(down('ArrowUp'), grid)).toEqual({ type: 'jump', by: -2 });
   });
