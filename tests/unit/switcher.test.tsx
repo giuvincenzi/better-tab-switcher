@@ -115,8 +115,8 @@ describe('Switcher', () => {
     expect(handlers.onOpen).not.toHaveBeenCalled();
   });
 
-  it('shows the search field with Search on, without its button in the footer and without the focus', () => {
-    const { host } = open({ search: true });
+  it('shows the search field with Search on (the default), without its button in the footer and without the focus', () => {
+    const { host } = open();
     const field = host.querySelector('input[type="search"]') as HTMLInputElement;
     expect(field).not.toBeNull();
     expect(document.activeElement).not.toBe(field);
@@ -163,7 +163,7 @@ describe('Switcher', () => {
   });
 
   it('shows the search field from the footer button, also with Search off, for this time only', () => {
-    const { host } = open();
+    const { host } = open({ search: false });
     expect(host.querySelector('input[type="search"]')).toBeNull();
     (host.querySelector('button[aria-label="Search tabs"]') as HTMLButtonElement).click();
     expect(document.activeElement).toBe(host.querySelector('input[type="search"]'));
@@ -197,6 +197,31 @@ describe('Switcher', () => {
     expect(getComputedStyle(backdrop).visibility).toBe('hidden');
     takePicture();
     await vi.waitFor(() => expect(getComputedStyle(backdrop).visibility).toBe('visible'));
+  });
+});
+
+describe('Switcher list width', () => {
+  const panelWidth = (host: HTMLElement) => (host.querySelector('[style*="--panel-width"]') as HTMLElement).offsetWidth;
+
+  afterEach(async () => {
+    await page.viewport(1280, 800);
+  });
+
+  it('takes its share of the page: Small 35%, Medium 50%, Large 80%', async () => {
+    await page.viewport(1280, 800);
+    expect(panelWidth(open({ listWidth: 'small' }).host)).toBe(448);
+    dispose?.();
+    expect(panelWidth(open({ listWidth: 'medium' }).host)).toBe(640);
+    dispose?.();
+    expect(panelWidth(open({ listWidth: 'large' }).host)).toBe(1024);
+  });
+
+  it('is never narrower than 360 px, nor wider than the page', async () => {
+    await page.viewport(600, 800);
+    expect(panelWidth(open({ listWidth: 'small' }).host)).toBe(360);
+    dispose?.();
+    await page.viewport(380, 800);
+    expect(panelWidth(open({ listWidth: 'large' }).host)).toBe(348);
   });
 });
 

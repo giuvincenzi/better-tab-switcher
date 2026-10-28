@@ -182,7 +182,7 @@ export function Switcher(props: SwitcherProps): JSX.Element {
     const list = compact() ? sizes.compactList : sizes.list;
     const grid = layout() !== 'list';
     return {
-      '--panel-width': grid ? 'auto' : `${list.width}px`,
+      '--panel-width': grid ? 'auto' : `max(${sizes.listWidth.minWidth}px, ${sizes.listWidth[settings().listWidth]}vw)`,
       '--panel-padding': `${grid ? sizes.grid.padding : list.padding}px`,
       '--margin': `${sizes.margin}px`,
       '--row': `${list.row}px`,

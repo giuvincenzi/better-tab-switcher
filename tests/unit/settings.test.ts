@@ -18,6 +18,7 @@ describe('parseSettings', () => {
       theme: 'dark',
       view: 'grid',
       compact: false,
+      listWidth: 'large',
       listRows: 'fit',
       gridShow: 'icons',
       scope: 'all',
@@ -26,7 +27,7 @@ describe('parseSettings', () => {
       stayOpen: true,
       autoSelect: true,
       autoSelectSeconds: 5,
-      search: true,
+      search: false,
       details: { ...defaultSettings.details, address: true, longAddress: 'scroll', lastUsed: true },
     };
     expect(parseSettings(saved)).toEqual(saved);

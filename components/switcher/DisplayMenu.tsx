@@ -2,6 +2,7 @@ import { createUniqueId, type JSX, Show } from 'solid-js';
 import { i18n } from '#i18n';
 import type { Settings } from '../../lib/settings/settings';
 import type { SettingsChange } from '../../lib/settings/store';
+import { listWidthOptions } from '../settings/options';
 import { Icon } from '../ui/Icon';
 import { SegmentedControl } from '../ui/SegmentedControl';
 import { Toggle } from '../ui/Toggle';
@@ -19,7 +20,7 @@ interface DisplayMenuProps {
  * page. Its controls are the browser's own: the switcher's keys leave them alone (data-display-menu).
  */
 export function DisplayMenu(props: DisplayMenuProps): JSX.Element {
-  const ids = { view: createUniqueId(), show: createUniqueId(), compact: createUniqueId() };
+  const ids = { view: createUniqueId(), show: createUniqueId(), width: createUniqueId(), compact: createUniqueId() };
   return (
     <fieldset id={props.id} class={styles.menu} aria-label={i18n.t('Switcher_Display')} data-display-menu>
       <div class={styles.group}>
@@ -39,14 +40,27 @@ export function DisplayMenu(props: DisplayMenuProps): JSX.Element {
       <Show
         when={props.settings.view === 'grid'}
         fallback={
-          <div class={styles.row}>
-            <span id={ids.compact}>{i18n.t('Settings_Compact')}</span>
-            <Toggle
-              checked={props.settings.compact}
-              labelledBy={ids.compact}
-              onChange={(compact) => props.onChange({ compact })}
-            />
-          </div>
+          <>
+            <div class={styles.group}>
+              <span id={ids.width} class={styles.label}>
+                {i18n.t('Settings_ListWidth')}
+              </span>
+              <SegmentedControl
+                value={props.settings.listWidth}
+                options={listWidthOptions()}
+                labelledBy={ids.width}
+                onChange={(listWidth) => props.onChange({ listWidth })}
+              />
+            </div>
+            <div class={styles.row}>
+              <span id={ids.compact}>{i18n.t('Settings_Compact')}</span>
+              <Toggle
+                checked={props.settings.compact}
+                labelledBy={ids.compact}
+                onChange={(compact) => props.onChange({ compact })}
+              />
+            </div>
+          </>
         }
       >
         <div class={styles.group}>

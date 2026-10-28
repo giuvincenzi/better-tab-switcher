@@ -50,7 +50,7 @@
 
 .scrolls > span {
   display: inline-block;
-  animation: scroll-address 1.5s linear 1s infinite alternate;
+  animation: scroll-address 2.25s linear 1s infinite alternate;
 }
 
 @keyframes scroll-address {

@@ -2,8 +2,10 @@ import type { Settings } from '../settings/settings';
 
 /** The switcher's sizes in px, written once: the components draw it with them (as CSS variables). */
 export const sizes = {
-  list: { width: 560, padding: 8, row: 48 },
-  compactList: { width: 440, padding: 6, row: 36 },
+  list: { padding: 8, row: 48 },
+  compactList: { padding: 6, row: 36 },
+  /** The list's width: a share of the page's width (%), never narrower than minWidth, nor wider than the page. */
+  listWidth: { small: 35, medium: 50, large: 80, minWidth: 360 },
   /** Between two rows or two tiles. */
   gap: 2,
   /**

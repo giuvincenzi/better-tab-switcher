@@ -8,6 +8,7 @@ import { NumberField } from '../ui/NumberField';
 import { SegmentedControl } from '../ui/SegmentedControl';
 import { Select, type SelectOption } from '../ui/Select';
 import { Toggle } from '../ui/Toggle';
+import { listWidthOptions } from './options';
 import { SettingRow } from './SettingRow';
 import { SettingsSection } from './SettingsSection';
 import styles from './SettingsSections.module.css';
@@ -70,6 +71,17 @@ export function AppearanceSection(props: SectionProps): JSX.Element {
         when={grid()}
         fallback={
           <>
+            <SettingRow
+              label={i18n.t('Settings_ListWidth')}
+              control={(ids) => (
+                <SegmentedControl
+                  value={props.settings.listWidth}
+                  options={listWidthOptions()}
+                  labelledBy={ids.label}
+                  onChange={(listWidth) => props.save({ listWidth })}
+                />
+              )}
+            />
             <ToggleRow
               label={i18n.t('Settings_Compact')}
               note={i18n.t('Settings_CompactNote')}
