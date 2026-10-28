@@ -76,13 +76,12 @@ test.describe('grid @grid', () => {
     await expect(pictures(page)).toHaveCount(0);
   });
 
-  test("switches to the grid from the switcher's Display menu, and keeps it", async ({ context, serviceWorker }) => {
+  test("switches to the grid from the switcher's toolbar, and keeps it", async ({ context, serviceWorker }) => {
     const [, current] = await openPages(context, ['alpha', 'beta']);
     const page = current as Page;
     await showSwitcher(serviceWorker);
     const switcher = page.locator('better-tab-switcher');
-    await switcher.getByRole('button', { name: 'Display' }).click();
-    await switcher.getByText('Grid', { exact: true }).click();
+    await switcher.locator('label', { has: page.getByRole('radio', { name: 'Grid' }) }).click();
     await expect(switcher.getByRole('listbox')).toHaveCSS('display', 'grid');
     await expect
       .poll(() =>

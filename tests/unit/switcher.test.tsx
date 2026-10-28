@@ -32,7 +32,6 @@ function open(settings: Partial<Settings> = {}, more: Partial<SwitcherSnapshot &
     settings: { ...defaultSettings, delayMs: 0, ...settings },
     direction: 'next',
     fromIcon: false,
-    shortcuts: { next: 'Alt+Y', previous: 'Alt+Shift+Y' },
     waitForPicture: false,
     ...more,
   };
@@ -68,27 +67,25 @@ function open(settings: Partial<Settings> = {}, more: Partial<SwitcherSnapshot &
 }
 
 const selectedTitle = (host: HTMLElement) => host.querySelector('[aria-selected="true"]')?.getAttribute('aria-label');
-const footer = (host: HTMLElement) => host.querySelector('button[aria-label="Display"]')?.parentElement?.textContent;
 
 describe('Switcher', () => {
   it('selects the previous tab and shows the keys with the real shortcuts', () => {
     const { host } = open();
     expect(host.querySelectorAll('[role="option"]')).toHaveLength(4);
     expect(selectedTitle(host)).toBe('Inbox (3)');
-    expect(footer(host)).toContain('Alt+Y next, Alt+Shift+Y back, Esc closes');
   });
 
-  it('shows only the next tab shortcut when the previous one has no keys', () => {
-    const { host } = open({}, { shortcuts: { next: 'Ctrl+Q', previous: '' } });
-    expect(footer(host)).toContain('Ctrl+Q next, Esc closes');
-  });
-
-  it('says how to choose when it stays open', () => {
-    expect(footer(open({ stayOpen: true }).host)).toContain('Enter or a click opens the tab, Esc closes');
-    dispose?.();
-    expect(footer(open({}, { fromIcon: true }).host)).toContain('Enter or a click opens the tab, Esc closes');
-    dispose?.();
-    expect(footer(open({}, { canSeeRelease: false }).host)).toContain('Enter or a click opens the tab, Esc closes');
+  it('stays open on release with Stay open, from the toolbar icon, or when it cannot see the release', () => {
+    for (const [settings, more] of [
+      [{ stayOpen: true }, {}],
+      [{}, { fromIcon: true }],
+      [{}, { canSeeRelease: false }],
+    ] as const) {
+      const { handlers, press } = open(settings, more);
+      press('Alt', 'keyup');
+      expect(handlers.onOpen).not.toHaveBeenCalled();
+      dispose?.();
+    }
   });
 
   it('opens the selected tab when Alt is released', () => {
@@ -115,31 +112,29 @@ describe('Switcher', () => {
     expect(handlers.onOpen).not.toHaveBeenCalled();
   });
 
-  it('shows the search field with Search on (the default), without its button in the footer and without the focus', () => {
+  it('shows the toolbar with its search field (the default), without the focus', () => {
     const { host } = open();
-    const field = host.querySelector('input[type="search"]') as HTMLInputElement;
+    const field = host.querySelector('[role="toolbar"] input[type="search"]') as HTMLInputElement;
     expect(field).not.toBeNull();
     expect(document.activeElement).not.toBe(field);
     expect(selectedTitle(host)).toBe('Inbox (3)');
-    expect(host.querySelector('button[aria-label="Search tabs"]')).toBeNull();
   });
 
-  it('opens the selected tab on release with Search on, as without it', () => {
-    const { handlers, press } = open({ search: true });
+  it('opens the selected tab on release with the toolbar, as without it', () => {
+    const { handlers, press } = open();
     press('Alt', 'keyup');
     expect(handlers.onOpen).toHaveBeenCalledWith(tabs[1]);
   });
 
   it('stays open once the search field is clicked', () => {
-    const { host, handlers, press } = open({ search: true });
+    const { host, handlers, press } = open();
     (host.querySelector('input[type="search"]') as HTMLInputElement).focus();
     press('Alt', 'keyup');
     expect(handlers.onOpen).not.toHaveBeenCalled();
-    expect(footer(host)).toContain('Enter or a click opens the tab, Esc closes');
   });
 
   it('shows the tabs that match what is typed, with the match highlighted', () => {
-    const { host } = open({ search: true });
+    const { host } = open();
     const field = host.querySelector('input[type="search"]') as HTMLInputElement;
     field.focus();
     field.value = 'plan';
@@ -159,12 +154,11 @@ describe('Switcher', () => {
     expect(host.textContent).toContain('No tabs match your search.');
   });
 
-  it('shows the search field from the footer button, also with Search off, for this time only', () => {
-    const { host } = open({ search: false });
+  it('shows only the tabs with the toolbar off: no search field, no buttons', () => {
+    const { host } = open({ toolbar: false });
+    expect(host.querySelector('[role="toolbar"]')).toBeNull();
     expect(host.querySelector('input[type="search"]')).toBeNull();
-    (host.querySelector('button[aria-label="Search tabs"]') as HTMLButtonElement).click();
-    expect(document.activeElement).toBe(host.querySelector('input[type="search"]'));
-    expect(host.querySelector('button[aria-label="Search tabs"]')).toBeNull();
+    expect(host.querySelectorAll('[role="option"]')).toHaveLength(4);
   });
 
   it('closes a tab and keeps the list', () => {
@@ -304,42 +298,60 @@ describe('Switcher in the grid', () => {
   });
 });
 
-describe('Switcher Display menu', () => {
-  const displayButton = (host: HTMLElement) => host.querySelector('button[aria-label="Display"]') as HTMLButtonElement;
+describe('Switcher toolbar', () => {
+  const button = (host: HTMLElement, name: string) =>
+    host.querySelector(`button[aria-label="${name}"]`) as HTMLButtonElement;
+  const radio = (host: HTMLElement, value: string) =>
+    host.querySelector(`[role="toolbar"] input[type="radio"][value="${value}"]`) as HTMLInputElement;
 
-  it('opens from the footer and keeps the switcher open', () => {
+  it("has the list's width and Compact at the start, the view and the settings at the end", () => {
+    const { host } = open();
+    const [start, , end] = [...(host.querySelector('[role="toolbar"]') as HTMLElement).children];
+    expect(start?.querySelector('[aria-label="Width"]')).not.toBeNull();
+    expect(start?.querySelector('button[aria-label="Compact"]')).not.toBeNull();
+    expect(end?.querySelector('[aria-label="View"]')).not.toBeNull();
+    expect(end?.lastElementChild?.getAttribute('aria-label')).toBe('All settings');
+  });
+
+  it('shows what the grid shows at the start, in the grid', () => {
+    const { host } = open({ view: 'grid' });
+    expect(radio(host, 'previews').checked).toBe(true);
+    expect(radio(host, 'medium')).toBeNull();
+  });
+
+  it('changes the view at once, saves it, and keeps the switcher open', () => {
     const { host, handlers, press } = open();
-    displayButton(host).click();
-    expect(displayButton(host).getAttribute('aria-expanded')).toBe('true');
+    radio(host, 'grid').click();
+    expect(handlers.onSettingsChange).toHaveBeenCalledWith({ view: 'grid' });
+    expect(host.querySelector('[role="listbox"]')?.className).toContain('previews');
     press('Alt', 'keyup');
     expect(handlers.onOpen).not.toHaveBeenCalled();
   });
 
-  it('changes the view at once, saves it and closes', () => {
+  it('turns Compact on and off, and changes the width', () => {
     const { host, handlers } = open();
-    displayButton(host).click();
-    const grid = [...host.querySelectorAll<HTMLInputElement>('input[type="radio"]')].find(
-      (radio) => radio.value === 'grid',
-    );
-    grid?.click();
-    expect(handlers.onSettingsChange).toHaveBeenCalledWith({ view: 'grid' });
-    expect(host.querySelector('[role="listbox"]')?.className).toContain('previews');
-    expect(displayButton(host).getAttribute('aria-expanded')).toBe('false');
+    expect(button(host, 'Compact').getAttribute('aria-pressed')).toBe('true');
+    button(host, 'Compact').click();
+    expect(handlers.onSettingsChange).toHaveBeenCalledWith({ compact: false });
+    expect(button(host, 'Compact').getAttribute('aria-pressed')).toBe('false');
+    radio(host, 'large').click();
+    expect(handlers.onSettingsChange).toHaveBeenCalledWith({ listWidth: 'large' });
   });
 
   it('opens the settings page', () => {
     const { host, handlers } = open();
-    displayButton(host).click();
-    [...host.querySelectorAll('button')].find((button) => button.textContent === 'Settings')?.click();
+    button(host, 'All settings').click();
     expect(handlers.onSettings).toHaveBeenCalledOnce();
   });
 
-  it('closes with Esc, the switcher stays', () => {
-    const { host, handlers } = open();
-    displayButton(host).click();
-    const radio = host.querySelector('input[type="radio"]') as HTMLInputElement;
-    radio.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, composed: true }));
-    expect(displayButton(host).getAttribute('aria-expanded')).toBe('false');
-    expect(handlers.onClose).not.toHaveBeenCalled();
+  it('leaves the keyboard on the tabs when a button is clicked', () => {
+    const { host, press } = open();
+    const list = host.querySelector('[role="listbox"]') as HTMLElement;
+    const pressed = new MouseEvent('mousedown', { bubbles: true, cancelable: true, composed: true });
+    button(host, 'Compact').dispatchEvent(pressed);
+    expect(pressed.defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(list);
+    press('ArrowDown');
+    expect(selectedTitle(host)).toBe('Q4 planning');
   });
 });

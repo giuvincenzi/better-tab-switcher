@@ -27,3 +27,14 @@
   width: 22px;
   height: 22px;
 }
+
+.large {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--bts-radius);
+}
+
+.button[aria-pressed="true"] {
+  background: var(--bts-selected);
+  color: var(--bts-selected-text);
+}

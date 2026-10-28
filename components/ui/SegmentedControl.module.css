@@ -20,6 +20,23 @@
   cursor: pointer;
 }
 
+/* An option shown as an icon or a short text: square. */
+.compactOption {
+  justify-content: center;
+  min-width: 28px;
+  padding: 0 6px;
+}
+
+/* The label of an option shown as an icon: for screen readers only. */
+.hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 /* The radio button itself is hidden: the option shows its state. It stays in the page for the keyboard. */
 .input {
   position: absolute;

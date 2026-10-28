@@ -21,7 +21,7 @@ import { ADDRESS_TUCK, gridColumns, listRows, sizes, tileHeight, tileWidth } fro
 import type { SwitcherTab } from '../../lib/tabs/tabs';
 import { SearchField } from './SearchField';
 import styles from './Switcher.module.css';
-import { SwitcherFooter } from './SwitcherFooter';
+import { SwitcherToolbar } from './SwitcherToolbar';
 import { type Layout, type ShownTab, TabList } from './TabList';
 
 export interface SwitcherProps {
@@ -37,7 +37,7 @@ export interface SwitcherProps {
   onOpen: (tab: SwitcherTab) => void;
   onClose: () => void;
   onCloseTab: (tab: SwitcherTab) => void;
-  /** A change made in the Display menu, to save; the switcher shows it at once. */
+  /** A change made in the toolbar, to save; the switcher shows it at once. */
   onSettingsChange: (change: SettingsChange) => void;
   onSettings: () => void;
 }
@@ -59,7 +59,7 @@ const PICTURE_WAIT_MS = 1000;
 
 /** The switcher: its rules are the state machine's (lib/switcher/machine.ts); here they meet the keys and the UI. */
 export function Switcher(props: SwitcherProps): JSX.Element {
-  const { fromIcon, direction, shortcuts } = props.snapshot;
+  const { fromIcon, direction } = props.snapshot;
   const [settings, setSettings] = createSignal<Settings>(props.snapshot.settings);
   const [tabs, setTabs] = createSignal(props.snapshot.tabs);
   const [query, setQuery] = createSignal('');
@@ -82,7 +82,7 @@ export function Switcher(props: SwitcherProps): JSX.Element {
   const [waitOver, setWaitOver] = createSignal(!props.snapshot.waitForPicture);
   const visible = () => delayOver() && (waitOver() || props.pictureTaken());
   const layout = (): Layout => (settings().view === 'list' ? 'list' : settings().gridShow);
-  // The panel's size and the grid's columns are taken once, as the switcher opens (or as the Display menu changes how it
+  // The panel's size and the grid's columns are taken once, as the switcher opens (or as the toolbar changes how it
   // shows the tabs): they never change while it is open, whatever is typed or closed, or however the page is resized.
   const [frame, setFrame] = createSignal<Frame>();
   const columns = () =>
@@ -90,11 +90,8 @@ export function Switcher(props: SwitcherProps): JSX.Element {
   const compact = () => layout() === 'list' && settings().compact;
   const now = Date.now();
   const language = browser.i18n.getUILanguage();
-  // The search field shows with Search on, and while the user searches (the footer's search button shows it then).
-  const fieldShown = () => settings().search || state().searching;
   // The auto-select line starts again each time the mouse moves onto another tab.
   const [autoSelectRound, setAutoSelectRound] = createSignal(0);
-  const [menuOpen, setMenuOpen] = createSignal(false);
   let panel: HTMLDivElement | undefined;
 
   function dispatch(event: SwitcherEvent) {
@@ -126,11 +123,6 @@ export function Switcher(props: SwitcherProps): JSX.Element {
     dispatch({ type: 'removed', index });
   }
 
-  function toggleMenu() {
-    if (!menuOpen()) dispatch({ type: 'hold' });
-    setMenuOpen((open) => !open);
-  }
-
   /** Takes the panel's size and the grid's columns, as they are now: they stay so until the next takeFrame. */
   function takeFrame() {
     setFrame(undefined);
@@ -139,27 +131,23 @@ export function Switcher(props: SwitcherProps): JSX.Element {
     setFrame({ width, height, columns: columns() });
   }
 
-  /** A change made in the Display menu: the switcher shows it at once, framed anew, and the menu closes. */
+  /**
+   * A change made in the toolbar: the switcher shows it at once, framed anew, and stays open (the user works in it).
+   */
   function changeSettings(change: SettingsChange) {
+    dispatch({ type: 'hold' });
     setSettings((now) => ({ ...now, ...change, details: { ...now.details, ...change.details } }));
     props.onSettingsChange(change);
-    setMenuOpen(false);
     takeFrame();
   }
 
-  /** The Display menu's own controls get their keys; Esc closes the menu, not the switcher. */
-  function inMenu(event: Event) {
-    return event.composedPath().some((target) => target instanceof HTMLElement && 'displayMenu' in target.dataset);
+  /** The toolbar's buttons, reached with Tab, get their own keys (the arrows, Enter, Space); Esc still closes. */
+  function inToolbarControls(event: Event) {
+    return event.composedPath().some((target) => target instanceof HTMLElement && 'toolbarControls' in target.dataset);
   }
 
   function onKey(event: KeyboardEvent) {
-    if (inMenu(event)) {
-      if (event.type === 'keydown' && event.key === 'Escape') {
-        event.preventDefault();
-        setMenuOpen(false);
-      }
-      return;
-    }
+    if (inToolbarControls(event) && event.key !== 'Escape') return;
     const switcherEvent = keyEvent(event, { columns: columns(), inField: state().selected === FIELD });
     if (!switcherEvent) return;
     event.preventDefault();
@@ -167,13 +155,14 @@ export function Switcher(props: SwitcherProps): JSX.Element {
     dispatch(switcherEvent);
   }
 
-  /** A click outside the panel closes the switcher, as Esc does; outside the Display menu, it closes the menu. */
+  /** A click on the toolbar's buttons doesn't move the keyboard focus: the arrows and Enter keep working on the tabs. */
+  function onMouseDown(event: MouseEvent) {
+    if (inToolbarControls(event)) event.preventDefault();
+  }
+
+  /** A click outside the panel closes the switcher, as Esc does. */
   function onPointerDown(event: PointerEvent) {
-    const path = event.composedPath();
-    if (panel && !path.includes(panel)) dispatch({ type: 'cancel' });
-    else if (menuOpen() && !inMenu(event) && !path.some((target) => target instanceof HTMLButtonElement)) {
-      setMenuOpen(false);
-    }
+    if (panel && !event.composedPath().includes(panel)) dispatch({ type: 'cancel' });
   }
 
   createEffect(on(props.moves, (move) => dispatch({ type: move.direction }), { defer: true }));
@@ -182,6 +171,7 @@ export function Switcher(props: SwitcherProps): JSX.Element {
     window.addEventListener('keydown', onKey, true);
     window.addEventListener('keyup', onKey, true);
     window.addEventListener('pointerdown', onPointerDown, true);
+    window.addEventListener('mousedown', onMouseDown, true);
     takeFrame();
     const delay = delayOver() ? undefined : setTimeout(() => setDelayOver(true), settings().delayMs);
     const wait = waitOver() ? undefined : setTimeout(() => setWaitOver(true), PICTURE_WAIT_MS);
@@ -189,6 +179,7 @@ export function Switcher(props: SwitcherProps): JSX.Element {
       window.removeEventListener('keydown', onKey, true);
       window.removeEventListener('keyup', onKey, true);
       window.removeEventListener('pointerdown', onPointerDown, true);
+      window.removeEventListener('mousedown', onMouseDown, true);
       clearTimeout(delay);
       clearTimeout(wait);
     });
@@ -221,25 +212,27 @@ export function Switcher(props: SwitcherProps): JSX.Element {
       '--preview-height': `${sizes.preview.height}px`,
       '--icon-cell': `${sizes.icons.cell}px`,
       '--icon-gap': `${sizes.icons.gap}px`,
+      '--search-max-width': `${sizes.searchMaxWidth}px`,
     };
-  };
-
-  const hint = () => {
-    const { next, previous } = shortcuts;
-    if (state().stayOpen || next === '') return i18n.t('Switcher_HintStayOpen');
-    return previous === '' ? i18n.t('Switcher_HintNextOnly', [next]) : i18n.t('Switcher_HintKeys', [next, previous]);
   };
 
   return (
     <div class={styles.backdrop} classList={{ [styles.hidden as string]: !visible() }}>
       <div ref={panel} class={styles.panel} classList={{ [styles.compact as string]: compact() }} style={panelSizes()}>
-        <Show when={fieldShown()}>
-          <SearchField
-            value={query()}
-            selected={state().selected === FIELD}
-            compact={compact()}
-            onFocus={startSearching}
-            onInput={search}
+        <Show when={settings().toolbar}>
+          <SwitcherToolbar
+            settings={settings()}
+            search={
+              <SearchField
+                value={query()}
+                selected={state().selected === FIELD}
+                compact={compact()}
+                onFocus={startSearching}
+                onInput={search}
+              />
+            }
+            onChange={changeSettings}
+            onSettings={() => props.onSettings()}
           />
         </Show>
         <div class={styles.results}>
@@ -247,7 +240,7 @@ export function Switcher(props: SwitcherProps): JSX.Element {
             layout={layout()}
             tabs={shown()}
             selected={state().selected}
-            focused={state().selected !== FIELD && !menuOpen()}
+            focused={state().selected !== FIELD}
             compact={compact()}
             columns={columns()}
             rows={layout() === 'list' ? listRows(settings(), shown().length) : undefined}
@@ -268,16 +261,6 @@ export function Switcher(props: SwitcherProps): JSX.Element {
             <p class={styles.noMatch}>{i18n.t('Switcher_NoMatch')}</p>
           </Show>
         </div>
-        <SwitcherFooter
-          hint={hint()}
-          compact={compact()}
-          onSearch={fieldShown() ? undefined : startSearching}
-          settings={settings()}
-          menuOpen={menuOpen()}
-          onMenu={toggleMenu}
-          onChange={changeSettings}
-          onSettings={() => props.onSettings()}
-        />
       </div>
     </div>
   );

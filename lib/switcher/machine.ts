@@ -1,7 +1,7 @@
 /**
  * The switcher's rules, without UI: what is selected, and when a tab is opened or the switcher closes. The items are
- * the tabs shown, by index. Once the user starts searching (a click on the search field, or the footer's search
- * button), the search field is one more item before them, at index -1, and the switcher stays open.
+ * the tabs shown, by index. Once the user starts searching (a click on the search field), the search field is one more
+ * item before them, at index -1, and the switcher stays open.
  */
 
 /** The search field, as a selected item. */
@@ -39,9 +39,9 @@ export type SwitcherEvent =
   | { type: 'results'; count: number; filtered: boolean }
   /** A tab was closed from the switcher. */
   | { type: 'removed'; index: number }
-  /** A click on the search field, or the footer's search button: the user starts searching. */
+  /** A click on the search field: the user starts searching. */
   | { type: 'openSearch' }
-  /** The user works in the switcher (its Display menu): it stays open until a tab is chosen. */
+  /** The user works in the switcher (its toolbar's buttons): it stays open until a tab is chosen. */
   | { type: 'hold' };
 
 export type SwitcherEffect = { type: 'open'; index: number } | { type: 'close' };

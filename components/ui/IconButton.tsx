@@ -6,26 +6,26 @@ interface IconButtonProps {
   icon: IconName;
   /** What the button does: its accessible name. */
   label: string;
-  size?: 'small' | 'medium';
+  size?: 'small' | 'medium' | 'large';
   class?: string;
-  /** For a button that opens a menu: whether it is open, and the menu's id. */
-  expanded?: boolean;
-  controls?: string;
+  /** For a button that turns something on and off: whether it is on. */
+  pressed?: boolean;
   onClick: (event: MouseEvent) => void;
 }
 
-/** A button with only an icon; its background shows under the mouse. */
+const ICON_SIZE = { small: 12, medium: 14, large: 16 } as const;
+
+/** A button with only an icon; its background shows under the mouse, and while it is pressed (on). */
 export function IconButton(props: IconButtonProps): JSX.Element {
   return (
     <button
       type="button"
-      class={`${styles.button} ${props.size === 'small' ? styles.small : ''} ${props.class ?? ''}`}
+      class={`${styles.button} ${props.size ? (styles[props.size] ?? '') : ''} ${props.class ?? ''}`}
       aria-label={props.label}
-      aria-expanded={props.expanded}
-      aria-controls={props.controls}
+      aria-pressed={props.pressed}
       onClick={(event) => props.onClick(event)}
     >
-      <Icon name={props.icon} size={props.size === 'small' ? 12 : 14} />
+      <Icon name={props.icon} size={ICON_SIZE[props.size ?? 'medium']} />
     </button>
   );
 }

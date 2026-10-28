@@ -108,19 +108,13 @@ export function listenToSwitcher(): void {
 }
 
 async function takeSnapshot(current: Browser.tabs.Tab, request: SwitcherRequest): Promise<SwitcherSnapshot> {
-  const [settings, { tabs, windowIds }, commands] = await Promise.all([
-    loadSettings(),
-    readTabs(),
-    browser.commands.getAll(),
-  ]);
+  const [settings, { tabs, windowIds }] = await Promise.all([loadSettings(), readTabs()]);
   const here = { tabId: current.id as number, windowId: current.windowId, incognito: current.incognito };
-  const shortcut = (name: string) => commands.find((c) => c.name === name)?.shortcut ?? '';
   return {
     tabs: switcherTabs(tabs, windowIds, here, settings),
     settings,
     direction: request.direction,
     fromIcon: request.from === 'icon',
-    shortcuts: { next: shortcut('next-tab'), previous: shortcut('previous-tab') },
     waitForPicture: false,
   };
 }

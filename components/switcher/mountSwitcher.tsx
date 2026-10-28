@@ -65,7 +65,7 @@ export function mountSwitcher(container: HTMLElement, snapshot: SwitcherSnapshot
     ),
     dialog,
   );
-  // The previews already taken (the grid can be chosen in the Display menu); a newer one that arrived meanwhile stays.
+  // The previews already taken (the grid can be chosen in the toolbar); a newer one that arrived meanwhile stays.
   void sendMessage(
     'getPreviews',
     snapshot.tabs.map((tab) => tab.id),

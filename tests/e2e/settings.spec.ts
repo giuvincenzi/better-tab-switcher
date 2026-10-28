@@ -9,14 +9,13 @@ async function openSettings(context: BrowserContext, extensionId: string): Promi
 }
 
 test.describe('settings page @settings', () => {
-  test("opens from the switcher's Display menu", async ({ context, serviceWorker }) => {
+  test("opens from the switcher's toolbar", async ({ context, serviceWorker }) => {
     const [, current] = await openPages(context, ['alpha', 'beta']);
     const page = current as Page;
     await showSwitcher(serviceWorker);
     const opened = context.waitForEvent('page', (tab) => tab.url().endsWith('/options.html'));
     const switcher = page.locator('better-tab-switcher');
-    await switcher.getByRole('button', { name: 'Display' }).click();
-    await switcher.getByRole('button', { name: 'Settings' }).click();
+    await switcher.getByRole('button', { name: 'All settings' }).click();
     const settings = await opened;
     await expect(settings.getByRole('heading', { name: 'Better Tab Switcher settings' })).toBeVisible();
     await expect(rows(page)).toHaveCount(0);

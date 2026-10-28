@@ -67,6 +67,12 @@ export function AppearanceSection(props: SectionProps): JSX.Element {
           />
         )}
       />
+      <ToggleRow
+        label={i18n.t('Settings_Toolbar')}
+        note={i18n.t('Settings_ToolbarNote')}
+        checked={props.settings.toolbar}
+        onChange={(toolbar) => props.save({ toolbar })}
+      />
       <Show
         when={grid()}
         fallback={
@@ -181,12 +187,6 @@ export function SwitchingSection(props: SectionProps): JSX.Element {
             onChange={(autoSelectSeconds) => props.save({ autoSelectSeconds })}
           />
         )}
-      />
-      <ToggleRow
-        label={i18n.t('Settings_Search')}
-        note={i18n.t('Settings_SearchNote')}
-        checked={props.settings.search}
-        onChange={(search) => props.save({ search })}
       />
     </SettingsSection>
   );

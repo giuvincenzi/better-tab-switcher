@@ -11,8 +11,6 @@ export interface SwitcherSnapshot {
   direction: Direction;
   /** Opened from the toolbar icon: no key is held, so it stays open until a tab is chosen. */
   fromIcon: boolean;
-  /** The shortcuts as Chrome writes them, "" when one has none. */
-  shortcuts: { next: string; previous: string };
   /** The page's picture is being taken: the switcher stays hidden until pictureTaken, so it isn't in the picture. */
   waitForPicture: boolean;
 }

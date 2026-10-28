@@ -18,6 +18,8 @@ export const sizes = {
   grid: { padding: 14, tileGap: 8, tileBorder: 2, tilePadding: 8, tileHeader: 22, tileSpace: 6, tileLine: 14 },
   /** The grid of icons: a square cell per tab, the site's icon in its middle. */
   icons: { cell: 80, gap: 6 },
+  /** The toolbar's search field is never wider than this: in a wide switcher it stays in the middle. */
+  searchMaxWidth: 560,
   /** The space the switcher leaves around itself, inside the page. */
   margin: 16,
   /** The preview in a tile; pictures are taken twice as big, for screens with twice the pixels. */

@@ -10,26 +10,21 @@ Command_PreviousTab: Open the switcher on the previous tab
 # The switcher's list of tabs, for screen readers.
 Switcher_Tabs: Open tabs, most recent first
 
-# The switcher's footer while a shortcut is held. $1: the next tab shortcut (Alt+Y); $2: the previous tab one.
-Switcher_HintKeys: $1 next, $2 back, Esc closes
+# The toolbar at the top of the switcher (search field and buttons), for screen readers.
+Switcher_Toolbar: Toolbar
 
-# The switcher's footer while a shortcut is held, when the previous tab shortcut has no keys. $1: the next tab shortcut.
-Switcher_HintNextOnly: $1 next, Esc closes
-
-# The switcher's footer when it stays open (Stay open, opened from the toolbar icon, or while searching).
-Switcher_HintStayOpen: Enter or a click opens the tab, Esc closes
-
-# The search field's placeholder, and the footer's button that shows it.
+# The search field's placeholder and accessible name, in the toolbar.
 Switcher_Search: Search tabs
 
 # Under the search field when no tab matches what was typed.
 Switcher_NoMatch: No tabs match your search.
 
-# The footer's button that opens the Display menu (how the tabs are shown, and the settings).
-Switcher_Display: Display
+# The toolbar's width buttons: the first letter (or a short form) of Settings_ListWidthMedium and Settings_ListWidthLarge.
+Switcher_WidthMediumShort: M
+Switcher_WidthLargeShort: L
 
-# The Display menu's item that opens the settings page.
-Switcher_Settings: Settings
+# The toolbar's button that opens the settings page.
+Switcher_Settings: All settings
 
 # The button on a tab, shown under the mouse, that closes it.
 Switcher_CloseTab: Close tab
@@ -57,12 +52,15 @@ Settings_ThemeDark: Dark
 Settings_View: View
 Settings_ViewList: List
 Settings_ViewGrid: Grid
-# Grid only: what the tiles show. Also in the switcher's Display menu.
+# Shows the switcher's toolbar: the search field, and buttons for the view, its options and the settings.
+Settings_Toolbar: Show toolbar
+Settings_ToolbarNote: A bar at the top of the switcher, with the search field and buttons for the view and the settings.
+# Grid only: what the tiles show. Also in the switcher's toolbar.
 Settings_GridShow: Show
 Settings_GridShowPreviews: Previews
 Settings_GridShowIcons: Icons
 Settings_GridShowNote: Previews shows a picture of each tab, Icons only each site's icon. The grid fits the screen by itself.
-# List only. Settings_ListWidth (and its choices) and Settings_Compact are also in the switcher's Display menu.
+# List only. Settings_ListWidth (and its choices) and Settings_Compact are also in the switcher's toolbar.
 Settings_ListWidth: Width
 Settings_ListWidthMedium: Medium
 Settings_ListWidthLarge: Large
@@ -87,8 +85,6 @@ Settings_StayOpenNote: Releasing the shortcut's keys doesn't switch tabs. Choose
 Settings_AutoSelect: Auto-select
 Settings_AutoSelectNote: The selected tab opens after a few seconds. A line shows the time left.
 Settings_AutoSelectTime: Auto-select time
-Settings_Search: Search
-Settings_SearchNote: A search field at the top, to find a tab by its title or its address.
 
 # Section: what each tab shows.
 Settings_TabDetails: Tab details

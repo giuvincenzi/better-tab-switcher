@@ -27,7 +27,7 @@ describe('settings store', () => {
   });
 
   it('restores the defaults', async () => {
-    await saveSettings({ theme: 'dark', search: true });
+    await saveSettings({ theme: 'dark', toolbar: false });
     await restoreDefaultSettings();
     expect(await loadSettings()).toEqual(defaultSettings);
   });

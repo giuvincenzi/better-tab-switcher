@@ -1,6 +1,19 @@
 import { type JSX, Match, Switch } from 'solid-js';
 
-export type IconName = 'search' | 'close' | 'settings' | 'pin' | 'audio' | 'sleep' | 'window' | 'chevron' | 'display';
+export type IconName =
+  | 'search'
+  | 'close'
+  | 'settings'
+  | 'pin'
+  | 'audio'
+  | 'sleep'
+  | 'window'
+  | 'chevron'
+  | 'list'
+  | 'grid'
+  | 'previews'
+  | 'icons'
+  | 'compact';
 
 interface IconProps {
   name: IconName;
@@ -50,11 +63,25 @@ export function Icon(props: IconProps): JSX.Element {
         <Match when={props.name === 'sleep'}>
           <path d="M20 14.5A8 8 0 019.5 4a8 8 0 1010.5 10.5z" />
         </Match>
-        <Match when={props.name === 'display'}>
-          <path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12" />
-          <circle cx="16" cy="6" r="2" />
-          <circle cx="10" cy="12" r="2" />
-          <circle cx="18" cy="18" r="2" />
+        <Match when={props.name === 'list'}>
+          <path d="M4 6h16M4 12h16M4 18h16" />
+        </Match>
+        <Match when={props.name === 'grid'}>
+          <rect x="4" y="4" width="7" height="7" rx="1.5" />
+          <rect x="13" y="4" width="7" height="7" rx="1.5" />
+          <rect x="4" y="13" width="7" height="7" rx="1.5" />
+          <rect x="13" y="13" width="7" height="7" rx="1.5" />
+        </Match>
+        <Match when={props.name === 'previews'}>
+          <rect x="3" y="5" width="18" height="14" rx="2" />
+          <path d="M3 9h18M7 13h6" />
+        </Match>
+        <Match when={props.name === 'icons'}>
+          <rect x="3" y="8" width="8" height="8" rx="2.5" />
+          <rect x="13" y="8" width="8" height="8" rx="2.5" />
+        </Match>
+        <Match when={props.name === 'compact'}>
+          <path d="M4 7h16M4 11h16M4 15h16M4 19h16" />
         </Match>
         <Match when={props.name === 'chevron'}>
           <path d="M6 9l6 6 6-6" />

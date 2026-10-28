@@ -33,7 +33,8 @@ export interface Settings {
   stayOpen: boolean;
   autoSelect: boolean;
   autoSelectSeconds: number;
-  search: boolean;
+  /** The switcher's toolbar: the search field, and buttons for the view, its options and the settings. */
+  toolbar: boolean;
   details: TabDetails;
 }
 
@@ -50,7 +51,7 @@ export const defaultSettings: Readonly<Settings> = Object.freeze({
   stayOpen: false,
   autoSelect: false,
   autoSelectSeconds: 3,
-  search: true,
+  toolbar: true,
   details: Object.freeze({
     address: false,
     longAddress: 'cut',
@@ -114,7 +115,7 @@ export function parseSettings(value: unknown): Settings {
     stayOpen: flag(saved.stayOpen, d.stayOpen),
     autoSelect: flag(saved.autoSelect, d.autoSelect),
     autoSelectSeconds: whole(saved.autoSelectSeconds, limits.autoSelectSeconds, d.autoSelectSeconds),
-    search: flag(saved.search, d.search),
+    toolbar: flag(saved.toolbar, d.toolbar),
     details: {
       address: flag(details.address, d.details.address),
       longAddress: oneOf(details.longAddress, ['cut', 'scroll'], d.details.longAddress),

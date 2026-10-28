@@ -1,0 +1,33 @@
+/*
+ * Three columns: the two sides as wide as each other, so the search field is always in the middle; each side never
+ * narrower than its buttons. The search field is never wider than --search-max-width (lib/switcher/sizes.ts).
+ */
+.toolbar {
+  /* As wide as the panel, never wider: the toolbar takes the panel's width, it doesn't set it. */
+  width: 0;
+  min-width: 100%;
+  display: grid;
+  grid-template-columns: minmax(max-content, 1fr) minmax(0, var(--search-max-width)) minmax(max-content, 1fr);
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.start,
+.end {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.start {
+  justify-self: start;
+}
+
+.end {
+  justify-self: end;
+}
+
+.search {
+  min-width: 0;
+}
