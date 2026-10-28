@@ -8,9 +8,10 @@
 # files it reads (testing.md): lint and types, unit tests, end-to-end tests. A check that is not needed doesn't run, and
 # a skipped job counts as passing for a required check. Called by publish_release or started by hand, everything runs.
 # Every check runs once: lint and types only in unit_test, the extension is built only in build_extension.
-# The end-to-end tests run on every system of E2E_SYSTEMS, in E2E_GROUPS groups each, every group on its own machine
-# at the same time (e2e_<system>_group_<n>), split by Playwright's --shard; e2e_test checks that on every system each
-# test ran once and passed (testing.md, "End-to-end tests in groups").
+# The end-to-end tests run in every browser of E2E_BROWSERS on every system of E2E_SYSTEMS, in E2E_GROUPS groups each,
+# every group on its own machine at the same time (e2e_<system>_<browser>_group_<n>), split by Playwright's --shard;
+# e2e_test checks that in every browser on every system each test ran once and passed (testing.md, "End-to-end tests
+# in groups").
 name: test
 
 on:
@@ -28,6 +29,8 @@ env:
   E2E_GROUPS: 2 # how many machines run the end-to-end tests at once on each system: change only this (testing.md)
   # The systems the end-to-end tests run on, name:runner (GitHub's machines): change only this.
   E2E_SYSTEMS: linux:ubuntu-latest windows:windows-latest macos:macos-latest
+  # The browsers the end-to-end tests run in, on every system: Playwright's Chromium and Microsoft Edge (tests/e2e/fixtures.ts).
+  E2E_BROWSERS: chromium msedge
 
 jobs:
   decide_which_tests_run:
@@ -39,6 +42,7 @@ jobs:
       unit_groups: ${{ steps.matrix.outputs.unit_groups }}
       e2e_groups: ${{ steps.matrix.outputs.e2e_groups }}
       e2e_systems: ${{ steps.matrix.outputs.e2e_systems }}
+      e2e_browsers: ${{ steps.matrix.outputs.e2e_browsers }}
     steps:
       - name: checkout_code
         uses: actions/checkout@v7
@@ -109,6 +113,12 @@ jobs:
             systems+=("{\"name\":\"${system%%:*}\",\"runner\":\"${system#*:}\"}")
           done
           echo "e2e_systems=[$(IFS=,; echo "${systems[*]}")]" >> "$GITHUB_OUTPUT"
+          browsers=()
+          for browser in $E2E_BROWSERS; do
+            if ! [[ "$browser" =~ ^(chromium|msedge)$ ]]; then echo "::error::E2E_BROWSERS takes chromium and msedge: '$browser'."; exit 1; fi
+            browsers+=("\"$browser\"")
+          done
+          echo "e2e_browsers=[$(IFS=,; echo "${browsers[*]}")]" >> "$GITHUB_OUTPUT"
 
   # Biome and tsc, when a file they read changed.
   lint:
@@ -324,23 +334,25 @@ jobs:
             .output/chrome-mv3-e2e/
           retention-days: 1
 
-  # One copy per system and group (e2e_linux_group_1 ... e2e_macos_group_N), at the same time, each on its own machine.
+  # One copy per system, browser and group (e2e_linux_chromium_group_1 ... e2e_macos_msedge_group_N), at the same time,
+  # each on its own machine.
   e2e_group:
-    name: e2e_${{ matrix.system.name }}_group_${{ matrix.group }}
+    name: e2e_${{ matrix.system.name }}_${{ matrix.browser }}_group_${{ matrix.group }}
     needs: [decide_which_tests_run, build_extension]
     if: needs.decide_which_tests_run.outputs.e2e == 'true'
     strategy:
       fail-fast: false # a failing group does not stop the others: every broken test shows
       matrix:
         system: ${{ fromJSON(needs.decide_which_tests_run.outputs.e2e_systems) }}
+        browser: ${{ fromJSON(needs.decide_which_tests_run.outputs.e2e_browsers) }}
         group: ${{ fromJSON(needs.decide_which_tests_run.outputs.e2e_groups) }}
     runs-on: ${{ matrix.system.runner }}
     defaults:
       run:
         shell: bash # the same commands on Windows too (Git Bash)
     env:
-      SYSTEM: ${{ matrix.system.name }}
       GROUP: ${{ matrix.group }}
+      E2E_BROWSER: ${{ matrix.browser }} # the browser tests/e2e/fixtures.ts launches
     steps:
       - name: checkout_code
         uses: actions/checkout@v7
@@ -354,9 +366,10 @@ jobs:
       - name: install_dependencies
         run: npm ci
 
-      # Playwright's browsers, downloaded once per system and Playwright version: a download from Playwright's servers
-      # can stall for minutes.
+      # Playwright's Chromium, downloaded once per system and Playwright version: a download from Playwright's servers
+      # can stall for minutes. (Edge installs into the system, from Microsoft.)
       - name: restore_browsers
+        if: matrix.browser == 'chromium'
         uses: actions/cache@v6
         with:
           path: |
@@ -365,10 +378,12 @@ jobs:
             ~/AppData/Local/ms-playwright
           key: playwright-e2e-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
-      # Playwright's Chromium for this system, the full one the extension runs in (not the headless shell); on Linux
-      # also the system libraries it needs.
-      - name: install_chromium
-        run: npx playwright install ${{ runner.os == 'Linux' && '--with-deps' || '' }} --no-shell chromium
+      # The browser for this system: Playwright's Chromium, the full one the extension runs in (not the headless shell),
+      # or Microsoft Edge stable; on Linux also the system libraries it needs.
+      - name: install_browser
+        run: |
+          if [ "$E2E_BROWSER" = chromium ]; then set -- --no-shell chromium; else set -- msedge; fi
+          npx playwright install ${{ runner.os == 'Linux' && '--with-deps' || '' }} "$@"
 
       - name: get_builds
         uses: actions/download-artifact@v8
@@ -396,17 +411,18 @@ jobs:
         run: |
           mkdir -p e2e_results
           cat > e2e_results/README.txt <<'EOF'
-          Better Tab Switcher end-to-end tests: one group's results on one system
-          ======================================================================
+          Better Tab Switcher end-to-end tests: one group's results in one browser on one system
+          =====================================================================================
 
-          This artifact holds what one group of the end-to-end tests did on one GitHub machine (a "runner") of one
-          system. The test workflow (.github/workflows/test.yml) runs the end-to-end tests on every system of
-          E2E_SYSTEMS (Linux, Windows, macOS) and splits them on each into E2E_GROUPS groups with Playwright's --shard;
-          they run at the same time on different machines. This README is written by the step describe_group_result
-          of that workflow.
+          This artifact holds what one group of the end-to-end tests did in one browser on one GitHub machine (a
+          "runner") of one system. The test workflow (.github/workflows/test.yml) runs the end-to-end tests in every
+          browser of E2E_BROWSERS (Playwright's Chromium, Microsoft Edge) on every system of E2E_SYSTEMS (Linux,
+          Windows, macOS) and splits them for each into E2E_GROUPS groups with Playwright's --shard; they run at the
+          same time on different machines. This README is written by the step describe_group_result of that workflow.
 
-          Artifact name: e2e_<system>_group_<n>_attempt_<a>
+          Artifact name: e2e_<system>_<browser>_group_<n>_attempt_<a>
             <system>  linux, windows or macos: the system the tests ran on.
+            <browser> chromium (Playwright's Chromium) or msedge (Microsoft Edge stable): the browser they ran in.
             <n>       the group's number, from 1 to E2E_GROUPS.
             <a>       the run's attempt (github.run_attempt): 1 for the first run; "Re-run failed jobs" runs the failed
                       groups again as attempt 2, 3, ..., each with an artifact of its own next to the older ones. The
@@ -444,8 +460,8 @@ jobs:
           Start from the test itself: its code (tests/e2e/<file>.spec.ts), what it does and what it expects, and the
           line that failed (in the job's log, step run_group_tests, in e2e_test's summary or in group_<n>.json). Then
           error-context.md and the trace show what the browser did at each step, and the screenshot what was on the page
-          when it failed. A test that fails on one system only: compare with the same test's screenshot and trace on
-          another system. Fix the cause, not the wait.
+          when it failed. A test that fails on one system or in one browser only: compare with the same test's
+          screenshot and trace on another system or in the other browser. Fix the cause, not the wait.
           EOF
 
       # Also when tests failed: e2e_test needs every group's list and report. The name has the run's attempt: after a
@@ -454,12 +470,12 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: e2e_${{ matrix.system.name }}_group_${{ matrix.group }}_attempt_${{ github.run_attempt }}
+          name: e2e_${{ matrix.system.name }}_${{ matrix.browser }}_group_${{ matrix.group }}_attempt_${{ github.run_attempt }}
           path: e2e_results/
           retention-days: 7
 
-  # The required check: green only when on every system every end-to-end test ran exactly once and passed, or when
-  # none was needed.
+  # The required check: green only when in every browser on every system every end-to-end test ran exactly once and
+  # passed, or when none was needed.
   e2e_test:
     needs: [decide_which_tests_run, e2e_group]
     if: always()
@@ -480,11 +496,11 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           pattern: e2e_*_group_*
-          path: e2e_results # one folder per artifact: e2e_<system>_group_<n>_attempt_<a>
+          path: e2e_results # one folder per artifact: e2e_<system>_<browser>_group_<n>_attempt_<a>
 
-      # On every system, for each group its newest attempt (a re-run group has a newer one, a passed group keeps its
-      # first), then: (1) every group of every system saw the same list, (2) on every system every test ran exactly
-      # once (none missing, none twice), (3) every test and every group passed.
+      # For every system and browser, each group's newest attempt (a re-run group has a newer one, a passed group keeps
+      # its first), then: (1) every group saw the same list, (2) in every browser on every system every test ran exactly
+      # once (none missing, none twice) and no group was left empty, (3) every test and every group passed.
       - name: check_every_test_ran_once
         if: steps.needed.outputs.run == 'true'
         env:
@@ -506,13 +522,15 @@ jobs:
               return [t for suite in json.loads(path.read_text())["suites"] for t in tests(suite)]
 
           systems = [pair.split(":")[0] for pair in os.environ["E2E_SYSTEMS"].split()]
+          browsers = os.environ["E2E_BROWSERS"].split()
+          setups = [f"{system}_{browser}" for system in systems for browser in browsers]
           groups = int(os.environ["E2E_GROUPS"])
           root = pathlib.Path("e2e_results")
           problems, failed, lists, counts = [], [], set(), []
-          for system in systems:
+          for setup in setups:
               ran = {}
               for g in range(1, groups + 1):
-                  group = f"e2e_{system}_group_{g}"
+                  group = f"e2e_{setup}_group_{g}"
                   attempts = sorted(root.glob(f"{group}_attempt_*"), key=lambda p: int(p.name.rsplit("_", 1)[1]))
                   if not attempts or not (attempts[-1] / "all_tests.json").exists():
                       problems.append(f"{group}: no results (it did not get as far as listing the tests).")
@@ -529,28 +547,28 @@ jobs:
                       status = results[-1]["status"] if results else "not run"
                       if status != "passed":
                           failed.append(f"{name} ({status}, {group})")
-              counts.append((system, ran))
+              counts.append((setup, ran))
           if len(lists) > 1:
               problems.append("The groups did not see the same list of tests.")
           everything = [t for t in (lists.pop() if len(lists) == 1 else "").split("\n") if t]
-          for system, ran in counts:
+          for setup, ran in counts:
               for name in everything:
                   if name not in ran:
-                      problems.append(f"{name}: ran in no group on {system}.")
+                      problems.append(f"{name}: ran in no group on {setup}.")
               for name, where in ran.items():
                   if len(where) > 1:
-                      groups_text = ", ".join(f"e2e_{system}_group_{g}" for g in where)
-                      problems.append(f"{name}: ran in more than one group on {system} ({groups_text}).")
+                      groups_text = ", ".join(f"e2e_{setup}_group_{g}" for g in where)
+                      problems.append(f"{name}: ran in more than one group on {setup} ({groups_text}).")
               # A group with no test while there are enough for all: the tests are not split between the groups.
               if len(everything) >= groups:
                   for g in range(1, groups + 1):
                       if not any(g in where for where in ran.values()):
-                          problems.append(f"e2e_{system}_group_{g}: no test: the tests are not split between the groups.")
+                          problems.append(f"e2e_{setup}_group_{g}: no test: the tests are not split between the groups.")
           if os.environ["GROUPS_RESULT"] != "success":
               problems.append(f"The groups' result is '{os.environ['GROUPS_RESULT']}'.")
           summary = [
-              f"End-to-end tests: {len(everything)} on {len(systems)} systems ({', '.join(systems)}), "
-              f"{groups} groups each, {len(failed)} failed."
+              f"End-to-end tests: {len(everything)} in {len(browsers)} browsers ({', '.join(browsers)}) on "
+              f"{len(systems)} systems ({', '.join(systems)}), {groups} groups each, {len(failed)} failed."
           ]
           summary += [f"- Failed: {f}" for f in failed] + [f"- {p}" for p in problems]
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as out:

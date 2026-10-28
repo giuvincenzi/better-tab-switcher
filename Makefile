@@ -7,8 +7,9 @@
 #                   make dev tabs=N also opens N tabs of real sites (1 to 100), to try the switcher
 #   make lint       check the code's format, lint rules and types
 #   make test       run the unit tests (logic and components)
-#   make e2e        build the extension and run the end-to-end tests in Chromium;
-#                   make e2e category=<name> runs one category, make e2e headed=1 shows the browser
+#   make e2e        build the extension and run the end-to-end tests in Playwright's Chromium;
+#                   make e2e category=<name> runs one category, make e2e headed=1 shows the browser,
+#                   make e2e browser=msedge runs them in Microsoft Edge (installed on the PC)
 #   make build      create the zip for the stores in .output/, no upload
 #   make icons      draw the extension's icons (public/icon/) from assets/icon.svg, after changing it
 #
@@ -31,7 +32,7 @@ test:
 	npm test
 
 e2e:
-	$(if $(headed),HEADED=1) npm run e2e $(if $(category),-- --grep @$(category))
+	$(if $(headed),HEADED=1) $(if $(browser),E2E_BROWSER=$(browser)) npm run e2e $(if $(category),-- --grep @$(category))
 
 build:
 	npm run zip
