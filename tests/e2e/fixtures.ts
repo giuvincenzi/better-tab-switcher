@@ -34,15 +34,14 @@ export const test = base.extend<ExtensionFixtures>({
       headless: !process.env.HEADED,
       locale: chromeLanguage,
       viewport: null,
-      // Chrome takes its language from --lang; on Linux it needs the environment's language too, on macOS the
-      // system's preferred languages (AppleLanguages, given at launch).
+      // Chrome takes its language from --lang; on Linux it needs the environment's language too. On macOS it takes it
+      // only from the system's settings, which no test changes: there Chrome stays in the system's language.
       env: { ...process.env, LANGUAGE: chromeLanguage, LANG: `${chromeLanguage.replace('-', '_')}.UTF-8` },
       args: [
         `--disable-extensions-except=${extensionDir}`,
         `--load-extension=${extensionDir}`,
         `--lang=${chromeLanguage}`,
         '--window-size=1280,720',
-        ...(process.platform === 'darwin' ? ['-AppleLanguages', `(${chromeLanguage})`] : []),
       ],
     });
     await use(context);
