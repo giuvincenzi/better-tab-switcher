@@ -77,15 +77,15 @@ describe('SettingsPage', () => {
   it("shows the list's options for the list, the grid's for the grid", () => {
     const { host, saved } = open();
     expect(texts(host)).toContain('Tabs shown before scrolling');
-    expect(texts(host)).not.toContain('Columns');
+    expect(texts(host)).not.toContain('Previews shows a picture of each tab');
     const grid = [...host.querySelectorAll<HTMLInputElement>('input[type="radio"]')].find(
       (radio) => radio.value === 'grid',
     );
     grid?.click();
     expect(saved).toContainEqual({ view: 'grid' });
-    expect(texts(host)).toContain('Columns');
-    expect(texts(host)).toContain('Previews');
+    expect(texts(host)).toContain('Previews shows a picture of each tab');
     expect(texts(host)).not.toContain('Compact');
+    expect(texts(host)).not.toContain('Tabs shown before scrolling');
   });
 
   it('saves a switch at once', () => {
@@ -114,11 +114,13 @@ describe('SettingsPage', () => {
     expect(saved).toHaveLength(1);
   });
 
-  it('lets the rows be all', () => {
+  it('shows up to 12 rows, or as many as fit the screen', () => {
     const { host, saved } = open();
-    change(select(host, 'Tabs shown before scrolling'), 'all');
-    change(select(host, 'Tabs shown before scrolling'), '12');
-    expect(saved).toEqual([{ listRows: 'all' }, { listRows: 12 }]);
+    const rows = select(host, 'Tabs shown before scrolling');
+    expect([...rows.options].map((option) => option.textContent).slice(-2)).toEqual(['12', 'Fit the screen']);
+    change(rows, 'fit');
+    change(rows, '12');
+    expect(saved).toEqual([{ listRows: 'fit' }, { listRows: 12 }]);
   });
 
   it('turns on the auto-select time only with Auto-select', () => {

@@ -9,12 +9,14 @@ async function openSettings(context: BrowserContext, extensionId: string): Promi
 }
 
 test.describe('settings page @settings', () => {
-  test("opens from the switcher's settings button", async ({ context, serviceWorker }) => {
+  test("opens from the switcher's Display menu", async ({ context, serviceWorker }) => {
     const [, current] = await openPages(context, ['alpha', 'beta']);
     const page = current as Page;
     await showSwitcher(serviceWorker);
     const opened = context.waitForEvent('page', (tab) => tab.url().endsWith('/options.html'));
-    await page.locator('better-tab-switcher').getByRole('button', { name: 'Settings' }).click();
+    const switcher = page.locator('better-tab-switcher');
+    await switcher.getByRole('button', { name: 'Display' }).click();
+    await switcher.getByRole('button', { name: 'Settings' }).click();
     const settings = await opened;
     await expect(settings.getByRole('heading', { name: 'Better Tab Switcher settings' })).toBeVisible();
     await expect(rows(page)).toHaveCount(0);
@@ -24,7 +26,7 @@ test.describe('settings page @settings', () => {
     const settings = await openSettings(context, extensionId);
     await settings.getByText('Grid', { exact: true }).click();
     await expect(settings.getByRole('radio', { name: 'Grid' })).toBeChecked();
-    await expect(settings.getByRole('switch', { name: 'Previews' })).toBeChecked();
+    await expect(settings.getByRole('radio', { name: 'Previews' })).toBeChecked();
     await expect(settings.getByText('Tabs shown before scrolling')).toHaveCount(0);
     const [, current] = await openPages(context, ['alpha', 'beta']);
     const page = current as Page;

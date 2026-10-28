@@ -12,9 +12,9 @@ const CAPTURE_GAP_MS = 500;
 /** The permission that lets the extension take a tab's picture whenever the tab is used, not only in the switcher. */
 export const ALL_SITES = { origins: ['<all_urls>'] };
 
-/** Pictures are taken only for the grid with Previews on: the list never shows them. */
+/** Pictures are taken only for the grid showing previews: the list and the grid of icons never show them. */
 export function wantsPreviews(settings: Settings): boolean {
-  return settings.previews && settings.view === 'grid';
+  return settings.view === 'grid' && settings.gridShow === 'previews';
 }
 
 export interface Previews {
@@ -63,7 +63,7 @@ export function keepPreviews(onPreview: (tabId: number, picture: string) => void
     void deletePreview(tabId);
   });
   watchSettings((settings) => {
-    if (!settings.previews) void deleteAllPreviews();
+    if (settings.gridShow !== 'previews') void deleteAllPreviews();
   });
 
   return {

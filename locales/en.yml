@@ -25,7 +25,10 @@ Switcher_Search: Search tabs
 # Under the search field when no tab matches what was typed.
 Switcher_NoMatch: No tabs match your search.
 
-# The footer's button that opens the settings page.
+# The footer's button that opens the Display menu (how the tabs are shown, and the settings).
+Switcher_Display: Display
+
+# The Display menu's item that opens the settings page.
 Switcher_Settings: Settings
 
 # The button on a tab, shown under the mouse, that closes it.
@@ -54,18 +57,18 @@ Settings_ThemeDark: Dark
 Settings_View: View
 Settings_ViewList: List
 Settings_ViewGrid: Grid
-# Grid only.
-Settings_Previews: Previews
-Settings_PreviewsNote: Pictures of the tabs. When it's off, each tab shows its site's icon instead.
-Settings_Columns: Columns
-Settings_GridRows: Rows shown before scrolling
-# List only.
+# Grid only: what the tiles show. Also in the switcher's Display menu.
+Settings_GridShow: Show
+Settings_GridShowPreviews: Previews
+Settings_GridShowIcons: Icons
+Settings_GridShowNote: Previews shows a picture of each tab, Icons only each site's icon. The grid fits the screen by itself.
+# List only. Settings_Compact is also in the switcher's Display menu.
 Settings_Compact: Compact
 Settings_CompactNote: Lower rows, so more tabs fit.
 Settings_ListRows: Tabs shown before scrolling
-# The choice of rows that shows them all, and its note.
-Settings_RowsAll: All
-Settings_RowsAllNote: All shows as many as fit on the screen.
+# The choice of rows that shows as many as the screen's height allows, and its note.
+Settings_RowsFit: Fit the screen
+Settings_RowsFitNote: Fit the screen shows as many as the screen's height allows.
 
 # Section: which tabs the switcher shows and how it opens them.
 Settings_Switching: Switching

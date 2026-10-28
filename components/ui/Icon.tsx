@@ -1,6 +1,6 @@
 import { type JSX, Match, Switch } from 'solid-js';
 
-export type IconName = 'search' | 'close' | 'settings' | 'pin' | 'audio' | 'sleep' | 'window' | 'chevron';
+export type IconName = 'search' | 'close' | 'settings' | 'pin' | 'audio' | 'sleep' | 'window' | 'chevron' | 'display';
 
 interface IconProps {
   name: IconName;
@@ -49,6 +49,12 @@ export function Icon(props: IconProps): JSX.Element {
         </Match>
         <Match when={props.name === 'sleep'}>
           <path d="M20 14.5A8 8 0 019.5 4a8 8 0 1010.5 10.5z" />
+        </Match>
+        <Match when={props.name === 'display'}>
+          <path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12" />
+          <circle cx="16" cy="6" r="2" />
+          <circle cx="10" cy="12" r="2" />
+          <circle cx="18" cy="18" r="2" />
         </Match>
         <Match when={props.name === 'chevron'}>
           <path d="M6 9l6 6 6-6" />

@@ -8,6 +8,9 @@ interface IconButtonProps {
   label: string;
   size?: 'small' | 'medium';
   class?: string;
+  /** For a button that opens a menu: whether it is open, and the menu's id. */
+  expanded?: boolean;
+  controls?: string;
   onClick: (event: MouseEvent) => void;
 }
 
@@ -18,6 +21,8 @@ export function IconButton(props: IconButtonProps): JSX.Element {
       type="button"
       class={`${styles.button} ${props.size === 'small' ? styles.small : ''} ${props.class ?? ''}`}
       aria-label={props.label}
+      aria-expanded={props.expanded}
+      aria-controls={props.controls}
       onClick={(event) => props.onClick(event)}
     >
       <Icon name={props.icon} size={props.size === 'small' ? 12 : 14} />

@@ -1,9 +1,12 @@
 /*
- * As many rows as the settings say (--rows), never taller than the screen leaves room for; then it scrolls. The sizes
- * (--row, --tile-width, --tile-height, --gap, --tile-gap) come from the switcher (lib/switcher/sizes.ts).
+ * The tabs scroll once they reach the height the switcher leaves them (it is never taller than the page). The sizes
+ * (--row, --gap, --tile-*, --icon-*) come from the switcher (lib/switcher/sizes.ts).
  */
 .list,
-.grid {
+.previews,
+.icons {
+  flex: 0 1 auto;
+  min-height: 0;
   margin: 0;
   padding: 0;
   overflow-y: auto;
@@ -15,14 +18,33 @@
   display: flex;
   flex-direction: column;
   gap: var(--gap);
-  max-height: min(calc(var(--rows) * (var(--row) + var(--gap))), calc(100vh - 160px));
 }
 
-/* The columns stay as many as the setting says: narrower than the screen, the tiles shrink, never wrap. */
-.grid {
+/* As many columns as fit the page (--columns): the tiles keep their size, never squeezed. */
+.previews {
   display: grid;
-  grid-template-columns: repeat(var(--columns), minmax(0, var(--tile-width)));
+  grid-template-columns: repeat(var(--columns), var(--tile-width));
   grid-auto-rows: var(--tile-height);
   gap: var(--tile-gap);
-  max-height: min(calc(var(--rows) * (var(--tile-height) + var(--tile-gap)) - var(--tile-gap)), calc(100vh - 160px));
+}
+
+.icons {
+  display: grid;
+  grid-template-columns: repeat(var(--columns), var(--icon-cell));
+  grid-auto-rows: var(--icon-cell);
+  justify-content: center;
+  gap: var(--icon-gap);
+}
+
+/* Under the grid of icons: the selected tab's title, as the Mac's app switcher names the selected app. */
+.selectedName {
+  flex: none;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 10px 8px 2px;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }

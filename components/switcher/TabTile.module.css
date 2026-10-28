@@ -47,7 +47,7 @@
   font-weight: 500;
 }
 
-/* Under the title, where the title's text starts: past the site's icon when there is one. */
+/* Under the title, where the title's text starts: past the site's icon. */
 .address {
   flex: none;
   height: var(--tile-line);
@@ -55,10 +55,6 @@
   padding-left: 22px;
   font-size: 11px;
   line-height: var(--tile-line);
-}
-
-.iconOnly .address {
-  padding-left: 0;
 }
 
 .preview {

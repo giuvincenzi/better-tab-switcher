@@ -28,8 +28,6 @@ export interface TabTileProps {
   details: TabDetails;
   /** The tab's picture; until there is one, the site's icon. */
   picture?: string;
-  /** Previews are off: the site's icon in place of the preview, never a picture. */
-  iconOnly: boolean;
   /** Now, for "last used", in milliseconds since 1970. */
   now: number;
   language: string;
@@ -46,7 +44,6 @@ export interface TabTileProps {
 
 /** One tab in the switcher's grid: the title above, the preview below. */
 export function TabTile(props: TabTileProps): JSX.Element {
-  const picture = () => (props.iconOnly ? undefined : props.picture);
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: the keys that open a tab (Enter, the arrows, Alt's release) belong to the grid, which points to the selected tile with aria-activedescendant (WAI-ARIA listbox pattern).
     <div
@@ -59,7 +56,6 @@ export function TabTile(props: TabTileProps): JSX.Element {
       classList={{
         [styles.selected as string]: props.selected,
         [styles.sleeping as string]: props.details.sleeping && props.tab.sleeping,
-        [styles.iconOnly as string]: props.iconOnly,
       }}
       onClick={() => props.onChoose()}
       onPointerEnter={() => props.onHover()}
@@ -69,9 +65,7 @@ export function TabTile(props: TabTileProps): JSX.Element {
       }}
     >
       <div class={styles.header}>
-        <Show when={!props.iconOnly}>
-          <img class={styles.favicon} src={faviconUrl(props.tab.url, 16)} alt="" />
-        </Show>
+        <img class={styles.favicon} src={faviconUrl(props.tab.url, 16)} alt="" />
         <span class={styles.title}>
           <TabTitle tab={props.tab} title={props.title} details={props.details} />
         </span>
@@ -96,7 +90,7 @@ export function TabTile(props: TabTileProps): JSX.Element {
       </Show>
       <div class={styles.preview}>
         <Show
-          when={picture()}
+          when={props.picture}
           fallback={
             <img
               class={styles.siteIcon}

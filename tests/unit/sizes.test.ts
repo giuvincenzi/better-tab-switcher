@@ -1,32 +1,45 @@
 import { describe, expect, it } from 'vitest';
 import { defaultSettings, type Settings } from '../../lib/settings/settings';
-import { ADDRESS_TUCK, gridColumns, sizes, tileHeight, tileWidth, visibleRows } from '../../lib/switcher/sizes';
+import { ADDRESS_TUCK, gridColumns, listRows, sizes, tileHeight, tileWidth } from '../../lib/switcher/sizes';
 
 const settings = (change: Partial<Settings> = {}): Settings => ({ ...defaultSettings, ...change });
 
-describe('visibleRows', () => {
+describe('listRows', () => {
   it('shows the rows the setting says, fewer with fewer tabs', () => {
-    expect(visibleRows(settings({ listRows: 6 }), 20)).toBe(6);
-    expect(visibleRows(settings({ listRows: 6 }), 4)).toBe(4);
-    expect(visibleRows(settings({ listRows: 'all' }), 20)).toBe(20);
+    expect(listRows(settings({ listRows: 6 }), 20)).toBe(6);
+    expect(listRows(settings({ listRows: 6 }), 4)).toBe(4);
   });
 
-  it('counts the grid in rows of tiles', () => {
-    const grid = settings({ view: 'grid', gridColumns: 5, gridRows: 3 });
-    expect(visibleRows(grid, 40)).toBe(3);
-    expect(visibleRows(grid, 7)).toBe(2);
-    expect(visibleRows({ ...grid, gridRows: 'all' }, 40)).toBe(8);
+  it('leaves the height to the page with Fit the screen', () => {
+    expect(listRows(settings({ listRows: 'fit' }), 20)).toBeUndefined();
   });
 
   it('keeps one row with no tabs', () => {
-    expect(visibleRows(settings(), 0)).toBe(1);
+    expect(listRows(settings(), 0)).toBe(1);
   });
 });
 
 describe('gridColumns', () => {
-  it('has fewer columns than the setting only with fewer tabs', () => {
-    expect(gridColumns(settings({ gridColumns: 5 }), 12)).toBe(5);
-    expect(gridColumns(settings({ gridColumns: 5 }), 3)).toBe(3);
+  const grid = settings({ view: 'grid' });
+  const across = (n: number, cell: number, gap: number) =>
+    n * cell + (n - 1) * gap + 2 * (sizes.margin + sizes.grid.padding);
+
+  it('fits as many tiles as the page is wide', () => {
+    expect(gridColumns(grid, 40, across(5, tileWidth, sizes.grid.tileGap))).toBe(5);
+    expect(gridColumns(grid, 40, across(5, tileWidth, sizes.grid.tileGap) - 1)).toBe(4);
+  });
+
+  it('never squeezes the tiles: one column on a page narrower than a tile', () => {
+    expect(gridColumns(grid, 40, 100)).toBe(1);
+  });
+
+  it('has no more columns than tabs', () => {
+    expect(gridColumns(grid, 3, 4000)).toBe(3);
+  });
+
+  it('fits more icons than tiles', () => {
+    const icons = { ...grid, gridShow: 'icons' } as const;
+    expect(gridColumns(icons, 40, across(12, sizes.icons.cell, sizes.icons.gap))).toBe(12);
   });
 });
 

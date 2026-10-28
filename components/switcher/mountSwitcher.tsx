@@ -2,6 +2,7 @@ import { createSignal } from 'solid-js';
 import { render } from 'solid-js/web';
 import { applyLanguage } from '../../lib/i18n/direction';
 import { type Direction, type Preview, type SwitcherSnapshot, sendMessage } from '../../lib/messages';
+import { saveSettings } from '../../lib/settings/store';
 import { applyTheme } from '../ui/applyTheme';
 import styles from './mountSwitcher.module.css';
 import { Switcher } from './Switcher';
@@ -55,6 +56,7 @@ export function mountSwitcher(container: HTMLElement, snapshot: SwitcherSnapshot
           void sendMessage('switcherClosed');
         }}
         onCloseTab={(tab) => void sendMessage('closeTab', tab.id)}
+        onSettingsChange={(change) => void saveSettings(change)}
         onSettings={() => {
           onDone();
           void sendMessage('openSettings');
@@ -63,13 +65,11 @@ export function mountSwitcher(container: HTMLElement, snapshot: SwitcherSnapshot
     ),
     dialog,
   );
-  // The previews already taken; a newer one that arrived meanwhile stays.
-  if (snapshot.settings.view === 'grid' && snapshot.settings.previews) {
-    void sendMessage(
-      'getPreviews',
-      snapshot.tabs.map((tab) => tab.id),
-    ).then((saved) => setPreviews((arrived) => ({ ...saved, ...arrived })));
-  }
+  // The previews already taken (the grid can be chosen in the Display menu); a newer one that arrived meanwhile stays.
+  void sendMessage(
+    'getPreviews',
+    snapshot.tabs.map((tab) => tab.id),
+  ).then((saved) => setPreviews((arrived) => ({ ...saved, ...arrived })));
   return {
     move: (direction) => setMoves((last) => ({ direction, count: last.count + 1 })),
     showPreview: ({ tabId, picture }) => setPreviews((all) => ({ ...all, [tabId]: picture })),

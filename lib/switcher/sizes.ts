@@ -11,6 +11,10 @@ export const sizes = {
    * the last used time (each one when it is on).
    */
   grid: { padding: 14, tileGap: 8, tileBorder: 2, tilePadding: 8, tileHeader: 22, tileSpace: 6, tileLine: 14 },
+  /** The grid of icons: a square cell per tab, the site's icon in its middle. */
+  icons: { cell: 80, gap: 6 },
+  /** The space the switcher leaves around itself, inside the page. */
+  margin: 16,
   /** The preview in a tile; pictures are taken twice as big, for screens with twice the pixels. */
   preview: { width: 188, height: 118 },
 } as const;
@@ -33,15 +37,17 @@ export function tileHeight(settings: Settings): number {
 /** How far the address goes up under the title, in a tile. */
 export const ADDRESS_TUCK = 4;
 
-/** The grid's columns: as many as the setting says, fewer when there are fewer tabs. */
-export function gridColumns(settings: Settings, count: number): number {
-  return Math.max(1, Math.min(settings.gridColumns, count));
+/**
+ * The grid's columns: as many tiles (or icons) as fit across the page, fewer when there are fewer tabs. The grid's
+ * height is the CSS's: never taller than the page, then it scrolls.
+ */
+export function gridColumns(settings: Settings, count: number, pageWidth: number): number {
+  const { cell, gap } = settings.gridShow === 'icons' ? sizes.icons : { cell: tileWidth, gap: sizes.grid.tileGap };
+  const room = pageWidth - 2 * (sizes.margin + sizes.grid.padding);
+  return Math.max(1, Math.min(count, Math.floor((room + gap) / (cell + gap))));
 }
 
-/** The rows shown before the list or the grid scrolls. */
-export function visibleRows(settings: Settings, count: number): number {
-  const grid = settings.view === 'grid';
-  const all = grid ? Math.ceil(count / gridColumns(settings, count)) : count;
-  const setting = grid ? settings.gridRows : settings.listRows;
-  return Math.max(1, setting === 'all' ? all : Math.min(setting, all));
+/** The list's rows shown before it scrolls: the setting's, or all of them to fit the page (then it scrolls). */
+export function listRows(settings: Settings, count: number): number | undefined {
+  return settings.listRows === 'fit' ? undefined : Math.max(1, Math.min(settings.listRows, count));
 }

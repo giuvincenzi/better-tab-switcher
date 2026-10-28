@@ -105,6 +105,11 @@ describe('opening a tab', () => {
     expect(run(stay, { type: 'release' }, { type: 'choose', index: 3 }).effect).toEqual({ type: 'open', index: 3 });
   });
 
+  it('stays open on release once the user works in it (its Display menu)', () => {
+    expect(run(list, { type: 'hold' }, { type: 'release' }).effect).toBeUndefined();
+    expect(run(list, { type: 'hold' }, { type: 'confirm' }).effect).toEqual({ type: 'open', index: 1 });
+  });
+
   it('stays open on release while searching, also on a tab, until Enter or a click', () => {
     expect(searching(list, { type: 'next' }, { type: 'release' }).effect).toBeUndefined();
     expect(searching(list, { type: 'next' }, { type: 'confirm' }).effect).toEqual({ type: 'open', index: 1 });

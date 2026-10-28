@@ -1,6 +1,7 @@
 import { createSignal } from 'solid-js';
 import { render } from 'solid-js/web';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { page } from 'vitest/browser';
 import { Switcher, type SwitcherProps } from '../../components/switcher/Switcher';
 import type { Direction, SwitcherSnapshot } from '../../lib/messages';
 import { defaultSettings, type Settings } from '../../lib/settings/settings';
@@ -38,7 +39,13 @@ function open(settings: Partial<Settings> = {}, more: Partial<SwitcherSnapshot &
   const [moves, setMoves] = createSignal<{ direction: Direction; count: number }>({ direction: 'next', count: 0 });
   const [previews, setPreviews] = createSignal<Record<number, string>>({});
   const [pictureTaken, setPictureTaken] = createSignal(false);
-  const handlers = { onOpen: vi.fn(), onClose: vi.fn(), onCloseTab: vi.fn(), onSettings: vi.fn() };
+  const handlers = {
+    onOpen: vi.fn(),
+    onClose: vi.fn(),
+    onCloseTab: vi.fn(),
+    onSettings: vi.fn(),
+    onSettingsChange: vi.fn(),
+  };
   const host = document.createElement('div');
   document.body.append(host);
   dispose = render(
@@ -61,7 +68,7 @@ function open(settings: Partial<Settings> = {}, more: Partial<SwitcherSnapshot &
 }
 
 const selectedTitle = (host: HTMLElement) => host.querySelector('[aria-selected="true"]')?.getAttribute('aria-label');
-const footer = (host: HTMLElement) => host.querySelector('button[aria-label="Settings"]')?.parentElement?.textContent;
+const footer = (host: HTMLElement) => host.querySelector('button[aria-label="Display"]')?.parentElement?.textContent;
 
 describe('Switcher', () => {
   it('selects the previous tab and shows the keys with the real shortcuts', () => {
@@ -163,12 +170,6 @@ describe('Switcher', () => {
     expect(host.querySelector('button[aria-label="Search tabs"]')).toBeNull();
   });
 
-  it('opens the settings from the footer', () => {
-    const { host, handlers } = open();
-    (host.querySelector('button[aria-label="Settings"]') as HTMLButtonElement).click();
-    expect(handlers.onSettings).toHaveBeenCalledOnce();
-  });
-
   it('closes a tab and keeps the list', () => {
     const { host, handlers } = open();
     (host.querySelectorAll('button[aria-label="Close tab"]')[3] as HTMLButtonElement).click();
@@ -200,8 +201,14 @@ describe('Switcher', () => {
 });
 
 describe('Switcher in the grid', () => {
-  it('moves along a row with left and right, between rows with up and down', () => {
-    const { host, press } = open({ view: 'grid', gridColumns: 2 });
+  afterEach(async () => {
+    await page.viewport(1280, 800);
+  });
+
+  it('fits as many tiles as the page is wide, and moves between rows with up and down', async () => {
+    // Two tiles across (lib/switcher/sizes.ts): 208 px each, with the switcher's margins and padding.
+    await page.viewport(600, 800);
+    const { host, press } = open({ view: 'grid' });
     expect(selectedTitle(host)).toBe('Inbox (3)');
     press('ArrowDown');
     expect(selectedTitle(host)).toBe('Running plan');
@@ -222,9 +229,51 @@ describe('Switcher in the grid', () => {
     expect(tile().querySelector('img[src^="data:"]')).not.toBeNull();
   });
 
-  it("shows only the sites' icons with Previews off", () => {
-    const { host, setPreviews } = open({ view: 'grid', previews: false });
+  it("shows only the sites' icons, and the selected tab's title under them, with Show Icons", () => {
+    const { host, setPreviews } = open({ view: 'grid', gridShow: 'icons' });
     setPreviews({ 3: 'data:image/webp;base64,UklGRg==' });
     expect(host.querySelector('img[src^="data:"]')).toBeNull();
+    expect(host.querySelectorAll('[role="option"] img[src*="_favicon"]')).toHaveLength(4);
+    expect(host.textContent).toContain('Inbox (3)');
+    expect(host.textContent).not.toContain('Q4 planning');
+  });
+});
+
+describe('Switcher Display menu', () => {
+  const displayButton = (host: HTMLElement) => host.querySelector('button[aria-label="Display"]') as HTMLButtonElement;
+
+  it('opens from the footer and keeps the switcher open', () => {
+    const { host, handlers, press } = open();
+    displayButton(host).click();
+    expect(displayButton(host).getAttribute('aria-expanded')).toBe('true');
+    press('Alt', 'keyup');
+    expect(handlers.onOpen).not.toHaveBeenCalled();
+  });
+
+  it('changes the view at once and saves it', () => {
+    const { host, handlers } = open();
+    displayButton(host).click();
+    const grid = [...host.querySelectorAll<HTMLInputElement>('input[type="radio"]')].find(
+      (radio) => radio.value === 'grid',
+    );
+    grid?.click();
+    expect(handlers.onSettingsChange).toHaveBeenCalledWith({ view: 'grid' });
+    expect(host.querySelector('[role="listbox"]')?.className).toContain('previews');
+  });
+
+  it('opens the settings page', () => {
+    const { host, handlers } = open();
+    displayButton(host).click();
+    [...host.querySelectorAll('button')].find((button) => button.textContent === 'Settings')?.click();
+    expect(handlers.onSettings).toHaveBeenCalledOnce();
+  });
+
+  it('closes with Esc, the switcher stays', () => {
+    const { host, handlers } = open();
+    displayButton(host).click();
+    const radio = host.querySelector('input[type="radio"]') as HTMLInputElement;
+    radio.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, composed: true }));
+    expect(displayButton(host).getAttribute('aria-expanded')).toBe('false');
+    expect(handlers.onClose).not.toHaveBeenCalled();
   });
 });

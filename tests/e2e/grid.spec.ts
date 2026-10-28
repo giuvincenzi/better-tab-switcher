@@ -20,12 +20,17 @@ async function useEach(worker: Worker, pages: Page[]) {
 }
 
 test.describe('grid @grid', () => {
-  test('shows the tabs as tiles and moves with the arrows', async ({ context, serviceWorker }) => {
-    await useSettings(serviceWorker, { view: 'grid', gridColumns: 2 });
+  test('fits the tiles to the page and moves with the arrows', async ({ context, serviceWorker }) => {
+    await useSettings(serviceWorker, { view: 'grid' });
     const [, , , current] = await openPages(context, ['alpha', 'beta', 'gamma', 'delta']);
     const page = current as Page;
+    // Two tiles across (lib/switcher/sizes.ts): 208 px each, with the switcher's margins and padding.
+    await page.setViewportSize({ width: 600, height: 800 });
     await showSwitcher(serviceWorker);
     await expect(rows(page)).toHaveCount(4);
+    // Both rows of tiles in sight: the grid scrolls only when the page is too low for it.
+    const grid = page.locator('better-tab-switcher [role="listbox"]');
+    expect(await grid.evaluate((list) => list.scrollHeight - list.clientHeight)).toBe(0);
     await expect(selected(page)).toHaveAccessibleName('gamma');
     await page.keyboard.press('ArrowDown');
     await expect(selected(page)).toHaveAccessibleName('alpha');
@@ -51,15 +56,33 @@ test.describe('grid @grid', () => {
     expect(kept.local).toHaveLength(0);
   });
 
-  test('forgets the pictures when Previews is turned off', async ({ context, serviceWorker }) => {
+  test('forgets the pictures when the grid shows icons', async ({ context, serviceWorker }) => {
     await useSettings(serviceWorker, { view: 'grid' });
     const pages = await openPages(context, ['alpha', 'beta', 'gamma']);
     await useEach(serviceWorker, pages);
     const page = pages[2] as Page;
-    await useSettings(serviceWorker, { view: 'grid', previews: false });
+    await useSettings(serviceWorker, { view: 'grid', gridShow: 'icons' });
     await expect.poll(() => savedPictures(serviceWorker)).toHaveLength(0);
     await showSwitcher(serviceWorker);
     await expect(rows(page)).toHaveCount(3);
     await expect(pictures(page)).toHaveCount(0);
+  });
+
+  test("switches to the grid from the switcher's Display menu, and keeps it", async ({ context, serviceWorker }) => {
+    const [, current] = await openPages(context, ['alpha', 'beta']);
+    const page = current as Page;
+    await showSwitcher(serviceWorker);
+    const switcher = page.locator('better-tab-switcher');
+    await switcher.getByRole('button', { name: 'Display' }).click();
+    await switcher.getByText('Grid', { exact: true }).click();
+    await expect(switcher.getByRole('listbox')).toHaveCSS('display', 'grid');
+    await expect
+      .poll(() =>
+        serviceWorker.evaluate(async () => {
+          const { settings } = await chrome.storage.local.get('settings');
+          return (settings as { view?: string } | undefined)?.view;
+        }),
+      )
+      .toBe('grid');
   });
 });

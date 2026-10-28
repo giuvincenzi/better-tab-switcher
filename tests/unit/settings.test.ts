@@ -18,10 +18,8 @@ describe('parseSettings', () => {
       theme: 'dark',
       view: 'grid',
       compact: false,
-      listRows: 'all',
-      gridColumns: 4,
-      gridRows: 2,
-      previews: false,
+      listRows: 'fit',
+      gridShow: 'icons',
       scope: 'all',
       showPinned: false,
       delayMs: 250,
@@ -42,14 +40,14 @@ describe('parseSettings', () => {
 
   it('refuses numbers outside their limits or not whole', () => {
     expect(parseSettings({ listRows: limits.listRows.max + 1 }).listRows).toBe(defaultSettings.listRows);
-    expect(parseSettings({ gridColumns: 0 }).gridColumns).toBe(defaultSettings.gridColumns);
+    expect(parseSettings({ listRows: 0 }).listRows).toBe(defaultSettings.listRows);
     expect(parseSettings({ delayMs: 99.5 }).delayMs).toBe(defaultSettings.delayMs);
     expect(parseSettings({ autoSelectSeconds: '3' }).autoSelectSeconds).toBe(defaultSettings.autoSelectSeconds);
   });
 
   it('accepts the limits themselves', () => {
     expect(parseSettings({ delayMs: limits.delayMs.min }).delayMs).toBe(limits.delayMs.min);
-    expect(parseSettings({ gridRows: limits.gridRows.max }).gridRows).toBe(limits.gridRows.max);
+    expect(parseSettings({ listRows: limits.listRows.max }).listRows).toBe(limits.listRows.max);
   });
 
   it('keeps the details that are valid when others are not', () => {

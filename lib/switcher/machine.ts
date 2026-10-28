@@ -40,7 +40,9 @@ export type SwitcherEvent =
   /** A tab was closed from the switcher. */
   | { type: 'removed'; index: number }
   /** A click on the search field, or the footer's search button: the user starts searching. */
-  | { type: 'openSearch' };
+  | { type: 'openSearch' }
+  /** The user works in the switcher (its Display menu): it stays open until a tab is chosen. */
+  | { type: 'hold' };
 
 export type SwitcherEffect = { type: 'open'; index: number } | { type: 'close' };
 
@@ -89,6 +91,8 @@ export function step(state: SwitcherState, event: SwitcherEvent): Step {
       return removed(state, event.index);
     case 'openSearch':
       return { state: { ...state, searching: true, stayOpen: true, selected: FIELD } };
+    case 'hold':
+      return { state: { ...state, stayOpen: true } };
   }
 }
 

@@ -18,13 +18,22 @@
   flex-direction: column;
   gap: var(--gap);
   width: var(--panel-width);
-  max-width: calc(100vw - 32px);
+  max-width: calc(100vw - 2 * var(--margin));
+  max-height: calc(100vh - 2 * var(--margin));
   padding: var(--panel-padding);
   box-sizing: border-box;
   border: 1px solid var(--bts-border);
   border-radius: var(--bts-radius-panel);
   background: var(--bts-panel);
   box-shadow: var(--bts-shadow);
+}
+
+/* The tabs (and "no match"): they take the height the panel has left, then scroll. */
+.results {
+  display: flex;
+  flex: 0 1 auto;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .compact {

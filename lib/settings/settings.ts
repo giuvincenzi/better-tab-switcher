@@ -2,8 +2,10 @@ export type Theme = 'device' | 'light' | 'dark';
 export type View = 'list' | 'grid';
 export type Scope = 'window' | 'all';
 export type LongAddress = 'cut' | 'scroll';
-/** A number of rows, or every row that fits on the screen. */
-export type RowCount = number | 'all';
+/** What the grid's tiles show: a picture of each tab, or only each site's icon. */
+export type GridShow = 'previews' | 'icons';
+/** A number of rows, or as many as fit on the screen. */
+export type RowCount = number | 'fit';
 
 export interface TabDetails {
   address: boolean;
@@ -20,9 +22,8 @@ export interface Settings {
   view: View;
   compact: boolean;
   listRows: RowCount;
-  gridColumns: number;
-  gridRows: RowCount;
-  previews: boolean;
+  /** The grid fits the screen by itself: its columns and rows are not settings. */
+  gridShow: GridShow;
   scope: Scope;
   showPinned: boolean;
   delayMs: number;
@@ -38,9 +39,7 @@ export const defaultSettings: Readonly<Settings> = Object.freeze({
   view: 'list',
   compact: false,
   listRows: 6,
-  gridColumns: 5,
-  gridRows: 3,
-  previews: true,
+  gridShow: 'previews',
   scope: 'window',
   showPinned: true,
   delayMs: 50,
@@ -61,9 +60,7 @@ export const defaultSettings: Readonly<Settings> = Object.freeze({
 
 /** The values each number setting accepts. */
 export const limits = Object.freeze({
-  listRows: { min: 1, max: 30 },
-  gridColumns: { min: 1, max: 8 },
-  gridRows: { min: 1, max: 10 },
+  listRows: { min: 1, max: 12 },
   delayMs: { min: 0, max: 1000 },
   autoSelectSeconds: { min: 1, max: 10 },
 });
@@ -85,7 +82,7 @@ function whole(value: unknown, range: Range, fallback: number): number {
 }
 
 function rows(value: unknown, range: Range, fallback: RowCount): RowCount {
-  return value === 'all' ? 'all' : whole(value, range, fallback === 'all' ? range.max : fallback);
+  return value === 'fit' ? 'fit' : whole(value, range, fallback === 'fit' ? range.max : fallback);
 }
 
 function record(value: unknown): Record<string, unknown> {
@@ -105,9 +102,7 @@ export function parseSettings(value: unknown): Settings {
     view: oneOf(saved.view, ['list', 'grid'], d.view),
     compact: flag(saved.compact, d.compact),
     listRows: rows(saved.listRows, limits.listRows, d.listRows),
-    gridColumns: whole(saved.gridColumns, limits.gridColumns, d.gridColumns),
-    gridRows: rows(saved.gridRows, limits.gridRows, d.gridRows),
-    previews: flag(saved.previews, d.previews),
+    gridShow: oneOf(saved.gridShow, ['previews', 'icons'], d.gridShow),
     scope: oneOf(saved.scope, ['window', 'all'], d.scope),
     showPinned: flag(saved.showPinned, d.showPinned),
     delayMs: whole(saved.delayMs, limits.delayMs, d.delayMs),

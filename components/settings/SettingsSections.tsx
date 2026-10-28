@@ -86,29 +86,20 @@ export function AppearanceSection(props: SectionProps): JSX.Element {
           </>
         }
       >
-        <ToggleRow
-          label={i18n.t('Settings_Previews')}
-          note={i18n.t('Settings_PreviewsNote')}
-          checked={props.settings.previews}
-          onChange={(previews) => props.save({ previews })}
-        />
         <SettingRow
-          label={i18n.t('Settings_Columns')}
+          label={i18n.t('Settings_GridShow')}
+          note={i18n.t('Settings_GridShowNote')}
           control={(ids) => (
-            <NumberField
-              value={props.settings.gridColumns}
-              {...limits.gridColumns}
+            <SegmentedControl
+              value={props.settings.gridShow}
+              options={[
+                { value: 'previews', label: i18n.t('Settings_GridShowPreviews') },
+                { value: 'icons', label: i18n.t('Settings_GridShowIcons') },
+              ]}
               labelledBy={ids.label}
-              onChange={(gridColumns) => props.save({ gridColumns })}
+              onChange={(gridShow) => props.save({ gridShow })}
             />
           )}
-        />
-        <RowsRow
-          language={props.language}
-          label={i18n.t('Settings_GridRows')}
-          value={props.settings.gridRows}
-          max={limits.gridRows.max}
-          onChange={(gridRows) => props.save({ gridRows })}
         />
       </Show>
     </SettingsSection>
@@ -298,7 +289,7 @@ function ToggleRow(props: { label: string; note?: string; checked: boolean; onCh
   );
 }
 
-/** How many rows show before scrolling: a number, or All. */
+/** How many rows show before scrolling: a number, or as many as fit the screen. */
 function RowsRow(props: {
   label: string;
   value: RowCount;
@@ -311,19 +302,19 @@ function RowsRow(props: {
       value: String(i + 1),
       label: new Intl.NumberFormat(props.language).format(i + 1),
     })),
-    { value: 'all', label: i18n.t('Settings_RowsAll') },
+    { value: 'fit', label: i18n.t('Settings_RowsFit') },
   ];
   return (
     <SettingRow
       label={props.label}
-      note={i18n.t('Settings_RowsAllNote')}
+      note={i18n.t('Settings_RowsFitNote')}
       control={(ids) => (
         <Select
           value={String(props.value)}
           options={options()}
           labelledBy={ids.label}
           describedBy={ids.note}
-          onChange={(value) => props.onChange(value === 'all' ? 'all' : Number(value))}
+          onChange={(value) => props.onChange(value === 'fit' ? 'fit' : Number(value))}
         />
       )}
     />
