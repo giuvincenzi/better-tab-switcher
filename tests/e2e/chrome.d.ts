@@ -7,6 +7,8 @@ declare global {
    */
   const chrome: Omit<typeof browser, 'i18n'> & { i18n: { getMessage(name: string): string } };
 
-  /** The test build's hook in the service worker (entrypoints/background.ts): opens the switcher as a shortcut does. */
-  var betterTabSwitcherTest: { showSwitcher(direction: 'next' | 'previous', fromClick: boolean): Promise<void> };
+  /** The test build's hook in the service worker (entrypoints/background.ts): asks for the switcher as a shortcut or the toolbar icon does. */
+  var betterTabSwitcherTest: {
+    requestSwitcher(request: { direction: 'next' | 'previous'; from: 'shortcut' | 'icon' }): Promise<void>;
+  };
 }

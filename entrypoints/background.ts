@@ -1,18 +1,19 @@
 import { browser, defineBackground } from '#imports';
-import type { Direction } from '../lib/messages';
-import { listenToSwitcher, showPreview, showSwitcher } from '../lib/presenter/presenter';
+import { listenToSwitcher, requestSwitcher, type SwitcherRequest, showPreview } from '../lib/presenter/presenter';
 import { keepPreviews } from '../lib/previews/service';
 
 export default defineBackground(() => {
   const previews = keepPreviews((tabId, picture) => void showPreview(tabId, picture));
-  const show = (direction: Direction, fromClick: boolean) => showSwitcher(direction, fromClick, previews);
+  const request = (switcher: SwitcherRequest) => requestSwitcher(switcher, previews);
   browser.commands.onCommand.addListener((command) => {
-    if (command === 'next-tab') void show('next', false);
-    else if (command === 'previous-tab') void show('previous', false);
+    if (command === 'next-tab') void request({ direction: 'next', from: 'shortcut' });
+    else if (command === 'previous-tab') void request({ direction: 'previous', from: 'shortcut' });
   });
-  browser.action.onClicked.addListener(() => void show('next', true));
+  browser.action.onClicked.addListener(() => void request({ direction: 'next', from: 'icon' }));
   listenToSwitcher();
 
-  // The end-to-end tests can't press Chrome's shortcuts: in their build only, they open the switcher as a shortcut does.
-  if (import.meta.env.MODE === 'e2e') Object.assign(globalThis, { betterTabSwitcherTest: { showSwitcher: show } });
+  // The end-to-end tests can't press Chrome's shortcuts nor click the toolbar icon: in their build only, they ask for
+  // the switcher as those do.
+  if (import.meta.env.MODE === 'e2e')
+    Object.assign(globalThis, { betterTabSwitcherTest: { requestSwitcher: request } });
 });

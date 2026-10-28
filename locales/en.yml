@@ -16,11 +16,8 @@ Switcher_HintKeys: $1 next, $2 back, Esc closes
 # The switcher's footer while a shortcut is held, when the previous tab shortcut has no keys. $1: the next tab shortcut.
 Switcher_HintNextOnly: $1 next, Esc closes
 
-# The switcher's footer when it stays open (Stay open, or opened from the toolbar icon).
+# The switcher's footer when it stays open (Stay open, opened from the toolbar icon, or while searching).
 Switcher_HintStayOpen: Enter or a click opens the tab, Esc closes
-
-# The switcher's footer while the search field is selected. $1: the next tab shortcut (Alt+Y).
-Switcher_HintSearch: Type to search, $1 goes to the tabs, Esc closes
 
 # The search field's placeholder, and the footer's button that shows it.
 Switcher_Search: Search tabs

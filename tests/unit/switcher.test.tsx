@@ -30,7 +30,7 @@ function open(settings: Partial<Settings> = {}, more: Partial<SwitcherSnapshot &
     tabs,
     settings: { ...defaultSettings, delayMs: 0, ...settings },
     direction: 'next',
-    fromClick: false,
+    fromIcon: false,
     shortcuts: { next: 'Alt+Y', previous: 'Alt+Shift+Y' },
     waitForPicture: false,
     ...more,
@@ -79,7 +79,7 @@ describe('Switcher', () => {
   it('says how to choose when it stays open', () => {
     expect(footer(open({ stayOpen: true }).host)).toContain('Enter or a click opens the tab, Esc closes');
     dispose?.();
-    expect(footer(open({}, { fromClick: true }).host)).toContain('Enter or a click opens the tab, Esc closes');
+    expect(footer(open({}, { fromIcon: true }).host)).toContain('Enter or a click opens the tab, Esc closes');
     dispose?.();
     expect(footer(open({}, { canSeeRelease: false }).host)).toContain('Enter or a click opens the tab, Esc closes');
   });
@@ -108,17 +108,33 @@ describe('Switcher', () => {
     expect(handlers.onOpen).not.toHaveBeenCalled();
   });
 
-  it('starts on the search field, focused, with Search on', () => {
+  it('shows the search field with Search on, without its button in the footer and without the focus', () => {
     const { host } = open({ search: true });
     const field = host.querySelector('input[type="search"]') as HTMLInputElement;
-    expect(document.activeElement).toBe(field);
-    expect(selectedTitle(host)).toBeUndefined();
-    expect(footer(host)).toContain('Type to search, Alt+Y goes to the tabs, Esc closes');
+    expect(field).not.toBeNull();
+    expect(document.activeElement).not.toBe(field);
+    expect(selectedTitle(host)).toBe('Inbox (3)');
+    expect(host.querySelector('button[aria-label="Search tabs"]')).toBeNull();
+  });
+
+  it('opens the selected tab on release with Search on, as without it', () => {
+    const { handlers, press } = open({ search: true });
+    press('Alt', 'keyup');
+    expect(handlers.onOpen).toHaveBeenCalledWith(tabs[1]);
+  });
+
+  it('stays open once the search field is clicked', () => {
+    const { host, handlers, press } = open({ search: true });
+    (host.querySelector('input[type="search"]') as HTMLInputElement).focus();
+    press('Alt', 'keyup');
+    expect(handlers.onOpen).not.toHaveBeenCalled();
+    expect(footer(host)).toContain('Enter or a click opens the tab, Esc closes');
   });
 
   it('shows the tabs that match what is typed, with the match highlighted', () => {
     const { host } = open({ search: true });
     const field = host.querySelector('input[type="search"]') as HTMLInputElement;
+    field.focus();
     field.value = 'plan';
     field.dispatchEvent(new InputEvent('input', { bubbles: true }));
     const shown = [...host.querySelectorAll('[role="option"]')].map((row) => row.getAttribute('aria-label'));
@@ -126,20 +142,25 @@ describe('Switcher', () => {
     expect([...host.querySelectorAll('mark')].map((m) => m.textContent)).toEqual(['plan', 'plan']);
   });
 
-  it('says so when nothing matches', () => {
+  it('says so when nothing matches, keeping its height', () => {
     const { host } = open({ search: true });
     const field = host.querySelector('input[type="search"]') as HTMLInputElement;
+    const list = host.querySelector('[role="listbox"]')?.parentElement as HTMLElement;
+    const height = list.offsetHeight;
+    field.focus();
     field.value = 'passport';
     field.dispatchEvent(new InputEvent('input', { bubbles: true }));
     expect(host.querySelectorAll('[role="option"]')).toHaveLength(0);
     expect(host.textContent).toContain('No tabs match your search.');
+    expect(list.offsetHeight).toBe(height);
   });
 
-  it('shows the search field from the footer button, also with Search off', () => {
+  it('shows the search field from the footer button, also with Search off, for this time only', () => {
     const { host } = open();
     expect(host.querySelector('input[type="search"]')).toBeNull();
     (host.querySelector('button[aria-label="Search tabs"]') as HTMLButtonElement).click();
     expect(document.activeElement).toBe(host.querySelector('input[type="search"]'));
+    expect(host.querySelector('button[aria-label="Search tabs"]')).toBeNull();
   });
 
   it('opens the settings from the footer', () => {

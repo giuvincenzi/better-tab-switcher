@@ -26,8 +26,13 @@ export async function openPages(context: BrowserContext, titles: string[]): Prom
   return pages;
 }
 
-export function showSwitcher(worker: Worker, direction: 'next' | 'previous' = 'next') {
-  return worker.evaluate((d) => globalThis.betterTabSwitcherTest.showSwitcher(d, false), direction);
+/** Asks for the switcher as the shortcut does (`direction`), or as the toolbar icon does (`from: 'icon'`). */
+export function showSwitcher(
+  worker: Worker,
+  direction: 'next' | 'previous' = 'next',
+  from: 'shortcut' | 'icon' = 'shortcut',
+) {
+  return worker.evaluate((request) => globalThis.betterTabSwitcherTest.requestSwitcher(request), { direction, from });
 }
 
 export function activeTitle(worker: Worker) {

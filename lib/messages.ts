@@ -10,7 +10,7 @@ export interface SwitcherSnapshot {
   settings: Settings;
   direction: Direction;
   /** Opened from the toolbar icon: no key is held, so it stays open until a tab is chosen. */
-  fromClick: boolean;
+  fromIcon: boolean;
   /** The shortcuts as Chrome writes them, "" when one has none. */
   shortcuts: { next: string; previous: string };
   /** The page's picture is being taken: the switcher stays hidden until pictureTaken, so it isn't in the picture. */
@@ -23,14 +23,14 @@ export interface Preview {
   picture: string;
 }
 
-/** The messages between the background and the switcher (in a page, or in its own window). */
+/** The messages between the background and the switcher, in the page it is shown in. */
 interface Messages {
   /** Background → switcher: show these tabs. */
   showSwitcher(snapshot: SwitcherSnapshot): void;
   /** Background → switcher: the shortcut was pressed again while it is open. */
   moveSwitcher(direction: Direction): void;
-  /** Switcher's window → background: the snapshot to show, once its page has loaded. */
-  getSnapshot(): SwitcherSnapshot | null;
+  /** Background → switcher: close, a new switcher opens in another tab. */
+  closeSwitcher(): void;
   /** Switcher → background: open this tab (the switcher has already closed). */
   openTab(tab: { id: number; windowId: number }): void;
   /** Switcher → background: close this tab; the switcher stays open. */
@@ -43,7 +43,7 @@ interface Messages {
   getPreviews(tabIds: number[]): Record<number, string>;
   /** Background → switcher: a tab's new preview, while the switcher is open. */
   previewReady(preview: Preview): void;
-  /** Background → switcher in a page: the page's picture is taken, the switcher can show. */
+  /** Background → switcher: the page's picture is taken, the switcher can show. */
   pictureTaken(): void;
 }
 

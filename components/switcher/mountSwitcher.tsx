@@ -3,6 +3,7 @@ import { render } from 'solid-js/web';
 import { applyLanguage } from '../../lib/i18n/direction';
 import { type Direction, type Preview, type SwitcherSnapshot, sendMessage } from '../../lib/messages';
 import { applyTheme } from '../ui/applyTheme';
+import styles from './mountSwitcher.module.css';
 import { Switcher } from './Switcher';
 
 export interface SwitcherHandle {
@@ -16,22 +17,28 @@ export interface SwitcherHandle {
 }
 
 /**
- * Shows the switcher in `container` and connects it to the background; the same in a page and in the switcher's
- * window. `themeRoot` gets the theme chosen in the settings and the language's direction; `onDone` removes the switcher once it is done.
+ * Shows the switcher in `container`, in the page, and connects it to the background. It is drawn in a modal dialog:
+ * the browser's top layer, above everything of the page, its own dialogs, popovers and full screen elements too.
+ * `onDone` removes it once it is done.
  */
-export function mountSwitcher(
-  container: HTMLElement,
-  themeRoot: HTMLElement,
-  snapshot: SwitcherSnapshot,
-  canSeeRelease: boolean,
-  onDone: () => void,
-): SwitcherHandle {
-  applyTheme(themeRoot, snapshot.settings.theme);
-  applyLanguage(themeRoot);
+export function mountSwitcher(container: HTMLElement, snapshot: SwitcherSnapshot, onDone: () => void): SwitcherHandle {
+  const dialog = document.createElement('dialog');
+  dialog.className = styles.dialog as string;
+  // The dialog takes the focus itself, not the first control in it (the search field stays as it is).
+  dialog.autofocus = true;
+  applyTheme(dialog, snapshot.settings.theme);
+  applyLanguage(dialog);
+  // Esc is the switcher's own key (it closes it as a click outside does), never the dialog's.
+  dialog.addEventListener('cancel', (event) => event.preventDefault());
+  container.append(dialog);
+  const canSeeRelease = document.hasFocus();
+  dialog.showModal();
+
   const [moves, setMoves] = createSignal({ direction: snapshot.direction, count: 0 });
   const [previews, setPreviews] = createSignal<Record<number, string>>({});
   const [pictureTaken, setPictureTaken] = createSignal(false);
-  const dispose = render(
+
+  const disposeRender = render(
     () => (
       <Switcher
         snapshot={snapshot}
@@ -54,7 +61,7 @@ export function mountSwitcher(
         }}
       />
     ),
-    container,
+    dialog,
   );
   // The previews already taken; a newer one that arrived meanwhile stays.
   if (snapshot.settings.view === 'grid' && snapshot.settings.previews) {
@@ -67,6 +74,10 @@ export function mountSwitcher(
     move: (direction) => setMoves((last) => ({ direction, count: last.count + 1 })),
     showPreview: ({ tabId, picture }) => setPreviews((all) => ({ ...all, [tabId]: picture })),
     pictureTaken: () => setPictureTaken(true),
-    dispose,
+    dispose() {
+      disposeRender();
+      dialog.close();
+      dialog.remove();
+    },
   };
 }

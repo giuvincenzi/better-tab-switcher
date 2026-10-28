@@ -1,4 +1,4 @@
-import type { JSX } from 'solid-js';
+import { type JSX, Show } from 'solid-js';
 import { i18n } from '#i18n';
 import { IconButton } from '../ui/IconButton';
 import styles from './SwitcherFooter.module.css';
@@ -6,7 +6,8 @@ import styles from './SwitcherFooter.module.css';
 interface SwitcherFooterProps {
   hint: string;
   compact: boolean;
-  onSearch: () => void;
+  /** None while the search field shows. */
+  onSearch?: () => void;
   onSettings: () => void;
 }
 
@@ -15,7 +16,9 @@ export function SwitcherFooter(props: SwitcherFooterProps): JSX.Element {
   return (
     <div class={styles.footer} classList={{ [styles.compact as string]: props.compact }}>
       <span class={styles.hint}>{props.hint}</span>
-      <IconButton icon="search" label={i18n.t('Switcher_Search')} onClick={() => props.onSearch()} />
+      <Show when={props.onSearch}>
+        {(onSearch) => <IconButton icon="search" label={i18n.t('Switcher_Search')} onClick={() => onSearch()()} />}
+      </Show>
       <IconButton icon="settings" label={i18n.t('Switcher_Settings')} onClick={() => props.onSettings()} />
     </div>
   );

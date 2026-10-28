@@ -21,7 +21,7 @@ export default defineConfig({
     name: '__MSG_Extension_Name__',
     // light-dark() in styles/theme.css needs Chrome 123.
     minimum_chrome_version: '123',
-    permissions: ['tabs', 'activeTab', 'scripting', 'storage', 'favicon', 'system.display', 'tabGroups'],
+    permissions: ['tabs', 'activeTab', 'scripting', 'storage', 'favicon', 'tabGroups'],
     // Asked for in the settings, for Previews: a picture of each tab whenever it is used, not only in the switcher.
     optional_host_permissions: ['<all_urls>'],
     // The end-to-end tests can't press the shortcut, which gives the extension the page (activeTab): their build has

@@ -1,4 +1,4 @@
-import { type JSX, Show } from 'solid-js';
+import { createEffect, type JSX, on, Show } from 'solid-js';
 import { i18n } from '#i18n';
 import { timeAgo } from '../../lib/i18n/time';
 import type { TitleParts } from '../../lib/search/search';
@@ -70,23 +70,23 @@ export function TabIcons(props: { tab: SwitcherTab; details: TabDetails }): JSX.
   return (
     <>
       <Show when={props.details.pinnedIcon && props.tab.pinned}>
-        <span class={styles.icon} title={i18n.t('Switcher_Pinned')}>
+        <span class={styles.icon}>
           <Icon name="pin" size={14} />
         </span>
       </Show>
       <Show when={props.details.audioIcon && props.tab.audible}>
-        <span class={styles.icon} title={i18n.t('Switcher_PlayingAudio')}>
+        <span class={styles.icon}>
           <Icon name="audio" size={14} />
         </span>
       </Show>
       <Show when={props.details.sleeping && props.tab.sleeping}>
-        <span class={styles.icon} title={i18n.t('Switcher_Sleeping')}>
+        <span class={styles.icon}>
           <Icon name="sleep" size={14} />
         </span>
       </Show>
       <Show when={props.tab.windowLabel}>
         {(label) => (
-          <span class={styles.window} title={i18n.t('Switcher_Window', [label()])}>
+          <span class={styles.window}>
             <Icon name="window" size={12} />
             {label()}
           </span>
@@ -101,13 +101,35 @@ export function LastUsed(props: { tab: SwitcherTab; now: number; language: strin
   return <span class={styles.age}>{timeAgo(props.tab.lastAccessed, props.now, props.language)}</span>;
 }
 
-/** Auto-select: a line at the bottom of the selected tab, full when it is selected and shrinking to nothing. */
-export function AutoSelectLine(props: { seconds: number; onEnd: () => void }): JSX.Element {
+/**
+ * Auto-select: a line at the bottom of the selected tab, full when it is selected and shrinking to nothing. It starts
+ * again, full, when `round` changes.
+ */
+export function AutoSelectLine(props: { seconds: number; round: number; onEnd: () => void }): JSX.Element {
+  let line: HTMLSpanElement | undefined;
+  createEffect(
+    on(
+      () => props.round,
+      () => {
+        for (const animation of line?.getAnimations() ?? []) animation.currentTime = 0;
+      },
+      { defer: true },
+    ),
+  );
   return (
     <span
+      ref={line}
       class={styles.autoSelect}
       style={{ 'animation-duration': `${props.seconds}s` }}
       onAnimationEnd={() => props.onEnd()}
     />
   );
+}
+
+/** A click with the mouse's middle button closes a tab. */
+export const MIDDLE_BUTTON = 1;
+
+/** The middle button's press would start the browser's auto-scroll: on a tab, it only closes it. */
+export function preventMiddleClickScroll(event: MouseEvent): void {
+  if (event.button === MIDDLE_BUTTON) event.preventDefault();
 }

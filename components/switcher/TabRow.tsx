@@ -5,7 +5,16 @@ import type { TitleParts } from '../../lib/search/search';
 import type { TabDetails } from '../../lib/settings/settings';
 import type { SwitcherTab } from '../../lib/tabs/tabs';
 import { IconButton } from '../ui/IconButton';
-import { Address, AutoSelectLine, LastUsed, TabIcons, TabTitle, tabName } from './TabParts';
+import {
+  Address,
+  AutoSelectLine,
+  LastUsed,
+  MIDDLE_BUTTON,
+  preventMiddleClickScroll,
+  TabIcons,
+  TabTitle,
+  tabName,
+} from './TabParts';
 import styles from './TabRow.module.css';
 
 export interface TabRowProps {
@@ -19,9 +28,13 @@ export interface TabRowProps {
   language: string;
   /** Seconds before the selected tab opens by itself; none without Auto-select. */
   autoSelectSeconds?: number;
+  /** Changes when the auto-select line starts again. */
+  autoSelectRound: number;
   onChoose: () => void;
   onClose: () => void;
   onAutoSelect: () => void;
+  /** The mouse moved onto the tab. */
+  onHover: () => void;
 }
 
 /** One tab in the switcher's list. */
@@ -42,6 +55,11 @@ export function TabRow(props: TabRowProps): JSX.Element {
         [styles.sleeping as string]: props.details.sleeping && props.tab.sleeping,
       }}
       onClick={() => props.onChoose()}
+      onPointerEnter={() => props.onHover()}
+      onMouseDown={preventMiddleClickScroll}
+      onAuxClick={(event) => {
+        if (event.button === MIDDLE_BUTTON) props.onClose();
+      }}
     >
       <img class={styles.favicon} src={faviconUrl(props.tab.url, props.compact ? 16 : 20)} alt="" />
       <div class={styles.text}>
@@ -67,7 +85,7 @@ export function TabRow(props: TabRowProps): JSX.Element {
         }}
       />
       <Show when={props.selected && props.autoSelectSeconds}>
-        {(seconds) => <AutoSelectLine seconds={seconds()} onEnd={props.onAutoSelect} />}
+        {(seconds) => <AutoSelectLine seconds={seconds()} round={props.autoSelectRound} onEnd={props.onAutoSelect} />}
       </Show>
     </div>
   );

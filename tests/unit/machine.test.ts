@@ -1,13 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { FIELD, type Start, type SwitcherEvent, start, step } from '../../lib/switcher/machine';
 
-const list: Start = { count: 5, hasField: false, stayOpen: false, direction: 'next' };
-const withSearch: Start = { ...list, hasField: true };
+const list: Start = { count: 5, stayOpen: false, direction: 'next' };
+const openSearch = { type: 'openSearch' } as const;
 
 function run(from: Start, ...events: SwitcherEvent[]) {
   let current = { state: start(from) } as ReturnType<typeof step>;
   for (const event of events) current = step(current.state, event);
   return current;
+}
+
+/** The user clicked the search field. */
+function searching(from: Start, ...events: SwitcherEvent[]) {
+  return run(from, openSearch, ...events);
 }
 
 describe('opening', () => {
@@ -24,8 +29,8 @@ describe('opening', () => {
     expect(start({ ...list, count: 1, direction: 'previous' }).selected).toBe(0);
   });
 
-  it('selects the search field when there is one', () => {
-    expect(start(withSearch).selected).toBe(FIELD);
+  it('never starts on the search field', () => {
+    expect(start(list)).toMatchObject({ selected: 1, searching: false });
   });
 });
 
@@ -36,27 +41,32 @@ describe('moving', () => {
     expect(run(list, { type: 'previous' }, { type: 'previous' }).state.selected).toBe(4);
   });
 
-  it('goes from the search field to the previous tab, or to the first result once something is typed', () => {
-    expect(run(withSearch, { type: 'next' }).state.selected).toBe(1);
-    expect(run(withSearch, { type: 'results', count: 2, filtered: true }, { type: 'next' }).state.selected).toBe(0);
+  it('never passes through the search field before the user searches', () => {
+    expect(run(list, { type: 'previous' }, { type: 'previous' }).state.selected).toBe(4);
   });
 
-  it('passes through the search field going round', () => {
-    expect(run(withSearch, { type: 'previous' }).state.selected).toBe(4);
-    const lastTab = run(withSearch, { type: 'previous' }).state;
-    expect(step(lastTab, { type: 'next' }).state.selected).toBe(FIELD);
-    const firstTab = run(withSearch, { type: 'results', count: 2, filtered: true }, { type: 'next' }).state;
-    expect(step(firstTab, { type: 'previous' }).state.selected).toBe(FIELD);
-  });
-
-  it('shows and selects the search field from the footer, also when Search is off', () => {
-    const state = run(list, { type: 'openSearch' }).state;
-    expect(state).toMatchObject({ hasField: true, selected: FIELD });
+  it('starts searching from a click on the search field: selected, and the switcher stays open', () => {
+    const state = searching(list).state;
+    expect(state).toMatchObject({ searching: true, stayOpen: true, selected: FIELD });
     expect(step(state, { type: 'release' }).effect).toBeUndefined();
   });
 
+  it('goes from the search field to the previous tab, or to the first result once something is typed', () => {
+    expect(searching(list, { type: 'next' }).state.selected).toBe(1);
+    expect(searching(list, { type: 'results', count: 2, filtered: true }, { type: 'next' }).state.selected).toBe(0);
+  });
+
+  it('passes through the search field going round, while searching', () => {
+    expect(searching(list, { type: 'previous' }).state.selected).toBe(4);
+    const lastTab = searching(list, { type: 'previous' }).state;
+    expect(step(lastTab, { type: 'next' }).state.selected).toBe(FIELD);
+    const firstTab = searching(list, { type: 'results', count: 2, filtered: true }, { type: 'next' }).state;
+    expect(step(firstTab, { type: 'previous' }).state.selected).toBe(FIELD);
+  });
+
   it('stays on the search field when nothing matches', () => {
-    expect(run(withSearch, { type: 'results', count: 0, filtered: true }, { type: 'next' }).state.selected).toBe(FIELD);
+    const typed = { type: 'results', count: 0, filtered: true } as const;
+    expect(searching(list, typed, { type: 'next' }).state.selected).toBe(FIELD);
   });
 });
 
@@ -72,11 +82,10 @@ describe('moving in the grid', () => {
     expect(run(grid, { type: 'jump', by: -5 }).state.selected).toBe(1);
   });
 
-  it('goes up from the first row to the search field, and down from it to the tabs', () => {
-    const search = { ...grid, hasField: true };
-    expect(run(search, { type: 'jump', by: 5 }).state.selected).toBe(1);
-    expect(run(search, { type: 'jump', by: 5 }, { type: 'jump', by: -5 }).state.selected).toBe(FIELD);
-    expect(run(search, { type: 'jump', by: -5 }).state.selected).toBe(FIELD);
+  it('goes up from the first row to the search field while searching, and down from it to the tabs', () => {
+    expect(searching(grid, { type: 'jump', by: 5 }).state.selected).toBe(1);
+    expect(searching(grid, { type: 'jump', by: 5 }, { type: 'jump', by: -5 }).state.selected).toBe(FIELD);
+    expect(run(grid, { type: 'jump', by: -5 }).state.selected).toBe(1);
   });
 });
 
@@ -96,23 +105,21 @@ describe('opening a tab', () => {
     expect(run(stay, { type: 'release' }, { type: 'choose', index: 3 }).effect).toEqual({ type: 'open', index: 3 });
   });
 
-  it('stays open on release while the search field is selected', () => {
-    expect(run(withSearch, { type: 'release' }).effect).toBeUndefined();
-  });
-
-  it('opens the selected tab on release once Alt+Y moved from the search field to the tabs', () => {
-    expect(run(withSearch, { type: 'next' }, { type: 'release' }).effect).toEqual({ type: 'open', index: 1 });
+  it('stays open on release while searching, also on a tab, until Enter or a click', () => {
+    expect(searching(list, { type: 'next' }, { type: 'release' }).effect).toBeUndefined();
+    expect(searching(list, { type: 'next' }, { type: 'confirm' }).effect).toEqual({ type: 'open', index: 1 });
   });
 
   it('opens the first result on Enter in the search field', () => {
     const typed = { type: 'results', count: 3, filtered: true } as const;
-    expect(run(withSearch, typed, { type: 'confirm' }).effect).toEqual({ type: 'open', index: 0 });
-    expect(run(withSearch, { type: 'results', count: 0, filtered: true }, { type: 'confirm' }).effect).toBeUndefined();
+    expect(searching(list, typed, { type: 'confirm' }).effect).toEqual({ type: 'open', index: 0 });
+    const none = { type: 'results', count: 0, filtered: true } as const;
+    expect(searching(list, none, { type: 'confirm' }).effect).toBeUndefined();
   });
 
   it('opens the selected tab when the auto-select line runs out, never from the search field', () => {
     expect(run(list, { type: 'next' }, { type: 'autoSelect' }).effect).toEqual({ type: 'open', index: 2 });
-    expect(run(withSearch, { type: 'autoSelect' }).effect).toBeUndefined();
+    expect(searching(list, { type: 'autoSelect' }).effect).toBeUndefined();
   });
 
   it('ignores a click outside the tabs shown', () => {

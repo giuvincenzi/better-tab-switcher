@@ -21,6 +21,7 @@ export function Icon(props: IconProps): JSX.Element {
       stroke-width="2"
       stroke-linecap="round"
       stroke-linejoin="round"
+      data-icon={props.name}
       role={props.label ? 'img' : undefined}
       aria-label={props.label}
       aria-hidden={props.label ? undefined : 'true'}

@@ -11,7 +11,7 @@ test.describe('extension @setup', () => {
     expect(manifest.content_scripts).toBeUndefined();
     expect(manifest.optional_host_permissions).toEqual(['<all_urls>']);
     expect(manifest.permissions.sort()).toEqual(
-      ['activeTab', 'favicon', 'scripting', 'storage', 'system.display', 'tabGroups', 'tabs'].sort(),
+      ['activeTab', 'favicon', 'scripting', 'storage', 'tabGroups', 'tabs'].sort(),
     );
   });
 

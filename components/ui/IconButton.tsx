@@ -4,7 +4,7 @@ import styles from './IconButton.module.css';
 
 interface IconButtonProps {
   icon: IconName;
-  /** What the button does: its accessible name and tooltip. */
+  /** What the button does: its accessible name. */
   label: string;
   size?: 'small' | 'medium';
   class?: string;
@@ -18,7 +18,6 @@ export function IconButton(props: IconButtonProps): JSX.Element {
       type="button"
       class={`${styles.button} ${props.size === 'small' ? styles.small : ''} ${props.class ?? ''}`}
       aria-label={props.label}
-      title={props.label}
       onClick={(event) => props.onClick(event)}
     >
       <Icon name={props.icon} size={props.size === 'small' ? 12 : 14} />

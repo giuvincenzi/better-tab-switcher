@@ -43,7 +43,7 @@ const PICTURE_WAIT_MS = 1000;
 
 /** The switcher: its rules are the state machine's (lib/switcher/machine.ts); here they meet the keys and the UI. */
 export function Switcher(props: SwitcherProps): JSX.Element {
-  const { settings, fromClick, direction, shortcuts } = props.snapshot;
+  const { settings, fromIcon, direction, shortcuts } = props.snapshot;
   const [tabs, setTabs] = createSignal(props.snapshot.tabs);
   const [query, setQuery] = createSignal('');
   const shown = createMemo<ShownTab[]>(() =>
@@ -55,20 +55,26 @@ export function Switcher(props: SwitcherProps): JSX.Element {
   const [state, setState] = createSignal(
     start({
       count: shown().length,
-      hasField: settings.search,
-      stayOpen: settings.stayOpen || fromClick || !props.canSeeRelease,
+      stayOpen: settings.stayOpen || fromIcon || !props.canSeeRelease,
       direction,
     }),
   );
   // Shown after the delay: a quick tap opens the previous tab before the switcher ever appears. Also not before the
   // page's picture is taken, or the switcher would be in it; never later than PICTURE_WAIT_MS all the same.
-  const [delayOver, setDelayOver] = createSignal(fromClick || settings.delayMs === 0);
+  const [delayOver, setDelayOver] = createSignal(fromIcon || settings.delayMs === 0);
   const [waitOver, setWaitOver] = createSignal(!props.snapshot.waitForPicture);
   const visible = () => delayOver() && (waitOver() || props.pictureTaken());
   const grid = settings.view === 'grid';
   const columns = () => (grid ? gridColumns(settings, shown().length) : 1);
   const now = Date.now();
   const language = browser.i18n.getUILanguage();
+  // The search field shows with Search on, and while the user searches (the footer's search button shows it then).
+  const fieldShown = () => settings.search || state().searching;
+  // While the user searches, the tabs keep the height they had: the switcher doesn't jump as results come and go.
+  const [resultsHeight, setResultsHeight] = createSignal<number>();
+  // The auto-select line starts again each time the mouse moves onto another tab.
+  const [autoSelectRound, setAutoSelectRound] = createSignal(0);
+  let results: HTMLDivElement | undefined;
 
   function dispatch(event: SwitcherEvent) {
     const result = step(state(), event);
@@ -79,6 +85,12 @@ export function Switcher(props: SwitcherProps): JSX.Element {
     } else if (result.effect?.type === 'close') {
       props.onClose();
     }
+  }
+
+  function startSearching() {
+    if (state().searching) return;
+    setResultsHeight(results?.offsetHeight);
+    dispatch({ type: 'openSearch' });
   }
 
   function search(value: string) {
@@ -127,7 +139,7 @@ export function Switcher(props: SwitcherProps): JSX.Element {
   });
 
   const compact = !grid && settings.compact;
-  // The sizes of lib/switcher/sizes.ts, for the CSS: the switcher's own window is made with the same ones.
+  // The sizes of lib/switcher/sizes.ts, for the CSS.
   const panelSizes = () => {
     const list = compact ? sizes.compactList : sizes.list;
     return {
@@ -152,40 +164,51 @@ export function Switcher(props: SwitcherProps): JSX.Element {
   const hint = () => {
     const { next, previous } = shortcuts;
     if (state().stayOpen || next === '') return i18n.t('Switcher_HintStayOpen');
-    if (state().selected === FIELD) return i18n.t('Switcher_HintSearch', [next]);
     return previous === '' ? i18n.t('Switcher_HintNextOnly', [next]) : i18n.t('Switcher_HintKeys', [next, previous]);
   };
 
   return (
     <div class={styles.backdrop} classList={{ [styles.hidden as string]: !visible() }}>
       <div ref={panel} class={styles.panel} classList={{ [styles.compact as string]: compact }} style={panelSizes()}>
-        <Show when={state().hasField}>
-          <SearchField value={query()} selected={state().selected === FIELD} compact={compact} onInput={search} />
+        <Show when={fieldShown()}>
+          <SearchField
+            value={query()}
+            selected={state().selected === FIELD}
+            compact={compact}
+            onFocus={startSearching}
+            onInput={search}
+          />
         </Show>
-        <TabList
-          view={settings.view}
-          tabs={shown()}
-          selected={state().selected}
-          focused={state().selected !== FIELD}
-          compact={compact}
-          columns={columns()}
-          rows={visibleRows(settings, shown().length)}
-          details={settings.details}
-          previews={settings.previews ? props.previews() : undefined}
-          now={now}
-          language={language}
-          autoSelectSeconds={settings.autoSelect ? settings.autoSelectSeconds : undefined}
-          onChoose={(index) => dispatch({ type: 'choose', index })}
-          onClose={closeTab}
-          onAutoSelect={() => dispatch({ type: 'autoSelect' })}
-        />
-        <Show when={state().hasField && shown().length === 0}>
-          <p class={styles.noMatch}>{i18n.t('Switcher_NoMatch')}</p>
-        </Show>
+        <div ref={results} style={{ 'min-height': resultsHeight() ? `${resultsHeight()}px` : undefined }}>
+          <TabList
+            view={settings.view}
+            tabs={shown()}
+            selected={state().selected}
+            focused={state().selected !== FIELD}
+            compact={compact}
+            columns={columns()}
+            rows={visibleRows(settings, shown().length)}
+            details={settings.details}
+            previews={settings.previews ? props.previews() : undefined}
+            now={now}
+            language={language}
+            autoSelectSeconds={settings.autoSelect ? settings.autoSelectSeconds : undefined}
+            autoSelectRound={autoSelectRound()}
+            onChoose={(index) => dispatch({ type: 'choose', index })}
+            onClose={closeTab}
+            onAutoSelect={() => dispatch({ type: 'autoSelect' })}
+            onHover={(index) => {
+              if (index !== state().selected) setAutoSelectRound((round) => round + 1);
+            }}
+          />
+          <Show when={state().filtered && shown().length === 0}>
+            <p class={styles.noMatch}>{i18n.t('Switcher_NoMatch')}</p>
+          </Show>
+        </div>
         <SwitcherFooter
           hint={hint()}
           compact={compact}
-          onSearch={() => dispatch({ type: 'openSearch' })}
+          onSearch={fieldShown() ? undefined : startSearching}
           onSettings={() => props.onSettings()}
         />
       </div>

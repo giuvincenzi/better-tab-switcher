@@ -93,23 +93,92 @@ test.describe('switcher theme @switcher', () => {
   }
 });
 
-test.describe('switcher in its own window @switcher', () => {
-  test('opens in a window of its own over a Chrome page, and switches from there', async ({
-    context,
-    serviceWorker,
-  }) => {
+test.describe("Chrome's own pages @switcher", () => {
+  test('does nothing on a page Chrome keeps extensions out of', async ({ context, serviceWorker }) => {
     await openPages(context, ['alpha', 'beta']);
     const chromePage = await context.newPage();
     await chromePage.goto('chrome://version');
     await chromePage.bringToFront();
-    const opened = context.waitForEvent('page', (page) => page.url().endsWith('/switcher-window.html'));
     await showSwitcher(serviceWorker);
-    const window = await opened;
-    const listed = window.locator('[role="option"]');
-    await expect(listed.first()).toContainText('About Version');
-    await expect(window.locator('[role="option"][aria-selected="true"]')).toContainText('beta');
-    await window.keyboard.press('Enter');
-    await expect.poll(() => activeTitle(serviceWorker)).toBe('beta');
-    await expect.poll(() => window.isClosed()).toBe(true);
+    expect(await activeTitle(serviceWorker)).toBe('About Version');
+    expect(context.pages().map((page) => page.url())).not.toContainEqual(
+      expect.stringContaining('chrome-extension://'),
+    );
+  });
+});
+
+test.describe('one switcher at a time @switcher', () => {
+  test('closes when another tab comes to the front, and opens again where the user is', async ({
+    context,
+    serviceWorker,
+  }) => {
+    const [alpha, beta, gamma] = (await openPages(context, ['alpha', 'beta', 'gamma'])) as [Page, Page, Page];
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    await expect(rows(gamma)).toHaveCount(3);
+    await beta.bringToFront();
+    await expect(rows(gamma)).toHaveCount(0);
+    await showSwitcher(serviceWorker);
+    await expect(rows(beta)).toHaveCount(3);
+    await expect(rows(alpha)).toHaveCount(0);
+  });
+
+  test('opens again from the toolbar icon, never stays lost', async ({ context, serviceWorker }) => {
+    const [, , gamma] = (await openPages(context, ['alpha', 'beta', 'gamma'])) as [Page, Page, Page];
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    await expect(rows(gamma)).toHaveCount(3);
+    await expect(gamma.locator('better-tab-switcher')).toHaveCount(1);
+  });
+});
+
+test.describe('switcher over the page @switcher', () => {
+  test("stays above the site's dialogs, popovers and overlays", async ({ context, serviceWorker }) => {
+    const [, current] = await openPages(context, ['alpha', 'beta']);
+    const page = current as Page;
+    await page.evaluate(() => {
+      const overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:white';
+      document.body.append(overlay);
+      const popover = document.createElement('div');
+      popover.popover = 'manual';
+      popover.style.cssText = 'inset:0;width:100vw;height:100vh';
+      document.body.append(popover);
+      popover.showPopover();
+      const dialog = document.createElement('dialog');
+      dialog.style.cssText = 'width:100vw;height:100vh;max-width:none;max-height:none';
+      document.body.append(dialog);
+      dialog.showModal();
+    });
+    await showSwitcher(serviceWorker);
+    await expect(rows(page)).toHaveCount(2);
+    const onTop = await page.evaluate(() => document.elementFromPoint(innerWidth / 2, innerHeight / 2)?.localName);
+    expect(onTop).toBe('better-tab-switcher');
+  });
+});
+
+test.describe('tabs of other windows @switcher', () => {
+  test('opens a tab of another window', async ({ context, serviceWorker }) => {
+    await useSettings(serviceWorker, { scope: 'all' });
+    await openPages(context, ['alpha', 'beta']);
+    // A new window, the last focused one, with a blank tab; then its page goes to the site (Playwright serves the
+    // site's pages it knows).
+    const opened = context.waitForEvent('page');
+    await serviceWorker.evaluate(() => chrome.windows.create({}));
+    const delta = await opened;
+    await delta.goto('https://bts.test/delta');
+    const firstWindow = await serviceWorker.evaluate(
+      async () => (await chrome.tabs.query({ title: 'alpha' }))[0]?.windowId,
+    );
+    await showSwitcher(serviceWorker);
+    await rows(delta).filter({ hasText: 'alpha' }).click();
+    await expect
+      .poll(() =>
+        serviceWorker.evaluate(
+          async (id) => (await chrome.tabs.query({ active: true, windowId: id }))[0]?.title,
+          firstWindow,
+        ),
+      )
+      .toBe('alpha');
+    await expect(rows(delta)).toHaveCount(0);
   });
 });

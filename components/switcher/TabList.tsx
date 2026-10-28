@@ -30,9 +30,13 @@ interface TabListProps {
   now: number;
   language: string;
   autoSelectSeconds?: number;
+  /** Changes when the auto-select line starts again. */
+  autoSelectRound: number;
   onChoose: (index: number) => void;
   onClose: (index: number) => void;
   onAutoSelect: () => void;
+  /** The mouse moved onto a tab. */
+  onHover: (index: number) => void;
 }
 
 /**
@@ -70,6 +74,7 @@ export function TabList(props: TabListProps): JSX.Element {
             onChoose: () => props.onChoose(index()),
             onClose: () => props.onClose(index()),
             onAutoSelect: props.onAutoSelect,
+            onHover: () => props.onHover(index()),
           };
           const selected = () => index() === props.selected;
           const autoSelectSeconds = () => (selected() ? props.autoSelectSeconds : undefined);
@@ -78,11 +83,18 @@ export function TabList(props: TabListProps): JSX.Element {
               {...common}
               selected={selected()}
               autoSelectSeconds={autoSelectSeconds()}
+              autoSelectRound={props.autoSelectRound}
               picture={props.previews?.[shown.tab.id]}
               iconOnly={props.previews === undefined}
             />
           ) : (
-            <TabRow {...common} selected={selected()} autoSelectSeconds={autoSelectSeconds()} compact={props.compact} />
+            <TabRow
+              {...common}
+              selected={selected()}
+              autoSelectSeconds={autoSelectSeconds()}
+              autoSelectRound={props.autoSelectRound}
+              compact={props.compact}
+            />
           );
         }}
       </For>

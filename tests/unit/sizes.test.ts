@@ -1,14 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { defaultSettings, type Settings } from '../../lib/settings/settings';
-import {
-  ADDRESS_TUCK,
-  gridColumns,
-  sizes,
-  switcherSize,
-  tileHeight,
-  tileWidth,
-  visibleRows,
-} from '../../lib/switcher/sizes';
+import { ADDRESS_TUCK, gridColumns, sizes, tileHeight, tileWidth, visibleRows } from '../../lib/switcher/sizes';
 
 const settings = (change: Partial<Settings> = {}): Settings => ({ ...defaultSettings, ...change });
 
@@ -38,14 +30,7 @@ describe('gridColumns', () => {
   });
 });
 
-describe('switcherSize', () => {
-  it('fits the grid: its columns and rows of tiles', () => {
-    const grid = settings({ view: 'grid', gridColumns: 5, gridRows: 3 });
-    const { width, height } = switcherSize(grid, 40);
-    expect(width).toBe(5 * tileWidth + 4 * sizes.grid.tileGap + 2 * sizes.grid.padding);
-    expect(height).toBeGreaterThan(3 * tileHeight(grid));
-  });
-
+describe('tiles', () => {
   it('makes tiles taller for the address and for the last used time', () => {
     const grid = settings({ view: 'grid' });
     const { tileSpace, tileLine } = sizes.grid;
@@ -58,16 +43,5 @@ describe('switcherSize', () => {
 
   it('makes a tile 208 px wide: the preview, its padding and its border', () => {
     expect(tileWidth).toBe(208);
-  });
-
-  it('makes the compact list narrower and lower', () => {
-    const normal = switcherSize(settings({ compact: false }), 10);
-    const compact = switcherSize(settings({ compact: true }), 10);
-    expect(compact.width).toBeLessThan(normal.width);
-    expect(compact.height).toBeLessThan(normal.height);
-  });
-
-  it('makes room for the search field', () => {
-    expect(switcherSize(settings({ search: true }), 10).height).toBeGreaterThan(switcherSize(settings(), 10).height);
   });
 });

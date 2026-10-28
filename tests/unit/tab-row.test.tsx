@@ -39,7 +39,9 @@ function row(props: Partial<TabRowProps> = {}) {
         language="en"
         onChoose={() => undefined}
         onClose={() => undefined}
+        autoSelectRound={0}
         onAutoSelect={() => undefined}
+        onHover={() => undefined}
         {...props}
       />
     ),
@@ -64,21 +66,21 @@ describe('TabRow', () => {
   it('shows the icons of a pinned tab playing audio, by default', () => {
     const element = row({ tab: { ...tab, pinned: true, audible: true } });
     expect(element.getAttribute('aria-label')).toBe('Q4 planning, Pinned, Playing audio');
-    expect(element.querySelector('[title="Pinned"] svg')).not.toBeNull();
-    expect(element.querySelector('[title="Playing audio"] svg')).not.toBeNull();
+    expect(element.querySelector('[data-icon="pin"]')).not.toBeNull();
+    expect(element.querySelector('[data-icon="audio"]')).not.toBeNull();
   });
 
   it('shows a sleeping tab with its icon, greyed', () => {
     const element = row({ tab: { ...tab, sleeping: true } });
-    expect(element.querySelector('[title="Sleeping"]')).not.toBeNull();
+    expect(element.querySelector('[data-icon="sleep"]')).not.toBeNull();
     expect(Number(getComputedStyle(element).opacity)).toBeLessThan(1);
   });
 
   it('hides the icons that are off in the settings', () => {
     const details = { ...defaultSettings.details, pinnedIcon: false, sleeping: false };
     const element = row({ tab: { ...tab, pinned: true, sleeping: true }, details });
-    expect(element.querySelector('[title="Pinned"]')).toBeNull();
-    expect(element.querySelector('[title="Sleeping"]')).toBeNull();
+    expect(element.querySelector('[data-icon="pin"]')).toBeNull();
+    expect(element.querySelector('[data-icon="sleep"]')).toBeNull();
     expect(Number(getComputedStyle(element).opacity)).toBe(1);
   });
 
@@ -101,7 +103,7 @@ describe('TabRow', () => {
 
   it('shows the window of a tab from another window', () => {
     const element = row({ tab: { ...tab, windowLabel: '2' } });
-    expect(element.querySelector('[title="Window 2"]')?.textContent).toBe('2');
+    expect(element.querySelector('[data-icon="window"]')?.parentElement?.textContent).toBe('2');
     expect(element.getAttribute('aria-label')).toBe('Q4 planning, Window 2');
   });
 
@@ -128,5 +130,13 @@ describe('TabRow', () => {
     const element = row({ selected: true, autoSelectSeconds: 0.05, onAutoSelect });
     expect(element.getAttribute('aria-selected')).toBe('true');
     await vi.waitFor(() => expect(onAutoSelect).toHaveBeenCalledOnce());
+  });
+
+  it('closes the tab with a click of the middle button', () => {
+    const onClose = vi.fn();
+    const onChoose = vi.fn();
+    row({ onClose, onChoose }).dispatchEvent(new MouseEvent('auxclick', { button: 1, bubbles: true }));
+    expect(onClose).toHaveBeenCalledOnce();
+    expect(onChoose).not.toHaveBeenCalled();
   });
 });

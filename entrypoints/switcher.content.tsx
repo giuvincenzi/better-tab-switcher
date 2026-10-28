@@ -3,7 +3,7 @@ import { createShadowRootUi, defineContentScript } from '#imports';
 import { mountSwitcher, type SwitcherHandle } from '../components/switcher/mountSwitcher';
 import { onMessage } from '../lib/messages';
 
-// The switcher in a page: injected by the background only when the shortcut is pressed there (not listed in the
+// The switcher in a page: injected by the background only when the switcher is asked for there (not listed in the
 // manifest), drawn in a shadow root so the page's styles never reach it, and removed when it closes.
 export default defineContentScript({
   registration: 'runtime',
@@ -16,11 +16,11 @@ export default defineContentScript({
       remove?.();
       const ui = await createShadowRootUi(ctx, {
         name: 'better-tab-switcher',
-        position: 'modal',
-        zIndex: 2147483647,
+        position: 'inline',
+        anchor: 'body',
         isolateEvents: true,
         onMount(container) {
-          handle = mountSwitcher(container, container, snapshot, document.hasFocus(), () => remove?.());
+          handle = mountSwitcher(container, snapshot, () => remove?.());
         },
         onRemove() {
           handle?.dispose();
@@ -38,6 +38,7 @@ export default defineContentScript({
       if (!handle) throw new Error('No switcher is open in this page.');
       handle.move(direction);
     });
+    onMessage('closeSwitcher', () => remove?.());
     onMessage('previewReady', ({ data: preview }) => handle?.showPreview(preview));
     onMessage('pictureTaken', () => handle?.pictureTaken());
   },
