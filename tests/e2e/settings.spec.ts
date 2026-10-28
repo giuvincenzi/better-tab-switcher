@@ -9,6 +9,7 @@ import {
   selected,
   shortcutText,
   showSwitcher,
+  switcher,
   testBrowser,
 } from './helpers';
 
@@ -24,8 +25,8 @@ test.describe('settings page @settings', () => {
     const page = current as Page;
     await showSwitcher(serviceWorker);
     const opened = context.waitForEvent('page', (tab) => tab.url().endsWith('/options.html'));
-    const switcher = page.locator('better-tab-switcher');
-    await switcher.getByRole('button', { name: 'All settings' }).click();
+    const panel = switcher(page);
+    await panel.getByRole('button', { name: 'All settings' }).click();
     const settings = await opened;
     await expect(settings.getByRole('heading', { name: 'Better Tab Switcher settings' })).toBeVisible();
     await expect(rows(page)).toHaveCount(0);
@@ -41,7 +42,7 @@ test.describe('settings page @settings', () => {
     const page = current as Page;
     await showSwitcher(serviceWorker);
     await expect(rows(page)).toHaveCount(2);
-    await expect(page.locator('better-tab-switcher [role="listbox"]')).toHaveCSS('display', 'grid');
+    await expect(switcher(page).locator('[role="listbox"]')).toHaveCSS('display', 'grid');
   });
 
   test('follows the theme chosen in it', async ({ context, extensionId }) => {
@@ -84,9 +85,9 @@ test.describe('settings page @settings', () => {
     const page = current as Page;
     await showSwitcher(serviceWorker, 'next', 'icon');
     await expect(rows(page)).toHaveCount(2);
-    const switcher = page.locator('better-tab-switcher');
-    await expect(switcher.getByRole('toolbar')).toHaveCount(0);
-    await expect(switcher.getByRole('searchbox')).toHaveCount(0);
+    const panel = switcher(page);
+    await expect(panel.getByRole('toolbar')).toHaveCount(0);
+    await expect(panel.getByRole('searchbox')).toHaveCount(0);
   });
 });
 
@@ -98,7 +99,7 @@ test.describe("the switcher's toolbar @settings", () => {
     const [, current] = await openPages(context, ['alpha', 'beta']);
     const page = current as Page;
     await showSwitcher(serviceWorker, 'next', 'icon');
-    const address = page.locator('better-tab-switcher').getByRole('button', { name: 'Website address' });
+    const address = switcher(page).getByRole('button', { name: 'Website address' });
     await expect(address).toHaveAttribute('aria-pressed', 'false');
     await expect(selected(page)).toHaveAccessibleName('alpha');
     await address.click();

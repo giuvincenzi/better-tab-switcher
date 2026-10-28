@@ -1,5 +1,12 @@
 import { type Browser, browser, storage } from '#imports';
-import { type Direction, onMessage, type Preview, type SwitcherSnapshot, sendMessage } from '../messages';
+import {
+  type Direction,
+  type FrameShown,
+  onMessage,
+  type Preview,
+  type SwitcherSnapshot,
+  sendMessage,
+} from '../messages';
 import { type Previews, wantsPreviews } from '../previews/service';
 import { loadPreviews } from '../previews/store';
 import { loadSettings } from '../settings/store';
@@ -15,19 +22,19 @@ export interface SwitcherRequest {
 }
 
 /**
- * The open switcher: the tab it is shown in, or its own window (on Chrome's pages) and the window it came from. The
- * presenter is the only one that knows it; it is kept in storage.session because Chrome can stop the background
- * between two key presses.
+ * The open switcher: the tab it is shown in, or its own window (on Chrome's pages), its tab and the window it came
+ * from. The switcher is sent its messages in its tab (lib/messages.ts). The presenter is the only one that knows it; it
+ * is kept in storage.session because Chrome can stop the background between two key presses.
  */
 type OpenSwitcher =
   | { in: 'page'; tabId: number; windowId: number }
-  | { in: 'window'; windowId: number; fromWindowId: number };
+  | { in: 'window'; windowId: number; tabId: number; fromWindowId: number };
 
 const openSwitcher = storage.defineItem<OpenSwitcher | null>('session:openSwitcher', { fallback: null });
 /** The tabs for the switcher's window, until the window asks for them (getSnapshot). */
 const windowSnapshot = storage.defineItem<SwitcherSnapshot | null>('session:windowSnapshot', { fallback: null });
 
-/** The switcher's script, injected into a page only when it opens there. */
+/** The holder of the switcher's frame, injected into a page only when the switcher opens there. */
 const SWITCHER_SCRIPT = '/content-scripts/switcher.js';
 /** The switcher's own window, where a page can't host it. */
 const SWITCHER_WINDOW = '/switcher-window.html';
@@ -69,8 +76,7 @@ async function handleRequest(request: SwitcherRequest, previews: Previews): Prom
 export async function showPreview(tabId: number, picture: string): Promise<void> {
   const open = await openSwitcher.getValue();
   const preview: Preview = { tabId, picture };
-  if (open?.in === 'page') await sendMessage('previewReady', preview, open.tabId).catch(() => undefined);
-  else if (open) await sendMessage('previewReady', preview).catch(() => undefined);
+  if (open) await answered(sendMessage('previewReady', preview, open.tabId)).catch(() => undefined);
 }
 
 /** Answers the switcher's messages, and closes or forgets the switcher when its tab or its window goes away. */
@@ -100,6 +106,12 @@ export function listenToSwitcher(): void {
   // The user went to another window (or another program): the focus stays there.
   onMessage('switcherLeft', async () => {
     await forget();
+  });
+  // A key the page got for the switcher in it, while its frame didn't have the focus.
+  onMessage('keyInPage', async ({ data: key, sender }) => {
+    const open = await openSwitcher.getValue();
+    if (open?.in === 'page' && open.tabId === sender.tab?.id)
+      await answered(sendMessage('pressKey', key, open.tabId)).catch(() => undefined);
   });
   onMessage('getPreviews', ({ data: tabIds }) => loadPreviews(tabIds));
   onMessage('openSettings', async () => {
@@ -134,16 +146,24 @@ function isWhereTheUserIs(open: OpenSwitcher, current: Browser.tabs.Tab | undefi
 export const PAGE_ANSWER_MS = 1000;
 
 /**
- * How long the switcher's script has to be put into a page the first time. It took at most 23 ms on GitHub's Linux,
- * Windows and macOS machines, in Chromium and Microsoft Edge: the limit is far above it, so a page that is only slow is
- * never taken for one that hangs, and it is reached only by a page that really doesn't answer.
+ * How long each step of putting the switcher into a page the first time can take: its frame's holder (the script), then
+ * the frame. The script took at most 23 ms on GitHub's Linux, Windows and macOS machines, in Chromium and Microsoft
+ * Edge; a whole first opening with the frame, at most 360 ms on a computer slowed down 6 times. The limit is far above
+ * both, so a page that is only slow is never taken for one that hangs.
  */
-export const SCRIPT_INJECTION_MS = 5000;
+export const FIRST_TIME_MS = 5000;
 
-/** What a page was sent, or a failure when the page doesn't answer within the limit (PAGE_ANSWER_MS by default). */
+/** A page that doesn't answer: it hangs, or is paused. */
+class NoAnswer extends Error {
+  constructor() {
+    super('The page did not answer.');
+  }
+}
+
+/** What a page was sent, or NoAnswer when the page doesn't answer within the limit (PAGE_ANSWER_MS by default). */
 function answered<T>(sent: Promise<T>, limitMs = PAGE_ANSWER_MS): Promise<T> {
   return new Promise((resolve, reject) => {
-    const late = setTimeout(() => reject(new Error('The page did not answer.')), limitMs);
+    const late = setTimeout(() => reject(new NoAnswer()), limitMs);
     sent.then(
       (value) => {
         clearTimeout(late);
@@ -159,11 +179,7 @@ function answered<T>(sent: Promise<T>, limitMs = PAGE_ANSWER_MS): Promise<T> {
 
 /** Moves the open switcher's selection. False when it is not there any more (its page closed, reloaded or hangs). */
 function move(open: OpenSwitcher, direction: Direction): Promise<boolean> {
-  const sent =
-    open.in === 'page'
-      ? answered(sendMessage('moveSwitcher', direction, open.tabId))
-      : sendMessage('moveSwitcher', direction);
-  return sent.then(
+  return answered(sendMessage('moveSwitcher', direction, open.tabId)).then(
     () => true,
     () => false,
   );
@@ -208,29 +224,34 @@ async function showInPage(current: Browser.tabs.Tab, snapshot: SwitcherSnapshot,
 }
 
 /**
- * Sends the tabs to the page's switcher, injecting its script the first time. False when Chrome doesn't let it in or
- * the page doesn't answer: then the page is told to close what it may show once it answers again (it handles its
- * messages in order), so no switcher shows late there.
+ * Shows the switcher's frame in the page and sends it the tabs, then the keys the page got meanwhile. False when Chrome
+ * doesn't let it in, the page keeps scripts out of its frames, or the page doesn't answer: then the page is told to
+ * hide what it may show once it answers again (it handles its messages in order), so no switcher shows late there.
  */
 async function sendSnapshot(tabId: number, snapshot: SwitcherSnapshot): Promise<boolean> {
-  const show = () => answered(sendMessage('showSwitcher', snapshot, tabId));
   try {
-    await show();
-    return true;
-  } catch {
-    // Not injected yet in this page, or the page doesn't answer.
-  }
-  try {
-    await answered(
-      browser.scripting.executeScript({ target: { tabId }, files: [SWITCHER_SCRIPT] }),
-      SCRIPT_INJECTION_MS,
-    );
-    await show();
+    const { canSeeRelease, keys } = await showFrame(tabId);
+    await answered(sendMessage('showSwitcher', { ...snapshot, canSeeRelease }, tabId));
+    for (const key of keys) await answered(sendMessage('pressKey', key, tabId));
     return true;
   } catch {
     sendMessage('closeSwitcher', undefined, tabId).catch(() => undefined);
+    sendMessage('hideFrame', undefined, tabId).catch(() => undefined);
     return false;
   }
+}
+
+/** Shows the switcher's frame over the page, putting its holder in the page the first time. */
+async function showFrame(tabId: number): Promise<FrameShown> {
+  const show = (limitMs?: number) => answered(sendMessage('showFrame', undefined, tabId), limitMs);
+  try {
+    return await show();
+  } catch (error) {
+    // The page hangs: nothing more is tried there. Otherwise the holder isn't in the page yet.
+    if (error instanceof NoAnswer) throw error;
+  }
+  await answered(browser.scripting.executeScript({ target: { tabId }, files: [SWITCHER_SCRIPT] }), FIRST_TIME_MS);
+  return show(FIRST_TIME_MS);
 }
 
 /**
@@ -252,20 +273,31 @@ async function showInWindow(fromWindowId: number, snapshot: SwitcherSnapshot): P
     focused: true,
     ...centerOn(centeredOn, firstWindowSize(snapshot.settings, snapshot.tabs.length, centeredOn)),
   });
-  if (created?.id !== undefined) await openSwitcher.setValue({ in: 'window', windowId: created.id, fromWindowId });
+  const tabId = created?.tabs?.[0]?.id;
+  if (created?.id !== undefined && tabId !== undefined)
+    await openSwitcher.setValue({ in: 'window', windowId: created.id, tabId, fromWindowId });
 }
 
-/** The switcher is done: it is no longer open, and its own window, if it has one, closes. */
+/**
+ * The switcher is done (it is gone already): it is no longer open, and its frame hides, or its own window closes. The
+ * frame hides while the background goes on: the tab chosen never waits for the page it was chosen in.
+ */
 async function forget(): Promise<OpenSwitcher | null> {
   const open = await openSwitcher.getValue();
   await openSwitcher.setValue(null);
-  if (open?.in === 'window') await browser.windows.remove(open.windowId).catch(() => undefined);
+  if (open?.in === 'page') void answered(sendMessage('hideFrame', undefined, open.tabId)).catch(() => undefined);
+  else if (open) await browser.windows.remove(open.windowId).catch(() => undefined);
   return open;
 }
 
 /** Closes the open switcher, for a new one; in a page, it is gone already when the page closed or reloaded. */
 async function closeSwitcher(open: OpenSwitcher): Promise<void> {
   await openSwitcher.setValue(null);
-  if (open.in === 'page') await answered(sendMessage('closeSwitcher', undefined, open.tabId)).catch(() => undefined);
+  if (open.in === 'page')
+    await Promise.all(
+      (['closeSwitcher', 'hideFrame'] as const).map((type) =>
+        answered(sendMessage(type, undefined, open.tabId)).catch(() => undefined),
+      ),
+    );
   else await browser.windows.remove(open.windowId).catch(() => undefined);
 }

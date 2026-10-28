@@ -2,16 +2,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { browser, fakeBrowser } from '#imports';
 import type { SwitcherSnapshot } from '../../lib/messages';
 import {
+  FIRST_TIME_MS,
   listenToSwitcher,
   PAGE_ANSWER_MS,
   requestSwitcher,
-  SCRIPT_INJECTION_MS,
   showPreview,
 } from '../../lib/presenter/presenter';
 import { saveSettings } from '../../lib/settings/store';
 import {
   deliverTo,
   FIRST_POPUP_ID,
+  FIRST_POPUP_TAB_ID,
   fakeChrome,
   newWorld,
   normalWindow,
@@ -24,7 +25,7 @@ import {
 const messages = await vi.hoisted(async () => (await import('./background-world')).fakeMessages());
 vi.mock('../../lib/messages', () => ({ sendMessage: messages.sendMessage, onMessage: messages.onMessage }));
 
-/** The messages of this type the switcher received, with the tab each went to (none: the switcher's window). */
+/** The messages of this type the switcher (or the frame's holder) received, with the tab each went to. */
 function sent(type: string) {
   return world.received.filter((m) => m.type === type).map(({ data, tabId }) => ({ data, tabId }));
 }
@@ -67,6 +68,52 @@ afterEach(() => {
 });
 
 describe('the switcher in a web page', () => {
+  it('shows its frame over the page, then sends it the tabs, telling it the page has the focus', async () => {
+    await shortcut();
+    expect(world.received.map((m) => [m.type, m.tabId])).toEqual([
+      ['showFrame', 11],
+      ['showSwitcher', 11],
+    ]);
+    expect(firstSnapshot().canSeeRelease).toBe(true);
+  });
+
+  it('gives the switcher, once it is there, the keys the page got while its frame was loading, in order', async () => {
+    const altUp = { type: 'keyup', key: 'Alt', altKey: false, ctrlKey: false, metaKey: false, isComposing: false };
+    const down = { ...altUp, type: 'keydown', key: 'ArrowDown', altKey: true };
+    world.keysWhileLoading.set(11, [down, altUp]);
+    await shortcut();
+    expect(world.received.map((m) => m.type)).toEqual(['showFrame', 'showSwitcher', 'pressKey', 'pressKey']);
+    expect(sent('pressKey')).toEqual([
+      { data: down, tabId: 11 },
+      { data: altUp, tabId: 11 },
+    ]);
+  });
+
+  it('opens in its own window on a page that keeps scripts out of its frames, and hides the frame there', async () => {
+    world.sandboxed.add(11);
+    await shortcut();
+    expect(browser.windows.create).toHaveBeenCalledTimes(1);
+    expect(sent('hideFrame')).toEqual([{ data: undefined, tabId: 11 }]);
+  });
+
+  it('sends each message to one tab, never to every page of the extension (each page keeps a hidden frame)', async () => {
+    await shortcut();
+    await shortcut('previous');
+    await showPreview(12, 'data:image/webp;base64,BBB');
+    world.currentTabId = 12;
+    await icon();
+    world.tabs.push(tab(13, 1, { url: 'chrome://settings/' }));
+    world.currentTabId = 13;
+    await shortcut();
+    await shortcut();
+    await showPreview(12, 'data:image/webp;base64,CCC');
+    const calls = messages.sendMessage.mock.calls;
+    expect(calls.map(([type]) => type)).toEqual(
+      expect.arrayContaining(['showSwitcher', 'moveSwitcher', 'previewReady', 'closeSwitcher', 'hideFrame']),
+    );
+    expect(calls.filter(([, , tabId]) => tabId === undefined)).toEqual([]);
+  });
+
   it('opens in the current page with the tabs of its window, the current one first, going the way asked', async () => {
     await shortcut('previous');
     const [shown] = sent('showSwitcher');
@@ -191,17 +238,25 @@ describe('a page that hangs (a script that never ends)', () => {
         )) as never,
     );
     await waited(shortcut());
-    expect(PAGE_ANSWER_MS * 2).toBeLessThan(SCRIPT_INJECTION_MS);
+    expect(PAGE_ANSWER_MS * 2).toBeLessThan(FIRST_TIME_MS);
     expect(sent('showSwitcher').map((m) => m.tabId)).toEqual([11]);
     expect(browser.windows.create).not.toHaveBeenCalled();
+  });
+
+  it('puts nothing more into a page that hangs: no script, and the switcher in its own window after one wait', async () => {
+    world.hung.add(11);
+    const request = shortcut();
+    await vi.advanceTimersByTimeAsync(PAGE_ANSWER_MS);
+    await request;
+    expect(browser.scripting.executeScript).not.toHaveBeenCalled();
+    expect(browser.windows.create).toHaveBeenCalledTimes(1);
   });
 
   it('tells the page it gave up on to close what it shows, so nothing shows there once it answers again', async () => {
     world.hung.add(11);
     await waited(shortcut());
     const toThePage = messages.sendMessage.mock.calls.filter(([, , tabId]) => tabId === 11).map(([type]) => type);
-    expect(toThePage.at(-1)).toBe('closeSwitcher');
-    expect(toThePage).toContain('showSwitcher');
+    expect(toThePage).toEqual(['showFrame', 'closeSwitcher', 'hideFrame']);
   });
 });
 
@@ -275,7 +330,7 @@ describe('the switcher in a window of its own', () => {
     world.tabs = [tab(11, 1, { url: 'chrome://settings/' }), tab(12, 1)];
     await shortcut();
     await shortcut('previous');
-    expect(sent('moveSwitcher')).toEqual([{ data: 'previous', tabId: undefined }]);
+    expect(sent('moveSwitcher')).toEqual([{ data: 'previous', tabId: FIRST_POPUP_TAB_ID }]);
     expect(browser.windows.create).toHaveBeenCalledTimes(1);
     expect(browser.windows.remove).not.toHaveBeenCalled();
   });
@@ -303,7 +358,7 @@ describe('the switcher in a window of its own', () => {
     await Promise.all([shortcut(), shortcut('previous')]);
     expect(browser.windows.create).toHaveBeenCalledTimes(1);
     expect(browser.windows.remove).not.toHaveBeenCalled();
-    expect(sent('moveSwitcher')).toEqual([{ data: 'previous', tabId: undefined }]);
+    expect(sent('moveSwitcher')).toEqual([{ data: 'previous', tabId: FIRST_POPUP_TAB_ID }]);
   });
 });
 
@@ -355,7 +410,7 @@ describe('new previews', () => {
     await shortcut();
     await showPreview(12, 'data:image/webp;base64,BBB');
     expect(sent('previewReady')).toEqual([
-      { data: { tabId: 12, picture: 'data:image/webp;base64,BBB' }, tabId: undefined },
+      { data: { tabId: 12, picture: 'data:image/webp;base64,BBB' }, tabId: FIRST_POPUP_TAB_ID },
     ]);
   });
 

@@ -9,6 +9,8 @@ import {
   rows,
   selected,
   showSwitcher,
+  switcher,
+  switcherFrame,
   useSettings,
 } from './helpers';
 
@@ -39,6 +41,24 @@ test.describe('how the switcher switches @switching', () => {
     await expect.poll(() => activeTitle(serviceWorker)).toBe('alpha');
   });
 
+  test('takes the keys the page gets while its frame has no focus: the arrows move, letting go of Alt opens the tab', async ({
+    context,
+    serviceWorker,
+  }) => {
+    const [, , current] = await openPages(context, ['alpha', 'beta', 'gamma']);
+    const page = current as Page;
+    await page.keyboard.down('Alt');
+    await showSwitcher(serviceWorker);
+    await expect(selected(page)).toHaveAccessibleName('beta');
+    // The focus goes back to the page, as it is while the frame loads the first time: the page gets the keys.
+    await switcherFrame(page)?.evaluate(() => window.parent.focus());
+    await expect.poll(() => page.evaluate(() => document.activeElement?.localName)).not.toBe('better-tab-switcher');
+    await page.keyboard.press('ArrowDown');
+    await expect(selected(page)).toHaveAccessibleName('alpha');
+    await page.keyboard.up('Alt');
+    await expect.poll(() => activeTitle(serviceWorker)).toBe('alpha');
+  });
+
   test('opens the selected tab by itself after the Auto-select time', async ({ context, serviceWorker }) => {
     await useSettings(serviceWorker, { autoSelect: true, autoSelectSeconds: 1 });
     const [, , current] = await openPages(context, ['alpha', 'beta', 'gamma']);
@@ -61,7 +81,7 @@ test.describe('how the switcher switches @switching', () => {
     await page.keyboard.down('Alt');
     await showSwitcher(serviceWorker);
     await expect(rows(page)).toHaveCount(3);
-    await expect(page.getByRole('listbox', { name: 'Open tabs, most recent first' })).toBeHidden();
+    await expect(switcher(page).getByRole('listbox', { name: 'Open tabs, most recent first' })).toBeHidden();
     await page.keyboard.up('Alt');
     await expect.poll(() => activeTitle(serviceWorker)).toBe('beta');
     await expect(rows(page)).toHaveCount(0);

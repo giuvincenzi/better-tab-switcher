@@ -1,4 +1,5 @@
 import { defineExtensionMessaging } from '@webext-core/messaging';
+import type { Key } from './keys/keys';
 import type { Rect } from './presenter/placement';
 import type { Settings } from './settings/settings';
 import type { SettingsChange } from './settings/store';
@@ -16,10 +17,23 @@ export interface SwitcherSnapshot {
   /** The page's picture is being taken: the switcher stays hidden until pictureTaken, so it isn't in the picture. */
   waitForPicture: boolean;
   /**
+   * In a page: the page had the focus as the switcher opened, so the switcher sees the keys let go, in its frame or
+   * passed on by the page (keyInPage). Not set in its own window, which knows it itself.
+   */
+  canSeeRelease?: boolean;
+  /**
    * Shown in a window of its own (on Chrome's pages): the Chrome window it is in the middle of. The switcher takes its
    * sizes from that window, as it would from its page, and its own window fits it.
    */
   centeredOn?: Rect;
+}
+
+/** The switcher's frame is shown in the page (showFrame). */
+export interface FrameShown {
+  /** The page had the focus: the switcher sees the keys let go (SwitcherSnapshot.canSeeRelease). */
+  canSeeRelease: boolean;
+  /** The keys the page got while the frame was loading, for the switcher once it is there (pressKey). */
+  keys: Key[];
 }
 
 /** A tab's new preview. */
@@ -28,10 +42,29 @@ export interface Preview {
   picture: string;
 }
 
-/** The messages between the background and the switcher, in the page or the window it is shown in. */
+/**
+ * The messages between the background and the switcher, in a page's frame or in its own window, and the frame's holder
+ * in the page (entrypoints/switcher.content.ts).
+ *
+ * The background sends to one tab, never to every page of the extension: each page keeps its switcher's frame, hidden,
+ * and every frame would get the message. In that tab the holder and the frame both get it, and each answers only its
+ * own messages. The switcher, the holder and the extension's pages send to the background with runtime.sendMessage,
+ * which every frame gets too: no frame listens to those messages.
+ */
 interface Messages {
   /** Switcher's window → background: the tabs to show, once (null when the window was not opened for a switcher). */
   getSnapshot(): SwitcherSnapshot | null;
+  /**
+   * Background → holder: show the switcher's frame over the page and give it the focus, making it the first time; it
+   * answers once the frame is loaded.
+   */
+  showFrame(): FrameShown;
+  /** Background → holder: hide the switcher's frame; it stays in the page, ready for the next time. */
+  hideFrame(): void;
+  /** Holder → background: a key the page got while the switcher's frame was shown without the focus. */
+  keyInPage(key: Key): void;
+  /** Background → switcher: a key the page got for it (keyInPage). */
+  pressKey(key: Key): void;
   /** Background → switcher: show these tabs. */
   showSwitcher(snapshot: SwitcherSnapshot): void;
   /** Background → switcher: the shortcut was pressed again while it is open. */

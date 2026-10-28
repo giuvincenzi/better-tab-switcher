@@ -1,6 +1,7 @@
 import { createSignal } from 'solid-js';
 import { render } from 'solid-js/web';
 import { applyLanguage } from '../../lib/i18n/language';
+import type { Key } from '../../lib/keys/keys';
 import { type Direction, type Preview, type SwitcherSnapshot, sendMessage } from '../../lib/messages';
 import { applyTheme } from '../ui/applyTheme';
 import { registerEmUnit } from '../ui/emUnit';
@@ -10,6 +11,8 @@ import { Switcher } from './Switcher';
 export interface SwitcherHandle {
   /** The shortcut was pressed again. */
   move: (direction: Direction) => void;
+  /** A key the page got for the switcher (keyInPage). */
+  pressKey: (key: Key) => void;
   /** A tab's new preview. */
   showPreview: (preview: Preview) => void;
   /** The page's picture is taken: the switcher can show. */
@@ -18,9 +21,9 @@ export interface SwitcherHandle {
 }
 
 /**
- * Shows the switcher in `container`, in the page or in its own window, and connects it to the background. It is drawn
- * in a modal dialog: the browser's top layer, above everything of the page, its own dialogs, popovers and full screen
- * elements too. `onDone` removes it once it is done; `onFrame` gets the panel's size (Switcher).
+ * Shows the switcher in `container`, in its frame in a page or in its own window, and connects it to the background. It
+ * is drawn in a modal dialog, which takes the keyboard focus. `onDone` removes it once it is done; `onFrame` gets the
+ * panel's size (Switcher).
  */
 export function mountSwitcher(
   container: HTMLElement,
@@ -39,10 +42,11 @@ export function mountSwitcher(
   // Esc is the switcher's own key (it closes it as a click outside does), never the dialog's.
   dialog.addEventListener('cancel', (event) => event.preventDefault());
   container.append(dialog);
-  const canSeeRelease = document.hasFocus();
+  const canSeeRelease = snapshot.canSeeRelease ?? document.hasFocus();
   dialog.showModal();
 
   const [moves, setMoves] = createSignal({ direction: snapshot.direction, count: 0 });
+  const [pageKeys, setPageKeys] = createSignal<{ key: Key; count: number }>();
   const [previews, setPreviews] = createSignal<Record<number, string>>({});
   const [pictureTaken, setPictureTaken] = createSignal(false);
 
@@ -51,6 +55,7 @@ export function mountSwitcher(
       <Switcher
         snapshot={snapshot}
         moves={moves}
+        pageKeys={pageKeys}
         canSeeRelease={canSeeRelease}
         previews={previews}
         pictureTaken={pictureTaken}
@@ -80,6 +85,7 @@ export function mountSwitcher(
   ).then((saved) => setPreviews((arrived) => ({ ...saved, ...arrived })));
   return {
     move: (direction) => setMoves((last) => ({ direction, count: last.count + 1 })),
+    pressKey: (key) => setPageKeys((last) => ({ key, count: (last?.count ?? 0) + 1 })),
     showPreview: ({ tabId, picture }) => setPreviews((all) => ({ ...all, [tabId]: picture })),
     pictureTaken: () => setPictureTaken(true),
     dispose() {

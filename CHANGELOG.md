@@ -13,8 +13,10 @@
 - Auto-select, Stay open until you choose a tab, and tabs from all windows.
 - Tabs shown before scrolling in the list: 6, 10 (the default), 15, or as many as fit the screen.
 - Use a window on Chrome's pages (Microsoft Edge's pages in Edge), on by default: where the browser keeps extensions
-  out (its own pages, its web store), the switcher opens in a small window of its own, in the middle of the current
-  window.
+  out (its own pages, its web store), or a page keeps scripts out of its frames, the switcher opens in a small window
+  of its own, in the middle of the current window.
+- Sites never see your tabs: over a page, the switcher is drawn in the extension's own page, which the site can't
+  read nor search for a tab's title.
 - Works in Chrome and in Microsoft Edge: the settings name the browser they run in and open its shortcuts page.
 - Close a tab from the switcher with its close button or with the mouse's middle button.
 - Tab details: website address, pinned, playing audio and sleeping icons, tab group color, last used.

@@ -2,6 +2,7 @@ import { createSignal } from 'solid-js';
 import { render } from 'solid-js/web';
 import { vi } from 'vitest';
 import { Switcher, type SwitcherProps } from '../../components/switcher/Switcher';
+import type { Key } from '../../lib/keys/keys';
 import type { Direction, SwitcherSnapshot } from '../../lib/messages';
 import { defaultSettings, type Settings } from '../../lib/settings/settings';
 import type { SwitcherTab } from '../../lib/tabs/tabs';
@@ -46,6 +47,7 @@ export function openSwitcher(settings: Partial<Settings> = {}, more: Partial<Swi
     ...more,
   };
   const [moves, setMoves] = createSignal<{ direction: Direction; count: number }>({ direction: 'next', count: 0 });
+  const [pageKeys, setPageKeys] = createSignal<{ key: Key; count: number }>();
   const [previews, setPreviews] = createSignal<Record<number, string>>({});
   const handlers = {
     onOpen: vi.fn(),
@@ -62,6 +64,7 @@ export function openSwitcher(settings: Partial<Settings> = {}, more: Partial<Swi
       <Switcher
         snapshot={snapshot}
         moves={moves}
+        pageKeys={pageKeys}
         canSeeRelease={more.canSeeRelease ?? true}
         previews={previews}
         pictureTaken={() => false}
@@ -73,7 +76,13 @@ export function openSwitcher(settings: Partial<Settings> = {}, more: Partial<Swi
   const press = (key: string, type: 'keydown' | 'keyup' = 'keydown') =>
     window.dispatchEvent(new KeyboardEvent(type, { key, bubbles: true }));
   const move = (direction: Direction) => setMoves((m) => ({ direction, count: m.count + 1 }));
-  return { host, handlers, press, move, setPreviews, snapshot };
+  /** A key the page got and passed on to the switcher (its frame didn't have the focus). */
+  const pageKey = (key: Partial<Key> & Pick<Key, 'type' | 'key'>) =>
+    setPageKeys((last) => ({
+      key: { altKey: false, ctrlKey: false, metaKey: false, isComposing: false, ...key },
+      count: (last?.count ?? 0) + 1,
+    }));
+  return { host, handlers, press, move, pageKey, setPreviews, snapshot };
 }
 
 export const options = (host: HTMLElement) => [...host.querySelectorAll<HTMLElement>('[role="option"]')];

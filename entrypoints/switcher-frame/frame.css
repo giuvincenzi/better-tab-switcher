@@ -1,0 +1,11 @@
+/*
+ * The frame covers the whole page and shows only the switcher's panel, nothing of its own around it. Its root has no
+ * theme (the theme is on the switcher's dialog), so the frame stays transparent over the page in any theme.
+ */
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+}

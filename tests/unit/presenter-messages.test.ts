@@ -104,6 +104,46 @@ describe('opening a tab', () => {
   });
 });
 
+describe("the switcher's frame in a page, once the switcher is done", () => {
+  it.each([
+    ['a tab is chosen', () => messages.ask('openTab', 12)],
+    ['it closes without a tab chosen', () => messages.ask('switcherClosed')],
+    ['the settings open', () => messages.ask('openSettings')],
+  ])('hides when %s', async (_, done) => {
+    await openInPage();
+    await done();
+    await settle();
+    expect(received('hideFrame')).toEqual([11]);
+  });
+
+  it('hides without holding up the tab chosen, even when the page hangs', async () => {
+    await openInPage();
+    world.hung.add(11);
+    await messages.ask('openTab', 12);
+    expect(browser.tabs.update).toHaveBeenCalledWith(12, { active: true });
+  });
+});
+
+describe('the keys the page got while the frame had no focus', () => {
+  const altUp = { type: 'keyup', key: 'Alt', altKey: false, ctrlKey: false, metaKey: false, isComposing: false };
+
+  it('go to the switcher in that page', async () => {
+    await openInPage();
+    await messages.ask('keyInPage', altUp, 11);
+    expect(world.received.filter((m) => m.type === 'pressKey')).toEqual([{ type: 'pressKey', data: altUp, tabId: 11 }]);
+  });
+
+  it('go nowhere from another page, or when the switcher is in its own window or closed', async () => {
+    await openInPage();
+    await messages.ask('keyInPage', altUp, 12);
+    await messages.ask('switcherClosed');
+    await messages.ask('keyInPage', altUp, 11);
+    await openInWindow();
+    await messages.ask('keyInPage', altUp, 11);
+    expect(received('pressKey')).toEqual([]);
+  });
+});
+
 describe('closing a tab from the switcher', () => {
   it('closes the tab and keeps the switcher open', async () => {
     await openInPage();

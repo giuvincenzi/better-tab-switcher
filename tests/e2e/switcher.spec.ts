@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures';
-import { activeTitle, openPages, rows, selected, showSwitcher, useSettings } from './helpers';
+import { activeTitle, openPages, rows, selected, showSwitcher, switcher, useSettings } from './helpers';
 
 test.describe('switcher in a page @switcher', () => {
   test('lists the tabs most recently used first, the previous one selected', async ({ context, serviceWorker }) => {
@@ -87,7 +87,7 @@ test.describe('switcher theme @switcher', () => {
       const [, current] = await openPages(context, ['alpha', 'beta']);
       const page = current as Page;
       await showSwitcher(serviceWorker);
-      const list = page.getByRole('listbox', { name: 'Open tabs, most recent first' });
+      const list = switcher(page).getByRole('listbox', { name: 'Open tabs, most recent first' });
       await expect(list).toHaveCSS('color-scheme', theme);
     });
   }
@@ -223,7 +223,7 @@ test.describe('one switcher at a time @switcher', () => {
     await showSwitcher(serviceWorker, 'next', 'icon');
     await showSwitcher(serviceWorker, 'next', 'icon');
     await expect(rows(gamma)).toHaveCount(3);
-    await expect(gamma.locator('better-tab-switcher')).toHaveCount(1);
+    await expect(switcher(gamma)).toHaveCount(1);
   });
 });
 
@@ -249,6 +249,114 @@ test.describe('switcher over the page @switcher', () => {
     await expect(rows(page)).toHaveCount(2);
     const onTop = await page.evaluate(() => document.elementFromPoint(innerWidth / 2, innerHeight / 2)?.localName);
     expect(onTop).toBe('better-tab-switcher');
+  });
+});
+
+test.describe('what the page sees of the switcher @switcher', () => {
+  test("keeps the tabs from the page: it can't reach the switcher, read its text, nor find a tab's title", async ({
+    context,
+    serviceWorker,
+  }) => {
+    const [, , current] = await openPages(context, ['alpha', 'mybank', 'gamma']);
+    const page = current as Page;
+    // window.find searches what is drawn and can be selected: it finds the page's own text, before the switcher opens.
+    const find = (text: string) =>
+      page.evaluate((text) => (window as unknown as { find: (text: string) => boolean }).find(text), text);
+    expect(await find('gamma')).toBe(true);
+    await showSwitcher(serviceWorker);
+    await expect(rows(page)).toHaveCount(3);
+    await expect(rows(page).filter({ hasText: 'mybank' })).toBeVisible();
+    const seen = await page.evaluate(() => {
+      const holder = document.querySelector('better-tab-switcher');
+      return {
+        holder: holder !== null,
+        shadowRoot: holder?.shadowRoot ?? null,
+        frames: document.querySelectorAll('iframe').length,
+        text: document.body.innerText,
+      };
+    });
+    expect(seen).toEqual({ holder: true, shadowRoot: null, frames: 0, text: 'gamma' });
+    expect(await find('mybank')).toBe(false);
+  });
+
+  test('opens in its own window on a page that keeps scripts out of its frames', async ({ context, serviceWorker }) => {
+    await openPages(context, ['alpha', 'beta']);
+    // The rule raw.githubusercontent.com sends: the page's frames run no script, the switcher's frame neither.
+    await context.route('https://sandboxed.test/**', (route) =>
+      route.fulfill({
+        contentType: 'text/html',
+        headers: { 'content-security-policy': "default-src 'none'; sandbox" },
+        body: '<title>sandboxed</title><h1>sandboxed</h1>',
+      }),
+    );
+    const page = await context.newPage();
+    await page.goto('https://sandboxed.test/file');
+    await page.bringToFront();
+    const opened = context.waitForEvent('page');
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    const switcherWindow = await opened;
+    await expect(switcherWindow.getByRole('option')).toHaveCount(3);
+    // Nothing is left over the page: it takes the clicks and keys again.
+    await expect(page.locator('better-tab-switcher')).toBeHidden();
+  });
+});
+
+test.describe('pages that get in the way @switcher', () => {
+  test('a page that takes the switcher out while it is open gets its keys back, and the shortcut opens a new one', async ({
+    context,
+    serviceWorker,
+  }) => {
+    const [, , current] = await openPages(context, ['alpha', 'beta', 'gamma']);
+    const page = current as Page;
+    await page.evaluate(() => {
+      const field = document.createElement('input');
+      field.setAttribute('aria-label', 'Page field');
+      document.body.append(field);
+    });
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    await expect(rows(page)).toHaveCount(3);
+    // A site that rebuilds its page without reloading it.
+    await page.evaluate(() => document.querySelector('better-tab-switcher')?.remove());
+    const field = page.getByRole('textbox', { name: 'Page field' });
+    await field.click();
+    await page.keyboard.type('typed');
+    await expect(field).toHaveValue('typed');
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    await expect(rows(page)).toHaveCount(3);
+  });
+
+  test("a page's CSS zoom leaves the switcher as large as on any page, whole", async ({ context, serviceWorker }) => {
+    const [, , current] = await openPages(context, ['alpha', 'beta', 'gamma']);
+    const page = current as Page;
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    const normal = await switcher(page).getByRole('listbox').boundingBox();
+    await page.keyboard.press('Escape');
+    await expect(rows(page)).toHaveCount(0);
+    await page.evaluate(() => {
+      document.documentElement.style.zoom = '2';
+    });
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    await expect(rows(page)).toHaveCount(3);
+    const zoomed = await switcher(page).getByRole('listbox').boundingBox();
+    expect(zoomed).toEqual(normal);
+  });
+
+  test('a page that stops clicks and keys at its window still lets the switcher work', async ({
+    context,
+    serviceWorker,
+  }) => {
+    const [, , current] = await openPages(context, ['alpha', 'beta', 'gamma']);
+    const page = current as Page;
+    await page.evaluate(() => {
+      for (const type of ['pointerdown', 'mousedown', 'click', 'keydown', 'keyup', 'beforeinput', 'input'])
+        window.addEventListener(type, (event) => event.stopImmediatePropagation(), true);
+    });
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    await switcher(page).getByRole('searchbox', { name: 'Search tabs' }).click();
+    await page.keyboard.type('alp');
+    await expect(rows(page)).toHaveCount(1);
+    await rows(page).filter({ hasText: 'alpha' }).click();
+    await expect.poll(() => activeTitle(serviceWorker)).toBe('alpha');
   });
 });
 

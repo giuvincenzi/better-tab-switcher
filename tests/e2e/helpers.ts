@@ -1,4 +1,4 @@
-import type { BrowserContext, Page, Worker } from '@playwright/test';
+import type { BrowserContext, Frame, Locator, Page, Worker } from '@playwright/test';
 import type { BrowserName } from '../../lib/browser';
 import type { Settings } from '../../lib/settings/settings';
 
@@ -40,8 +40,22 @@ export function activeTitle(worker: Worker) {
   return worker.evaluate(async () => (await chrome.tabs.query({ active: true, lastFocusedWindow: true }))[0]?.title);
 }
 
-export const rows = (page: Page) => page.locator('better-tab-switcher [role="option"]');
-export const selected = (page: Page) => page.locator('better-tab-switcher [role="option"][aria-selected="true"]');
+/**
+ * The switcher's frame in a page. Its holder is a closed shadow root that neither the page nor Playwright's locators see
+ * into, so the frame is found among the page's frames. It stays in the page, hidden, once the first switcher has shown
+ * there; before, there is none.
+ */
+export function switcherFrame(page: Page): Frame | null {
+  return page.frame({ url: /\/switcher-frame\.html$/ });
+}
+
+/** The switcher open in a page: its modal dialog, in its frame. Before the first switcher there, nothing to find. */
+export function switcher(page: Page): Locator {
+  return switcherFrame(page)?.locator('body > dialog') ?? page.locator('no-switcher-frame-in-this-page');
+}
+
+export const rows = (page: Page) => switcher(page).locator('[role="option"]');
+export const selected = (page: Page) => switcher(page).locator('[role="option"][aria-selected="true"]');
 
 /**
  * The browser the tests run in (E2E_BROWSER, launched by tests/e2e/fixtures.ts), as lib/browser.ts names it: the tests

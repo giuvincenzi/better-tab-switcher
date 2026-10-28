@@ -1,8 +1,8 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures';
-import { activeTitle, openPages, rows, selected, showSwitcher } from './helpers';
+import { activeTitle, openPages, rows, selected, showSwitcher, switcher } from './helpers';
 
-const searchField = (page: Page) => page.locator('better-tab-switcher').getByRole('searchbox', { name: 'Search tabs' });
+const searchField = (page: Page) => switcher(page).getByRole('searchbox', { name: 'Search tabs' });
 const titles = (page: Page) => rows(page).locator('img + div');
 
 test.describe('search @search', () => {
@@ -68,12 +68,12 @@ test.describe('search @search', () => {
     await searchField(page).click();
     await page.keyboard.type('zzz');
     await expect(rows(page)).toHaveCount(0);
-    await expect(page.getByText('No tabs match your search.')).toBeVisible();
+    await expect(switcher(page).getByText('No tabs match your search.')).toBeVisible();
     await searchField(page).fill('');
     await expect(titles(page)).toHaveText(['gamma', 'beta', 'alpha']);
-    await expect(page.getByText('No tabs match your search.')).toHaveCount(0);
+    await expect(switcher(page).getByText('No tabs match your search.')).toHaveCount(0);
     await page.keyboard.press('Escape');
-    await expect(page.locator('better-tab-switcher')).toHaveCount(0);
+    await expect(switcher(page)).toHaveCount(0);
     expect(await activeTitle(serviceWorker)).toBe('gamma');
   });
 

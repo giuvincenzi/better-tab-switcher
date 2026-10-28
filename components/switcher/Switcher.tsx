@@ -11,7 +11,7 @@ import {
 } from 'solid-js';
 import { i18n } from '#i18n';
 import { languageInUse } from '../../lib/i18n/language';
-import { keyEvent } from '../../lib/keys/keys';
+import { type Key, keyEvent } from '../../lib/keys/keys';
 import type { Direction, SwitcherSnapshot } from '../../lib/messages';
 import { matchTab } from '../../lib/search/search';
 import type { Settings } from '../../lib/settings/settings';
@@ -37,7 +37,9 @@ export interface SwitcherProps {
   snapshot: SwitcherSnapshot;
   /** Changes each time the shortcut is pressed again while the switcher is open. */
   moves: Accessor<{ direction: Direction; count: number }>;
-  /** Releasing the shortcut's modifier can be seen here: this page has the keyboard focus. */
+  /** Changes with each key the page got for the switcher while its frame didn't have the focus yet (keyInPage). */
+  pageKeys: Accessor<{ key: Key; count: number } | undefined>;
+  /** Releasing the shortcut's modifier can be seen: here, or in the page that passes its keys on. */
   canSeeRelease: boolean;
   /** The tabs' pictures by tab id, as they arrive. */
   previews: Accessor<Record<number, string>>;
@@ -167,13 +169,18 @@ export function Switcher(props: SwitcherProps): JSX.Element {
 
   function onKey(event: KeyboardEvent) {
     if (inToolbarControls(event) && event.key !== 'Escape') return;
-    // The direction the tabs are laid out in: the page's dir, as the panel has it.
-    const direction = panel && getComputedStyle(panel).direction === 'rtl' ? 'rtl' : 'ltr';
-    const switcherEvent = keyEvent(event, { columns: columns(), inField: state().selected === FIELD, direction });
+    const switcherEvent = eventFor(event);
     if (!switcherEvent) return;
     event.preventDefault();
     event.stopPropagation();
     dispatch(switcherEvent);
+  }
+
+  /** The switcher's event for a key, with the tabs as they are laid out now. */
+  function eventFor(key: Key): SwitcherEvent | null {
+    // The direction the tabs are laid out in: the page's dir, as the panel has it.
+    const direction = panel && getComputedStyle(panel).direction === 'rtl' ? 'rtl' : 'ltr';
+    return keyEvent(key, { columns: columns(), inField: state().selected === FIELD, direction });
   }
 
   /** A click on the toolbar's buttons doesn't move the keyboard focus: the arrows and Enter keep working on the tabs. */
@@ -187,6 +194,12 @@ export function Switcher(props: SwitcherProps): JSX.Element {
   }
 
   createEffect(on(props.moves, (move) => dispatch({ type: move.direction }), { defer: true }));
+  createEffect(
+    on(props.pageKeys, (pressed) => {
+      const switcherEvent = pressed && eventFor(pressed.key);
+      if (switcherEvent) dispatch(switcherEvent);
+    }),
+  );
 
   onMount(() => {
     window.addEventListener('keydown', onKey, true);

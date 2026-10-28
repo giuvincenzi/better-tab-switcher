@@ -1,6 +1,6 @@
 import type { Page, Worker } from '@playwright/test';
 import { expect, test } from './fixtures';
-import { activeTitle, openPages, rows, selected, showSwitcher, useSettings } from './helpers';
+import { activeTitle, openPages, rows, selected, showSwitcher, switcher, useSettings } from './helpers';
 
 const pictures = (page: Page) => rows(page).locator('img[src^="data:image/webp"]');
 
@@ -37,7 +37,7 @@ test.describe('grid @grid', () => {
     await showSwitcher(serviceWorker);
     await expect(rows(page)).toHaveCount(4);
     // Both rows of tiles in sight: the grid scrolls only when the page is too low for it.
-    const grid = page.locator('better-tab-switcher [role="listbox"]');
+    const grid = switcher(page).locator('[role="listbox"]');
     expect(await grid.evaluate((list) => list.scrollHeight - list.clientHeight)).toBe(0);
     await expect(selected(page)).toHaveAccessibleName('gamma');
     await page.keyboard.press('ArrowDown');
@@ -56,7 +56,7 @@ test.describe('grid @grid', () => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await showSwitcher(serviceWorker);
     await expect(rows(page)).toHaveCount(7);
-    const grid = page.locator('better-tab-switcher [role="listbox"]');
+    const grid = switcher(page).locator('[role="listbox"]');
     const fits = await grid.evaluate((list) => ({
       columns: getComputedStyle(list).gridTemplateColumns.split(' ').length,
       across: list.scrollWidth - list.clientWidth,
@@ -97,9 +97,9 @@ test.describe('grid @grid', () => {
     const [, current] = await openPages(context, ['alpha', 'beta']);
     const page = current as Page;
     await showSwitcher(serviceWorker);
-    const switcher = page.locator('better-tab-switcher');
-    await switcher.locator('label', { has: page.getByRole('radio', { name: 'Grid' }) }).click();
-    await expect(switcher.getByRole('listbox')).toHaveCSS('display', 'grid');
+    const panel = switcher(page);
+    await panel.getByRole('radio', { name: 'Grid' }).locator('xpath=ancestor::label').click();
+    await expect(panel.getByRole('listbox')).toHaveCSS('display', 'grid');
     await expect
       .poll(() =>
         serviceWorker.evaluate(async () => {
@@ -124,13 +124,13 @@ test.describe('grid of icons @grid', () => {
     await expect(rows(page)).toHaveCount(12);
     // Most recent first: tab12, tab11… tab01.
     const order = [...names].reverse();
-    const grid = page.locator('better-tab-switcher [role="listbox"]');
+    const grid = switcher(page).locator('[role="listbox"]');
     const columns = await grid.evaluate((list) => getComputedStyle(list).gridTemplateColumns.split(' ').length);
     expect(columns).toBeGreaterThanOrEqual(2);
     // At least two rows, so that down has a row to go to from the first one.
     expect(columns).toBeLessThanOrEqual(9);
     // The selected tab's name, under the icons.
-    const name = page.locator('better-tab-switcher [aria-hidden="true"]', { hasText: /^\w+$/ });
+    const name = switcher(page).locator('[aria-hidden="true"]', { hasText: /^\w+$/ });
     await expect(selected(page)).toHaveAccessibleName('tab11');
     await expect(name).toHaveText('tab11');
     await page.keyboard.press('ArrowRight');

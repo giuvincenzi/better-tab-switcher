@@ -4,18 +4,6 @@ import { defineConfig } from 'wxt';
 export default defineConfig({
   modules: ['@wxt-dev/module-solid', '@wxt-dev/i18n/module'],
   imports: false,
-  hooks: {
-    // The switcher's content script has no matches: it is injected only where the user opens the switcher (activeTab),
-    // and WXT would turn a runtime content script's matches into host_permissions, asking for every site at install.
-    // Its styles still have to be readable from any page, where the switcher shows in a shadow root.
-    'build:manifestGenerated': (_wxt, manifest) => {
-      for (const entry of manifest.web_accessible_resources ?? []) {
-        if (typeof entry !== 'string' && entry.resources.includes('content-scripts/switcher.css')) {
-          entry.matches = ['<all_urls>'];
-        }
-      }
-    },
-  },
   manifest: ({ mode }) => ({
     default_locale: 'en',
     name: '__MSG_Extension_Name__',
@@ -27,8 +15,9 @@ export default defineConfig({
     ...(mode === 'e2e' ? { host_permissions: ['<all_urls>'] } : {}),
     // The toolbar icon opens the switcher: no popup.
     action: { default_title: '__MSG_Extension_Name__' },
-    // The switcher in a page shows the tabs' icons from Chrome's cache.
-    web_accessible_resources: [{ resources: ['_favicon/*'], matches: ['<all_urls>'], use_dynamic_url: true }],
+    // The switcher in a page is drawn in this extension page, in a frame (entrypoints/switcher.content.ts). With a
+    // dynamic URL, which changes each time Chrome starts, a site can't load it to find out the extension is installed.
+    web_accessible_resources: [{ resources: ['switcher-frame.html'], matches: ['<all_urls>'], use_dynamic_url: true }],
     commands: {
       'next-tab': {
         suggested_key: { default: 'Alt+Y', mac: 'Alt+Y' },

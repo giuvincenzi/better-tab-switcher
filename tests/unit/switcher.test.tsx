@@ -3,6 +3,7 @@ import { render } from 'solid-js/web';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { page } from 'vitest/browser';
 import { Switcher, type SwitcherProps } from '../../components/switcher/Switcher';
+import type { Key } from '../../lib/keys/keys';
 import type { Direction, SwitcherSnapshot } from '../../lib/messages';
 import { defaultSettings, type Settings } from '../../lib/settings/settings';
 import { DEFAULT_EM_PX, sizes } from '../../lib/switcher/sizes';
@@ -37,6 +38,7 @@ function open(settings: Partial<Settings> = {}, more: Partial<SwitcherSnapshot &
     ...more,
   };
   const [moves, setMoves] = createSignal<{ direction: Direction; count: number }>({ direction: 'next', count: 0 });
+  const [pageKeys, setPageKeys] = createSignal<{ key: Key; count: number }>();
   const [previews, setPreviews] = createSignal<Record<number, string>>({});
   const [pictureTaken, setPictureTaken] = createSignal(false);
   const handlers = {
@@ -53,6 +55,7 @@ function open(settings: Partial<Settings> = {}, more: Partial<SwitcherSnapshot &
       <Switcher
         snapshot={snapshot}
         moves={moves}
+        pageKeys={pageKeys}
         canSeeRelease={more.canSeeRelease ?? true}
         previews={previews}
         pictureTaken={pictureTaken}
@@ -64,7 +67,13 @@ function open(settings: Partial<Settings> = {}, more: Partial<SwitcherSnapshot &
   const press = (key: string, type: 'keydown' | 'keyup' = 'keydown') =>
     window.dispatchEvent(new KeyboardEvent(type, { key, bubbles: true }));
   const move = (direction: Direction) => setMoves((m) => ({ direction, count: m.count + 1 }));
-  return { host, handlers, press, move, setPreviews, takePicture: () => setPictureTaken(true) };
+  /** A key the page got and passed on to the switcher (its frame didn't have the focus). */
+  const pageKey = (key: Partial<Key> & Pick<Key, 'type' | 'key'>) =>
+    setPageKeys((last) => ({
+      key: { altKey: false, ctrlKey: false, metaKey: false, isComposing: false, ...key },
+      count: (last?.count ?? 0) + 1,
+    }));
+  return { host, handlers, press, move, pageKey, setPreviews, takePicture: () => setPictureTaken(true) };
 }
 
 const selectedTitle = (host: HTMLElement) => host.querySelector('[aria-selected="true"]')?.getAttribute('aria-label');
@@ -93,6 +102,14 @@ describe('Switcher', () => {
     const { handlers, press } = open();
     press('Alt', 'keyup');
     expect(handlers.onOpen).toHaveBeenCalledWith(tabs[1]);
+  });
+
+  it('takes the keys the page passes on: an arrow moves, and letting go of Alt opens the selected tab', () => {
+    const { host, handlers, pageKey } = open();
+    pageKey({ type: 'keydown', key: 'ArrowDown', altKey: true });
+    expect(selectedTitle(host)).toBe('Q4 planning');
+    pageKey({ type: 'keyup', key: 'Alt' });
+    expect(handlers.onOpen).toHaveBeenCalledWith(tabs[2]);
   });
 
   it('moves when the shortcut is pressed again, and with the arrows', () => {

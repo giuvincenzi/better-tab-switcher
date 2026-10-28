@@ -9,6 +9,7 @@ import {
   rows,
   selected,
   showSwitcher,
+  switcher,
   useSettings,
 } from './helpers';
 
@@ -83,7 +84,7 @@ test.describe('which tabs the switcher lists @tabs', () => {
     await showSwitcher(serviceWorker, 'previous', 'icon');
     await expect(rows(page)).toHaveCount(60);
     await expect(selected(page)).toHaveAccessibleName('tab01');
-    const list = page.locator('better-tab-switcher [role="listbox"]');
+    const list = switcher(page).locator('[role="listbox"]');
     expect(await list.evaluate((l) => l.scrollHeight > l.clientHeight)).toBe(true);
     await expect(selected(page)).toBeInViewport();
     await expect(rows(page).first()).not.toBeInViewport();
