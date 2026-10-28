@@ -147,6 +147,14 @@ test.describe("Chrome's own pages @switcher", () => {
         }),
       )
       .toBe(true);
+    // Never a white window: the page has the panel's color, in the theme in use.
+    expect(
+      await switcherWindow.evaluate(() => {
+        const page = getComputedStyle(document.documentElement).backgroundColor;
+        const panel = getComputedStyle(document.querySelector('[style*="--panel-width"]') as HTMLElement);
+        return page === panel.backgroundColor;
+      }),
+    ).toBe(true);
     await switcherWindow.getByRole('option', { name: /^alpha/ }).click();
     await expect.poll(() => activeTitle(serviceWorker)).toBe('alpha');
     await expect.poll(() => switcherWindow.isClosed()).toBe(true);

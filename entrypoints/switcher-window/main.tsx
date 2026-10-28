@@ -3,6 +3,7 @@ import './switcher.css';
 import { i18n } from '#i18n';
 import { browser } from '#imports';
 import { mountSwitcher } from '../../components/switcher/mountSwitcher';
+import { applyTheme } from '../../components/ui/applyTheme';
 import { onMessage, sendMessage } from '../../lib/messages';
 import { centerOn, type Rect } from '../../lib/presenter/placement';
 
@@ -13,10 +14,12 @@ document.title = i18n.t('Extension_Name');
 const snapshot = await sendMessage('getSnapshot');
 const centeredOn = snapshot?.centeredOn;
 if (snapshot && centeredOn) {
+  applyTheme(document.documentElement, snapshot.settings.theme);
   const handle = mountSwitcher(
     document.body,
     snapshot,
-    () => handle.dispose(),
+    // Done: the switcher stays drawn until the background closes its window, so the window never shows empty.
+    () => undefined,
     (size) => void fitWindow(centeredOn, size),
   );
   onMessage('moveSwitcher', ({ data: direction }) => handle.move(direction));
