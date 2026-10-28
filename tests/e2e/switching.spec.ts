@@ -95,7 +95,8 @@ test.describe("the switcher's own window @switching", () => {
     // once it closed (headless Chromium gives the focus back by itself: this does not prove the extension does).
     const lastFocusedType = () => serviceWorker.evaluate(async () => (await chrome.windows.getLastFocused()).type);
     await expect.poll(lastFocusedType).toBe('popup');
-    await switcherWindow.keyboard.press('Escape');
+    // Only the key press: the switcher closes on it, and its window can be gone before a key release would arrive.
+    await switcherWindow.keyboard.down('Escape');
     await expect.poll(() => switcherWindow.isClosed()).toBe(true);
     await expect.poll(lastFocusedType).toBe('normal');
     // The Chrome page is still the current tab, and the shortcut opens a new switcher on it.
@@ -119,7 +120,8 @@ test.describe("the switcher's own window @switching", () => {
     await expect(chosen).toHaveAccessibleName('gamma');
     // Still the one window.
     expect(context.pages().filter((page) => page.url().startsWith('chrome-extension://'))).toHaveLength(1);
-    await switcherWindow.keyboard.press('Enter');
+    // Only the key press: the switcher opens the tab on it, and its window can be gone before a key release would arrive.
+    await switcherWindow.keyboard.down('Enter');
     await expect.poll(() => activeTitle(serviceWorker)).toBe('gamma');
     await expect.poll(() => switcherWindow.isClosed()).toBe(true);
   });
