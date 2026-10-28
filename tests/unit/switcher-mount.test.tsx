@@ -4,12 +4,10 @@ import { browser } from '#imports';
 import { mountSwitcher, type SwitcherHandle } from '../../components/switcher/mountSwitcher';
 import { type SwitcherSnapshot, sendMessage } from '../../lib/messages';
 import { defaultSettings, type Settings } from '../../lib/settings/settings';
-import { saveSettings } from '../../lib/settings/store';
 import type { SwitcherTab } from '../../lib/tabs/tabs';
 
 // The switcher as the page and its own window show it: mountSwitcher, with the messages to the background faked.
 vi.mock('../../lib/messages', () => ({ sendMessage: vi.fn() }));
-vi.mock('../../lib/settings/store', () => ({ saveSettings: vi.fn() }));
 
 const tab = (id: number, title: string): SwitcherTab => ({
   id,
@@ -36,7 +34,6 @@ beforeEach(() => {
           savedPreviews = done;
         })
       : Promise.resolve()) as unknown as typeof sendMessage);
-  vi.mocked(saveSettings).mockReset();
 });
 
 let handle: SwitcherHandle | undefined;
@@ -124,10 +121,10 @@ describe('mountSwitcher', () => {
     expect(messages).toHaveBeenCalledWith('openSettings');
   });
 
-  it('saves a change made in the toolbar', () => {
+  it('sends a change made in the toolbar to the background, which saves the settings', () => {
     mount();
     (document.querySelector('button[aria-label="Compact"]') as HTMLButtonElement).click();
-    expect(saveSettings).toHaveBeenCalledWith({ compact: false });
+    expect(messages).toHaveBeenCalledWith('saveSettings', { compact: false });
   });
 
   it('moves the selection each time the shortcut is pressed again', () => {

@@ -114,3 +114,25 @@ test.describe("the switcher's toolbar @settings", () => {
     await expect(address).toHaveAttribute('aria-pressed', 'true');
   });
 });
+
+test.describe('settings changed in two pages at once @settings', () => {
+  test('keeps both changes, every time', async ({ context, extensionId, serviceWorker }) => {
+    const first = await openSettings(context, extensionId);
+    const second = await openSettings(context, extensionId);
+    const saved = () =>
+      serviceWorker.evaluate(async () => {
+        const { settings } = (await chrome.storage.local.get('settings')) as {
+          settings?: { toolbar?: boolean; compact?: boolean };
+        };
+        return [settings?.toolbar, settings?.compact];
+      });
+    for (const on of [false, true, false, true, false, true, false, true, false, true]) {
+      // The same moment in both pages: each one changes its own setting.
+      await Promise.all([
+        first.getByRole('switch', { name: 'Show toolbar' }).click(),
+        second.getByRole('switch', { name: 'Compact' }).click(),
+      ]);
+      await expect.poll(saved).toEqual([on, on]);
+    }
+  });
+});

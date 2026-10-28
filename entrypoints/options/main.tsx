@@ -10,10 +10,12 @@ import { registerEmUnit } from '../../components/ui/emUnit';
 import { shortcutsPageUrl } from '../../lib/browser';
 import { applyLanguage, languageInUse } from '../../lib/i18n/language';
 import { CTRL_TAB_GUIDE_URL } from '../../lib/links';
-import { loadSettings, restoreDefaultSettings, saveSettings, watchSettings } from '../../lib/settings/store';
+import { sendMessage } from '../../lib/messages';
+import { loadSettings, watchSettings } from '../../lib/settings/store';
 
-// The settings page: every change is saved at once, and the page follows changes made elsewhere (another settings
-// page, Restore) and the shortcuts changed in chrome://extensions/shortcuts.
+// The settings page: every change is saved at once by the background, the one writer of the settings
+// (lib/settings/service.ts), and the page follows changes made elsewhere (another settings page, Restore) and the
+// shortcuts changed in chrome://extensions/shortcuts.
 const root = document.documentElement;
 registerEmUnit();
 applyLanguage(root);
@@ -39,14 +41,14 @@ render(
   () => (
     <SettingsPage
       settings={settings()}
-      save={(change) => void saveSettings(change)}
+      save={(change) => void sendMessage('saveSettings', change)}
       shortcuts={shortcuts()}
       language={languageInUse()}
       now={Date.now()}
       iconUrl={browser.runtime.getURL('/icon/128.png')}
       guideUrl={CTRL_TAB_GUIDE_URL}
       onChangeShortcut={() => void browser.tabs.create({ url: shortcutsPageUrl() })}
-      onRestore={() => void restoreDefaultSettings()}
+      onRestore={() => void sendMessage('restoreDefaultSettings')}
     />
   ),
   document.getElementById('settings') as HTMLElement,

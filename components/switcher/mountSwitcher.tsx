@@ -2,7 +2,6 @@ import { createSignal } from 'solid-js';
 import { render } from 'solid-js/web';
 import { applyLanguage } from '../../lib/i18n/language';
 import { type Direction, type Preview, type SwitcherSnapshot, sendMessage } from '../../lib/messages';
-import { saveSettings } from '../../lib/settings/store';
 import { applyTheme } from '../ui/applyTheme';
 import { registerEmUnit } from '../ui/emUnit';
 import styles from './mountSwitcher.module.css';
@@ -64,7 +63,7 @@ export function mountSwitcher(
           void sendMessage('switcherClosed');
         }}
         onCloseTab={(tab) => void sendMessage('closeTab', tab.id)}
-        onSettingsChange={(change) => void saveSettings(change)}
+        onSettingsChange={(change) => void sendMessage('saveSettings', change)}
         onSettings={() => {
           onDone();
           void sendMessage('openSettings');

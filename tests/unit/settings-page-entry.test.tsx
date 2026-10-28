@@ -1,11 +1,15 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
 import { shortcutsPageUrl } from '../../lib/browser';
+import { listenToSettingsChanges } from '../../lib/settings/service';
 import { defaultSettings } from '../../lib/settings/settings';
 import { loadSettings, saveSettings } from '../../lib/settings/store';
 
 // The settings page as the extension opens it (entrypoints/options/main.tsx): the settings saved in the extension's
-// storage, the shortcuts from the browser. The page opens once for this file, so the tests follow each other.
+// storage, the shortcuts from the browser. The page opens once for this file, so the tests follow each other. Its
+// messages go to the background's settings service, as in the extension (the fake browser carries no messages).
+const messages = await vi.hoisted(async () => (await import('./background-world')).fakeMessages());
+vi.mock('../../lib/messages', () => ({ sendMessage: messages.sendMessage, onMessage: messages.onMessage }));
 
 const shortcuts = vi.fn(async () => [
   { name: 'next-tab', shortcut: 'Alt+Y' },
@@ -29,6 +33,10 @@ const button = (text: string) =>
 describe('the settings page of the extension', () => {
   beforeAll(async () => {
     fakeBrowser.reset();
+    listenToSettingsChanges();
+    messages.state.receive = async (type, data) => {
+      await messages.ask(type, data);
+    };
     (fakeBrowser.commands as { getAll: unknown }).getAll = shortcuts;
     await saveSettings({ theme: 'dark', compact: false });
     const host = document.createElement('div');

@@ -1,6 +1,7 @@
 import { browser, defineBackground } from '#imports';
 import { listenToSwitcher, requestSwitcher, type SwitcherRequest, showPreview } from '../lib/presenter/presenter';
 import { keepPreviews } from '../lib/previews/service';
+import { listenToSettingsChanges } from '../lib/settings/service';
 
 export default defineBackground(() => {
   const previews = keepPreviews((tabId, picture) => void showPreview(tabId, picture));
@@ -11,6 +12,7 @@ export default defineBackground(() => {
   });
   browser.action.onClicked.addListener(() => void request({ direction: 'next', from: 'icon' }));
   listenToSwitcher();
+  listenToSettingsChanges();
 
   // The end-to-end tests can't press Chrome's shortcuts nor click the toolbar icon: in their build only, they ask for
   // the switcher as those do.

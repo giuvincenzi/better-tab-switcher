@@ -1,6 +1,7 @@
 import { defineExtensionMessaging } from '@webext-core/messaging';
 import type { Rect } from './presenter/placement';
 import type { Settings } from './settings/settings';
+import type { SettingsChange } from './settings/store';
 import type { SwitcherTab } from './tabs/tabs';
 
 export type Direction = 'next' | 'previous';
@@ -47,6 +48,10 @@ interface Messages {
   switcherLeft(): void;
   /** Switcher → background: open the settings page. */
   openSettings(): void;
+  /** Settings page or switcher → background: save this change (lib/settings/service.ts); gives the settings saved. */
+  saveSettings(change: SettingsChange): Settings;
+  /** Settings page → background: back to the default settings. */
+  restoreDefaultSettings(): void;
   /** Switcher → background: the previews there are of these tabs, by tab id. */
   getPreviews(tabIds: number[]): Record<number, string>;
   /** Background → switcher: a tab's new preview, while the switcher is open. */
