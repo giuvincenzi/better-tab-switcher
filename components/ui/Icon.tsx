@@ -14,7 +14,9 @@ export type IconName =
   | 'grid'
   | 'previews'
   | 'icons'
-  | 'compact';
+  | 'compact'
+  | 'address'
+  | 'lastUsed';
 
 interface IconProps {
   name: IconName;
@@ -83,6 +85,15 @@ export function Icon(props: IconProps): JSX.Element {
         </Match>
         <Match when={props.name === 'compact'}>
           <path d="M4 7h16M4 11h16M4 15h16M4 19h16" />
+        </Match>
+        <Match when={props.name === 'address'}>
+          <circle cx="12" cy="12" r="9" />
+          <path d="M3 12h18" />
+          <path d="M12 3a14 14 0 010 18a14 14 0 010-18z" />
+        </Match>
+        <Match when={props.name === 'lastUsed'}>
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 7v5l3 2" />
         </Match>
         <Match when={props.name === 'chevron'}>
           <path d="M6 9l6 6 6-6" />

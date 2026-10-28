@@ -385,6 +385,30 @@ describe('Switcher toolbar', () => {
     expect(button(host, 'Compact').getAttribute('aria-pressed')).toBe('false');
   });
 
+  it('turns the website address and the last used time on and off, in the list and in the grid', () => {
+    for (const view of ['list', 'grid'] as const) {
+      const { host, handlers } = open({ view });
+      const address = button(host, 'Website address');
+      const lastUsed = button(host, 'Last used');
+      expect([address.getAttribute('aria-pressed'), lastUsed.getAttribute('aria-pressed')]).toEqual(['false', 'false']);
+      address.click();
+      lastUsed.click();
+      expect(handlers.onSettingsChange).toHaveBeenCalledWith({ details: { address: true } });
+      expect(handlers.onSettingsChange).toHaveBeenCalledWith({ details: { lastUsed: true } });
+      expect(address.getAttribute('aria-pressed')).toBe('true');
+      expect(lastUsed.getAttribute('aria-pressed')).toBe('true');
+      // The tabs shown follow at once: the address beside or under the title, and the last used time.
+      expect(host.querySelector('[role="option"]')?.textContent).toMatch(/example\.com.*ago/);
+      dispose?.();
+    }
+  });
+
+  it('has no website address nor last used in the grid of icons, which shows neither', () => {
+    const { host } = open({ view: 'grid', gridShow: 'icons' });
+    expect(button(host, 'Website address')).toBeNull();
+    expect(button(host, 'Last used')).toBeNull();
+  });
+
   it('opens the settings page', () => {
     const { host, handlers } = open();
     button(host, 'All settings').click();

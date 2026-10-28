@@ -74,9 +74,12 @@ export function TabList(props: TabListProps): JSX.Element {
       >
         <For each={props.tabs}>
           {(shown, index) => {
+            // A getter, so a row follows the details changed in the toolbar while it is shown.
             const common = {
               tab: shown.tab,
-              details: props.details,
+              get details() {
+                return props.details;
+              },
               language: props.language,
               onChoose: () => props.onChoose(index()),
               onClose: () => props.onClose(index()),

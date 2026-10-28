@@ -8,8 +8,8 @@
   shows the tabs most recently used first, centered over the page; releasing Alt opens the selected tab.
 - The list view, with Compact rows, and the grid view, which fits the screen by itself: a preview of each tab, kept
   in memory only, or only each site's icon.
-- The switcher's toolbar: the search field in the middle, buttons for the view, its options and the settings. It can be
-  turned off (Show toolbar).
+- The switcher's toolbar: the search field in the middle, buttons for the view, its options, the website address, the
+  last used time and the settings. It can be turned off (Show toolbar).
 - Auto-select, Stay open until you choose a tab, and tabs from all windows.
 - Tabs shown before scrolling in the list: 6, 10 (the default), 15, or as many as fit the screen.
 - Use a window on Chrome's pages, off by default: where Chrome keeps extensions out (its own pages, the Chrome Web

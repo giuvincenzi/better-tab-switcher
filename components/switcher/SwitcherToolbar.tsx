@@ -16,10 +16,12 @@ interface SwitcherToolbarProps {
 
 /**
  * The switcher's toolbar: the search field always in the middle; at the start edge the option of the view in use (the
- * list's Compact, or what the grid shows), at the end edge the view and the settings. Its buttons are marked
+ * list's Compact, or what the grid shows), then the website address and the last used time (none in the grid of
+ * icons, which shows neither); at the end edge the view and the settings. Its buttons are marked
  * data-toolbar-controls: the switcher leaves the keyboard on the tabs when they are clicked.
  */
 export function SwitcherToolbar(props: SwitcherToolbarProps): JSX.Element {
+  const details = () => props.settings.details;
   return (
     <div role="toolbar" aria-label={i18n.t('Switcher_Toolbar')} class={styles.toolbar}>
       <div class={styles.start} data-toolbar-controls>
@@ -43,6 +45,22 @@ export function SwitcherToolbar(props: SwitcherToolbarProps): JSX.Element {
               { value: 'icons', label: i18n.t('Settings_GridShowIcons'), icon: 'icons' },
             ]}
             onChange={(gridShow) => props.onChange({ gridShow })}
+          />
+        </Show>
+        <Show when={props.settings.view === 'list' || props.settings.gridShow === 'previews'}>
+          <IconButton
+            icon="address"
+            label={i18n.t('Settings_Address')}
+            size="large"
+            pressed={details().address}
+            onClick={() => props.onChange({ details: { address: !details().address } })}
+          />
+          <IconButton
+            icon="lastUsed"
+            label={i18n.t('Settings_LastUsed')}
+            size="large"
+            pressed={details().lastUsed}
+            onClick={() => props.onChange({ details: { lastUsed: !details().lastUsed } })}
           />
         </Show>
       </div>
