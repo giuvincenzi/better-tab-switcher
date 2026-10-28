@@ -4,6 +4,7 @@
 #   make setup      install the dependencies (npm ci) and Playwright's Chromium when it is missing
 #   make dev        build the development build and open it in Playwright's Chromium with a fresh browser profile;
 #                   it rebuilds on every change (close the browser or press Ctrl+C to stop)
+#                   make dev tabs=N also opens N tabs of real sites (1 to 100), to try the switcher
 #   make lint       check the code's format, lint rules and types
 #   make test       run the unit tests (logic and components)
 #   make e2e        build the extension and run the end-to-end tests in Chromium;
@@ -21,7 +22,7 @@ setup:
 	npx playwright install chromium
 
 dev:
-	npm run dev
+	npm run dev $(if $(tabs),-- --tabs=$(tabs))
 
 lint:
 	npm run lint
