@@ -27,6 +27,7 @@ describe('parseSettings', () => {
       autoSelect: true,
       autoSelectSeconds: 5,
       toolbar: false,
+      chromePagesWindow: true,
       details: { ...defaultSettings.details, address: true, longAddress: 'scroll', lastUsed: true },
     };
     expect(parseSettings(saved)).toEqual(saved);
@@ -39,15 +40,18 @@ describe('parseSettings', () => {
   });
 
   it('refuses numbers outside their limits or not whole', () => {
-    expect(parseSettings({ listRows: limits.listRows.max + 1 }).listRows).toBe(defaultSettings.listRows);
-    expect(parseSettings({ listRows: 0 }).listRows).toBe(defaultSettings.listRows);
     expect(parseSettings({ delayMs: 99.5 }).delayMs).toBe(defaultSettings.delayMs);
     expect(parseSettings({ autoSelectSeconds: '3' }).autoSelectSeconds).toBe(defaultSettings.autoSelectSeconds);
   });
 
   it('accepts the limits themselves', () => {
     expect(parseSettings({ delayMs: limits.delayMs.min }).delayMs).toBe(limits.delayMs.min);
-    expect(parseSettings({ listRows: limits.listRows.max }).listRows).toBe(limits.listRows.max);
+    expect(parseSettings({ delayMs: limits.delayMs.max }).delayMs).toBe(limits.delayMs.max);
+  });
+
+  it('keeps only the numbers of rows there are to choose from', () => {
+    for (const rows of [6, 10, 15, 'fit']) expect(parseSettings({ listRows: rows }).listRows).toBe(rows);
+    for (const rows of [8, 0, 16, '10']) expect(parseSettings({ listRows: rows }).listRows).toBe(10);
   });
 
   it('keeps the details that are valid when others are not', () => {

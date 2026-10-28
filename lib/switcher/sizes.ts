@@ -85,6 +85,43 @@ export function gridColumns(settings: Settings, count: number, pageWidth: number
   return Math.max(1, Math.min(count, widest, Math.max(narrowest, Math.ceil(Math.sqrt(count)))));
 }
 
+/** About the toolbar's height, with the space under it: for firstWindowSize only, the switcher measures the rest. */
+const ABOUT_TOOLBAR = 3;
+
+/**
+ * The switcher's own window as it opens, in pixels at Chrome's default text size: about the switcher's size in the
+ * middle of `page` (the Chrome window it opens from), for the moment before the switcher measures itself and fits its
+ * window to it. Never larger than `page`.
+ */
+export function firstWindowSize(
+  settings: Settings,
+  count: number,
+  page: { width: number; height: number },
+): { width: number; height: number } {
+  const toolbar = settings.toolbar ? ABOUT_TOOLBAR : 0;
+  const min = sizes.listWidth.min;
+  let width: number;
+  let height: number;
+  if (settings.view === 'list') {
+    const list = settings.compact ? sizes.compactList : sizes.list;
+    const { share, max } = sizes.listWidth;
+    width = Math.min(Math.max(min, (page.width * share) / 100 / DEFAULT_EM_PX), max);
+    height = 2 * list.padding + toolbar + (listRows(settings, count) ?? count) * (list.row + sizes.gap);
+  } else {
+    const icons = settings.gridShow === 'icons';
+    const columns = gridColumns(settings, count, page.width, DEFAULT_EM_PX);
+    const cell = icons ? sizes.icons.cell : tileWidth;
+    const gap = icons ? sizes.icons.gap : sizes.grid.tileGap;
+    const rowHeight = icons ? sizes.icons.cell : tileHeight(settings);
+    width = Math.max(min, columns * (cell + gap) - gap + 2 * sizes.grid.padding);
+    height = 2 * sizes.grid.padding + toolbar + Math.ceil(count / columns) * (rowHeight + gap);
+  }
+  return {
+    width: Math.min(width * DEFAULT_EM_PX, page.width),
+    height: Math.min(height * DEFAULT_EM_PX, page.height),
+  };
+}
+
 /** The list's rows shown before it scrolls: the setting's, or all of them to fit the page (then it scrolls). */
 export function listRows(settings: Settings, count: number): number | undefined {
   return settings.listRows === 'fit' ? undefined : Math.max(1, Math.min(settings.listRows, count));

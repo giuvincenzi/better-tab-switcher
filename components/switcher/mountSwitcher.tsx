@@ -19,14 +19,20 @@ export interface SwitcherHandle {
 }
 
 /**
- * Shows the switcher in `container`, in the page, and connects it to the background. It is drawn in a modal dialog:
- * the browser's top layer, above everything of the page, its own dialogs, popovers and full screen elements too.
- * `onDone` removes it once it is done.
+ * Shows the switcher in `container`, in the page or in its own window, and connects it to the background. It is drawn
+ * in a modal dialog: the browser's top layer, above everything of the page, its own dialogs, popovers and full screen
+ * elements too. `onDone` removes it once it is done; `onFrame` gets the panel's size (Switcher).
  */
-export function mountSwitcher(container: HTMLElement, snapshot: SwitcherSnapshot, onDone: () => void): SwitcherHandle {
+export function mountSwitcher(
+  container: HTMLElement,
+  snapshot: SwitcherSnapshot,
+  onDone: () => void,
+  onFrame?: (size: { width: number; height: number }) => void,
+): SwitcherHandle {
   registerEmUnit();
   const dialog = document.createElement('dialog');
   dialog.className = styles.dialog as string;
+  dialog.classList.toggle(styles.ownWindow as string, snapshot.centeredOn !== undefined);
   // The dialog takes the focus itself, not the first control in it (the search field stays as it is).
   dialog.autofocus = true;
   applyTheme(dialog, snapshot.settings.theme);
@@ -63,6 +69,7 @@ export function mountSwitcher(container: HTMLElement, snapshot: SwitcherSnapshot
           onDone();
           void sendMessage('openSettings');
         }}
+        onFrame={onFrame}
       />
     ),
     dialog,

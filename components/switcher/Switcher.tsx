@@ -49,6 +49,8 @@ export interface SwitcherProps {
   /** A change made in the toolbar, to save; the switcher shows it at once. */
   onSettingsChange: (change: SettingsChange) => void;
   onSettings: () => void;
+  /** The panel's size in pixels, each time it is taken: its own window fits it (snapshot.centeredOn). */
+  onFrame?: (size: { width: number; height: number }) => void;
 }
 
 /** The panel's size and the grid's columns, fixed while the switcher is open. */
@@ -61,7 +63,7 @@ interface Frame {
 /** The list's width: its share of the page, between its minimum and its maximum (the CSS keeps it inside the page). */
 function listWidth(): string {
   const { share, min, max } = sizes.listWidth;
-  return `clamp(${em(min)}, ${share}vw, ${em(max)})`;
+  return `clamp(${em(min)}, calc(var(--page-width) * ${share / 100}), ${em(max)})`;
 }
 
 /** The longest the switcher waits for the page's picture before it shows. */
@@ -69,7 +71,9 @@ const PICTURE_WAIT_MS = 1000;
 
 /** The switcher: its rules are the state machine's (lib/switcher/machine.ts); here they meet the keys and the UI. */
 export function Switcher(props: SwitcherProps): JSX.Element {
-  const { fromIcon, direction } = props.snapshot;
+  const { fromIcon, direction, centeredOn } = props.snapshot;
+  // The page the switcher is in the middle of: the browser's window, or the Chrome window its own window is centered on.
+  const pageWidth = () => centeredOn?.width ?? window.innerWidth;
   const [settings, setSettings] = createSignal<Settings>(props.snapshot.settings);
   const [tabs, setTabs] = createSignal(props.snapshot.tabs);
   const [query, setQuery] = createSignal('');
@@ -96,7 +100,7 @@ export function Switcher(props: SwitcherProps): JSX.Element {
   // shows the tabs): they never change while it is open, whatever is typed or closed, or however the page is resized.
   const [frame, setFrame] = createSignal<Frame>();
   const columns = () =>
-    frame()?.columns ?? (layout() === 'list' ? 1 : gridColumns(settings(), shown().length, window.innerWidth, emPx()));
+    frame()?.columns ?? (layout() === 'list' ? 1 : gridColumns(settings(), shown().length, pageWidth(), emPx()));
   // An em of the switcher in pixels (the user's text size), for the grid's columns: read from the panel once it is in
   // the page (takeFrame), Chrome's default until then.
   const [emPx, setEmPx] = createSignal(DEFAULT_EM_PX);
@@ -143,6 +147,7 @@ export function Switcher(props: SwitcherProps): JSX.Element {
     setEmPx(Number.parseFloat(getComputedStyle(panel).getPropertyValue('--bts-em')) || DEFAULT_EM_PX);
     const { width, height } = panel.getBoundingClientRect();
     setFrame({ width, height, columns: columns() });
+    props.onFrame?.({ width, height });
   }
 
   /**
@@ -207,6 +212,8 @@ export function Switcher(props: SwitcherProps): JSX.Element {
     return {
       width: fixed ? `${fixed.width}px` : undefined,
       height: fixed ? `${fixed.height}px` : undefined,
+      '--page-width': centeredOn ? `${centeredOn.width}px` : '100vw',
+      '--page-height': centeredOn ? `${centeredOn.height}px` : '100vh',
       '--panel-width': grid ? 'auto' : listWidth(),
       '--panel-min-width': em(sizes.listWidth.min),
       '--panel-padding': em(grid ? sizes.grid.padding : list.padding),
@@ -232,7 +239,12 @@ export function Switcher(props: SwitcherProps): JSX.Element {
 
   return (
     <div class={styles.backdrop} classList={{ [styles.hidden as string]: !visible() }}>
-      <div ref={panel} class={styles.panel} classList={{ [styles.compact as string]: compact() }} style={panelSizes()}>
+      <div
+        ref={panel}
+        class={styles.panel}
+        classList={{ [styles.compact as string]: compact(), [styles.ownWindow as string]: centeredOn !== undefined }}
+        style={panelSizes()}
+      >
         <Show when={settings().toolbar}>
           <SwitcherToolbar
             settings={settings()}

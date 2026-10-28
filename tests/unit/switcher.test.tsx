@@ -264,6 +264,18 @@ describe('Switcher list width', () => {
     expect(panelWidth(open().host)).toBe(500);
   });
 
+  it('shows a short address whole beside the title, in the compact list', async () => {
+    await page.viewport(1280, 800);
+    const { host } = open({ compact: true, details: { ...defaultSettings.details, address: true } });
+    const addresses = [...host.querySelectorAll('span')].filter(
+      (span) => span.children.length === 0 && span.textContent === 'example.com',
+    );
+    expect(addresses).toHaveLength(tabs.length);
+    for (const address of addresses) {
+      expect(address.offsetWidth).toBeLessThanOrEqual((address.parentElement as HTMLElement).clientWidth);
+    }
+  });
+
   it('is never wider than the page', async () => {
     await page.viewport(380, 800);
     expect(panelWidth(open().host)).toBe(348);

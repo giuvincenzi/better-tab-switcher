@@ -1,0 +1,7 @@
+/* The switcher's window shows only the switcher. */
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+}

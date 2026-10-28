@@ -75,6 +75,8 @@ Settings_Delay: Delay before the switcher appears
 Settings_DelayNote: A quicker tap switches to the previous tab without showing it.
 Settings_StayOpen: Stay open until you choose a tab
 Settings_StayOpenNote: Releasing the shortcut's keys doesn't switch tabs. Choose a tab with Enter or a click.
+Settings_ChromePagesWindow: Use a window on Chrome's pages
+Settings_ChromePagesWindowNote: Chrome doesn't let extensions into its own pages, like Settings, or into the Chrome Web Store. There the switcher opens in a small window of its own.
 Settings_AutoSelect: Auto-select
 Settings_AutoSelectNote: The selected tab opens after a few seconds. A line shows the time left.
 Settings_AutoSelectTime: Auto-select time

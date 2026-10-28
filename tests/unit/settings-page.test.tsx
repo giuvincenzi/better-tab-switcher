@@ -114,13 +114,14 @@ describe('SettingsPage', () => {
     expect(saved).toHaveLength(1);
   });
 
-  it('shows up to 12 rows, or as many as fit the screen', () => {
+  it('shows 6, 10 or 15 rows, or as many as fit the screen; 10 at first', () => {
     const { host, saved } = open();
     const rows = select(host, 'Tabs shown before scrolling');
-    expect([...rows.options].map((option) => option.textContent).slice(-2)).toEqual(['12', 'Fit the screen']);
+    expect([...rows.options].map((option) => option.textContent)).toEqual(['6', '10', '15', 'Fit the screen']);
+    expect(rows.value).toBe('10');
     change(rows, 'fit');
-    change(rows, '12');
-    expect(saved).toEqual([{ listRows: 'fit' }, { listRows: 12 }]);
+    change(rows, '15');
+    expect(saved).toEqual([{ listRows: 'fit' }, { listRows: 15 }]);
   });
 
   it('turns on the auto-select time only with Auto-select', () => {

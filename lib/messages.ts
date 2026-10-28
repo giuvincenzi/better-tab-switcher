@@ -1,4 +1,5 @@
 import { defineExtensionMessaging } from '@webext-core/messaging';
+import type { Rect } from './presenter/placement';
 import type { Settings } from './settings/settings';
 import type { SwitcherTab } from './tabs/tabs';
 
@@ -13,6 +14,11 @@ export interface SwitcherSnapshot {
   fromIcon: boolean;
   /** The page's picture is being taken: the switcher stays hidden until pictureTaken, so it isn't in the picture. */
   waitForPicture: boolean;
+  /**
+   * Shown in a window of its own (on Chrome's pages): the Chrome window it is in the middle of. The switcher takes its
+   * sizes from that window, as it would from its page, and its own window fits it.
+   */
+  centeredOn?: Rect;
 }
 
 /** A tab's new preview. */
@@ -21,8 +27,10 @@ export interface Preview {
   picture: string;
 }
 
-/** The messages between the background and the switcher, in the page it is shown in. */
+/** The messages between the background and the switcher, in the page or the window it is shown in. */
 interface Messages {
+  /** Switcher's window → background: the tabs to show, once (null when the window was not opened for a switcher). */
+  getSnapshot(): SwitcherSnapshot | null;
   /** Background → switcher: show these tabs. */
   showSwitcher(snapshot: SwitcherSnapshot): void;
   /** Background → switcher: the shortcut was pressed again while it is open. */

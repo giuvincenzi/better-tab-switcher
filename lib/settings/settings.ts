@@ -4,8 +4,10 @@ export type Scope = 'window' | 'all';
 export type LongAddress = 'cut' | 'scroll';
 /** What the grid's tiles show: a picture of each tab, or only each site's icon. */
 export type GridShow = 'previews' | 'icons';
-/** A number of rows, or as many as fit on the screen. */
-export type RowCount = number | 'fit';
+/** The list's numbers of rows to choose from. */
+export const ROW_CHOICES = [6, 10, 15] as const;
+/** One of the numbers of rows, or as many as fit on the screen. */
+export type RowCount = (typeof ROW_CHOICES)[number] | 'fit';
 
 export interface TabDetails {
   address: boolean;
@@ -32,6 +34,8 @@ export interface Settings {
   autoSelectSeconds: number;
   /** The switcher's toolbar: the search field, and buttons for the view, its options and the settings. */
   toolbar: boolean;
+  /** Where Chrome keeps extensions out of the page (its own pages, the Chrome Web Store): a window of its own. */
+  chromePagesWindow: boolean;
   details: TabDetails;
 }
 
@@ -39,7 +43,7 @@ export const defaultSettings: Readonly<Settings> = Object.freeze({
   theme: 'device',
   view: 'list',
   compact: true,
-  listRows: 6,
+  listRows: 10,
   gridShow: 'previews',
   scope: 'window',
   showPinned: true,
@@ -48,6 +52,7 @@ export const defaultSettings: Readonly<Settings> = Object.freeze({
   autoSelect: false,
   autoSelectSeconds: 3,
   toolbar: true,
+  chromePagesWindow: false,
   details: Object.freeze({
     address: false,
     longAddress: 'cut',
@@ -61,7 +66,6 @@ export const defaultSettings: Readonly<Settings> = Object.freeze({
 
 /** The values each number setting accepts. */
 export const limits = Object.freeze({
-  listRows: { min: 1, max: 12 },
   delayMs: { min: 0, max: 1000 },
   autoSelectSeconds: { min: 1, max: 10 },
 });
@@ -82,8 +86,8 @@ function whole(value: unknown, range: Range, fallback: number): number {
     : fallback;
 }
 
-function rows(value: unknown, range: Range, fallback: RowCount): RowCount {
-  return value === 'fit' ? 'fit' : whole(value, range, fallback === 'fit' ? range.max : fallback);
+function rows(value: unknown, fallback: RowCount): RowCount {
+  return value === 'fit' || ROW_CHOICES.includes(value as never) ? (value as RowCount) : fallback;
 }
 
 function record(value: unknown): Record<string, unknown> {
@@ -102,7 +106,7 @@ export function parseSettings(value: unknown): Settings {
     theme: oneOf(saved.theme, ['device', 'light', 'dark'], d.theme),
     view: oneOf(saved.view, ['list', 'grid'], d.view),
     compact: flag(saved.compact, d.compact),
-    listRows: rows(saved.listRows, limits.listRows, d.listRows),
+    listRows: rows(saved.listRows, d.listRows),
     gridShow: oneOf(saved.gridShow, ['previews', 'icons'], d.gridShow),
     scope: oneOf(saved.scope, ['window', 'all'], d.scope),
     showPinned: flag(saved.showPinned, d.showPinned),
@@ -111,6 +115,7 @@ export function parseSettings(value: unknown): Settings {
     autoSelect: flag(saved.autoSelect, d.autoSelect),
     autoSelectSeconds: whole(saved.autoSelectSeconds, limits.autoSelectSeconds, d.autoSelectSeconds),
     toolbar: flag(saved.toolbar, d.toolbar),
+    chromePagesWindow: flag(saved.chromePagesWindow, d.chromePagesWindow),
     details: {
       address: flag(details.address, d.details.address),
       longAddress: oneOf(details.longAddress, ['cut', 'scroll'], d.details.longAddress),

@@ -1,7 +1,7 @@
 import { type JSX, Show } from 'solid-js';
 import { i18n } from '#i18n';
 import { timeAgo } from '../../lib/i18n/time';
-import { limits, type RowCount, type Settings, type TabDetails } from '../../lib/settings/settings';
+import { limits, ROW_CHOICES, type RowCount, type Settings, type TabDetails } from '../../lib/settings/settings';
 import type { SettingsChange } from '../../lib/settings/store';
 import { Button } from '../ui/Button';
 import { NumberField } from '../ui/NumberField';
@@ -86,7 +86,6 @@ export function AppearanceSection(props: SectionProps): JSX.Element {
               language={props.language}
               label={i18n.t('Settings_ListRows')}
               value={props.settings.listRows}
-              max={limits.listRows.max}
               onChange={(listRows) => props.save({ listRows })}
             />
           </>
@@ -155,6 +154,12 @@ export function SwitchingSection(props: SectionProps): JSX.Element {
         note={i18n.t('Settings_StayOpenNote')}
         checked={props.settings.stayOpen}
         onChange={(stayOpen) => props.save({ stayOpen })}
+      />
+      <ToggleRow
+        label={i18n.t('Settings_ChromePagesWindow')}
+        note={i18n.t('Settings_ChromePagesWindowNote')}
+        checked={props.settings.chromePagesWindow}
+        onChange={(chromePagesWindow) => props.save({ chromePagesWindow })}
       />
       <ToggleRow
         label={i18n.t('Settings_AutoSelect')}
@@ -289,19 +294,10 @@ function ToggleRow(props: { label: string; note?: string; checked: boolean; onCh
   );
 }
 
-/** How many rows show before scrolling: a number, or as many as fit the screen. */
-function RowsRow(props: {
-  label: string;
-  value: RowCount;
-  max: number;
-  language: string;
-  onChange: (rows: RowCount) => void;
-}) {
+/** How many rows show before scrolling: one of the numbers to choose from, or as many as fit the screen. */
+function RowsRow(props: { label: string; value: RowCount; language: string; onChange: (rows: RowCount) => void }) {
   const options = (): SelectOption<string>[] => [
-    ...Array.from({ length: props.max }, (_, i) => ({
-      value: String(i + 1),
-      label: new Intl.NumberFormat(props.language).format(i + 1),
-    })),
+    ...ROW_CHOICES.map((rows) => ({ value: String(rows), label: new Intl.NumberFormat(props.language).format(rows) })),
     { value: 'fit', label: i18n.t('Settings_RowsFit') },
   ];
   return (
@@ -314,7 +310,7 @@ function RowsRow(props: {
           options={options()}
           labelledBy={ids.label}
           describedBy={ids.note}
-          onChange={(value) => props.onChange(value === 'fit' ? 'fit' : Number(value))}
+          onChange={(value) => props.onChange(value === 'fit' ? 'fit' : (Number(value) as RowCount))}
         />
       )}
     />

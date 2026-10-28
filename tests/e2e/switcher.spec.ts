@@ -105,6 +105,49 @@ test.describe("Chrome's own pages @switcher", () => {
       expect.stringContaining('chrome-extension://'),
     );
   });
+
+  test("opens in a window of its own there, with Use a window on Chrome's pages", async ({
+    context,
+    serviceWorker,
+  }) => {
+    await openPages(context, ['alpha', 'beta']);
+    await useSettings(serviceWorker, { chromePagesWindow: true });
+    const chromePage = await context.newPage();
+    await chromePage.goto('chrome://version');
+    await chromePage.bringToFront();
+    const opened = context.waitForEvent('page');
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    const switcherWindow = await opened;
+    await expect(switcherWindow.getByRole('option')).toHaveCount(3);
+    // In the middle of the Chrome window it was asked from, as large as the switcher.
+    await expect
+      .poll(() =>
+        serviceWorker.evaluate(async () => {
+          const windows = await chrome.windows.getAll();
+          const from = windows.find((w) => w.type === 'normal') as chrome.windows.Window;
+          const own = windows.find((w) => w.type === 'popup') as chrome.windows.Window;
+          const middle = (w: chrome.windows.Window) => [
+            (w.left ?? 0) + (w.width ?? 0) / 2,
+            (w.top ?? 0) + (w.height ?? 0) / 2,
+          ];
+          const [fromX, fromY] = middle(from) as [number, number];
+          const [ownX, ownY] = middle(own) as [number, number];
+          return Math.abs(fromX - ownX) <= 1 && Math.abs(fromY - ownY) <= 1;
+        }),
+      )
+      .toBe(true);
+    await expect
+      .poll(() =>
+        switcherWindow.evaluate(() => {
+          const panel = (document.querySelector('[style*="--panel-width"]') as HTMLElement).getBoundingClientRect();
+          return Math.abs(panel.width - window.innerWidth) <= 1 && Math.abs(panel.height - window.innerHeight) <= 1;
+        }),
+      )
+      .toBe(true);
+    await switcherWindow.getByRole('option', { name: /^alpha/ }).click();
+    await expect.poll(() => activeTitle(serviceWorker)).toBe('alpha');
+    await expect.poll(() => switcherWindow.isClosed()).toBe(true);
+  });
 });
 
 test.describe('one switcher at a time @switcher', () => {

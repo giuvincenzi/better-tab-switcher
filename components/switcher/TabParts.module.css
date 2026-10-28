@@ -37,10 +37,13 @@
   text-overflow: ellipsis;
 }
 
+/*
+ * Beside the title (the compact list): a column as wide in every row, so the addresses line up. Its width can't be
+ * its text's: the container that measures the address to scroll it takes no width from its text.
+ */
 .side {
-  flex: 0 1 auto;
-  min-width: calc(3 * var(--bts-em));
-  max-width: 42%;
+  flex: none;
+  width: 30%;
 }
 
 /* Scrolls a long address back and forth on the selected tab: as far as it is longer than its place, no further. */

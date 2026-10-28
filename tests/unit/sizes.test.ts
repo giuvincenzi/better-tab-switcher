@@ -3,6 +3,7 @@ import { defaultSettings, type Settings } from '../../lib/settings/settings';
 import {
   ADDRESS_TUCK,
   DEFAULT_EM_PX,
+  firstWindowSize,
   gridColumns,
   listRows,
   sizes,
@@ -59,6 +60,25 @@ describe('gridColumns', () => {
     expect(gridColumns(icons, 11, 1280, emPx)).toBe(5);
     expect(gridColumns(icons, 3, 1280, emPx)).toBe(3);
     expect(gridColumns(grid, 3, 1280, emPx)).toBe(2);
+  });
+});
+
+describe('firstWindowSize', () => {
+  const page = { width: 1280, height: 800 };
+
+  it('opens the window as wide as the list would be in that page: 40% of it, at least 500 px', () => {
+    expect(firstWindowSize(settings(), 30, page).width).toBe(512);
+    expect(firstWindowSize(settings(), 30, { width: 1000, height: 800 }).width).toBe(500);
+  });
+
+  it('opens it taller with more rows, never taller than the page', () => {
+    const six = firstWindowSize(settings({ listRows: 6 }), 30, page).height;
+    expect(firstWindowSize(settings({ listRows: 10 }), 30, page).height).toBeGreaterThan(six);
+    expect(firstWindowSize(settings({ listRows: 'fit' }), 100, page).height).toBe(800);
+  });
+
+  it('opens it as wide as the grid of icons, at least 500 px', () => {
+    expect(firstWindowSize(settings({ view: 'grid', gridShow: 'icons' }), 4, page).width).toBe(500);
   });
 });
 

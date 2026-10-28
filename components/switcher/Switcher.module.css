@@ -18,10 +18,13 @@
   flex-direction: column;
   gap: var(--gap);
   width: var(--panel-width);
-  /* min-width wins over max-width: it is the page's width at most, too. */
-  min-width: min(var(--panel-min-width), calc(100vw - 2 * var(--margin)));
-  max-width: calc(100vw - 2 * var(--margin));
-  max-height: calc(100vh - 2 * var(--margin));
+  /*
+   * min-width wins over max-width: it is the page's width at most, too. The page is the browser's window, or the
+   * Chrome window the switcher's own window is centered on (--page-width, --page-height).
+   */
+  min-width: min(var(--panel-min-width), calc(var(--page-width) - 2 * var(--margin)));
+  max-width: calc(var(--page-width) - 2 * var(--margin));
+  max-height: calc(var(--page-height) - 2 * var(--margin));
   padding: var(--panel-padding);
   box-sizing: border-box;
   border: calc(0.0625 * var(--bts-em)) solid var(--bts-border);
@@ -40,6 +43,13 @@
 
 .compact {
   border-radius: var(--bts-radius-large);
+}
+
+/* In its own window the panel is the whole window: the window's frame is its edge. */
+.ownWindow {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .noMatch {

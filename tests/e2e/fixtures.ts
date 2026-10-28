@@ -10,7 +10,10 @@ interface ExtensionFixtures {
   extensionId: string;
 }
 
-/** Every test gets a fresh browser profile with the extension loaded, in English. */
+/**
+ * Every test gets a fresh browser profile with the extension loaded, in English. The windows are real, 1280 by 720
+ * pixels, never an emulated viewport: the switcher's own window measures its frame (outer and inner sizes).
+ */
 export const test = base.extend<ExtensionFixtures>({
   // biome-ignore lint/correctness/noEmptyPattern: Playwright fixtures take their dependencies as a destructured object.
   context: async ({}, use) => {
@@ -18,7 +21,13 @@ export const test = base.extend<ExtensionFixtures>({
       channel: 'chromium',
       headless: !process.env.HEADED,
       locale: 'en-US',
-      args: [`--disable-extensions-except=${extensionDir}`, `--load-extension=${extensionDir}`, '--lang=en-US'],
+      viewport: null,
+      args: [
+        `--disable-extensions-except=${extensionDir}`,
+        `--load-extension=${extensionDir}`,
+        '--lang=en-US',
+        '--window-size=1280,720',
+      ],
     });
     await use(context);
     await context.close();
