@@ -9,13 +9,21 @@ const savedPictures = (worker: Worker) =>
     Object.keys(await chrome.storage.session.get(null)).filter((k) => k.startsWith('preview-')),
   );
 
-/** Uses each page in turn, as a person would: each one stays in front until its picture is taken. */
+/**
+ * Uses each page in turn, as a person would: the switcher opens on it (its picture is taken then) and closes. Chrome
+ * takes at most two pictures a second: a switcher opened sooner gets none, so it opens again until the picture is kept.
+ */
 async function useEach(worker: Worker, pages: Page[]) {
   for (const page of pages) {
     await page.bringToFront();
     const title = await page.title();
     const tabId = await worker.evaluate(async (t) => (await chrome.tabs.query({ title: t }))[0]?.id, title);
-    await expect.poll(() => savedPictures(worker)).toContain(`preview-${tabId}`);
+    await expect(async () => {
+      await showSwitcher(worker);
+      await page.keyboard.press('Escape');
+      await expect(rows(page)).toHaveCount(0);
+      await expect.poll(() => savedPictures(worker), { timeout: 1000 }).toContain(`preview-${tabId}`);
+    }).toPass();
   }
 }
 

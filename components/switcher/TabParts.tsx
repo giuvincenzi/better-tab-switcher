@@ -24,7 +24,7 @@ export function tabName(tab: SwitcherTab, details: TabDetails, language: string)
   );
 }
 
-export function hostOf(url: string): string {
+function hostOf(url: string): string {
   try {
     return new URL(url).host || url;
   } catch {

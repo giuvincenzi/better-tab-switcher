@@ -9,7 +9,7 @@ test.describe('extension @setup', () => {
     const manifest = JSON.parse(readFileSync('.output/chrome-mv3/manifest.json', 'utf8'));
     expect(manifest.host_permissions).toBeUndefined();
     expect(manifest.content_scripts).toBeUndefined();
-    expect(manifest.optional_host_permissions).toEqual(['<all_urls>']);
+    expect(manifest.optional_host_permissions).toBeUndefined();
     expect(manifest.permissions.sort()).toEqual(
       ['activeTab', 'favicon', 'scripting', 'storage', 'tabGroups', 'tabs'].sort(),
     );
