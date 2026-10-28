@@ -1,13 +1,13 @@
 .button {
   flex: none;
-  height: 32px;
-  padding: 0 14px;
-  border: 1px solid var(--bts-settings-border);
-  border-radius: 16px;
+  height: calc(2 * var(--bts-em));
+  padding: 0 calc(0.875 * var(--bts-em));
+  border: calc(0.0625 * var(--bts-em)) solid var(--bts-settings-border);
+  border-radius: calc(1 * var(--bts-em));
   background: transparent;
   color: var(--bts-link);
   font: inherit;
-  font-size: 13px;
+  font-size: calc(0.8125 * var(--bts-em));
   font-weight: 500;
   white-space: nowrap;
   cursor: pointer;
@@ -18,6 +18,6 @@
 }
 
 .button:focus-visible {
-  outline: 2px solid var(--bts-accent-bright);
-  outline-offset: 2px;
+  outline: calc(0.125 * var(--bts-em)) solid var(--bts-accent-bright);
+  outline-offset: calc(0.125 * var(--bts-em));
 }

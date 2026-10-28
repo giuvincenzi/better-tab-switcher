@@ -1,13 +1,14 @@
 import { type JSX, Show } from 'solid-js';
 import { faviconUrl } from '../../lib/favicon';
 import type { TabDetails } from '../../lib/settings/settings';
+import { em } from '../../lib/switcher/sizes';
 import type { SwitcherTab } from '../../lib/tabs/tabs';
 import styles from './TabIcon.module.css';
 import { AutoSelectLine, MIDDLE_BUTTON, preventMiddleClickScroll, tabName } from './TabParts';
 import { tabOptionId } from './TabRow';
 
 /** The site's icon: never shown larger than this, nor than its own size. */
-const SITE_ICON_SIZE = 32;
+const SITE_ICON_SIZE = 2;
 
 export interface TabIconProps {
   tab: SwitcherTab;
@@ -50,7 +51,7 @@ export function TabIcon(props: TabIconProps): JSX.Element {
       <img
         class={styles.icon}
         src={faviconUrl(props.tab.url, SITE_ICON_SIZE)}
-        style={{ 'max-width': `${SITE_ICON_SIZE}px`, 'max-height': `${SITE_ICON_SIZE}px` }}
+        style={{ 'max-width': em(SITE_ICON_SIZE), 'max-height': em(SITE_ICON_SIZE) }}
         alt=""
       />
       <Show when={props.selected && props.autoSelectSeconds}>

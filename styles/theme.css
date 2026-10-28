@@ -2,10 +2,13 @@
  * The colors and sizes every component uses, for both themes. Each color is written once with light-dark(): the
  * theme comes from color-scheme, set by data-theme on the element the extension's UI is in ("device": the device's
  * theme). Not on :host: inside a page, WXT resets the shadow root's host with all: initial.
- * Sizes are in px, never rem: inside a page, rem follows the site's font size.
+ * Sizes are in em of this element, whose font size is the user's text size in Chrome (font-size: medium), through
+ * --bts-em (components/ui/emUnit.ts): never rem, which inside a page follows the site's font size.
  */
 [data-theme] {
   color-scheme: light dark;
+  font-size: medium;
+  --bts-em: 1em;
 
   --bts-accent: #0f766e;
   --bts-accent-bright: #14b8a6;
@@ -46,11 +49,11 @@
   --bts-group-orange: light-dark(#fa903e, #fcad70);
 
   --bts-font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --bts-shadow: 0 20px 56px rgb(0 0 0 / 38%);
-  --bts-radius-small: 6px;
-  --bts-radius: 8px;
-  --bts-radius-large: 12px;
-  --bts-radius-panel: 16px;
+  --bts-shadow: 0 calc(1.25 * var(--bts-em)) calc(3.5 * var(--bts-em)) rgb(0 0 0 / 38%);
+  --bts-radius-small: calc(0.375 * var(--bts-em));
+  --bts-radius: calc(0.5 * var(--bts-em));
+  --bts-radius-large: calc(0.75 * var(--bts-em));
+  --bts-radius-panel: calc(1 * var(--bts-em));
 }
 
 [data-theme="light"] {

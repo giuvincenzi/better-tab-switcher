@@ -3,6 +3,7 @@ import { i18n } from '#i18n';
 import { faviconUrl } from '../../lib/favicon';
 import type { TitleParts } from '../../lib/search/search';
 import type { TabDetails } from '../../lib/settings/settings';
+import { em } from '../../lib/switcher/sizes';
 import type { SwitcherTab } from '../../lib/tabs/tabs';
 import { IconButton } from '../ui/IconButton';
 import {
@@ -19,7 +20,7 @@ import { tabOptionId } from './TabRow';
 import styles from './TabTile.module.css';
 
 /** The site's icon in a tile without a preview: never shown larger than this, nor than its own size. */
-const SITE_ICON_SIZE = 32;
+const SITE_ICON_SIZE = 2;
 
 export interface TabTileProps {
   tab: SwitcherTab;
@@ -65,7 +66,7 @@ export function TabTile(props: TabTileProps): JSX.Element {
       }}
     >
       <div class={styles.header}>
-        <img class={styles.favicon} src={faviconUrl(props.tab.url, 16)} alt="" />
+        <img class={styles.favicon} src={faviconUrl(props.tab.url, 1)} alt="" />
         <span class={styles.title}>
           <TabTitle tab={props.tab} title={props.title} details={props.details} />
         </span>
@@ -95,7 +96,7 @@ export function TabTile(props: TabTileProps): JSX.Element {
             <img
               class={styles.siteIcon}
               src={faviconUrl(props.tab.url, SITE_ICON_SIZE)}
-              style={{ 'max-width': `${SITE_ICON_SIZE}px`, 'max-height': `${SITE_ICON_SIZE}px` }}
+              style={{ 'max-width': em(SITE_ICON_SIZE), 'max-height': em(SITE_ICON_SIZE) }}
               alt=""
             />
           }

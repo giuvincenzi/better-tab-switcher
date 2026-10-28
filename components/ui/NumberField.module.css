@@ -2,24 +2,24 @@
   display: inline-flex;
   flex: none;
   align-items: center;
-  gap: 6px;
-  height: 32px;
-  padding: 0 10px;
+  gap: calc(0.375 * var(--bts-em));
+  height: calc(2 * var(--bts-em));
+  padding: 0 calc(0.625 * var(--bts-em));
   box-sizing: border-box;
-  border: 1px solid var(--bts-settings-border);
+  border: calc(0.0625 * var(--bts-em)) solid var(--bts-settings-border);
   border-radius: var(--bts-radius);
   background: var(--bts-field);
-  font-size: 13px;
+  font-size: calc(0.8125 * var(--bts-em));
 }
 
 .field:focus-within {
-  outline: 2px solid var(--bts-accent-bright);
-  outline-offset: 1px;
+  outline: calc(0.125 * var(--bts-em)) solid var(--bts-accent-bright);
+  outline-offset: calc(0.0625 * var(--bts-em));
 }
 
 /* Numbers stay left to right, also in a right-to-left page. */
 .input {
-  width: 48px;
+  width: calc(3 * var(--bts-em));
   padding: 0;
   border: 0;
   outline: none;

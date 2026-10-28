@@ -1,4 +1,5 @@
 import { type JSX, Match, Switch } from 'solid-js';
+import { em } from '../../lib/switcher/sizes';
 
 export type IconName =
   | 'search'
@@ -17,6 +18,7 @@ export type IconName =
 
 interface IconProps {
   name: IconName;
+  /** In em of the UI's root (lib/switcher/sizes.ts, em()). */
   size: number;
   /** What the icon says, for screen readers; none when the text next to it already says it. */
   label?: string;
@@ -26,8 +28,7 @@ interface IconProps {
 export function Icon(props: IconProps): JSX.Element {
   return (
     <svg
-      width={props.size}
-      height={props.size}
+      style={{ width: em(props.size), height: em(props.size), 'flex-shrink': 0 }}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"

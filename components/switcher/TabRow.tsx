@@ -61,7 +61,7 @@ export function TabRow(props: TabRowProps): JSX.Element {
         if (event.button === MIDDLE_BUTTON) props.onClose();
       }}
     >
-      <img class={styles.favicon} src={faviconUrl(props.tab.url, props.compact ? 16 : 20)} alt="" />
+      <img class={styles.favicon} src={faviconUrl(props.tab.url, props.compact ? 1 : 1.25)} alt="" />
       <div class={styles.text}>
         <TabTitle tab={props.tab} title={props.title} details={props.details} />
         <Show when={props.details.address && !props.compact}>

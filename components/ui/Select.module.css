@@ -5,16 +5,16 @@
 }
 
 .select {
-  min-width: 160px;
-  height: 32px;
+  min-width: calc(10 * var(--bts-em));
+  height: calc(2 * var(--bts-em));
   padding-block: 0;
-  padding-inline: 12px 32px;
-  border: 1px solid var(--bts-settings-border);
+  padding-inline: calc(0.75 * var(--bts-em)) calc(2 * var(--bts-em));
+  border: calc(0.0625 * var(--bts-em)) solid var(--bts-settings-border);
   border-radius: var(--bts-radius);
   background: var(--bts-field);
   color: var(--bts-text);
   font: inherit;
-  font-size: 13px;
+  font-size: calc(0.8125 * var(--bts-em));
   appearance: none;
   cursor: pointer;
 }
@@ -24,13 +24,13 @@
 }
 
 .select:focus-visible {
-  outline: 2px solid var(--bts-accent-bright);
-  outline-offset: 1px;
+  outline: calc(0.125 * var(--bts-em)) solid var(--bts-accent-bright);
+  outline-offset: calc(0.0625 * var(--bts-em));
 }
 
 .chevron {
   position: absolute;
-  inset-inline-end: 10px;
+  inset-inline-end: calc(0.625 * var(--bts-em));
   top: 50%;
   display: inline-flex;
   color: var(--bts-text-muted);

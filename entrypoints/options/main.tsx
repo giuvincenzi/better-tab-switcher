@@ -6,6 +6,7 @@ import { i18n } from '#i18n';
 import { browser } from '#imports';
 import { SettingsPage } from '../../components/settings/SettingsPage';
 import { applyTheme } from '../../components/ui/applyTheme';
+import { registerEmUnit } from '../../components/ui/emUnit';
 import { applyLanguage } from '../../lib/i18n/direction';
 import { CTRL_TAB_GUIDE_URL, SHORTCUTS_PAGE_URL } from '../../lib/links';
 import { loadSettings, restoreDefaultSettings, saveSettings, watchSettings } from '../../lib/settings/store';
@@ -13,6 +14,7 @@ import { loadSettings, restoreDefaultSettings, saveSettings, watchSettings } fro
 // The settings page: every change is saved at once, and the page follows changes made elsewhere (another settings
 // page, Restore) and the shortcuts changed in chrome://extensions/shortcuts.
 const root = document.documentElement;
+registerEmUnit();
 applyLanguage(root);
 document.title = i18n.t('Settings_Title');
 

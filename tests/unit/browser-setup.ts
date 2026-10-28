@@ -1,5 +1,6 @@
 import { vi } from 'vitest';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
+import { registerEmUnit } from '../../components/ui/emUnit';
 
 // The components' tests in Chromium (vitest.config.ts): the extension APIs are WXT's fake browser, as in the logic's
 // tests, with Chrome's i18n added, which the fake browser doesn't have: the English texts of locales/en.yml.
@@ -14,6 +15,9 @@ const i18n = {
   },
   getUILanguage: () => 'en',
 };
+
+// The UI's size unit, as the switcher and the settings page register it (components/ui/emUnit.ts).
+registerEmUnit();
 
 vi.stubGlobal('chrome', { ...fakeBrowser, i18n });
 vi.stubGlobal('browser', { ...fakeBrowser, i18n });

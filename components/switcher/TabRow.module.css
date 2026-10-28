@@ -7,9 +7,10 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: calc(0.625 * var(--bts-em));
   min-height: var(--row);
-  padding: 6px 10px 6px 14px;
+  padding: calc(0.375 * var(--bts-em)) calc(0.625 * var(--bts-em)) calc(0.375 * var(--bts-em))
+    calc(0.875 * var(--bts-em));
   box-sizing: border-box;
   overflow: hidden;
   border-radius: var(--bts-radius-large);
@@ -23,17 +24,17 @@
 
 .favicon {
   flex: none;
-  width: 20px;
-  height: 20px;
+  width: calc(1.25 * var(--bts-em));
+  height: calc(1.25 * var(--bts-em));
 }
 
 .text {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 1px;
+  gap: calc(0.0625 * var(--bts-em));
   min-width: 0;
-  font-size: 15px;
+  font-size: calc(0.9375 * var(--bts-em));
   font-weight: 500;
 }
 
@@ -48,17 +49,17 @@
 }
 
 .compact {
-  padding: 4px 10px 4px 12px;
+  padding: calc(0.25 * var(--bts-em)) calc(0.625 * var(--bts-em)) calc(0.25 * var(--bts-em)) calc(0.75 * var(--bts-em));
   border-radius: var(--bts-radius);
 }
 
 .compact .favicon {
-  width: 16px;
-  height: 16px;
+  width: calc(1 * var(--bts-em));
+  height: calc(1 * var(--bts-em));
 }
 
 .compact .text {
-  font-size: 14px;
+  font-size: calc(0.875 * var(--bts-em));
   font-weight: 400;
 }
 

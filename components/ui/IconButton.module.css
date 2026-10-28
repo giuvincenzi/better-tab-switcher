@@ -3,8 +3,8 @@
   align-items: center;
   justify-content: center;
   flex: none;
-  width: 24px;
-  height: 24px;
+  width: calc(1.5 * var(--bts-em));
+  height: calc(1.5 * var(--bts-em));
   padding: 0;
   border: 0;
   border-radius: var(--bts-radius-small);
@@ -19,18 +19,18 @@
 }
 
 .button:focus-visible {
-  outline: 2px solid var(--bts-accent);
-  outline-offset: 1px;
+  outline: calc(0.125 * var(--bts-em)) solid var(--bts-accent);
+  outline-offset: calc(0.0625 * var(--bts-em));
 }
 
 .small {
-  width: 22px;
-  height: 22px;
+  width: calc(1.375 * var(--bts-em));
+  height: calc(1.375 * var(--bts-em));
 }
 
 .large {
-  width: 32px;
-  height: 32px;
+  width: calc(2 * var(--bts-em));
+  height: calc(2 * var(--bts-em));
   border-radius: var(--bts-radius);
 }
 

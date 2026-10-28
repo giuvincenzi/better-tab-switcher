@@ -192,6 +192,20 @@ describe('Switcher', () => {
 });
 
 describe('Switcher size', () => {
+  it("grows with the user's text size: rows and tiles in em", () => {
+    // The UI's root sets --bts-em to the user's text size (styles/theme.css): 20 px instead of the default 16.
+    document.body.style.setProperty('--bts-em', '20px');
+    try {
+      const row = open().host.querySelector('[role="option"]') as HTMLElement;
+      expect(row.getBoundingClientRect().height).toBe(36 * 1.25);
+      dispose?.();
+      const tile = open({ view: 'grid' }).host.querySelector('[role="option"]') as HTMLElement;
+      expect(tile.getBoundingClientRect().width).toBe(208 * 1.25);
+    } finally {
+      document.body.style.removeProperty('--bts-em');
+    }
+  });
+
   const panel = (host: HTMLElement) => host.querySelector('[style*="--panel-width"]') as HTMLElement;
   const size = (host: HTMLElement) => {
     const { width, height } = panel(host).getBoundingClientRect();

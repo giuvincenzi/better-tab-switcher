@@ -1,31 +1,31 @@
 .row {
   display: flex;
   align-items: center;
-  gap: 16px;
-  min-height: 56px;
-  padding: 10px 20px;
+  gap: calc(1 * var(--bts-em));
+  min-height: calc(3.5 * var(--bts-em));
+  padding: calc(0.625 * var(--bts-em)) calc(1.25 * var(--bts-em));
   box-sizing: border-box;
 }
 
 .row + .row {
-  border-top: 1px solid var(--bts-settings-border);
+  border-top: calc(0.0625 * var(--bts-em)) solid var(--bts-settings-border);
 }
 
 .text {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 2px;
+  gap: calc(0.125 * var(--bts-em));
   min-width: 0;
 }
 
 .label {
-  font-size: 14px;
+  font-size: calc(0.875 * var(--bts-em));
 }
 
 .note {
   color: var(--bts-text-muted);
-  font-size: 13px;
+  font-size: calc(0.8125 * var(--bts-em));
   line-height: 1.4;
 }
 

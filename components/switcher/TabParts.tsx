@@ -71,23 +71,23 @@ export function TabIcons(props: { tab: SwitcherTab; details: TabDetails }): JSX.
     <>
       <Show when={props.details.pinnedIcon && props.tab.pinned}>
         <span class={styles.icon}>
-          <Icon name="pin" size={14} />
+          <Icon name="pin" size={0.875} />
         </span>
       </Show>
       <Show when={props.details.audioIcon && props.tab.audible}>
         <span class={styles.icon}>
-          <Icon name="audio" size={14} />
+          <Icon name="audio" size={0.875} />
         </span>
       </Show>
       <Show when={props.details.sleeping && props.tab.sleeping}>
         <span class={styles.icon}>
-          <Icon name="sleep" size={14} />
+          <Icon name="sleep" size={0.875} />
         </span>
       </Show>
       <Show when={props.tab.windowLabel}>
         {(label) => (
           <span class={styles.window}>
-            <Icon name="window" size={12} />
+            <Icon name="window" size={0.75} />
             {label()}
           </span>
         )}

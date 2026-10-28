@@ -11,10 +11,10 @@
   z-index: 1;
   display: flex;
   align-items: center;
-  gap: 12px;
-  height: 56px;
-  padding: 0 24px;
-  border-bottom: 1px solid var(--bts-settings-border);
+  gap: calc(0.75 * var(--bts-em));
+  height: calc(3.5 * var(--bts-em));
+  padding: 0 calc(1.5 * var(--bts-em));
+  border-bottom: calc(0.0625 * var(--bts-em)) solid var(--bts-settings-border);
   background: var(--bts-settings-page);
 }
 
@@ -24,7 +24,7 @@
 
 .title {
   margin: 0;
-  font-size: 20px;
+  font-size: calc(1.25 * var(--bts-em));
   font-weight: 500;
 }
 
@@ -32,24 +32,24 @@
 .body {
   display: flex;
   flex-wrap: wrap;
-  gap: 24px;
-  max-width: 1100px;
+  gap: calc(1.5 * var(--bts-em));
+  max-width: calc(68.75 * var(--bts-em));
   margin: 0 auto;
-  padding: 24px;
+  padding: calc(1.5 * var(--bts-em));
   box-sizing: border-box;
 }
 
 .sidebar {
-  flex: 1 1 200px;
-  max-width: 240px;
+  flex: 1 1 calc(12.5 * var(--bts-em));
+  max-width: calc(15 * var(--bts-em));
 }
 
 .links {
   position: sticky;
-  top: 80px;
+  top: calc(5 * var(--bts-em));
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: calc(0.125 * var(--bts-em));
   margin: 0;
   padding: 0;
   list-style: none;
@@ -58,11 +58,11 @@
 .link {
   display: flex;
   align-items: center;
-  min-height: 40px;
-  padding: 0 16px;
-  border-radius: 20px;
+  min-height: calc(2.5 * var(--bts-em));
+  padding: 0 calc(1 * var(--bts-em));
+  border-radius: calc(1.25 * var(--bts-em));
   color: var(--bts-text);
-  font-size: 14px;
+  font-size: calc(0.875 * var(--bts-em));
   font-weight: 500;
   text-decoration: none;
 }
@@ -77,16 +77,16 @@
 }
 
 .link:focus-visible {
-  outline: 2px solid var(--bts-accent-bright);
-  outline-offset: 1px;
+  outline: calc(0.125 * var(--bts-em)) solid var(--bts-accent-bright);
+  outline-offset: calc(0.0625 * var(--bts-em));
 }
 
 .main {
   display: flex;
-  flex: 999 1 560px;
+  flex: 999 1 calc(35 * var(--bts-em));
   flex-direction: column;
-  gap: 28px;
+  gap: calc(1.75 * var(--bts-em));
   min-width: 0;
-  max-width: 720px;
+  max-width: calc(45 * var(--bts-em));
   margin: 0 auto;
 }

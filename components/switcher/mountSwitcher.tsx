@@ -4,6 +4,7 @@ import { applyLanguage } from '../../lib/i18n/direction';
 import { type Direction, type Preview, type SwitcherSnapshot, sendMessage } from '../../lib/messages';
 import { saveSettings } from '../../lib/settings/store';
 import { applyTheme } from '../ui/applyTheme';
+import { registerEmUnit } from '../ui/emUnit';
 import styles from './mountSwitcher.module.css';
 import { Switcher } from './Switcher';
 
@@ -23,6 +24,7 @@ export interface SwitcherHandle {
  * `onDone` removes it once it is done.
  */
 export function mountSwitcher(container: HTMLElement, snapshot: SwitcherSnapshot, onDone: () => void): SwitcherHandle {
+  registerEmUnit();
   const dialog = document.createElement('dialog');
   dialog.className = styles.dialog as string;
   // The dialog takes the focus itself, not the first control in it (the search field stays as it is).

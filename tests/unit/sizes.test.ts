@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { defaultSettings, type Settings } from '../../lib/settings/settings';
-import { ADDRESS_TUCK, gridColumns, listRows, sizes, tileHeight, tileWidth } from '../../lib/switcher/sizes';
+import {
+  ADDRESS_TUCK,
+  DEFAULT_EM_PX,
+  gridColumns,
+  listRows,
+  sizes,
+  tileHeight,
+  tileWidth,
+} from '../../lib/switcher/sizes';
 
 const settings = (change: Partial<Settings> = {}): Settings => ({ ...defaultSettings, ...change });
 
@@ -21,25 +29,32 @@ describe('listRows', () => {
 
 describe('gridColumns', () => {
   const grid = settings({ view: 'grid' });
-  const across = (n: number, cell: number, gap: number) =>
-    n * cell + (n - 1) * gap + 2 * (sizes.margin + sizes.grid.padding);
+  const emPx = DEFAULT_EM_PX;
+  /** The page's width, in pixels, that fits n cells: the cells, their gaps, the margins and the padding (in em). */
+  const across = (n: number, cell: number, gap: number, px = emPx) =>
+    (n * cell + (n - 1) * gap + 2 * (sizes.margin + sizes.grid.padding)) * px;
 
   it('fits as many tiles as the page is wide', () => {
-    expect(gridColumns(grid, 40, across(5, tileWidth, sizes.grid.tileGap))).toBe(5);
-    expect(gridColumns(grid, 40, across(5, tileWidth, sizes.grid.tileGap) - 1)).toBe(4);
+    expect(gridColumns(grid, 40, across(5, tileWidth, sizes.grid.tileGap), emPx)).toBe(5);
+    expect(gridColumns(grid, 40, across(5, tileWidth, sizes.grid.tileGap) - 1, emPx)).toBe(4);
+  });
+
+  it('fits fewer tiles with a larger text size: the tiles grow with it', () => {
+    const page = across(5, tileWidth, sizes.grid.tileGap);
+    expect(gridColumns(grid, 40, page, emPx * 1.25)).toBe(3);
   });
 
   it('never squeezes the tiles: one column on a page narrower than a tile', () => {
-    expect(gridColumns(grid, 40, 100)).toBe(1);
+    expect(gridColumns(grid, 40, 100, emPx)).toBe(1);
   });
 
   it('has no more columns than tabs', () => {
-    expect(gridColumns(grid, 3, 4000)).toBe(3);
+    expect(gridColumns(grid, 3, 4000, emPx)).toBe(3);
   });
 
   it('fits more icons than tiles', () => {
     const icons = { ...grid, gridShow: 'icons' } as const;
-    expect(gridColumns(icons, 40, across(12, sizes.icons.cell, sizes.icons.gap))).toBe(12);
+    expect(gridColumns(icons, 40, across(12, sizes.icons.cell, sizes.icons.gap), emPx)).toBe(12);
   });
 });
 
@@ -54,7 +69,7 @@ describe('tiles', () => {
     expect(withDetails(true, true)).toBe(tileHeight(grid) + 2 * (tileSpace + tileLine) - ADDRESS_TUCK);
   });
 
-  it('makes a tile 208 px wide: the preview, its padding and its border', () => {
-    expect(tileWidth).toBe(208);
+  it('makes a tile 208 px wide at the default text size: the preview, its padding and its border', () => {
+    expect(tileWidth * DEFAULT_EM_PX).toBe(208);
   });
 });

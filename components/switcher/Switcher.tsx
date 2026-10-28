@@ -17,7 +17,16 @@ import { matchTab } from '../../lib/search/search';
 import type { Settings } from '../../lib/settings/settings';
 import type { SettingsChange } from '../../lib/settings/store';
 import { FIELD, type SwitcherEvent, start, step } from '../../lib/switcher/machine';
-import { ADDRESS_TUCK, gridColumns, listRows, sizes, tileHeight, tileWidth } from '../../lib/switcher/sizes';
+import {
+  ADDRESS_TUCK,
+  DEFAULT_EM_PX,
+  em,
+  gridColumns,
+  listRows,
+  sizes,
+  tileHeight,
+  tileWidth,
+} from '../../lib/switcher/sizes';
 import type { SwitcherTab } from '../../lib/tabs/tabs';
 import { SearchField } from './SearchField';
 import styles from './Switcher.module.css';
@@ -51,7 +60,7 @@ interface Frame {
 
 /** A share (%) of the page's width, never narrower than the list's minimum width. */
 function shareOfPage(percent: number): string {
-  return `max(${sizes.listWidth.minWidth}px, ${percent}vw)`;
+  return `max(${em(sizes.listWidth.minWidth)}, ${percent}vw)`;
 }
 
 /** The longest the switcher waits for the page's picture before it shows. */
@@ -86,7 +95,10 @@ export function Switcher(props: SwitcherProps): JSX.Element {
   // shows the tabs): they never change while it is open, whatever is typed or closed, or however the page is resized.
   const [frame, setFrame] = createSignal<Frame>();
   const columns = () =>
-    frame()?.columns ?? (layout() === 'list' ? 1 : gridColumns(settings(), shown().length, window.innerWidth));
+    frame()?.columns ?? (layout() === 'list' ? 1 : gridColumns(settings(), shown().length, window.innerWidth, emPx()));
+  // An em of the switcher in pixels (the user's text size), for the grid's columns: read from the panel once it is in
+  // the page (takeFrame), Chrome's default until then.
+  const [emPx, setEmPx] = createSignal(DEFAULT_EM_PX);
   const compact = () => layout() === 'list' && settings().compact;
   const now = Date.now();
   const language = browser.i18n.getUILanguage();
@@ -127,6 +139,7 @@ export function Switcher(props: SwitcherProps): JSX.Element {
   function takeFrame() {
     setFrame(undefined);
     if (!panel) return;
+    setEmPx(Number.parseFloat(getComputedStyle(panel).getPropertyValue('--bts-em')) || DEFAULT_EM_PX);
     const { width, height } = panel.getBoundingClientRect();
     setFrame({ width, height, columns: columns() });
   }
@@ -195,24 +208,24 @@ export function Switcher(props: SwitcherProps): JSX.Element {
       height: fixed ? `${fixed.height}px` : undefined,
       '--panel-width': grid ? 'auto' : shareOfPage(sizes.listWidth[settings().listWidth]),
       '--panel-min-width': shareOfPage(sizes.listWidth.medium),
-      '--panel-padding': `${grid ? sizes.grid.padding : list.padding}px`,
-      '--margin': `${sizes.margin}px`,
-      '--row': `${list.row}px`,
-      '--gap': `${sizes.gap}px`,
-      '--tile-width': `${tileWidth}px`,
-      '--tile-height': `${tileHeight(settings())}px`,
-      '--tile-gap': `${sizes.grid.tileGap}px`,
-      '--tile-border': `${sizes.grid.tileBorder}px`,
-      '--tile-padding': `${sizes.grid.tilePadding}px`,
-      '--tile-header': `${sizes.grid.tileHeader}px`,
-      '--tile-space': `${sizes.grid.tileSpace}px`,
-      '--tile-line': `${sizes.grid.tileLine}px`,
-      '--address-tuck': `${ADDRESS_TUCK}px`,
-      '--preview-width': `${sizes.preview.width}px`,
-      '--preview-height': `${sizes.preview.height}px`,
-      '--icon-cell': `${sizes.icons.cell}px`,
-      '--icon-gap': `${sizes.icons.gap}px`,
-      '--search-max-width': `${sizes.searchMaxWidth}px`,
+      '--panel-padding': em(grid ? sizes.grid.padding : list.padding),
+      '--margin': em(sizes.margin),
+      '--row': em(list.row),
+      '--gap': em(sizes.gap),
+      '--tile-width': em(tileWidth),
+      '--tile-height': em(tileHeight(settings())),
+      '--tile-gap': em(sizes.grid.tileGap),
+      '--tile-border': em(sizes.grid.tileBorder),
+      '--tile-padding': em(sizes.grid.tilePadding),
+      '--tile-header': em(sizes.grid.tileHeader),
+      '--tile-space': em(sizes.grid.tileSpace),
+      '--tile-line': em(sizes.grid.tileLine),
+      '--address-tuck': em(ADDRESS_TUCK),
+      '--preview-width': em(sizes.preview.width),
+      '--preview-height': em(sizes.preview.height),
+      '--icon-cell': em(sizes.icons.cell),
+      '--icon-gap': em(sizes.icons.gap),
+      '--search-max-width': em(sizes.searchMaxWidth),
     };
   };
 

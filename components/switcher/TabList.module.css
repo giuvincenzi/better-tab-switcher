@@ -41,8 +41,8 @@
   flex: none;
   max-width: 100%;
   overflow: hidden;
-  padding: 10px 8px 2px;
-  font-size: 14px;
+  padding: calc(0.625 * var(--bts-em)) calc(0.5 * var(--bts-em)) calc(0.125 * var(--bts-em));
+  font-size: calc(0.875 * var(--bts-em));
   font-weight: 500;
   text-align: center;
   white-space: nowrap;

@@ -43,7 +43,7 @@ export function SegmentedControl<T extends string>(props: SegmentedControlProps<
             <Show when={option.icon || option.short} fallback={option.label}>
               <span class={styles.hidden}>{option.label}</span>
               <Show when={option.icon} fallback={<span aria-hidden="true">{option.short}</span>}>
-                {(icon) => <Icon name={icon()} size={16} />}
+                {(icon) => <Icon name={icon()} size={1} />}
               </Show>
             </Show>
           </label>

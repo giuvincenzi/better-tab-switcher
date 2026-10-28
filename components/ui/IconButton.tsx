@@ -13,7 +13,8 @@ interface IconButtonProps {
   onClick: (event: MouseEvent) => void;
 }
 
-const ICON_SIZE = { small: 12, medium: 14, large: 16 } as const;
+/** The icon's size in em, for each size of button. */
+const ICON_SIZE = { small: 0.75, medium: 0.875, large: 1 } as const;
 
 /** A button with only an icon; its background shows under the mouse, and while it is pressed (on). */
 export function IconButton(props: IconButtonProps): JSX.Element {

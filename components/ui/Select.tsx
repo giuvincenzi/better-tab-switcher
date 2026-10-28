@@ -37,7 +37,7 @@ export function Select<T extends string>(props: SelectProps<T>): JSX.Element {
         </For>
       </select>
       <span class={styles.chevron}>
-        <Icon name="chevron" size={14} />
+        <Icon name="chevron" size={0.875} />
       </span>
     </span>
   );

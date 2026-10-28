@@ -49,6 +49,23 @@ test.describe('grid @grid', () => {
     await expect.poll(() => activeTitle(serviceWorker)).toBe('delta');
   });
 
+  test('opens as wide as its columns and as tall as its rows, on a wide page', async ({ context, serviceWorker }) => {
+    await useSettings(serviceWorker, { view: 'grid' });
+    const pages = await openPages(context, ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta']);
+    const page = pages[6] as Page;
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await showSwitcher(serviceWorker);
+    await expect(rows(page)).toHaveCount(7);
+    const grid = page.locator('better-tab-switcher [role="listbox"]');
+    const fits = await grid.evaluate((list) => ({
+      columns: getComputedStyle(list).gridTemplateColumns.split(' ').length,
+      across: list.scrollWidth - list.clientWidth,
+      down: list.scrollHeight - list.clientHeight,
+    }));
+    // Five tiles across fit a 1280 px page; seven tabs make two rows, all in sight.
+    expect(fits).toEqual({ columns: 5, across: 0, down: 0 });
+  });
+
   test('shows a picture of each tab used, taken in memory', async ({ context, serviceWorker }) => {
     await useSettings(serviceWorker, { view: 'grid' });
     const pages = await openPages(context, ['alpha', 'beta', 'gamma']);

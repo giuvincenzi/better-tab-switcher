@@ -1,21 +1,21 @@
 .group {
   display: flex;
   flex: none;
-  height: 32px;
+  height: calc(2 * var(--bts-em));
   margin: 0;
-  padding: 2px;
+  padding: calc(0.125 * var(--bts-em));
   box-sizing: border-box;
-  border: 1px solid var(--bts-settings-border);
+  border: calc(0.0625 * var(--bts-em)) solid var(--bts-settings-border);
   border-radius: var(--bts-radius);
 }
 
 .option {
   display: flex;
   align-items: center;
-  padding: 0 14px;
+  padding: 0 calc(0.875 * var(--bts-em));
   border-radius: var(--bts-radius-small);
   color: var(--bts-text);
-  font-size: 13px;
+  font-size: calc(0.8125 * var(--bts-em));
   font-weight: 500;
   cursor: pointer;
 }
@@ -23,15 +23,15 @@
 /* An option shown as an icon or a short text: square. */
 .compactOption {
   justify-content: center;
-  min-width: 28px;
-  padding: 0 6px;
+  min-width: calc(1.75 * var(--bts-em));
+  padding: 0 calc(0.375 * var(--bts-em));
 }
 
 /* The label of an option shown as an icon: for screen readers only. */
 .hidden {
   position: absolute;
-  width: 1px;
-  height: 1px;
+  width: calc(0.0625 * var(--bts-em));
+  height: calc(0.0625 * var(--bts-em));
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
@@ -40,8 +40,8 @@
 /* The radio button itself is hidden: the option shows its state. It stays in the page for the keyboard. */
 .input {
   position: absolute;
-  width: 1px;
-  height: 1px;
+  width: calc(0.0625 * var(--bts-em));
+  height: calc(0.0625 * var(--bts-em));
   margin: 0;
   opacity: 0;
   pointer-events: none;
@@ -53,8 +53,8 @@
 }
 
 .option:has(.input:focus-visible) {
-  outline: 2px solid var(--bts-accent-bright);
-  outline-offset: 1px;
+  outline: calc(0.125 * var(--bts-em)) solid var(--bts-accent-bright);
+  outline-offset: calc(0.0625 * var(--bts-em));
 }
 
 @media (forced-colors: active) {

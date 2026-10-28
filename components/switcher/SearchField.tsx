@@ -24,7 +24,7 @@ export function SearchField(props: SearchFieldProps): JSX.Element {
       class={styles.field}
       classList={{ [styles.compact as string]: props.compact, [styles.selected as string]: props.selected }}
     >
-      <Icon name="search" size={16} />
+      <Icon name="search" size={1} />
       <input
         ref={input}
         class={styles.input}

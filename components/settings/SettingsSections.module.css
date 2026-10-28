@@ -2,17 +2,17 @@
   display: flex;
   flex: none;
   align-items: center;
-  gap: 12px;
+  gap: calc(0.75 * var(--bts-em));
 }
 
 /* Keys stay left to right, also in a right-to-left page. */
 .keys {
-  padding: 4px 8px;
-  border: 1px solid var(--bts-settings-border);
+  padding: calc(0.25 * var(--bts-em)) calc(0.5 * var(--bts-em));
+  border: calc(0.0625 * var(--bts-em)) solid var(--bts-settings-border);
   border-radius: var(--bts-radius-small);
   background: var(--bts-field);
   font-family: inherit;
-  font-size: 13px;
+  font-size: calc(0.8125 * var(--bts-em));
   white-space: nowrap;
   direction: ltr;
 }

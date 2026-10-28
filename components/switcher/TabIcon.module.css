@@ -8,8 +8,8 @@
   height: var(--icon-cell);
   box-sizing: border-box;
   overflow: hidden;
-  border: 2px solid transparent;
-  border-radius: 16px;
+  border: calc(0.125 * var(--bts-em)) solid transparent;
+  border-radius: calc(1 * var(--bts-em));
   cursor: default;
 }
 

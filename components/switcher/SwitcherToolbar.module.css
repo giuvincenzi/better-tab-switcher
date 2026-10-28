@@ -9,15 +9,15 @@
   display: grid;
   grid-template-columns: minmax(max-content, 1fr) minmax(0, var(--search-max-width)) minmax(max-content, 1fr);
   align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: calc(0.5 * var(--bts-em));
+  margin-bottom: calc(0.5 * var(--bts-em));
 }
 
 .start,
 .end {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: calc(0.375 * var(--bts-em));
 }
 
 .start {
