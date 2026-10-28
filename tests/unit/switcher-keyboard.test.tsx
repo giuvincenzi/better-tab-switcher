@@ -99,6 +99,18 @@ describe('Switcher keyboard while searching', () => {
     expect(handlers.onOpen).toHaveBeenCalledWith(tabs[2]);
   });
 
+  it('leaves Enter, Esc and the arrows to text being composed in the search field (Japanese, Chinese, Korean)', () => {
+    const { host, press, handlers } = openSwitcher();
+    typeInSearch(host, 'plan');
+    for (const key of ['Enter', 'Escape', 'ArrowDown']) {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key, isComposing: true, bubbles: true }));
+    }
+    expect(handlers.onOpen).not.toHaveBeenCalled();
+    expect(handlers.onClose).not.toHaveBeenCalled();
+    press('Enter');
+    expect(handlers.onOpen).toHaveBeenCalledWith(tabs[2]);
+  });
+
   it('goes from the search field down to the first match, and back up to the field', () => {
     const { host, press } = openSwitcher();
     typeInSearch(host, 'plan');

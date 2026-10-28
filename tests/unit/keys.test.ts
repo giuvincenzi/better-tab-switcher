@@ -7,9 +7,10 @@ const up = (key: string, held: Partial<Key> = {}): Key => ({
   altKey: false,
   ctrlKey: false,
   metaKey: false,
+  isComposing: false,
   ...held,
 });
-const down = (key: string): Key => ({ ...up(key), type: 'keydown' });
+const down = (key: string, more: Partial<Key> = {}): Key => ({ ...up(key), type: 'keydown', ...more });
 
 describe('isRelease', () => {
   it('is the release of Alt, Ctrl or Cmd when none of them is still held', () => {
@@ -70,6 +71,13 @@ describe('keyEvent', () => {
     expect(keyEvent(down('ArrowRight'), grid)).toBeNull();
     expect(keyEvent(down('ArrowLeft'), grid)).toBeNull();
     expect(keyEvent(down('ArrowDown'), grid)).toEqual({ type: 'jump', by: 5 });
+  });
+
+  it('leaves every key to the text being composed (Japanese, Chinese, Korean input): Enter, Esc and the arrows', () => {
+    const composing = { isComposing: true };
+    for (const key of ['Enter', 'Escape', 'ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight']) {
+      expect(keyEvent(down(key, composing), { columns: 3, inField: true, direction: 'ltr' }), key).toBeNull();
+    }
   });
 
   it('ignores the other keys, which stay for typing in the search field', () => {

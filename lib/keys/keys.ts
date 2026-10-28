@@ -8,6 +8,11 @@ export interface Key {
   altKey: boolean;
   ctrlKey: boolean;
   metaKey: boolean;
+  /**
+   * The key belongs to text being composed (Japanese, Chinese, Korean input): Enter, Esc and the arrows choose and
+   * confirm the characters, they don't drive the switcher.
+   */
+  isComposing: boolean;
 }
 
 const MODIFIERS = new Set(['Alt', 'Control', 'Meta']);
@@ -41,6 +46,7 @@ export function keyEvent(
   key: Key,
   layout: Layout = { columns: 1, inField: false, direction: 'ltr' },
 ): SwitcherEvent | null {
+  if (key.isComposing) return null;
   if (isRelease(key)) return { type: 'release' };
   if (key.type !== 'keydown') return null;
   const grid = layout.columns > 1;
