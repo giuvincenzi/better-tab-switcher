@@ -85,10 +85,10 @@ describe('mountSwitcher', () => {
     expect(dialog.dir).toBe('ltr');
   });
 
-  it('runs right to left in Arabic', () => {
+  it('runs right to left when its texts are in Arabic', () => {
     const getMessage = browser.i18n.getMessage;
     vi.spyOn(browser.i18n, 'getMessage').mockImplementation(((name: string, ...rest: []) =>
-      name === '@@bidi_dir' ? 'rtl' : getMessage(name as never, ...rest)) as typeof getMessage);
+      name === 'Language_Tag' ? 'ar' : getMessage(name as never, ...rest)) as typeof getMessage);
     const { dialog } = mount();
     expect(dialog.dir).toBe('rtl');
     expect(getComputedStyle(dialog.querySelector('[role="listbox"]') as HTMLElement).direction).toBe('rtl');

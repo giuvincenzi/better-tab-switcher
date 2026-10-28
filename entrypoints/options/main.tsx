@@ -8,7 +8,7 @@ import { SettingsPage } from '../../components/settings/SettingsPage';
 import { applyTheme } from '../../components/ui/applyTheme';
 import { registerEmUnit } from '../../components/ui/emUnit';
 import { shortcutsPageUrl } from '../../lib/browser';
-import { applyLanguage } from '../../lib/i18n/direction';
+import { applyLanguage, languageInUse } from '../../lib/i18n/language';
 import { CTRL_TAB_GUIDE_URL } from '../../lib/links';
 import { loadSettings, restoreDefaultSettings, saveSettings, watchSettings } from '../../lib/settings/store';
 
@@ -41,7 +41,7 @@ render(
       settings={settings()}
       save={(change) => void saveSettings(change)}
       shortcuts={shortcuts()}
-      language={browser.i18n.getUILanguage()}
+      language={languageInUse()}
       now={Date.now()}
       iconUrl={browser.runtime.getURL('/icon/128.png')}
       guideUrl={CTRL_TAB_GUIDE_URL}

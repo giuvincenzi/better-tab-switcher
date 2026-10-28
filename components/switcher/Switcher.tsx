@@ -10,7 +10,7 @@ import {
   Show,
 } from 'solid-js';
 import { i18n } from '#i18n';
-import { browser } from '#imports';
+import { languageInUse } from '../../lib/i18n/language';
 import { keyEvent } from '../../lib/keys/keys';
 import type { Direction, SwitcherSnapshot } from '../../lib/messages';
 import { matchTab } from '../../lib/search/search';
@@ -106,7 +106,7 @@ export function Switcher(props: SwitcherProps): JSX.Element {
   const [emPx, setEmPx] = createSignal(DEFAULT_EM_PX);
   const compact = () => layout() === 'list' && settings().compact;
   const now = Date.now();
-  const language = browser.i18n.getUILanguage();
+  const language = languageInUse();
   // The auto-select line starts again each time the mouse moves onto another tab.
   const [autoSelectRound, setAutoSelectRound] = createSignal(0);
   let panel: HTMLDivElement | undefined;

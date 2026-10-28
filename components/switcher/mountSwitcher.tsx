@@ -1,6 +1,6 @@
 import { createSignal } from 'solid-js';
 import { render } from 'solid-js/web';
-import { applyLanguage } from '../../lib/i18n/direction';
+import { applyLanguage } from '../../lib/i18n/language';
 import { type Direction, type Preview, type SwitcherSnapshot, sendMessage } from '../../lib/messages';
 import { saveSettings } from '../../lib/settings/store';
 import { applyTheme } from '../ui/applyTheme';

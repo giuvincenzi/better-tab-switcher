@@ -1,6 +1,10 @@
 # GLOBAL: the extension's name, the same in every language. Shown by Chrome and in the extension.
 Extension_Name: Better Tab Switcher
 
+# Never shown: the language of this file, as a BCP 47 tag (en, it, pt-BR, zh-Hans…). Every language file says its own,
+# so the extension knows which one Chrome uses (lib/i18n/language.ts): numbers, dates and the text direction follow it.
+Language_Tag: en
+
 # GLOBAL: the browser's name, the same in every language, in the sentences that name the browser the extension runs in
 # (lib/browser.ts, BROWSER_NAME_TEXT).
 Browser_Chrome: Chrome

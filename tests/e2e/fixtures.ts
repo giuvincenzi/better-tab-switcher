@@ -5,6 +5,8 @@ import { type BrowserContext, test as base, chromium, type Worker } from '@playw
 const extensionDir = resolve('.output/chrome-mv3-e2e');
 
 interface ExtensionFixtures {
+  /** Chrome's own language (a BCP 47 tag): English by default; a test file can choose another with test.use(). */
+  chromeLanguage: string;
   context: BrowserContext;
   serviceWorker: Worker;
   extensionId: string;
@@ -21,21 +23,23 @@ if (!(BROWSERS as readonly string[]).includes(browser)) {
 }
 
 /**
- * Every test gets a fresh browser profile with the extension loaded, in English. The windows are real, 1280 by 720
- * pixels, never an emulated viewport: the switcher's own window measures its frame (outer and inner sizes).
+ * Every test gets a fresh browser profile with the extension loaded, in English (chromeLanguage). The windows are real,
+ * 1280 by 720 pixels, never an emulated viewport: the switcher's own window measures its frame (outer and inner sizes).
  */
 export const test = base.extend<ExtensionFixtures>({
-  // biome-ignore lint/correctness/noEmptyPattern: Playwright fixtures take their dependencies as a destructured object.
-  context: async ({}, use) => {
+  chromeLanguage: ['en-US', { option: true }],
+  context: async ({ chromeLanguage }, use) => {
     const context = await chromium.launchPersistentContext('', {
       channel: browser,
       headless: !process.env.HEADED,
-      locale: 'en-US',
+      locale: chromeLanguage,
       viewport: null,
+      // Chrome takes its language from --lang; on Linux it needs the environment's language too.
+      env: { ...process.env, LANGUAGE: chromeLanguage, LANG: `${chromeLanguage.replace('-', '_')}.UTF-8` },
       args: [
         `--disable-extensions-except=${extensionDir}`,
         `--load-extension=${extensionDir}`,
-        '--lang=en-US',
+        `--lang=${chromeLanguage}`,
         '--window-size=1280,720',
       ],
     });
