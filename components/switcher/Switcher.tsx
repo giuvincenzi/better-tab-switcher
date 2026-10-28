@@ -42,6 +42,13 @@ export interface SwitcherProps {
   onSettings: () => void;
 }
 
+/** The panel's size and the grid's columns, fixed while the switcher is open. */
+interface Frame {
+  width: number;
+  height: number;
+  columns: number;
+}
+
 /** The longest the switcher waits for the page's picture before it shows. */
 const PICTURE_WAIT_MS = 1000;
 
@@ -69,21 +76,21 @@ export function Switcher(props: SwitcherProps): JSX.Element {
   const [delayOver, setDelayOver] = createSignal(fromIcon || settings().delayMs === 0);
   const [waitOver, setWaitOver] = createSignal(!props.snapshot.waitForPicture);
   const visible = () => delayOver() && (waitOver() || props.pictureTaken());
-  const [pageWidth, setPageWidth] = createSignal(window.innerWidth);
   const layout = (): Layout => (settings().view === 'list' ? 'list' : settings().gridShow);
-  const columns = () => (layout() === 'list' ? 1 : gridColumns(settings(), shown().length, pageWidth()));
+  // The panel's size and the grid's columns are taken once, as the switcher opens (or as the Display menu changes how it
+  // shows the tabs): they never change while it is open, whatever is typed or closed, or however the page is resized.
+  const [frame, setFrame] = createSignal<Frame>();
+  const columns = () =>
+    frame()?.columns ?? (layout() === 'list' ? 1 : gridColumns(settings(), shown().length, window.innerWidth));
   const compact = () => layout() === 'list' && settings().compact;
   const now = Date.now();
   const language = browser.i18n.getUILanguage();
   // The search field shows with Search on, and while the user searches (the footer's search button shows it then).
   const fieldShown = () => settings().search || state().searching;
-  // While the user searches, the tabs keep the height they had: the switcher doesn't jump as results come and go.
-  const [resultsHeight, setResultsHeight] = createSignal<number>();
   // The auto-select line starts again each time the mouse moves onto another tab.
   const [autoSelectRound, setAutoSelectRound] = createSignal(0);
   const [menuOpen, setMenuOpen] = createSignal(false);
   let panel: HTMLDivElement | undefined;
-  let results: HTMLDivElement | undefined;
 
   function dispatch(event: SwitcherEvent) {
     const result = step(state(), event);
@@ -98,7 +105,6 @@ export function Switcher(props: SwitcherProps): JSX.Element {
 
   function startSearching() {
     if (state().searching) return;
-    setResultsHeight(results?.offsetHeight);
     dispatch({ type: 'openSearch' });
   }
 
@@ -120,9 +126,20 @@ export function Switcher(props: SwitcherProps): JSX.Element {
     setMenuOpen((open) => !open);
   }
 
+  /** Takes the panel's size and the grid's columns, as they are now: they stay so until the next takeFrame. */
+  function takeFrame() {
+    setFrame(undefined);
+    if (!panel) return;
+    const { width, height } = panel.getBoundingClientRect();
+    setFrame({ width, height, columns: columns() });
+  }
+
+  /** A change made in the Display menu: the switcher shows it at once, framed anew, and the menu closes. */
   function changeSettings(change: SettingsChange) {
     setSettings((now) => ({ ...now, ...change, details: { ...now.details, ...change.details } }));
     props.onSettingsChange(change);
+    setMenuOpen(false);
+    takeFrame();
   }
 
   /** The Display menu's own controls get their keys; Esc closes the menu, not the switcher. */
@@ -154,24 +171,19 @@ export function Switcher(props: SwitcherProps): JSX.Element {
     }
   }
 
-  function onResize() {
-    setPageWidth(window.innerWidth);
-  }
-
   createEffect(on(props.moves, (move) => dispatch({ type: move.direction }), { defer: true }));
 
   onMount(() => {
     window.addEventListener('keydown', onKey, true);
     window.addEventListener('keyup', onKey, true);
     window.addEventListener('pointerdown', onPointerDown, true);
-    window.addEventListener('resize', onResize);
+    takeFrame();
     const delay = delayOver() ? undefined : setTimeout(() => setDelayOver(true), settings().delayMs);
     const wait = waitOver() ? undefined : setTimeout(() => setWaitOver(true), PICTURE_WAIT_MS);
     onCleanup(() => {
       window.removeEventListener('keydown', onKey, true);
       window.removeEventListener('keyup', onKey, true);
       window.removeEventListener('pointerdown', onPointerDown, true);
-      window.removeEventListener('resize', onResize);
       clearTimeout(delay);
       clearTimeout(wait);
     });
@@ -181,7 +193,10 @@ export function Switcher(props: SwitcherProps): JSX.Element {
   const panelSizes = () => {
     const list = compact() ? sizes.compactList : sizes.list;
     const grid = layout() !== 'list';
+    const fixed = frame();
     return {
+      width: fixed ? `${fixed.width}px` : undefined,
+      height: fixed ? `${fixed.height}px` : undefined,
       '--panel-width': grid ? 'auto' : `max(${sizes.listWidth.minWidth}px, ${sizes.listWidth[settings().listWidth]}vw)`,
       '--panel-padding': `${grid ? sizes.grid.padding : list.padding}px`,
       '--margin': `${sizes.margin}px`,
@@ -221,11 +236,7 @@ export function Switcher(props: SwitcherProps): JSX.Element {
             onInput={search}
           />
         </Show>
-        <div
-          ref={results}
-          class={styles.results}
-          style={{ 'min-height': resultsHeight() ? `${resultsHeight()}px` : undefined }}
-        >
+        <div class={styles.results}>
           <TabList
             layout={layout()}
             tabs={shown()}

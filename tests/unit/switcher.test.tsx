@@ -149,17 +149,14 @@ describe('Switcher', () => {
     expect([...host.querySelectorAll('mark')].map((m) => m.textContent)).toEqual(['plan', 'plan']);
   });
 
-  it('says so when nothing matches, keeping its height', () => {
-    const { host } = open({ search: true });
+  it('says so when nothing matches', () => {
+    const { host } = open();
     const field = host.querySelector('input[type="search"]') as HTMLInputElement;
-    const list = host.querySelector('[role="listbox"]')?.parentElement as HTMLElement;
-    const height = list.offsetHeight;
     field.focus();
     field.value = 'passport';
     field.dispatchEvent(new InputEvent('input', { bubbles: true }));
     expect(host.querySelectorAll('[role="option"]')).toHaveLength(0);
     expect(host.textContent).toContain('No tabs match your search.');
-    expect(list.offsetHeight).toBe(height);
   });
 
   it('shows the search field from the footer button, also with Search off, for this time only', () => {
@@ -197,6 +194,46 @@ describe('Switcher', () => {
     expect(getComputedStyle(backdrop).visibility).toBe('hidden');
     takePicture();
     await vi.waitFor(() => expect(getComputedStyle(backdrop).visibility).toBe('visible'));
+  });
+});
+
+describe('Switcher size', () => {
+  const panel = (host: HTMLElement) => host.querySelector('[style*="--panel-width"]') as HTMLElement;
+  const size = (host: HTMLElement) => {
+    const { width, height } = panel(host).getBoundingClientRect();
+    return { width, height };
+  };
+  const type = (host: HTMLElement, text: string) => {
+    const field = host.querySelector('input[type="search"]') as HTMLInputElement;
+    field.focus();
+    field.value = text;
+    field.dispatchEvent(new InputEvent('input', { bubbles: true }));
+  };
+
+  for (const view of ['list', 'grid'] as const) {
+    it(`never changes while open, in the ${view}: searching, closing tabs`, async () => {
+      await page.viewport(1280, 800);
+      const { host } = open({ view });
+      const opened = size(host);
+      type(host, 'plan');
+      expect(host.querySelectorAll('[role="option"]')).toHaveLength(2);
+      expect(size(host)).toEqual(opened);
+      type(host, '');
+      (host.querySelectorAll('button[aria-label="Close tab"]')[3] as HTMLButtonElement).click();
+      expect(host.querySelectorAll('[role="option"]')).toHaveLength(3);
+      expect(size(host)).toEqual(opened);
+    });
+  }
+
+  it("keeps the grid's columns while open, so up and down still jump a whole row", async () => {
+    await page.viewport(1280, 800);
+    const { host } = open({ view: 'grid' });
+    const grid = host.querySelector('[role="listbox"]') as HTMLElement;
+    const columns = () => getComputedStyle(grid).gridTemplateColumns.split(' ').length;
+    expect(columns()).toBe(4);
+    type(host, 'plan');
+    expect(host.querySelectorAll('[role="option"]')).toHaveLength(2);
+    expect(columns()).toBe(4);
   });
 });
 
@@ -275,7 +312,7 @@ describe('Switcher Display menu', () => {
     expect(handlers.onOpen).not.toHaveBeenCalled();
   });
 
-  it('changes the view at once and saves it', () => {
+  it('changes the view at once, saves it and closes', () => {
     const { host, handlers } = open();
     displayButton(host).click();
     const grid = [...host.querySelectorAll<HTMLInputElement>('input[type="radio"]')].find(
@@ -284,6 +321,7 @@ describe('Switcher Display menu', () => {
     grid?.click();
     expect(handlers.onSettingsChange).toHaveBeenCalledWith({ view: 'grid' });
     expect(host.querySelector('[role="listbox"]')?.className).toContain('previews');
+    expect(displayButton(host).getAttribute('aria-expanded')).toBe('false');
   });
 
   it('opens the settings page', () => {

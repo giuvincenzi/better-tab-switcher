@@ -28,10 +28,10 @@
   box-shadow: var(--bts-shadow);
 }
 
-/* The tabs (and "no match"): they take the height the panel has left, then scroll. */
+/* The tabs (and "no match"): they fill the height the panel has left (fixed once it is open), then scroll. */
 .results {
   display: flex;
-  flex: 0 1 auto;
+  flex: 1 1 auto;
   flex-direction: column;
   min-height: 0;
 }
