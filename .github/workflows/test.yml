@@ -172,11 +172,12 @@ jobs:
       - name: install_chromium
         run: npx playwright install --with-deps --only-shell chromium
 
-      # Every unit test, as Vitest lists it: the same list on every machine.
+      # Every unit test file, as Vitest lists them: the same list on every machine. Files, not tests: Vitest splits and
+      # runs whole files, and it lists a browser test file without running it (a test made in a loop counts once).
       - name: list_unit_tests
         run: |
           mkdir -p unit_results
-          npx vitest list --json > unit_results/all_tests.json
+          npx vitest list --filesOnly --json > unit_results/all_tests.json
 
       - name: run_group_tests
         run: npx vitest run --shard="$GROUP/$UNIT_GROUPS" --reporter=default --reporter=json --outputFile.json="unit_results/group_$GROUP.json"
@@ -238,13 +239,13 @@ jobs:
           pattern: unit_group_*
           path: unit_results # one folder per artifact: unit_group_<n>_attempt_<a>
 
-      # For each group its newest attempt, then: (1) every group saw the same list, (2) every test file ran in exactly
-      # one group with all its tests and none was left empty, (3) every test passed.
+      # For each group its newest attempt, then: (1) every group saw the same list of files, (2) every test file ran in
+      # exactly one group and no group was left empty, (3) every test passed.
       - name: check_every_test_ran_once
         if: env.UNIT == 'true'
         shell: python3 {0}
         run: |
-          import collections, json, os, pathlib, sys
+          import json, os, pathlib, sys
 
           root = pathlib.Path("unit_results")
           here = os.getcwd() + os.sep
@@ -257,8 +258,7 @@ jobs:
                   problems.append(f"{group}: no results (it did not get as far as listing the tests).")
                   continue
               folder = attempts[-1]
-              listed = collections.Counter(t["file"].replace(here, "") for t in json.loads((folder / "all_tests.json").read_text()))
-              lists.add(json.dumps(sorted(listed.items())))
+              lists.add(json.dumps(sorted(t["file"].replace(here, "") for t in json.loads((folder / "all_tests.json").read_text()))))
               report = folder / f"group_{g}.json"
               if not report.exists():
                   problems.append(f"{group}: no test report (the tests did not run).")
@@ -274,19 +274,18 @@ jobs:
                       failed.append(f"{file} ({result['status']}: {result.get('message', '')}, {group})")
           if len(lists) > 1:
               problems.append("The groups did not see the same list of tests.")
-          listed = dict(json.loads(lists.pop())) if len(lists) == 1 else {}
-          for file, count in listed.items():
+          listed = json.loads(lists.pop()) if len(lists) == 1 else []
+          for file in listed:
               where = [g for g, files in files_of.items() if file in files]
               if not where:
                   problems.append(f"{file}: ran in no group.")
               elif len(where) > 1:
                   problems.append(f"{file}: ran in more than one group ({', '.join(f'unit_group_{g}' for g in where)}).")
-              elif files_of[where[0]][file] != count:
-                  problems.append(f"{file}: {files_of[where[0]][file]} of its {count} tests ran.")
           for g, files in files_of.items():
               if not files and len(listed) >= groups:
                   problems.append(f"unit_group_{g}: no test file: the files are not split between the groups.")
-          summary = [f"Unit tests: {sum(listed.values())} in {len(listed)} files, {groups} groups, {len(failed)} failed."]
+          tests = sum(sum(files.values()) for files in files_of.values())
+          summary = [f"Unit tests: {tests} in {len(listed)} files, {groups} groups, {len(failed)} failed."]
           summary += [f"- Failed: {f}" for f in failed] + [f"- {p}" for p in problems]
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as out:
               out.write("\n".join(summary) + "\n")
