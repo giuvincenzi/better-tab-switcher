@@ -244,10 +244,8 @@ describe('Switcher list width', () => {
     await page.viewport(1280, 800);
   });
 
-  it('takes its share of the page: Small 35%, Medium 50%, Large 80%', async () => {
+  it('takes its share of the page: Medium 50%, Large 80%', async () => {
     await page.viewport(1280, 800);
-    expect(panelWidth(open({ listWidth: 'small' }).host)).toBe(448);
-    dispose?.();
     expect(panelWidth(open({ listWidth: 'medium' }).host)).toBe(640);
     dispose?.();
     expect(panelWidth(open({ listWidth: 'large' }).host)).toBe(1024);
@@ -255,10 +253,15 @@ describe('Switcher list width', () => {
 
   it('is never narrower than 360 px, nor wider than the page', async () => {
     await page.viewport(600, 800);
-    expect(panelWidth(open({ listWidth: 'small' }).host)).toBe(360);
+    expect(panelWidth(open({ listWidth: 'medium' }).host)).toBe(360);
     dispose?.();
     await page.viewport(380, 800);
     expect(panelWidth(open({ listWidth: 'large' }).host)).toBe(348);
+  });
+
+  it('is never narrower than Medium in the grid, with few tabs', async () => {
+    await page.viewport(1280, 800);
+    expect(panelWidth(open({ view: 'grid', gridShow: 'icons' }).host)).toBe(640);
   });
 });
 

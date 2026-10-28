@@ -5,7 +5,6 @@ import type { SelectOption } from '../ui/Select';
 /** The list's widths, as the settings page and the switcher's Display menu offer them. */
 export function listWidthOptions(): SelectOption<ListWidth>[] {
   return [
-    { value: 'small', label: i18n.t('Settings_ListWidthSmall') },
     { value: 'medium', label: i18n.t('Settings_ListWidthMedium') },
     { value: 'large', label: i18n.t('Settings_ListWidthLarge') },
   ];

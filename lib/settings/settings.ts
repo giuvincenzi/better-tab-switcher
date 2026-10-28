@@ -3,7 +3,7 @@ export type View = 'list' | 'grid';
 export type Scope = 'window' | 'all';
 export type LongAddress = 'cut' | 'scroll';
 /** How wide the list is: a share of the page's width (lib/switcher/sizes.ts). */
-export type ListWidth = 'small' | 'medium' | 'large';
+export type ListWidth = 'medium' | 'large';
 /** What the grid's tiles show: a picture of each tab, or only each site's icon. */
 export type GridShow = 'previews' | 'icons';
 /** A number of rows, or as many as fit on the screen. */
@@ -105,7 +105,7 @@ export function parseSettings(value: unknown): Settings {
     theme: oneOf(saved.theme, ['device', 'light', 'dark'], d.theme),
     view: oneOf(saved.view, ['list', 'grid'], d.view),
     compact: flag(saved.compact, d.compact),
-    listWidth: oneOf(saved.listWidth, ['small', 'medium', 'large'], d.listWidth),
+    listWidth: oneOf(saved.listWidth, ['medium', 'large'], d.listWidth),
     listRows: rows(saved.listRows, limits.listRows, d.listRows),
     gridShow: oneOf(saved.gridShow, ['previews', 'icons'], d.gridShow),
     scope: oneOf(saved.scope, ['window', 'all'], d.scope),

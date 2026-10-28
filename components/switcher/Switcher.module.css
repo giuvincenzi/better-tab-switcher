@@ -18,6 +18,8 @@
   flex-direction: column;
   gap: var(--gap);
   width: var(--panel-width);
+  /* min-width wins over max-width: it is the page's width at most, too. */
+  min-width: min(var(--panel-min-width), calc(100vw - 2 * var(--margin)));
   max-width: calc(100vw - 2 * var(--margin));
   max-height: calc(100vh - 2 * var(--margin));
   padding: var(--panel-padding);

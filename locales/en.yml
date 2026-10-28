@@ -64,7 +64,6 @@ Settings_GridShowIcons: Icons
 Settings_GridShowNote: Previews shows a picture of each tab, Icons only each site's icon. The grid fits the screen by itself.
 # List only. Settings_ListWidth (and its choices) and Settings_Compact are also in the switcher's Display menu.
 Settings_ListWidth: Width
-Settings_ListWidthSmall: Small
 Settings_ListWidthMedium: Medium
 Settings_ListWidthLarge: Large
 Settings_Compact: Compact
