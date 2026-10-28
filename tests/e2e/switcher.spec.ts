@@ -94,8 +94,12 @@ test.describe('switcher theme @switcher', () => {
 });
 
 test.describe("Chrome's own pages @switcher", () => {
-  test('does nothing on a page Chrome keeps extensions out of', async ({ context, serviceWorker }) => {
+  test("does nothing on a page Chrome keeps extensions out of, with Use a window on Chrome's pages off", async ({
+    context,
+    serviceWorker,
+  }) => {
     await openPages(context, ['alpha', 'beta']);
+    await useSettings(serviceWorker, { chromePagesWindow: false });
     const chromePage = await context.newPage();
     await chromePage.goto('chrome://version');
     await chromePage.bringToFront();
@@ -106,12 +110,11 @@ test.describe("Chrome's own pages @switcher", () => {
     );
   });
 
-  test("opens in a window of its own there, with Use a window on Chrome's pages", async ({
+  test("opens in a window of its own there, with Use a window on Chrome's pages (the default)", async ({
     context,
     serviceWorker,
   }) => {
     await openPages(context, ['alpha', 'beta']);
-    await useSettings(serviceWorker, { chromePagesWindow: true });
     const chromePage = await context.newPage();
     await chromePage.goto('chrome://version');
     await chromePage.bringToFront();

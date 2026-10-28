@@ -7,7 +7,7 @@ import { onMessage, sendMessage } from '../../lib/messages';
 import { centerOn, type Rect } from '../../lib/presenter/placement';
 
 // The switcher in a window of its own, where Chrome keeps extensions out of the page (its own pages, the Chrome Web
-// Store) and the user turned it on. The background opens this window in the middle of the Chrome window the user is
+// Store), with Use a window on Chrome's pages on. The background opens this window in the middle of the Chrome window the user is
 // in, and closes it once a tab is chosen or the switcher is closed.
 document.title = i18n.t('Extension_Name');
 const snapshot = await sendMessage('getSnapshot');

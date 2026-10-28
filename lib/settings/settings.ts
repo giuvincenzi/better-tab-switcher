@@ -52,7 +52,7 @@ export const defaultSettings: Readonly<Settings> = Object.freeze({
   autoSelect: false,
   autoSelectSeconds: 3,
   toolbar: true,
-  chromePagesWindow: false,
+  chromePagesWindow: true,
   details: Object.freeze({
     address: false,
     longAddress: 'cut',

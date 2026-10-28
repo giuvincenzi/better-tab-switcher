@@ -12,7 +12,7 @@
   last used time and the settings. It can be turned off (Show toolbar).
 - Auto-select, Stay open until you choose a tab, and tabs from all windows.
 - Tabs shown before scrolling in the list: 6, 10 (the default), 15, or as many as fit the screen.
-- Use a window on Chrome's pages, off by default: where Chrome keeps extensions out (its own pages, the Chrome Web
+- Use a window on Chrome's pages, on by default: where Chrome keeps extensions out (its own pages, the Chrome Web
   Store), the switcher opens in a small window of its own, in the middle of the current window.
 - Close a tab from the switcher with its close button or with the mouse's middle button.
 - Tab details: website address, pinned, playing audio and sleeping icons, tab group color, last used.

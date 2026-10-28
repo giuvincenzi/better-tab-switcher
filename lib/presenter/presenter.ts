@@ -37,7 +37,7 @@ const SWITCHER_WINDOW = '/switcher-window.html';
  * - the shortcut, with the switcher open where the user is: its selection moves;
  * - anything else: a switcher open elsewhere closes, and a new one opens in the current tab.
  * Chrome lets no extension into its own pages nor the Chrome Web Store: there the switcher opens in a window of its
- * own when the user turned it on (Use a window on Chrome's pages), otherwise nothing happens.
+ * own (Use a window on Chrome's pages, on by default), or nothing happens when the user turned that off.
  */
 export async function requestSwitcher(request: SwitcherRequest, previews: Previews): Promise<void> {
   const [[current], open] = await Promise.all([

@@ -27,7 +27,7 @@ describe('parseSettings', () => {
       autoSelect: true,
       autoSelectSeconds: 5,
       toolbar: false,
-      chromePagesWindow: true,
+      chromePagesWindow: false,
       details: { ...defaultSettings.details, address: true, longAddress: 'scroll', lastUsed: true },
     };
     expect(parseSettings(saved)).toEqual(saved);
