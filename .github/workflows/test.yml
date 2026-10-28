@@ -24,6 +24,7 @@ permissions:
   contents: read
 
 env:
+  UNIT_GROUPS: 2 # how many machines run the unit tests at once: change only this (testing.md)
   E2E_GROUPS: 2 # how many machines run the end-to-end tests at once on each system: change only this (testing.md)
   # The systems the end-to-end tests run on, name:runner (GitHub's machines): change only this.
   E2E_SYSTEMS: linux:ubuntu-latest windows:windows-latest macos:macos-latest
@@ -35,6 +36,7 @@ jobs:
       lint: ${{ steps.decide.outputs.lint }}
       unit: ${{ steps.decide.outputs.unit }}
       e2e: ${{ steps.decide.outputs.e2e }}
+      unit_groups: ${{ steps.matrix.outputs.unit_groups }}
       e2e_groups: ${{ steps.matrix.outputs.e2e_groups }}
       e2e_systems: ${{ steps.matrix.outputs.e2e_systems }}
     steps:
@@ -90,12 +92,16 @@ jobs:
           } >> "$GITHUB_OUTPUT"
           echo "Lint and types: $lint. Unit tests: $unit. End-to-end tests: $e2e (testing.md)." >> "$GITHUB_STEP_SUMMARY"
 
-      # E2E_GROUPS (2) -> [1,2] and E2E_SYSTEMS -> [{"name":"linux","runner":"ubuntu-latest"}, ...], the matrix of
-      # e2e_group: a matrix cannot read env, so both are written once at the top and turned into lists here.
-      - name: list_e2e_matrix
+      # UNIT_GROUPS and E2E_GROUPS (2) -> [1,2], E2E_SYSTEMS -> [{"name":"linux","runner":"ubuntu-latest"}, ...], the
+      # matrices of unit_group and e2e_group: a matrix cannot read env, so they are written once at the top and turned
+      # into lists here.
+      - name: list_test_matrices
         id: matrix
         run: |
-          if ! [[ "$E2E_GROUPS" =~ ^[1-9][0-9]*$ ]]; then echo "::error::E2E_GROUPS must be a number from 1: '$E2E_GROUPS'."; exit 1; fi
+          for name in UNIT_GROUPS E2E_GROUPS; do
+            if ! [[ "${!name}" =~ ^[1-9][0-9]*$ ]]; then echo "::error::$name must be a number from 1: '${!name}'."; exit 1; fi
+          done
+          echo "unit_groups=[$(seq -s, 1 "$UNIT_GROUPS")]" >> "$GITHUB_OUTPUT"
           echo "e2e_groups=[$(seq -s, 1 "$E2E_GROUPS")]" >> "$GITHUB_OUTPUT"
           systems=()
           for system in $E2E_SYSTEMS; do
@@ -104,17 +110,98 @@ jobs:
           done
           echo "e2e_systems=[$(IFS=,; echo "${systems[*]}")]" >> "$GITHUB_OUTPUT"
 
-  # Lint and types (when a file they read changed) and the unit tests (when a file they read changed). Red when
-  # decide_which_tests_run failed: nobody knows then what had to run.
-  unit_test:
+  # Biome and tsc, when a file they read changed.
+  lint:
     needs: decide_which_tests_run
-    if: >-
-      !cancelled() && (needs.decide_which_tests_run.result != 'success' ||
-      needs.decide_which_tests_run.outputs.lint == 'true' || needs.decide_which_tests_run.outputs.unit == 'true')
+    if: needs.decide_which_tests_run.outputs.lint == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout_code
+        uses: actions/checkout@v7
+
+      - name: install_node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .tool-versions
+          cache: npm
+
+      - name: install_dependencies
+        run: npm ci
+
+      - name: check_lint_and_types
+        run: npm run lint
+
+  # One copy per group (unit_group_1 ... unit_group_N), at the same time, each on its own machine. Vitest's --shard
+  # splits the test files: every file in exactly one group.
+  unit_group:
+    name: unit_group_${{ matrix.group }}
+    needs: decide_which_tests_run
+    if: needs.decide_which_tests_run.outputs.unit == 'true'
+    strategy:
+      fail-fast: false # a failing group does not stop the others: every broken test shows
+      matrix:
+        group: ${{ fromJSON(needs.decide_which_tests_run.outputs.unit_groups) }}
+    runs-on: ubuntu-latest
+    env:
+      GROUP: ${{ matrix.group }}
+    steps:
+      - name: checkout_code
+        uses: actions/checkout@v7
+
+      - name: install_node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .tool-versions
+          cache: npm
+
+      - name: install_dependencies
+        run: npm ci
+
+      # Playwright's browsers, downloaded once per system and Playwright version: a download from Playwright's servers
+      # can stall for minutes.
+      - name: restore_browsers
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cache/ms-playwright
+            ~/Library/Caches/ms-playwright
+            ~/AppData/Local/ms-playwright
+          key: playwright-unit-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      # The components' unit tests run in Playwright's headless Chromium (and its system libraries).
+      - name: install_chromium
+        run: npx playwright install --with-deps --only-shell chromium
+
+      # Every unit test, as Vitest lists it: the same list on every machine.
+      - name: list_unit_tests
+        run: |
+          mkdir -p unit_results
+          npx vitest list --json > unit_results/all_tests.json
+
+      - name: run_group_tests
+        run: npx vitest run --shard="$GROUP/$UNIT_GROUPS" --reporter=default --reporter=json --outputFile.json="unit_results/group_$GROUP.json"
+
+      # Also when tests failed: unit_test needs every group's list and report. The name has the run's attempt: after a
+      # "Re-run failed jobs" the group's new artifact does not mix with the failed one (unit_test reads the newest).
+      - name: save_group_result
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: unit_group_${{ matrix.group }}_attempt_${{ github.run_attempt }}
+          path: unit_results/
+          retention-days: 7
+
+  # A required check: green only when lint passed (or was not needed), every unit test file ran in exactly one group and
+  # passed (or none was needed), and a pull request doesn't change the version. Red when decide_which_tests_run failed:
+  # nobody knows then what had to run.
+  unit_test:
+    needs: [decide_which_tests_run, lint, unit_group]
+    if: always()
     runs-on: ubuntu-latest
     env:
       DECIDE: ${{ needs.decide_which_tests_run.result }}
       LINT: ${{ needs.decide_which_tests_run.outputs.lint }}
+      LINT_RESULT: ${{ needs.lint.result }}
       UNIT: ${{ needs.decide_which_tests_run.outputs.unit }}
     steps:
       - name: stop_if_undecided
@@ -139,27 +226,73 @@ jobs:
             exit 1
           fi
 
-      - name: install_node
-        uses: actions/setup-node@v7
+      - name: check_lint
+        run: |
+          if [ "$LINT" != true ]; then echo "Lint and types not needed: no changed file is one they read." | tee -a "$GITHUB_STEP_SUMMARY"; exit 0; fi
+          if [ "$LINT_RESULT" != success ]; then echo "::error::Lint and types: $LINT_RESULT (job lint)."; exit 1; fi
+
+      - name: collect_group_results
+        if: env.UNIT == 'true'
+        uses: actions/download-artifact@v8
         with:
-          node-version-file: .tool-versions
-          cache: npm
+          pattern: unit_group_*
+          path: unit_results # one folder per artifact: unit_group_<n>_attempt_<a>
 
-      - name: install_dependencies
-        run: npm ci
-
-      - name: check_lint_and_types
-        if: env.LINT == 'true'
-        run: npm run lint
-
-      # The components' unit tests run in Playwright's Chromium.
-      - name: install_chromium
+      # For each group its newest attempt, then: (1) every group saw the same list, (2) every test file ran in exactly
+      # one group with all its tests and none was left empty, (3) every test passed.
+      - name: check_every_test_ran_once
         if: env.UNIT == 'true'
-        run: npx playwright install --with-deps chromium
+        shell: python3 {0}
+        run: |
+          import collections, json, os, pathlib, sys
 
-      - name: run_unit_tests
-        if: env.UNIT == 'true'
-        run: npm test
+          root = pathlib.Path("unit_results")
+          here = os.getcwd() + os.sep
+          groups = int(os.environ["UNIT_GROUPS"])
+          problems, failed, lists, files_of = [], [], set(), {}
+          for g in range(1, groups + 1):
+              group = f"unit_group_{g}"
+              attempts = sorted(root.glob(f"{group}_attempt_*"), key=lambda p: int(p.name.rsplit("_", 1)[1]))
+              if not attempts or not (attempts[-1] / "all_tests.json").exists():
+                  problems.append(f"{group}: no results (it did not get as far as listing the tests).")
+                  continue
+              folder = attempts[-1]
+              listed = collections.Counter(t["file"].replace(here, "") for t in json.loads((folder / "all_tests.json").read_text()))
+              lists.add(json.dumps(sorted(listed.items())))
+              report = folder / f"group_{g}.json"
+              if not report.exists():
+                  problems.append(f"{group}: no test report (the tests did not run).")
+                  continue
+              files_of[g] = {}
+              for result in json.loads(report.read_text())["testResults"]:
+                  file = result["name"].replace(here, "")
+                  files_of[g][file] = len(result["assertionResults"])
+                  for test in result["assertionResults"]:
+                      if test["status"] != "passed":
+                          failed.append(f"{file} › {test['fullName']} ({test['status']}, {group})")
+                  if result["status"] != "passed" and not result["assertionResults"]:
+                      failed.append(f"{file} ({result['status']}: {result.get('message', '')}, {group})")
+          if len(lists) > 1:
+              problems.append("The groups did not see the same list of tests.")
+          listed = dict(json.loads(lists.pop())) if len(lists) == 1 else {}
+          for file, count in listed.items():
+              where = [g for g, files in files_of.items() if file in files]
+              if not where:
+                  problems.append(f"{file}: ran in no group.")
+              elif len(where) > 1:
+                  problems.append(f"{file}: ran in more than one group ({', '.join(f'unit_group_{g}' for g in where)}).")
+              elif files_of[where[0]][file] != count:
+                  problems.append(f"{file}: {files_of[where[0]][file]} of its {count} tests ran.")
+          for g, files in files_of.items():
+              if not files and len(listed) >= groups:
+                  problems.append(f"unit_group_{g}: no test file: the files are not split between the groups.")
+          summary = [f"Unit tests: {sum(listed.values())} in {len(listed)} files, {groups} groups, {len(failed)} failed."]
+          summary += [f"- Failed: {f}" for f in failed] + [f"- {p}" for p in problems]
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as out:
+              out.write("\n".join(summary) + "\n")
+          print("\n".join(summary))
+          if failed or problems:
+              sys.exit(1)
 
   # The extension, built once for every end-to-end group: the published build, whose manifest the tests check, and the
   # test build (the published one plus the hook the tests open the switcher with). The same files on every system.
@@ -222,9 +355,21 @@ jobs:
       - name: install_dependencies
         run: npm ci
 
-      # Playwright's Chromium for this system; on Linux also the system libraries it needs.
+      # Playwright's browsers, downloaded once per system and Playwright version: a download from Playwright's servers
+      # can stall for minutes.
+      - name: restore_browsers
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cache/ms-playwright
+            ~/Library/Caches/ms-playwright
+            ~/AppData/Local/ms-playwright
+          key: playwright-e2e-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      # Playwright's Chromium for this system, the full one the extension runs in (not the headless shell); on Linux
+      # also the system libraries it needs.
       - name: install_chromium
-        run: npx playwright install ${{ runner.os == 'Linux' && '--with-deps' || '' }} chromium
+        run: npx playwright install ${{ runner.os == 'Linux' && '--with-deps' || '' }} --no-shell chromium
 
       - name: get_builds
         uses: actions/download-artifact@v8
@@ -279,20 +424,29 @@ jobs:
             and errors. Missing: the tests did not run.
 
           report/
-            The same results as a web page (Playwright's HTML report): open report/index.html in a browser. Every test
-            shows its steps, its screenshot and its trace; a failed one also its error.
+            The same results as a web page (Playwright's HTML report). Every test shows its steps, its screenshot and its
+            trace; a failed one also its error. Extract the artifact first, then serve the page: opened as a file
+            (double click on index.html) it shows no trace. From the extracted folder:
+              npx playwright show-report report
+            (any folder with Node works: npx downloads Playwright).
 
           tests/
-            Playwright's output, a folder for each test that ran: the screenshot at its end (test-finished-1.png when
-            it passed, test-failed-1.png when it failed) and its trace (trace.zip). Open a trace with
-            `npx playwright show-trace trace.zip`: every step of the test, with the page as it was at each one.
+            Playwright's output as plain files, a folder for each test that ran:
+              test-finished-1.png / test-failed-1.png  the page at the end of the test (passed / failed).
+              trace.zip          every step of the test. A zip of text files: the actions and their timing as JSON
+                                 lines, the network requests, and the pictures of the page at each step (resources/).
+                                 Read it unzipped, or look at it with `npx playwright show-trace trace.zip` or by
+                                 dropping it on https://trace.playwright.dev (it stays in the browser, nothing is
+                                 uploaded).
+              error-context.md   a failed test only: the error and what the page held at that moment, in text.
 
           Investigating a failed test
           ---------------------------
           Start from the test itself: its code (tests/e2e/<file>.spec.ts), what it does and what it expects, and the
-          line that failed (in the job's log, step run_group_tests, or in e2e_test's summary). Then the trace shows what
-          the browser did at each step, and the screenshot what was on the page when it failed. A test that fails on one
-          system only: compare with the same test's screenshot and trace on another system. Fix the cause, not the wait.
+          line that failed (in the job's log, step run_group_tests, in e2e_test's summary or in group_<n>.json). Then
+          error-context.md and the trace show what the browser did at each step, and the screenshot what was on the page
+          when it failed. A test that fails on one system only: compare with the same test's screenshot and trace on
+          another system. Fix the cause, not the wait.
           EOF
 
       # Also when tests failed: e2e_test needs every group's list and report. The name has the run's attempt: after a
@@ -388,6 +542,11 @@ jobs:
                   if len(where) > 1:
                       groups_text = ", ".join(f"e2e_{system}_group_{g}" for g in where)
                       problems.append(f"{name}: ran in more than one group on {system} ({groups_text}).")
+              # A group with no test while there are enough for all: the tests are not split between the groups.
+              if len(everything) >= groups:
+                  for g in range(1, groups + 1):
+                      if not any(g in where for where in ran.values()):
+                          problems.append(f"e2e_{system}_group_{g}: no test: the tests are not split between the groups.")
           if os.environ["GROUPS_RESULT"] != "success":
               problems.append(f"The groups' result is '{os.environ['GROUPS_RESULT']}'.")
           summary = [
