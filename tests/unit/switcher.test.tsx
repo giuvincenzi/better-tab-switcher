@@ -235,7 +235,7 @@ describe('Switcher size', () => {
 
   it("keeps the grid's columns while open, so up and down still jump a whole row", async () => {
     await page.viewport(1280, 800);
-    const { host } = open({ view: 'grid' });
+    const { host } = open({ view: 'grid', width: 'large' });
     const grid = host.querySelector('[role="listbox"]') as HTMLElement;
     const columns = () => getComputedStyle(grid).gridTemplateColumns.split(' ').length;
     expect(columns()).toBe(4);
@@ -252,24 +252,25 @@ describe('Switcher list width', () => {
     await page.viewport(1280, 800);
   });
 
-  it('takes its share of the page: Medium 50%, Large 80%', async () => {
+  it('takes its share of the page: Small 35% (at least 500 px), Medium 55%, Large 80%', async () => {
     await page.viewport(1280, 800);
-    expect(panelWidth(open({ listWidth: 'medium' }).host)).toBe(640);
+    expect(panelWidth(open({ width: 'small' }).host)).toBe(500);
     dispose?.();
-    expect(panelWidth(open({ listWidth: 'large' }).host)).toBe(1024);
+    expect(panelWidth(open({ width: 'medium' }).host)).toBe(704);
+    dispose?.();
+    expect(panelWidth(open({ width: 'large' }).host)).toBe(1024);
   });
 
-  it('is never narrower than 360 px, nor wider than the page', async () => {
-    await page.viewport(600, 800);
-    expect(panelWidth(open({ listWidth: 'medium' }).host)).toBe(360);
-    dispose?.();
+  it('is never wider than the page', async () => {
     await page.viewport(380, 800);
-    expect(panelWidth(open({ listWidth: 'large' }).host)).toBe(348);
+    expect(panelWidth(open({ width: 'small' }).host)).toBe(348);
   });
 
-  it('is never narrower than Medium in the grid, with few tabs', async () => {
-    await page.viewport(1280, 800);
-    expect(panelWidth(open({ view: 'grid', gridShow: 'icons' }).host)).toBe(640);
+  it('has the same width in the grid, with few tabs too', async () => {
+    await page.viewport(1920, 800);
+    expect(panelWidth(open({ view: 'grid', width: 'medium' }).host)).toBe(1056);
+    dispose?.();
+    expect(panelWidth(open({ view: 'grid', gridShow: 'icons' }).host)).toBe(672);
   });
 });
 
@@ -327,10 +328,11 @@ describe('Switcher toolbar', () => {
     expect(end?.lastElementChild?.getAttribute('aria-label')).toBe('All settings');
   });
 
-  it('shows what the grid shows at the start, in the grid', () => {
+  it('shows the width and what the grid shows at the start, in the grid', () => {
     const { host } = open({ view: 'grid' });
+    expect(radio(host, 'small').checked).toBe(true);
     expect(radio(host, 'previews').checked).toBe(true);
-    expect(radio(host, 'medium')).toBeNull();
+    expect(button(host, 'Compact')).toBeNull();
   });
 
   it('changes the view at once, saves it, and keeps the switcher open', () => {
@@ -349,7 +351,7 @@ describe('Switcher toolbar', () => {
     expect(handlers.onSettingsChange).toHaveBeenCalledWith({ compact: false });
     expect(button(host, 'Compact').getAttribute('aria-pressed')).toBe('false');
     radio(host, 'large').click();
-    expect(handlers.onSettingsChange).toHaveBeenCalledWith({ listWidth: 'large' });
+    expect(handlers.onSettingsChange).toHaveBeenCalledWith({ width: 'large' });
   });
 
   it('opens the settings page', () => {

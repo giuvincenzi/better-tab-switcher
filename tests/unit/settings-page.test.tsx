@@ -97,11 +97,11 @@ describe('SettingsPage', () => {
     expect(compact.getAttribute('aria-checked')).toBe('false');
   });
 
-  it("chooses the list's width", () => {
+  it("chooses the switcher's width", () => {
     const { host, saved } = open();
     const large = [...host.querySelectorAll<HTMLInputElement>('input[type="radio"]')].find((r) => r.value === 'large');
     large?.click();
-    expect(saved).toEqual([{ listWidth: 'large' }]);
+    expect(saved).toEqual([{ width: 'large' }]);
   });
 
   it('saves a tab detail on its own', () => {

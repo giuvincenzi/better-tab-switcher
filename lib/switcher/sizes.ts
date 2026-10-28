@@ -8,10 +8,10 @@ export const sizes = {
   list: { padding: 0.5, row: 3 },
   compactList: { padding: 0.375, row: 2.25 },
   /**
-   * The list's width: a share of the page's width (%), never narrower than minWidth, nor wider than the page. Medium is
-   * also the narrowest the switcher ever is, in every view.
+   * The switcher's width, in the list and in the grid: a share of the page's width (%), never narrower than minWidth
+   * (500 px at the default text size), nor wider than the page.
    */
-  listWidth: { medium: 50, large: 80, minWidth: 22.5 },
+  width: { small: 35, medium: 55, large: 80, minWidth: 31.25 },
   /** Between two rows or two tiles. */
   gap: 0.125,
   /**
@@ -67,13 +67,23 @@ export function tileHeight(settings: Settings): number {
 export const ADDRESS_TUCK = 0.25;
 
 /**
- * The grid's columns: as many tiles (or icons) as fit across the page, fewer when there are fewer tabs. The page's
- * width is in pixels, and so is an em of the switcher (emPx): the user's text size. The grid's height is the CSS's:
- * never taller than the page, then it scrolls.
+ * The switcher's width in em: its share of the page, never narrower than the minimum, nor wider than the page (less
+ * its margins). The page's width is in pixels, and so is an em of the switcher (emPx): the user's text size. The CSS
+ * gives the panel the same width (Switcher.module.css).
+ */
+export function switcherWidth(settings: Settings, pageWidth: number, emPx: number): number {
+  const page = pageWidth / emPx;
+  const share = (page * sizes.width[settings.width]) / 100;
+  return Math.min(Math.max(share, sizes.width.minWidth), page - 2 * sizes.margin);
+}
+
+/**
+ * The grid's columns: as many tiles (or icons) as fit across the switcher's width, fewer when there are fewer tabs. The
+ * grid's height is the CSS's: never taller than the page, then it scrolls.
  */
 export function gridColumns(settings: Settings, count: number, pageWidth: number, emPx: number): number {
   const { cell, gap } = settings.gridShow === 'icons' ? sizes.icons : { cell: tileWidth, gap: sizes.grid.tileGap };
-  const room = pageWidth / emPx - 2 * (sizes.margin + sizes.grid.padding);
+  const room = switcherWidth(settings, pageWidth, emPx) - 2 * sizes.grid.padding;
   return Math.max(1, Math.min(count, Math.floor((room + gap) / (cell + gap))));
 }
 

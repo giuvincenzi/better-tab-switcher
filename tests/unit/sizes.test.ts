@@ -6,6 +6,7 @@ import {
   gridColumns,
   listRows,
   sizes,
+  switcherWidth,
   tileHeight,
   tileWidth,
 } from '../../lib/switcher/sizes';
@@ -27,34 +28,50 @@ describe('listRows', () => {
   });
 });
 
-describe('gridColumns', () => {
-  const grid = settings({ view: 'grid' });
+describe('switcherWidth', () => {
   const emPx = DEFAULT_EM_PX;
-  /** The page's width, in pixels, that fits n cells: the cells, their gaps, the margins and the padding (in em). */
-  const across = (n: number, cell: number, gap: number, px = emPx) =>
-    (n * cell + (n - 1) * gap + 2 * (sizes.margin + sizes.grid.padding)) * px;
 
-  it('fits as many tiles as the page is wide', () => {
-    expect(gridColumns(grid, 40, across(5, tileWidth, sizes.grid.tileGap), emPx)).toBe(5);
-    expect(gridColumns(grid, 40, across(5, tileWidth, sizes.grid.tileGap) - 1, emPx)).toBe(4);
+  it('takes its share of the page: Small 35%, Medium 55%, Large 80%', () => {
+    expect(switcherWidth(settings({ width: 'small' }), 1920, emPx) * emPx).toBe(672);
+    expect(switcherWidth(settings({ width: 'medium' }), 1920, emPx) * emPx).toBe(1056);
+    expect(switcherWidth(settings({ width: 'large' }), 1920, emPx) * emPx).toBe(1536);
+  });
+
+  it('is never narrower than 500 px at the default text size', () => {
+    expect(switcherWidth(settings({ width: 'small' }), 1280, emPx) * emPx).toBe(500);
+  });
+
+  it('is never wider than the page, less its margins', () => {
+    expect(switcherWidth(settings({ width: 'small' }), 400, emPx) * emPx).toBe(400 - 2 * sizes.margin * emPx);
+  });
+});
+
+describe('gridColumns', () => {
+  const emPx = DEFAULT_EM_PX;
+  const grid = (width: Settings['width']) => settings({ view: 'grid', width });
+
+  it('fits as many tiles as its width holds', () => {
+    expect(gridColumns(grid('small'), 40, 1280, emPx)).toBe(2);
+    expect(gridColumns(grid('small'), 40, 1920, emPx)).toBe(3);
+    expect(gridColumns(grid('medium'), 40, 1920, emPx)).toBe(4);
+    expect(gridColumns(grid('large'), 40, 1920, emPx)).toBe(7);
+  });
+
+  it('always fits two tiles at the narrowest width', () => {
+    expect(gridColumns(grid('small'), 40, 600, emPx)).toBe(2);
   });
 
   it('fits fewer tiles with a larger text size: the tiles grow with it', () => {
-    const page = across(5, tileWidth, sizes.grid.tileGap);
-    expect(gridColumns(grid, 40, page, emPx * 1.25)).toBe(3);
-  });
-
-  it('never squeezes the tiles: one column on a page narrower than a tile', () => {
-    expect(gridColumns(grid, 40, 100, emPx)).toBe(1);
+    expect(gridColumns(grid('large'), 40, 1920, emPx * 1.25)).toBe(5);
   });
 
   it('has no more columns than tabs', () => {
-    expect(gridColumns(grid, 3, 4000, emPx)).toBe(3);
+    expect(gridColumns(grid('large'), 3, 4000, emPx)).toBe(3);
   });
 
   it('fits more icons than tiles', () => {
-    const icons = { ...grid, gridShow: 'icons' } as const;
-    expect(gridColumns(icons, 40, across(12, sizes.icons.cell, sizes.icons.gap), emPx)).toBe(12);
+    const icons = { ...grid('small'), gridShow: 'icons' } as const;
+    expect(gridColumns(icons, 40, 1920, emPx)).toBe(7);
   });
 });
 

@@ -2,8 +2,8 @@ export type Theme = 'device' | 'light' | 'dark';
 export type View = 'list' | 'grid';
 export type Scope = 'window' | 'all';
 export type LongAddress = 'cut' | 'scroll';
-/** How wide the list is: a share of the page's width (lib/switcher/sizes.ts). */
-export type ListWidth = 'medium' | 'large';
+/** How wide the switcher is, in the list and in the grid: a share of the page's width (lib/switcher/sizes.ts). */
+export type Width = 'small' | 'medium' | 'large';
 /** What the grid's tiles show: a picture of each tab, or only each site's icon. */
 export type GridShow = 'previews' | 'icons';
 /** A number of rows, or as many as fit on the screen. */
@@ -23,7 +23,7 @@ export interface Settings {
   theme: Theme;
   view: View;
   compact: boolean;
-  listWidth: ListWidth;
+  width: Width;
   listRows: RowCount;
   /** The grid fits the screen by itself: its columns and rows are not settings. */
   gridShow: GridShow;
@@ -42,7 +42,7 @@ export const defaultSettings: Readonly<Settings> = Object.freeze({
   theme: 'device',
   view: 'list',
   compact: true,
-  listWidth: 'medium',
+  width: 'small',
   listRows: 6,
   gridShow: 'previews',
   scope: 'window',
@@ -106,7 +106,7 @@ export function parseSettings(value: unknown): Settings {
     theme: oneOf(saved.theme, ['device', 'light', 'dark'], d.theme),
     view: oneOf(saved.view, ['list', 'grid'], d.view),
     compact: flag(saved.compact, d.compact),
-    listWidth: oneOf(saved.listWidth, ['medium', 'large'], d.listWidth),
+    width: oneOf(saved.width, ['small', 'medium', 'large'], d.width),
     listRows: rows(saved.listRows, limits.listRows, d.listRows),
     gridShow: oneOf(saved.gridShow, ['previews', 'icons'], d.gridShow),
     scope: oneOf(saved.scope, ['window', 'all'], d.scope),
