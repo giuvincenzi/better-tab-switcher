@@ -80,11 +80,14 @@ export function listenToSwitcher(): void {
     await windowSnapshot.setValue(null);
     return snapshot;
   });
-  onMessage('openTab', async ({ data: tab }) => {
+  onMessage('openTab', async ({ data: tabId }) => {
     const open = await forget();
-    await browser.tabs.update(tab.id, { active: true });
+    // The tab as it is now: it may have moved to another window, or closed, while the switcher was open.
+    const now = await browser.tabs.get(tabId).catch(() => undefined);
+    if (!now) return;
+    await browser.tabs.update(tabId, { active: true });
     // Focusing a window that already has the focus can move the keyboard focus out of the page (macOS).
-    if (open?.windowId !== tab.windowId) await browser.windows.update(tab.windowId, { focused: true });
+    if (open?.windowId !== now.windowId) await browser.windows.update(now.windowId, { focused: true });
   });
   onMessage('closeTab', async ({ data: tabId }) => {
     await browser.tabs.remove(tabId);

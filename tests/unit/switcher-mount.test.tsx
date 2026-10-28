@@ -107,7 +107,7 @@ describe('mountSwitcher', () => {
     const { onDone } = mount();
     tile('Q4 planning').click();
     expect(onDone).toHaveBeenCalledOnce();
-    expect(messages).toHaveBeenCalledWith('openTab', { id: 3, windowId: 13 });
+    expect(messages).toHaveBeenCalledWith('openTab', 3);
   });
 
   it('asks the background to close a tab and stays open', () => {

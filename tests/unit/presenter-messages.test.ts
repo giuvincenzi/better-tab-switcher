@@ -57,29 +57,46 @@ afterEach(() => {
 describe('opening a tab', () => {
   it('activates the tab and focuses its window when it is in another window', async () => {
     await openInPage();
-    await messages.ask('openTab', { id: 21, windowId: 2 });
+    await messages.ask('openTab', 21);
     expect(browser.tabs.update).toHaveBeenCalledWith(21, { active: true });
     expect(browser.windows.update).toHaveBeenCalledWith(2, { focused: true });
   });
 
   it('does not focus the window again when the tab is in the window of the switcher', async () => {
     await openInPage();
-    await messages.ask('openTab', { id: 12, windowId: 1 });
+    await messages.ask('openTab', 12);
     expect(browser.tabs.update).toHaveBeenCalledWith(12, { active: true });
     expect(browser.windows.update).not.toHaveBeenCalled();
   });
 
   it("closes the switcher's window and focuses the window of the tab", async () => {
     await openInWindow();
-    await messages.ask('openTab', { id: 12, windowId: 1 });
+    await messages.ask('openTab', 12);
     expect(browser.windows.remove).toHaveBeenCalledWith(FIRST_POPUP_ID);
     expect(browser.tabs.update).toHaveBeenCalledWith(12, { active: true });
     expect(browser.windows.update).toHaveBeenCalledWith(1, { focused: true });
   });
 
+  it('focuses the window the tab is in now, when it was moved to another window while the switcher was open', async () => {
+    await openInPage();
+    // The switcher listed tab 12 in window 1; it was dragged to window 2 meanwhile.
+    world.tabs = world.tabs.map((t) => (t.id === 12 ? { ...t, windowId: 2 } : t));
+    await messages.ask('openTab', 12);
+    expect(browser.tabs.update).toHaveBeenCalledWith(12, { active: true });
+    expect(browser.windows.update).toHaveBeenCalledWith(2, { focused: true });
+  });
+
+  it('does nothing, quietly, when the tab was closed while the switcher was open', async () => {
+    await openInPage();
+    world.tabs = world.tabs.filter((t) => t.id !== 21);
+    await expect(messages.ask('openTab', 21)).resolves.toBeUndefined();
+    expect(browser.tabs.update).not.toHaveBeenCalled();
+    expect(browser.windows.update).not.toHaveBeenCalled();
+  });
+
   it('leaves no switcher open: the next shortcut opens a new one', async () => {
     await openInPage();
-    await messages.ask('openTab', { id: 12, windowId: 1 });
+    await messages.ask('openTab', 12);
     world.currentTabId = 12;
     await shortcut();
     expect(received('closeSwitcher')).toEqual([]);

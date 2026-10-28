@@ -38,7 +38,7 @@ interface Messages {
   /** Background → switcher: close, a new switcher opens in another tab. */
   closeSwitcher(): void;
   /** Switcher → background: open this tab (the switcher has already closed). */
-  openTab(tab: { id: number; windowId: number }): void;
+  openTab(tabId: number): void;
   /** Switcher → background: close this tab; the switcher stays open. */
   closeTab(tabId: number): void;
   /** Switcher → background: it closed without opening a tab (Esc, a click outside): the user is back where they were. */

@@ -57,7 +57,7 @@ export function mountSwitcher(
         pictureTaken={pictureTaken}
         onOpen={(tab) => {
           onDone();
-          void sendMessage('openTab', { id: tab.id, windowId: tab.windowId });
+          void sendMessage('openTab', tab.id);
         }}
         onClose={() => {
           onDone();
