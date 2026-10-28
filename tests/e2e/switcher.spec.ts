@@ -159,6 +159,26 @@ test.describe("Chrome's own pages @switcher", () => {
     await expect.poll(() => activeTitle(serviceWorker)).toBe('alpha');
     await expect.poll(() => switcherWindow.isClosed()).toBe(true);
   });
+
+  test('switches to the previous tab with a quick tap there, as in a page: the window closes at once', async ({
+    context,
+    serviceWorker,
+  }) => {
+    await openPages(context, ['alpha', 'beta']);
+    // A delay long enough that the release comes before it, whatever the machine.
+    await useSettings(serviceWorker, { delayMs: 1000 });
+    const chromePage = await context.newPage();
+    await chromePage.goto('chrome://version');
+    await chromePage.bringToFront();
+    const opened = context.waitForEvent('page');
+    await showSwitcher(serviceWorker);
+    const switcherWindow = await opened;
+    await switcherWindow.waitForFunction(() => document.querySelector('[role="listbox"]') !== null);
+    await switcherWindow.keyboard.down('Alt');
+    await switcherWindow.keyboard.up('Alt');
+    await expect.poll(() => activeTitle(serviceWorker)).toBe('beta');
+    await expect.poll(() => switcherWindow.isClosed()).toBe(true);
+  });
 });
 
 test.describe('one switcher at a time @switcher', () => {
