@@ -14,6 +14,8 @@ export interface World {
   refusing: Set<number>;
   /** Pages where the switcher's script runs: injected, and not reloaded since. */
   injected: Set<number>;
+  /** Pages that hang (a script that never ends): their messages and scripts never get an answer. */
+  hung: Set<number>;
   /** The switcher's own window is open and its page listens. */
   windowListening: boolean;
   /** The messages the switcher received from the background, in order: in a page (tab id) or in its window (none). */
@@ -27,6 +29,7 @@ export function newWorld(more: Partial<World> = {}): World {
     currentTabId: undefined,
     refusing: new Set(),
     injected: new Set(),
+    hung: new Set(),
     windowListening: false,
     received: [],
     ...more,
@@ -39,6 +42,7 @@ export function newWorld(more: Partial<World> = {}): World {
  */
 export function deliverTo(world: World) {
   return async (type: string, data?: unknown, tabId?: number): Promise<void> => {
+    if (tabId !== undefined && world.hung.has(tabId)) return new Promise<void>(() => undefined);
     const listens = tabId === undefined ? world.windowListening : world.injected.has(tabId);
     if (!listens) throw new Error('Could not establish connection. Receiving end does not exist.');
     world.received.push({ type, data, tabId });
@@ -132,6 +136,7 @@ export function fakeChrome(world: World) {
   }) as never);
   vi.spyOn(browser.scripting, 'executeScript').mockImplementation((async (injection: { target: { tabId: number } }) => {
     const { tabId } = injection.target;
+    if (world.hung.has(tabId)) return new Promise(() => undefined);
     if (world.refusing.has(tabId)) throw new Error('Cannot access contents of the page.');
     world.injected.add(tabId);
     return [];

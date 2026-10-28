@@ -80,6 +80,56 @@ test.describe('how the switcher switches @switching', () => {
   });
 });
 
+test.describe('a page that hangs @switching', () => {
+  test('gets the switcher in its own window, never shows one late, and the shortcut keeps working in other tabs', async ({
+    context,
+    serviceWorker,
+  }) => {
+    const [, beta] = (await openPages(context, ['alpha', 'beta'])) as [Page, Page];
+    // A page with a script that, once started, runs for 12 seconds: the page answers nothing meanwhile, long past the
+    // time the background waits for it.
+    await context.route('https://hang.test/**', (route) =>
+      route.fulfill({
+        contentType: 'text/html',
+        body: `<title>hang</title><script>
+          window.hang = () => setTimeout(() => { const end = Date.now() + 12000; while (Date.now() < end) {} });
+        </script>`,
+      }),
+    );
+    const hanging = await context.newPage();
+    await hanging.goto('https://hang.test/');
+    await hanging.bringToFront();
+    // The switcher has been in this page before: its script is there, and would show what it gets, even late.
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    await expect(rows(hanging)).toHaveCount(3);
+    await hanging.keyboard.press('Escape');
+    await expect(rows(hanging)).toHaveCount(0);
+    await hanging.evaluate(() => (window as unknown as { hang: () => void }).hang());
+    // Until the page has stopped answering: a question it doesn't answer in 300 ms.
+    await expect
+      .poll(() =>
+        Promise.race([
+          hanging.evaluate(() => 'answers').catch(() => 'answers'),
+          new Promise((busy) => setTimeout(() => busy('busy'), 300)),
+        ]),
+      )
+      .toBe('busy');
+    const opened = context.waitForEvent('page');
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    const switcherWindow = await opened;
+    await expect(switcherWindow.getByRole('option')).toHaveCount(3);
+    // Once the page answers again, what it was sent meanwhile is too late: no switcher shows in it.
+    await hanging.evaluate(() => new Promise((done) => requestAnimationFrame(() => setTimeout(done))));
+    await expect(rows(hanging)).toHaveCount(0);
+    // The user closes it and goes to another tab, where the shortcut opens the switcher at once.
+    await switcherWindow.keyboard.down('Escape');
+    await expect.poll(() => switcherWindow.isClosed()).toBe(true);
+    await beta.bringToFront();
+    await showSwitcher(serviceWorker);
+    await expect(rows(beta)).toHaveCount(3);
+  });
+});
+
 test.describe("the switcher's own window @switching", () => {
   test('closes its window with Esc, and the shortcut then opens a new one on the same page', async ({
     context,

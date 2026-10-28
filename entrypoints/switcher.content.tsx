@@ -11,8 +11,12 @@ export default defineContentScript({
   main(ctx) {
     let remove: (() => void) | undefined;
     let handle: SwitcherHandle | undefined;
+    // Counts the switchers asked for and closed: a switcher still being made when it is closed (or replaced) is never
+    // shown. The background closes a switcher it gave up waiting for: the page was busy.
+    let latest = 0;
 
     onMessage('showSwitcher', async ({ data: snapshot }) => {
+      const asked = ++latest;
       remove?.();
       const ui = await createShadowRootUi(ctx, {
         name: 'better-tab-switcher',
@@ -27,6 +31,7 @@ export default defineContentScript({
           handle = undefined;
         },
       });
+      if (asked !== latest) return;
       remove = () => {
         remove = undefined;
         ui.remove();
@@ -38,7 +43,10 @@ export default defineContentScript({
       if (!handle) throw new Error('No switcher is open in this page.');
       handle.move(direction);
     });
-    onMessage('closeSwitcher', () => remove?.());
+    onMessage('closeSwitcher', () => {
+      latest++;
+      remove?.();
+    });
     onMessage('previewReady', ({ data: preview }) => handle?.showPreview(preview));
     onMessage('pictureTaken', () => handle?.pictureTaken());
   },

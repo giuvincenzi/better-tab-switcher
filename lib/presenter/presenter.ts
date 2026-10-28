@@ -120,10 +120,35 @@ function isWhereTheUserIs(open: OpenSwitcher, current: Browser.tabs.Tab | undefi
   return open.in === 'page' ? open.tabId === current?.id : open.windowId === current?.windowId;
 }
 
-/** Moves the open switcher's selection. False when it is not there any more (its page closed or reloaded). */
+/**
+ * How long a page has to answer the switcher's messages. A page that doesn't (a script that never ends, a page paused)
+ * is a page the switcher can't show in: the requests never wait for it, and those after it are not held up.
+ */
+export const PAGE_ANSWER_MS = 1000;
+
+/** What a page was sent, or a failure when the page doesn't answer in PAGE_ANSWER_MS. */
+function answered<T>(sent: Promise<T>): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const late = setTimeout(() => reject(new Error('The page did not answer.')), PAGE_ANSWER_MS);
+    sent.then(
+      (value) => {
+        clearTimeout(late);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(late);
+        reject(error);
+      },
+    );
+  });
+}
+
+/** Moves the open switcher's selection. False when it is not there any more (its page closed, reloaded or hangs). */
 function move(open: OpenSwitcher, direction: Direction): Promise<boolean> {
   const sent =
-    open.in === 'page' ? sendMessage('moveSwitcher', direction, open.tabId) : sendMessage('moveSwitcher', direction);
+    open.in === 'page'
+      ? answered(sendMessage('moveSwitcher', direction, open.tabId))
+      : sendMessage('moveSwitcher', direction);
   return sent.then(
     () => true,
     () => false,
@@ -158,24 +183,30 @@ async function showInPage(current: Browser.tabs.Tab, snapshot: SwitcherSnapshot,
   }
   if (picture) {
     await picture;
-    await sendMessage('pictureTaken', undefined, tabId).catch(() => undefined);
+    await answered(sendMessage('pictureTaken', undefined, tabId)).catch(() => undefined);
   }
   return true;
 }
 
-/** Sends the tabs to the page's switcher, injecting its script the first time. False when Chrome doesn't let it in. */
+/**
+ * Sends the tabs to the page's switcher, injecting its script the first time. False when Chrome doesn't let it in or
+ * the page doesn't answer: then the page is told to close what it may show once it answers again (it handles its
+ * messages in order), so no switcher shows late there.
+ */
 async function sendSnapshot(tabId: number, snapshot: SwitcherSnapshot): Promise<boolean> {
+  const show = () => answered(sendMessage('showSwitcher', snapshot, tabId));
   try {
-    await sendMessage('showSwitcher', snapshot, tabId);
+    await show();
     return true;
   } catch {
-    // Not injected yet in this page.
+    // Not injected yet in this page, or the page doesn't answer.
   }
   try {
-    await browser.scripting.executeScript({ target: { tabId }, files: [SWITCHER_SCRIPT] });
-    await sendMessage('showSwitcher', snapshot, tabId);
+    await answered(browser.scripting.executeScript({ target: { tabId }, files: [SWITCHER_SCRIPT] }));
+    await show();
     return true;
   } catch {
+    sendMessage('closeSwitcher', undefined, tabId).catch(() => undefined);
     return false;
   }
 }
@@ -213,6 +244,6 @@ async function forget(): Promise<OpenSwitcher | null> {
 /** Closes the open switcher, for a new one; in a page, it is gone already when the page closed or reloaded. */
 async function closeSwitcher(open: OpenSwitcher): Promise<void> {
   await openSwitcher.setValue(null);
-  if (open.in === 'page') await sendMessage('closeSwitcher', undefined, open.tabId).catch(() => undefined);
+  if (open.in === 'page') await answered(sendMessage('closeSwitcher', undefined, open.tabId)).catch(() => undefined);
   else await browser.windows.remove(open.windowId).catch(() => undefined);
 }

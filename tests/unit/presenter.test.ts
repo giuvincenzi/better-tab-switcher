@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { browser, fakeBrowser } from '#imports';
 import type { SwitcherSnapshot } from '../../lib/messages';
-import { listenToSwitcher, requestSwitcher, showPreview } from '../../lib/presenter/presenter';
+import { listenToSwitcher, PAGE_ANSWER_MS, requestSwitcher, showPreview } from '../../lib/presenter/presenter';
 import { saveSettings } from '../../lib/settings/store';
 import {
   deliverTo,
@@ -132,6 +132,53 @@ describe('the switcher in a web page', () => {
     expect(sent('closeSwitcher')).toEqual([{ data: undefined, tabId: 11 }]);
     expect(sent('showSwitcher')).toHaveLength(1);
     expect(browser.windows.create).not.toHaveBeenCalled();
+  });
+});
+
+describe('a page that hangs (a script that never ends)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  /** A request, time going by (the waits for pages that don't answer) until it is done. */
+  async function waited(request: Promise<void>): Promise<void> {
+    let done = false;
+    const settled = request.finally(() => {
+      done = true;
+    });
+    while (!done) await vi.advanceTimersByTimeAsync(PAGE_ANSWER_MS);
+    await settled;
+  }
+
+  it('gets the switcher in a window of its own, and never holds up the requests after it', async () => {
+    world.hung.add(11);
+    await waited(shortcut());
+    expect(browser.windows.create).toHaveBeenCalledTimes(1);
+    world.currentTabId = 12;
+    await waited(shortcut());
+    expect(sent('showSwitcher').map((m) => m.tabId)).toEqual([12]);
+  });
+
+  it('with a switcher open in it, lets the shortcut open a new one instead of waiting for it', async () => {
+    await shortcut();
+    world.hung.add(11);
+    await waited(shortcut());
+    expect(browser.windows.create).toHaveBeenCalledTimes(1);
+    world.currentTabId = 12;
+    await waited(icon());
+    expect(sent('showSwitcher').map((m) => m.tabId)).toEqual([11, 12]);
+  });
+
+  it('tells the page it gave up on to close what it shows, so nothing shows there once it answers again', async () => {
+    world.hung.add(11);
+    await waited(shortcut());
+    const toThePage = messages.sendMessage.mock.calls.filter(([, , tabId]) => tabId === 11).map(([type]) => type);
+    expect(toThePage.at(-1)).toBe('closeSwitcher');
+    expect(toThePage).toContain('showSwitcher');
   });
 });
 
