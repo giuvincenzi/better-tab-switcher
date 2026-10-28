@@ -76,15 +76,18 @@ export function Icon(props: IconProps): JSX.Element {
           <rect x="13" y="13" width="7" height="7" rx="1.5" />
         </Match>
         <Match when={props.name === 'previews'}>
-          <rect x="3" y="5" width="18" height="14" rx="2" />
-          <path d="M3 9h18M7 13h6" />
+          <rect x="3" y="4" width="18" height="16" rx="2" />
+          <circle cx="9" cy="10" r="2" />
+          <path d="M21 16l-5-5-9 9" />
         </Match>
         <Match when={props.name === 'icons'}>
-          <rect x="3" y="8" width="8" height="8" rx="2.5" />
-          <rect x="13" y="8" width="8" height="8" rx="2.5" />
+          <circle cx="7" cy="7" r="3.5" />
+          <rect x="13.5" y="3.5" width="7" height="7" rx="1.5" />
+          <path d="M12 13.5l4.5 7h-9z" />
         </Match>
         <Match when={props.name === 'compact'}>
-          <path d="M4 7h16M4 11h16M4 15h16M4 19h16" />
+          <rect x="4" y="9.5" width="16" height="5" rx="1.5" />
+          <path d="M12 2.5v4M10 4.5l2 2 2-2M12 21.5v-4M10 19.5l2-2 2 2" />
         </Match>
         <Match when={props.name === 'address'}>
           <circle cx="12" cy="12" r="9" />
