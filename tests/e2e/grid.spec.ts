@@ -49,8 +49,8 @@ test.describe('grid @grid', () => {
     await expect.poll(() => activeTitle(serviceWorker)).toBe('delta');
   });
 
-  test('opens with as many columns as its width holds, all rows in sight', async ({ context, serviceWorker }) => {
-    await useSettings(serviceWorker, { view: 'grid', width: 'large' });
+  test('opens with about as many columns as rows, all of them in sight', async ({ context, serviceWorker }) => {
+    await useSettings(serviceWorker, { view: 'grid' });
     const pages = await openPages(context, ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta']);
     const page = pages[6] as Page;
     await page.setViewportSize({ width: 1280, height: 800 });
@@ -62,8 +62,8 @@ test.describe('grid @grid', () => {
       across: list.scrollWidth - list.clientWidth,
       down: list.scrollHeight - list.clientHeight,
     }));
-    // Large on a 1280 px page: 1024 px, four tiles across; seven tabs make two rows, all in sight.
-    expect(fits).toEqual({ columns: 4, across: 0, down: 0 });
+    // Seven tabs: three columns, three rows, all in sight on a 1280 by 800 page.
+    expect(fits).toEqual({ columns: 3, across: 0, down: 0 });
   });
 
   test('shows a picture of each tab used, taken in memory', async ({ context, serviceWorker }) => {

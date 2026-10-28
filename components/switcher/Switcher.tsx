@@ -58,9 +58,10 @@ interface Frame {
   columns: number;
 }
 
-/** A share (%) of the page's width, never narrower than the switcher's minimum width. */
-function shareOfPage(percent: number): string {
-  return `max(${em(sizes.width.minWidth)}, ${percent}vw)`;
+/** The list's width: its share of the page, between its minimum and its maximum (the CSS keeps it inside the page). */
+function listWidth(): string {
+  const { share, min, max } = sizes.listWidth;
+  return `clamp(${em(min)}, ${share}vw, ${em(max)})`;
 }
 
 /** The longest the switcher waits for the page's picture before it shows. */
@@ -206,8 +207,8 @@ export function Switcher(props: SwitcherProps): JSX.Element {
     return {
       width: fixed ? `${fixed.width}px` : undefined,
       height: fixed ? `${fixed.height}px` : undefined,
-      '--panel-width': shareOfPage(sizes.width[settings().width]),
-      '--panel-min-width': em(sizes.width.minWidth),
+      '--panel-width': grid ? 'auto' : listWidth(),
+      '--panel-min-width': em(sizes.listWidth.min),
       '--panel-padding': em(grid ? sizes.grid.padding : list.padding),
       '--margin': em(sizes.margin),
       '--row': em(list.row),

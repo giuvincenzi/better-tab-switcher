@@ -8,10 +8,12 @@ export const sizes = {
   list: { padding: 0.5, row: 3 },
   compactList: { padding: 0.375, row: 2.25 },
   /**
-   * The switcher's width, in the list and in the grid: a share of the page's width (%), never narrower than minWidth
-   * (500 px at the default text size), nor wider than the page.
+   * The list's width: its share of the page (%), between min and max (500 and 1000 px at the default text size), never
+   * wider than the page. min is also the narrowest the grid ever is (then its tiles are in the middle).
    */
-  width: { small: 35, medium: 55, large: 80, minWidth: 31.25 },
+  listWidth: { share: 40, min: 31.25, max: 62.5 },
+  /** The grid is as wide as its columns, never wider than this share of the page (%). */
+  gridMaxShare: 85,
   /** Between two rows or two tiles. */
   gap: 0.125,
   /**
@@ -67,24 +69,17 @@ export function tileHeight(settings: Settings): number {
 export const ADDRESS_TUCK = 0.25;
 
 /**
- * The switcher's width in em: its share of the page, never narrower than the minimum, nor wider than the page (less
- * its margins). The page's width is in pixels, and so is an em of the switcher (emPx): the user's text size. The CSS
- * gives the panel the same width (Switcher.module.css).
- */
-export function switcherWidth(settings: Settings, pageWidth: number, emPx: number): number {
-  const page = pageWidth / emPx;
-  const share = (page * sizes.width[settings.width]) / 100;
-  return Math.min(Math.max(share, sizes.width.minWidth), page - 2 * sizes.margin);
-}
-
-/**
- * The grid's columns: as many tiles (or icons) as fit across the switcher's width, fewer when there are fewer tabs. The
- * grid's height is the CSS's: never taller than the page, then it scrolls.
+ * The grid's columns: about as many as its rows, so that the tiles make a rectangle a little wider than tall (4 tabs:
+ * 2 by 2, 12 tabs: 4 by 3, 30 tabs: 6 by 5); never more than fit in its share of the page, nor more than the tabs. The
+ * page's width is in pixels, and so is an em of the switcher (emPx): the user's text size. The grid's height is the
+ * CSS's: never taller than the page, then it scrolls.
  */
 export function gridColumns(settings: Settings, count: number, pageWidth: number, emPx: number): number {
   const { cell, gap } = settings.gridShow === 'icons' ? sizes.icons : { cell: tileWidth, gap: sizes.grid.tileGap };
-  const room = switcherWidth(settings, pageWidth, emPx) - 2 * sizes.grid.padding;
-  return Math.max(1, Math.min(count, Math.floor((room + gap) / (cell + gap))));
+  const page = pageWidth / emPx;
+  const room = Math.min((page * sizes.gridMaxShare) / 100, page - 2 * sizes.margin) - 2 * sizes.grid.padding;
+  const fit = Math.floor((room + gap) / (cell + gap));
+  return Math.max(1, Math.min(count, fit, Math.ceil(Math.sqrt(count))));
 }
 
 /** The list's rows shown before it scrolls: the setting's, or all of them to fit the page (then it scrolls). */

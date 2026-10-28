@@ -19,12 +19,6 @@ Switcher_Search: Search tabs
 # Under the search field when no tab matches what was typed.
 Switcher_NoMatch: No tabs match your search.
 
-# The toolbar's width buttons: the first letter (or a short form) of Settings_WidthSmall, Settings_WidthMedium and
-# Settings_WidthLarge.
-Switcher_WidthSmallShort: S
-Switcher_WidthMediumShort: M
-Switcher_WidthLargeShort: L
-
 # The toolbar's button that opens the settings page.
 Switcher_Settings: All settings
 
@@ -62,12 +56,6 @@ Settings_GridShow: Show
 Settings_GridShowPreviews: Previews
 Settings_GridShowIcons: Icons
 Settings_GridShowNote: Previews shows a picture of each tab, Icons only each site's icon.
-# The switcher's width, in the list and in the grid. Settings_Width and its choices are also in the switcher's toolbar.
-Settings_Width: Width
-Settings_WidthNote: How much of the page the switcher takes. The grid shows as many tiles across as this width holds.
-Settings_WidthSmall: Small
-Settings_WidthMedium: Medium
-Settings_WidthLarge: Large
 # List only. Settings_Compact is also in the switcher's toolbar.
 Settings_Compact: Compact
 Settings_CompactNote: Lower rows, so more tabs fit.

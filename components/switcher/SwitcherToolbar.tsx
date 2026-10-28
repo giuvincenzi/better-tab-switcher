@@ -2,7 +2,6 @@ import { type JSX, Show } from 'solid-js';
 import { i18n } from '#i18n';
 import type { Settings } from '../../lib/settings/settings';
 import type { SettingsChange } from '../../lib/settings/store';
-import { widthOptions } from '../settings/options';
 import { IconButton } from '../ui/IconButton';
 import { SegmentedControl } from '../ui/SegmentedControl';
 import styles from './SwitcherToolbar.module.css';
@@ -16,20 +15,14 @@ interface SwitcherToolbarProps {
 }
 
 /**
- * The switcher's toolbar: the search field always in the middle; at the start edge the width and the options of the view
- * in use (the list's Compact, or what the grid shows), at the end edge the view and the settings. Its buttons are marked
+ * The switcher's toolbar: the search field always in the middle; at the start edge the option of the view in use (the
+ * list's Compact, or what the grid shows), at the end edge the view and the settings. Its buttons are marked
  * data-toolbar-controls: the switcher leaves the keyboard on the tabs when they are clicked.
  */
 export function SwitcherToolbar(props: SwitcherToolbarProps): JSX.Element {
   return (
     <div role="toolbar" aria-label={i18n.t('Switcher_Toolbar')} class={styles.toolbar}>
       <div class={styles.start} data-toolbar-controls>
-        <SegmentedControl
-          label={i18n.t('Settings_Width')}
-          value={props.settings.width}
-          options={widthOptions(true)}
-          onChange={(width) => props.onChange({ width })}
-        />
         <Show
           when={props.settings.view === 'grid'}
           fallback={

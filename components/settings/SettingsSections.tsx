@@ -8,7 +8,6 @@ import { NumberField } from '../ui/NumberField';
 import { SegmentedControl } from '../ui/SegmentedControl';
 import { Select, type SelectOption } from '../ui/Select';
 import { Toggle } from '../ui/Toggle';
-import { widthOptions } from './options';
 import { SettingRow } from './SettingRow';
 import { SettingsSection } from './SettingsSection';
 import styles from './SettingsSections.module.css';
@@ -72,18 +71,6 @@ export function AppearanceSection(props: SectionProps): JSX.Element {
         note={i18n.t('Settings_ToolbarNote')}
         checked={props.settings.toolbar}
         onChange={(toolbar) => props.save({ toolbar })}
-      />
-      <SettingRow
-        label={i18n.t('Settings_Width')}
-        note={i18n.t('Settings_WidthNote')}
-        control={(ids) => (
-          <SegmentedControl
-            value={props.settings.width}
-            options={widthOptions()}
-            labelledBy={ids.label}
-            onChange={(width) => props.save({ width })}
-          />
-        )}
       />
       <Show
         when={grid()}

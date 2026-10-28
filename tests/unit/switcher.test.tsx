@@ -235,13 +235,14 @@ describe('Switcher size', () => {
 
   it("keeps the grid's columns while open, so up and down still jump a whole row", async () => {
     await page.viewport(1280, 800);
-    const { host } = open({ view: 'grid', width: 'large' });
+    const { host } = open({ view: 'grid' });
     const grid = host.querySelector('[role="listbox"]') as HTMLElement;
     const columns = () => getComputedStyle(grid).gridTemplateColumns.split(' ').length;
-    expect(columns()).toBe(4);
-    type(host, 'plan');
-    expect(host.querySelectorAll('[role="option"]')).toHaveLength(2);
-    expect(columns()).toBe(4);
+    expect(columns()).toBe(2);
+    // One result would make one column: the grid keeps the two it opened with.
+    type(host, 'Running');
+    expect(host.querySelectorAll('[role="option"]')).toHaveLength(1);
+    expect(columns()).toBe(2);
   });
 });
 
@@ -252,25 +253,30 @@ describe('Switcher list width', () => {
     await page.viewport(1280, 800);
   });
 
-  it('takes its share of the page: Small 35% (at least 500 px), Medium 55%, Large 80%', async () => {
+  it('takes 40% of the page in the list, between 500 and 1000 px', async () => {
     await page.viewport(1280, 800);
-    expect(panelWidth(open({ width: 'small' }).host)).toBe(500);
+    expect(panelWidth(open().host)).toBe(512);
     dispose?.();
-    expect(panelWidth(open({ width: 'medium' }).host)).toBe(704);
+    await page.viewport(2560, 800);
+    expect(panelWidth(open().host)).toBe(1000);
     dispose?.();
-    expect(panelWidth(open({ width: 'large' }).host)).toBe(1024);
+    await page.viewport(1000, 800);
+    expect(panelWidth(open().host)).toBe(500);
   });
 
   it('is never wider than the page', async () => {
     await page.viewport(380, 800);
-    expect(panelWidth(open({ width: 'small' }).host)).toBe(348);
+    expect(panelWidth(open().host)).toBe(348);
   });
 
-  it('has the same width in the grid, with few tabs too', async () => {
+  it('is as wide as its columns in the grid, never narrower than 500 px', async () => {
     await page.viewport(1920, 800);
-    expect(panelWidth(open({ view: 'grid', width: 'medium' }).host)).toBe(1056);
-    dispose?.();
-    expect(panelWidth(open({ view: 'grid', gridShow: 'icons' }).host)).toBe(672);
+    const { host } = open({ view: 'grid' });
+    const grid = host.querySelector('[role="listbox"]') as HTMLElement;
+    // Four tabs: two columns of tiles, in the middle of the narrowest switcher, with no tile cut.
+    expect(getComputedStyle(grid).gridTemplateColumns.split(' ')).toHaveLength(2);
+    expect(panelWidth(host)).toBe(500);
+    expect(grid.scrollWidth).toBe(grid.clientWidth);
   });
 });
 
@@ -319,18 +325,16 @@ describe('Switcher toolbar', () => {
   const radio = (host: HTMLElement, value: string) =>
     host.querySelector(`[role="toolbar"] input[type="radio"][value="${value}"]`) as HTMLInputElement;
 
-  it("has the list's width and Compact at the start, the view and the settings at the end", () => {
+  it("has the list's Compact at the start, the view and the settings at the end", () => {
     const { host } = open();
     const [start, , end] = [...(host.querySelector('[role="toolbar"]') as HTMLElement).children];
-    expect(start?.querySelector('[aria-label="Width"]')).not.toBeNull();
     expect(start?.querySelector('button[aria-label="Compact"]')).not.toBeNull();
     expect(end?.querySelector('[aria-label="View"]')).not.toBeNull();
     expect(end?.lastElementChild?.getAttribute('aria-label')).toBe('All settings');
   });
 
-  it('shows the width and what the grid shows at the start, in the grid', () => {
+  it('shows what the grid shows at the start, in the grid', () => {
     const { host } = open({ view: 'grid' });
-    expect(radio(host, 'small').checked).toBe(true);
     expect(radio(host, 'previews').checked).toBe(true);
     expect(button(host, 'Compact')).toBeNull();
   });
@@ -344,14 +348,12 @@ describe('Switcher toolbar', () => {
     expect(handlers.onOpen).not.toHaveBeenCalled();
   });
 
-  it('turns Compact on and off, and changes the width', () => {
+  it('turns Compact on and off', () => {
     const { host, handlers } = open();
     expect(button(host, 'Compact').getAttribute('aria-pressed')).toBe('true');
     button(host, 'Compact').click();
     expect(handlers.onSettingsChange).toHaveBeenCalledWith({ compact: false });
     expect(button(host, 'Compact').getAttribute('aria-pressed')).toBe('false');
-    radio(host, 'large').click();
-    expect(handlers.onSettingsChange).toHaveBeenCalledWith({ width: 'large' });
   });
 
   it('opens the settings page', () => {

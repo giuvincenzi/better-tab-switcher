@@ -18,7 +18,6 @@ describe('parseSettings', () => {
       theme: 'dark',
       view: 'grid',
       compact: false,
-      width: 'large',
       listRows: 'fit',
       gridShow: 'icons',
       scope: 'all',
