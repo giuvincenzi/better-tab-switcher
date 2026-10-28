@@ -127,14 +127,12 @@ test.describe("Chrome's own pages @switcher", () => {
       .poll(() =>
         serviceWorker.evaluate(async () => {
           const windows = await chrome.windows.getAll();
-          const from = windows.find((w) => w.type === 'normal') as chrome.windows.Window;
-          const own = windows.find((w) => w.type === 'popup') as chrome.windows.Window;
-          const middle = (w: chrome.windows.Window) => [
-            (w.left ?? 0) + (w.width ?? 0) / 2,
-            (w.top ?? 0) + (w.height ?? 0) / 2,
-          ];
-          const [fromX, fromY] = middle(from) as [number, number];
-          const [ownX, ownY] = middle(own) as [number, number];
+          const middle = (type: string) => {
+            const w = windows.find((window) => window.type === type);
+            return [(w?.left ?? 0) + (w?.width ?? 0) / 2, (w?.top ?? 0) + (w?.height ?? 0) / 2];
+          };
+          const [fromX, fromY] = middle('normal') as [number, number];
+          const [ownX, ownY] = middle('popup') as [number, number];
           return Math.abs(fromX - ownX) <= 1 && Math.abs(fromY - ownY) <= 1;
         }),
       )
