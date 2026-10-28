@@ -1,7 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { browser, fakeBrowser } from '#imports';
 import type { SwitcherSnapshot } from '../../lib/messages';
-import { listenToSwitcher, PAGE_ANSWER_MS, requestSwitcher, showPreview } from '../../lib/presenter/presenter';
+import {
+  listenToSwitcher,
+  PAGE_ANSWER_MS,
+  requestSwitcher,
+  SCRIPT_INJECTION_MS,
+  showPreview,
+} from '../../lib/presenter/presenter';
 import { saveSettings } from '../../lib/settings/store';
 import {
   deliverTo,
@@ -171,6 +177,23 @@ describe('a page that hangs (a script that never ends)', () => {
     world.currentTabId = 12;
     await waited(icon());
     expect(sent('showSwitcher').map((m) => m.tabId)).toEqual([11, 12]);
+  });
+
+  it('waits for a script slower to put in than a page has to answer, and shows the switcher in the page', async () => {
+    world.injected.delete(11);
+    vi.mocked(browser.scripting.executeScript).mockImplementationOnce(
+      (() =>
+        new Promise((resolve) =>
+          setTimeout(() => {
+            world.injected.add(11);
+            resolve([]);
+          }, PAGE_ANSWER_MS * 2),
+        )) as never,
+    );
+    await waited(shortcut());
+    expect(PAGE_ANSWER_MS * 2).toBeLessThan(SCRIPT_INJECTION_MS);
+    expect(sent('showSwitcher').map((m) => m.tabId)).toEqual([11]);
+    expect(browser.windows.create).not.toHaveBeenCalled();
   });
 
   it('tells the page it gave up on to close what it shows, so nothing shows there once it answers again', async () => {

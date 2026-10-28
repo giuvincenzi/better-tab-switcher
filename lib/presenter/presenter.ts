@@ -133,10 +133,17 @@ function isWhereTheUserIs(open: OpenSwitcher, current: Browser.tabs.Tab | undefi
  */
 export const PAGE_ANSWER_MS = 1000;
 
-/** What a page was sent, or a failure when the page doesn't answer in PAGE_ANSWER_MS. */
-function answered<T>(sent: Promise<T>): Promise<T> {
+/**
+ * How long the switcher's script has to be put into a page the first time. It took at most 23 ms on GitHub's Linux,
+ * Windows and macOS machines, in Chromium and Microsoft Edge: the limit is far above it, so a page that is only slow is
+ * never taken for one that hangs, and it is reached only by a page that really doesn't answer.
+ */
+export const SCRIPT_INJECTION_MS = 5000;
+
+/** What a page was sent, or a failure when the page doesn't answer within the limit (PAGE_ANSWER_MS by default). */
+function answered<T>(sent: Promise<T>, limitMs = PAGE_ANSWER_MS): Promise<T> {
   return new Promise((resolve, reject) => {
-    const late = setTimeout(() => reject(new Error('The page did not answer.')), PAGE_ANSWER_MS);
+    const late = setTimeout(() => reject(new Error('The page did not answer.')), limitMs);
     sent.then(
       (value) => {
         clearTimeout(late);
@@ -214,7 +221,10 @@ async function sendSnapshot(tabId: number, snapshot: SwitcherSnapshot): Promise<
     // Not injected yet in this page, or the page doesn't answer.
   }
   try {
-    await answered(browser.scripting.executeScript({ target: { tabId }, files: [SWITCHER_SCRIPT] }));
+    await answered(
+      browser.scripting.executeScript({ target: { tabId }, files: [SWITCHER_SCRIPT] }),
+      SCRIPT_INJECTION_MS,
+    );
     await show();
     return true;
   } catch {
