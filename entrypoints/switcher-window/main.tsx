@@ -24,8 +24,9 @@ if (snapshot && centeredOn) {
   );
   onMessage('moveSwitcher', ({ data: direction }) => handle.move(direction));
   onMessage('previewReady', ({ data: preview }) => handle.showPreview(preview));
-  // Another window took the focus: the switcher closes, as a click outside it closes it in a page.
-  window.addEventListener('blur', () => void sendMessage('switcherClosed'));
+  // Another window took the focus: the switcher closes, as a click outside it closes it in a page, and the focus stays
+  // where the user went.
+  window.addEventListener('blur', () => void sendMessage('switcherLeft'));
 } else {
   window.close();
 }

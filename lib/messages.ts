@@ -41,8 +41,10 @@ interface Messages {
   openTab(tab: { id: number; windowId: number }): void;
   /** Switcher → background: close this tab; the switcher stays open. */
   closeTab(tabId: number): void;
-  /** Switcher → background: it closed without opening a tab. */
+  /** Switcher → background: it closed without opening a tab (Esc, a click outside): the user is back where they were. */
   switcherClosed(): void;
+  /** Switcher's window → background: another window took the focus: it closes, the focus stays where the user went. */
+  switcherLeft(): void;
   /** Switcher → background: open the settings page. */
   openSettings(): void;
   /** Switcher → background: the previews there are of these tabs, by tab id. */

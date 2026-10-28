@@ -127,6 +127,24 @@ describe('the switcher closed without a tab chosen', () => {
   });
 });
 
+describe('the switcher left for another window', () => {
+  it('closes its window and leaves the focus where the user went', async () => {
+    await openInWindow();
+    await messages.ask('switcherLeft');
+    expect(browser.windows.remove).toHaveBeenCalledWith(FIRST_POPUP_ID);
+    expect(browser.windows.update).not.toHaveBeenCalled();
+  });
+
+  it('is forgotten: the next shortcut opens a new one', async () => {
+    await openInWindow();
+    await messages.ask('switcherLeft');
+    // The user is in a browser window again.
+    world.currentTabId = 11;
+    await shortcut();
+    expect(browser.windows.create).toHaveBeenCalledTimes(2);
+  });
+});
+
 describe('the settings', () => {
   it("open from the switcher, and the switcher's window closes", async () => {
     await openInWindow();

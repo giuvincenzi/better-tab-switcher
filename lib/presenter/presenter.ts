@@ -94,6 +94,10 @@ export function listenToSwitcher(): void {
     if (open?.in === 'window')
       await browser.windows.update(open.fromWindowId, { focused: true }).catch(() => undefined);
   });
+  // The user went to another window (or another program): the focus stays there.
+  onMessage('switcherLeft', async () => {
+    await forget();
+  });
   onMessage('getPreviews', ({ data: tabIds }) => loadPreviews(tabIds));
   onMessage('openSettings', async () => {
     await forget();

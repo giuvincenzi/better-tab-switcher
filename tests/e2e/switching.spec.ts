@@ -131,6 +131,35 @@ test.describe('a page that hangs @switching', () => {
 });
 
 test.describe("the switcher's own window @switching", () => {
+  test('closes its window when another window takes the focus, and leaves the focus there', async ({
+    context,
+    serviceWorker,
+  }) => {
+    await openPages(context, ['alpha', 'beta']);
+    await openChromePage(context);
+    // The windows the extension brings to the front, from now on.
+    await serviceWorker.evaluate(() => {
+      const focused: number[] = [];
+      const update = chrome.windows.update.bind(chrome.windows);
+      Object.assign(globalThis, { focusedByTheExtension: focused });
+      chrome.windows.update = ((windowId: number, info: { focused?: boolean }) => {
+        if (info.focused) focused.push(windowId);
+        return update(windowId, info);
+      }) as never;
+    });
+    const opened = context.waitForEvent('page');
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    const switcherWindow = await opened;
+    await expect(switcherWindow.getByRole('option')).toHaveCount(3);
+    // Another window took the focus (headless Chromium moves no focus between windows: the event says it).
+    await switcherWindow.evaluate(() => window.dispatchEvent(new Event('blur')));
+    await expect.poll(() => switcherWindow.isClosed()).toBe(true);
+    const focused = await serviceWorker.evaluate(
+      () => (globalThis as unknown as { focusedByTheExtension: number[] }).focusedByTheExtension,
+    );
+    expect(focused).toEqual([]);
+  });
+
   test('closes its window with Esc, and the shortcut then opens a new one on the same page', async ({
     context,
     serviceWorker,
