@@ -53,8 +53,8 @@ test.describe('settings page @settings', () => {
     const settings = await openSettings(context, extensionId);
     const compact = settings.getByRole('switch', { name: 'Compact' });
     await compact.click();
-    await expect(compact).not.toBeChecked();
-    await settings.getByRole('button', { name: 'Restore' }).click();
     await expect(compact).toBeChecked();
+    await settings.getByRole('button', { name: 'Restore' }).click();
+    await expect(compact).not.toBeChecked();
   });
 });

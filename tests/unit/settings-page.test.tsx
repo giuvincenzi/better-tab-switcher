@@ -91,10 +91,10 @@ describe('SettingsPage', () => {
   it('saves a switch at once', () => {
     const { host, saved } = open();
     const compact = toggle(host, 'Compact');
-    expect(compact.getAttribute('aria-checked')).toBe('true');
-    compact.click();
-    expect(saved).toEqual([{ compact: false }]);
     expect(compact.getAttribute('aria-checked')).toBe('false');
+    compact.click();
+    expect(saved).toEqual([{ compact: true }]);
+    expect(compact.getAttribute('aria-checked')).toBe('true');
   });
 
   it('saves a tab detail on its own', () => {
