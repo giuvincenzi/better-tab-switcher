@@ -21,9 +21,11 @@ describe('settings store', () => {
     expect(settings.compact).toBe(defaultSettings.compact);
   });
 
-  it('never saves an invalid value', async () => {
-    await saveSettings({ delayMs: -5 });
-    expect((await loadSettings()).delayMs).toBe(defaultSettings.delayMs);
+  it('leaves a setting as it is when a change gives it an invalid value', async () => {
+    await saveSettings({ delayMs: 200, theme: 'dark', details: { longAddress: 'scroll' } });
+    await saveSettings({ delayMs: -5, theme: 'sepia' as never, details: { longAddress: 'wrap' as never } });
+    const settings = await loadSettings();
+    expect([settings.delayMs, settings.theme, settings.details.longAddress]).toEqual([200, 'dark', 'scroll']);
   });
 
   it('restores the defaults', async () => {
@@ -63,9 +65,9 @@ describe('settings store', () => {
   });
 
   it('writes no invalid value to the storage, for any page that reads it', async () => {
-    await saveSettings({ delayMs: 200 });
+    await saveSettings({ delayMs: 200, theme: 'dark' });
     await saveSettings({ autoSelectSeconds: 99, theme: 'sepia' as never });
-    expect(await storage.getItem('local:settings')).toEqual({ ...defaultSettings, delayMs: 200 });
+    expect(await storage.getItem('local:settings')).toEqual({ ...defaultSettings, delayMs: 200, theme: 'dark' });
   });
 
   it('gives back the settings it saved', async () => {

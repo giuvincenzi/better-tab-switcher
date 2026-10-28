@@ -96,12 +96,13 @@ function record(value: unknown): Record<string, unknown> {
 
 /**
  * Reads settings saved by any version: a value this version doesn't know, or a damaged one, gives that setting its
- * default instead of failing all the settings.
+ * value in `fallback` instead of failing all the settings: its default when the settings are read, the value it has now
+ * when a change is saved (an invalid change leaves it as it is).
  */
-export function parseSettings(value: unknown): Settings {
+export function parseSettings(value: unknown, fallback: Settings = defaultSettings): Settings {
   const saved = record(value);
   const details = record(saved.details);
-  const d = defaultSettings;
+  const d = fallback;
   return {
     theme: oneOf(saved.theme, ['device', 'light', 'dark'], d.theme),
     view: oneOf(saved.view, ['list', 'grid'], d.view),

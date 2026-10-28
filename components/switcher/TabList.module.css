@@ -41,9 +41,15 @@
 }
 
 /* Under the grid of icons: the selected tab's title, as the Mac's app switcher names the selected app. */
+/*
+ * As wide as the panel, never wider: the name takes the panel's width, it doesn't set it (the grid's panel is as wide as
+ * its columns). A long title is cut with "…".
+ */
 .selectedName {
   flex: none;
-  max-width: 100%;
+  box-sizing: border-box;
+  width: 0;
+  min-width: 100%;
   overflow: hidden;
   padding: calc(0.625 * var(--bts-em)) calc(0.5 * var(--bts-em)) calc(0.125 * var(--bts-em));
   font-size: calc(0.875 * var(--bts-em));

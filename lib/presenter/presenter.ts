@@ -38,8 +38,19 @@ const SWITCHER_WINDOW = '/switcher-window.html';
  * - anything else: a switcher open elsewhere closes, and a new one opens in the current tab.
  * Chrome lets no extension into its own pages nor the Chrome Web Store: there the switcher opens in a window of its
  * own (Use a window on Chrome's pages, on by default), or nothing happens when the user turned that off.
+ * The requests are handled one after the other, in the order they come: two at once (the shortcut pressed twice
+ * quickly) would both find no switcher open and both open one.
  */
-export async function requestSwitcher(request: SwitcherRequest, previews: Previews): Promise<void> {
+export function requestSwitcher(request: SwitcherRequest, previews: Previews): Promise<void> {
+  const handled = lastRequest.then(() => handleRequest(request, previews));
+  lastRequest = handled.catch(() => undefined);
+  return handled;
+}
+
+/** The request being handled, or the last one: the next request waits for it. */
+let lastRequest: Promise<void> = Promise.resolve();
+
+async function handleRequest(request: SwitcherRequest, previews: Previews): Promise<void> {
   const [[current], open] = await Promise.all([
     browser.tabs.query({ active: true, lastFocusedWindow: true }),
     openSwitcher.getValue(),

@@ -219,6 +219,22 @@ describe('the switcher in a window of its own', () => {
     expect(sent('moveSwitcher')).toEqual([]);
     expect(sent('showSwitcher').map((m) => m.tabId)).toEqual([21]);
   });
+
+  it('opens on the next request after one that failed: a failure never blocks the requests after it', async () => {
+    world.tabs = [tab(11, 1, { url: 'chrome://settings/' }), tab(12, 1)];
+    vi.spyOn(browser.tabs, 'query').mockRejectedValueOnce(new Error('The browser is closing a window.'));
+    await expect(shortcut()).rejects.toThrow();
+    await shortcut();
+    expect(browser.windows.create).toHaveBeenCalledTimes(1);
+  });
+
+  it('opens once when the shortcut is pressed twice quickly, then moves its selection', async () => {
+    world.tabs = [tab(11, 1, { url: 'chrome://settings/' }), tab(12, 1)];
+    await Promise.all([shortcut(), shortcut('previous')]);
+    expect(browser.windows.create).toHaveBeenCalledTimes(1);
+    expect(browser.windows.remove).not.toHaveBeenCalled();
+    expect(sent('moveSwitcher')).toEqual([{ data: 'previous', tabId: undefined }]);
+  });
 });
 
 describe("the page's picture for the previews", () => {

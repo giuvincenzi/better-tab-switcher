@@ -10,9 +10,10 @@ export async function loadSettings(): Promise<Settings> {
   return parseSettings(await settingsItem.getValue());
 }
 
+/** Saves a change: an invalid value in it leaves that setting as it is now. */
 export async function saveSettings(change: SettingsChange): Promise<Settings> {
   const current = await loadSettings();
-  const next = parseSettings({ ...current, ...change, details: { ...current.details, ...change.details } });
+  const next = parseSettings({ ...current, ...change, details: { ...current.details, ...change.details } }, current);
   await settingsItem.setValue(next);
   return next;
 }

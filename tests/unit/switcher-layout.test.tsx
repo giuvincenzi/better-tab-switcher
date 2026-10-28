@@ -169,6 +169,16 @@ describe('Switcher in the grid of icons', () => {
     const { host } = openSwitcher({ view: 'grid', gridShow: 'icons' });
     expect(options(host).map((icon) => icon.getAttribute('aria-label'))).toEqual(tabs.map((t) => t.title));
   });
+
+  it('cuts a long title under the icons, never widening the switcher', () => {
+    // Two icons fit the narrowest switcher (lib/switcher/sizes.ts): it stays as narrow, whatever the selected title.
+    const long = tab(2, 'A very long title '.repeat(20));
+    const { host } = openSwitcher({ view: 'grid', gridShow: 'icons' }, { tabs: [tabs[0] as (typeof tabs)[0], long] });
+    expect(nameUnder(host)?.textContent).toBe(long.title);
+    expect(panel(host).getBoundingClientRect().width).toBe(sizes.listWidth.min * DEFAULT_EM_PX);
+    const name = nameUnder(host) as HTMLElement;
+    expect(name.scrollWidth).toBeGreaterThan(name.clientWidth);
+  });
 });
 
 describe('Switcher tab details in every view', () => {
