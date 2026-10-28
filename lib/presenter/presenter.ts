@@ -160,8 +160,13 @@ function move(open: OpenSwitcher, direction: Direction): Promise<boolean> {
 }
 
 async function takeSnapshot(current: Browser.tabs.Tab, request: SwitcherRequest): Promise<SwitcherSnapshot> {
-  const [settings, { tabs, windowIds }] = await Promise.all([loadSettings(), readTabs()]);
-  const here = { tabId: current.id as number, windowId: current.windowId, incognito: current.incognito };
+  const [settings, { tabs, windowIds, currentWindowId }] = await Promise.all([loadSettings(), readTabs(current)]);
+  // A popup's tab counts in its home window (readTabs).
+  const here = {
+    tabId: current.id as number,
+    windowId: currentWindowId ?? current.windowId,
+    incognito: current.incognito,
+  };
   return {
     tabs: switcherTabs(tabs, windowIds, here, settings),
     settings,

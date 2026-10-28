@@ -30,6 +30,39 @@ describe('readTabs', () => {
     expect(windowIds).toEqual([1, 2]);
   });
 
+  it("counts the current tab of a site's popup window as a tab of the window it was opened from", async () => {
+    world.windows.push({ ...normalWindow(50), type: 'popup' });
+    const signIn = tab(51, 50, { openerTabId: 21 });
+    world.tabs = [tab(11, 1), tab(21, 2), signIn];
+    const { tabs, currentWindowId } = await readTabs(signIn);
+    expect(currentWindowId).toBe(2);
+    expect(tabs.find((t) => t.id === 51)?.windowId).toBe(2);
+  });
+
+  it('counts the current tab of a window opened by no tab (an installed web app) in the normal window used last', async () => {
+    world.windows.push({ ...normalWindow(50), type: 'app' });
+    world.lastNormalWindowId = 2;
+    const app = tab(51, 50);
+    world.tabs = [tab(11, 1), tab(21, 2), app];
+    const { tabs, currentWindowId } = await readTabs(app);
+    expect(currentWindowId).toBe(2);
+    expect(tabs.find((t) => t.id === 51)?.windowId).toBe(2);
+  });
+
+  it("never counts the switcher's own window, even when it is the current one", async () => {
+    world.windows.push({ ...normalWindow(900), type: 'popup' });
+    const own = tab(9000, 900, { url: browser.runtime.getURL('/switcher-window.html') });
+    world.tabs = [tab(11, 1), own];
+    const { tabs } = await readTabs(own);
+    expect(tabs.map((t) => t.id)).toEqual([11]);
+  });
+
+  it('reads the current tab of a normal window as it is, in its own window', async () => {
+    world.tabs = [tab(11, 1), tab(21, 2)];
+    const { currentWindowId } = await readTabs(world.tabs[1]);
+    expect(currentWindowId).toBe(2);
+  });
+
   it('leaves out a tab without an id', async () => {
     world.tabs = [tab(11, 1), tab(12, 1, { id: undefined })];
     expect((await readTabs()).tabs.map((t) => t.id)).toEqual([11]);

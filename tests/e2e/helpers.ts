@@ -84,3 +84,24 @@ export async function openWindow(context: BrowserContext, worker: Worker, title:
   await page.goto(`https://bts.test/${title}`);
   return page;
 }
+
+/**
+ * From now on, records the windows the extension brings to the front (windows.update with focused): headless Chromium
+ * moves no focus between windows by itself, so a test checks what the extension asked. focusedWindows reads them.
+ */
+export function recordFocusedWindows(worker: Worker) {
+  return worker.evaluate(() => {
+    const focused: number[] = [];
+    const update = chrome.windows.update.bind(chrome.windows);
+    Object.assign(globalThis, { focusedByTheExtension: focused });
+    chrome.windows.update = ((windowId: number, info: { focused?: boolean }) => {
+      if (info.focused) focused.push(windowId);
+      return update(windowId, info);
+    }) as never;
+  });
+}
+
+/** The windows the extension brought to the front since recordFocusedWindows. */
+export function focusedWindows(worker: Worker): Promise<number[]> {
+  return worker.evaluate(() => (globalThis as unknown as { focusedByTheExtension: number[] }).focusedByTheExtension);
+}

@@ -1,6 +1,16 @@
 import type { Page, Worker } from '@playwright/test';
 import { expect, test } from './fixtures';
-import { activeTitle, openPages, openWindow, rows, selected, showSwitcher, useSettings } from './helpers';
+import {
+  activeTitle,
+  focusedWindows,
+  openPages,
+  openWindow,
+  recordFocusedWindows,
+  rows,
+  selected,
+  showSwitcher,
+  useSettings,
+} from './helpers';
 
 const titles = (page: Page) => rows(page).locator('img + div');
 
@@ -83,6 +93,31 @@ test.describe('which tabs the switcher lists @tabs', () => {
     await page.keyboard.press('ArrowUp');
     await page.keyboard.press('Enter');
     await expect.poll(() => activeTitle(serviceWorker)).toBe('tab01');
+  });
+});
+
+test.describe("a site's popup window @tabs", () => {
+  test('lists the popup first, then the tabs of the window it was opened from, and opens the one chosen', async ({
+    context,
+    serviceWorker,
+  }) => {
+    const [, beta] = (await openPages(context, ['alpha', 'beta'])) as [Page, Page];
+    // A sign-in window, as a site opens one.
+    const opened = context.waitForEvent('page');
+    await beta.evaluate(() => window.open('https://bts.test/login', 'login', 'popup,width=600,height=500'));
+    const popup = await opened;
+    await expect(popup).toHaveTitle('login');
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    await expect(rows(popup)).toHaveText([/^login/, /^beta/, /^alpha/]);
+    await recordFocusedWindows(serviceWorker);
+    await rows(popup).filter({ hasText: 'alpha' }).click();
+    const home = await serviceWorker.evaluate(async () => (await chrome.tabs.query({ title: 'alpha' }))[0]?.windowId);
+    await expect
+      .poll(() =>
+        serviceWorker.evaluate(async (id) => (await chrome.tabs.query({ active: true, windowId: id }))[0]?.title, home),
+      )
+      .toBe('alpha');
+    expect(await focusedWindows(serviceWorker)).toEqual([home]);
   });
 });
 

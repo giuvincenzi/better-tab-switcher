@@ -18,6 +18,8 @@ export interface World {
   hung: Set<number>;
   /** The switcher's own window is open and its page listens. */
   windowListening: boolean;
+  /** The normal window used last (windows.getLastFocused of the normal windows): the first one when not set. */
+  lastNormalWindowId?: number;
   /** The messages the switcher received from the background, in order: in a page (tab id) or in its window (none). */
   received: { type: string; data: unknown; tabId: number | undefined }[];
 }
@@ -97,6 +99,11 @@ export function fakeChrome(world: World) {
   vi.spyOn(browser.tabGroups, 'query').mockImplementation((async () => []) as never);
   vi.spyOn(browser.windows, 'getAll').mockImplementation((async (filter?: { windowTypes?: string[] }) =>
     world.windows.filter((w) => !filter?.windowTypes || filter.windowTypes.includes(w.type ?? 'normal'))) as never);
+  vi.spyOn(browser.windows, 'getLastFocused').mockImplementation(
+    (async () =>
+      world.windows.find((w) => w.id === world.lastNormalWindowId) ??
+      world.windows.find((w) => (w.type ?? 'normal') === 'normal')) as never,
+  );
   vi.spyOn(browser.windows, 'get').mockImplementation((async (windowId: number) => {
     const found = world.windows.find((w) => w.id === windowId);
     if (!found) throw new Error(`No window with id: ${windowId}.`);

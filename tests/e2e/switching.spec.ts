@@ -1,6 +1,16 @@
 import type { BrowserContext, Page } from '@playwright/test';
 import { expect, test } from './fixtures';
-import { activeTitle, openPages, openWindow, rows, selected, showSwitcher, useSettings } from './helpers';
+import {
+  activeTitle,
+  focusedWindows,
+  openPages,
+  openWindow,
+  recordFocusedWindows,
+  rows,
+  selected,
+  showSwitcher,
+  useSettings,
+} from './helpers';
 
 /** A Chrome page (Chrome keeps extensions out of it) as the current tab: the switcher opens in its own window there. */
 async function openChromePage(context: BrowserContext): Promise<Page> {
@@ -137,16 +147,7 @@ test.describe("the switcher's own window @switching", () => {
   }) => {
     await openPages(context, ['alpha', 'beta']);
     await openChromePage(context);
-    // The windows the extension brings to the front, from now on.
-    await serviceWorker.evaluate(() => {
-      const focused: number[] = [];
-      const update = chrome.windows.update.bind(chrome.windows);
-      Object.assign(globalThis, { focusedByTheExtension: focused });
-      chrome.windows.update = ((windowId: number, info: { focused?: boolean }) => {
-        if (info.focused) focused.push(windowId);
-        return update(windowId, info);
-      }) as never;
-    });
+    await recordFocusedWindows(serviceWorker);
     const opened = context.waitForEvent('page');
     await showSwitcher(serviceWorker, 'next', 'icon');
     const switcherWindow = await opened;
@@ -154,10 +155,7 @@ test.describe("the switcher's own window @switching", () => {
     // Another window took the focus (headless Chromium moves no focus between windows: the event says it).
     await switcherWindow.evaluate(() => window.dispatchEvent(new Event('blur')));
     await expect.poll(() => switcherWindow.isClosed()).toBe(true);
-    const focused = await serviceWorker.evaluate(
-      () => (globalThis as unknown as { focusedByTheExtension: number[] }).focusedByTheExtension,
-    );
-    expect(focused).toEqual([]);
+    expect(await focusedWindows(serviceWorker)).toEqual([]);
   });
 
   test('closes its window with Esc, and the shortcut then opens a new one on the same page', async ({
