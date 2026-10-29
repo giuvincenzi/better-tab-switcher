@@ -1,9 +1,9 @@
-/* Better Tab Switcher website: dark like the switcher, with its colors (styles/theme.css, the dark theme). */
+/* Better Tab Switcher website: puppymacro's dark background and surfaces, the switcher's green. */
 :root {
-  --bg: #17181b;
-  --surface: #222327;
+  --bg: #121317;
+  --surface: #1b1d23;
   --raised: #2b2c2f;
-  --border: #2e2f33;
+  --border: #262933;
   --strong-border: #45474c;
   --text: #e8eaed;
   --muted: #c4c8cd;
@@ -85,7 +85,7 @@ kbd {
   position: sticky;
   top: 0;
   z-index: 10;
-  background: rgba(23, 24, 27, 0.92);
+  background: rgba(18, 19, 23, 0.92);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--border);
 }
@@ -566,12 +566,12 @@ kbd {
   padding: 0;
   border-radius: 50%;
   border: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(23, 24, 27, 0.75);
+  background: rgba(18, 19, 23, 0.75);
   color: #ffffff;
   cursor: pointer;
 }
 .view-arrow:hover {
-  background: rgba(23, 24, 27, 0.92);
+  background: rgba(18, 19, 23, 0.92);
 }
 .view-previous {
   inset-inline-start: 16px;
@@ -678,6 +678,16 @@ kbd {
 .privacy p {
   margin: 0;
   color: var(--muted);
+}
+.privacy-text {
+  color: var(--muted);
+}
+.privacy-text ul {
+  margin: 10px 0 0;
+  padding-inline-start: 20px;
+}
+.privacy-text li + li {
+  margin-top: 6px;
 }
 .privacy .privacy-label {
   margin-bottom: 6px;

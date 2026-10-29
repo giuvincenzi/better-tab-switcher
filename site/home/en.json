@@ -41,7 +41,7 @@
   "open_title": "Free and open source",
   "open_text": "No account, no ads. The code is on GitHub, under the MIT license.",
   "privacy_title": "Private by design",
-  "privacy_text": "Better Tab Switcher sends nothing anywhere: no account, no tracking, no network. Your tabs stay in your browser, and the sites you visit can't see which tabs you have open.",
+  "privacy_text": "<p>Better Tab Switcher works only inside your browser and never connects to the internet: no account, no tracking, nothing sent anywhere.</p><ul><li>Your settings are saved in your browser, on this computer.</li><li>With the grid showing <strong>Previews</strong>, the pictures of your tabs are kept only in memory, never on disk. They are deleted when the tab closes, when you choose <strong>Icons</strong> instead, or when you close the browser.</li><li>The sites you visit can't see which tabs you have open.</li></ul>",
   "ctrl_tab_title": "Want it on Ctrl+Tab?",
   "ctrl_tab_text": "The browser keeps Ctrl+Tab for itself, so the switcher opens with Alt+Y. The guide shows how to change the shortcut, and how to get Ctrl+Tab.",
   "guide_button": "Read the guide",
