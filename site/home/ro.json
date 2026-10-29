@@ -43,7 +43,7 @@
   "privacy_title": "Privat încă de la concepere",
   "privacy_text": "<p>Better Tab Switcher funcționează doar în browser și nu se conectează niciodată la internet: fără cont, fără urmărire, nu trimite nimic nicăieri.</p><ul><li>Setările tale sunt salvate în browser, pe acest computer.</li><li>Când grila afișează <strong>Previzualizări</strong>, imaginile filelor tale sunt păstrate doar în memorie, niciodată pe disc. Sunt șterse când închizi fila, când alegi <strong>Pictograme</strong> sau când închizi browserul.</li><li>Site-urile pe care le vizitezi nu pot vedea ce file ai deschise.</li></ul>",
   "ctrl_tab_title": "Cum să folosești Ctrl+Tab",
-  "ctrl_tab_text": "Chrome și Microsoft Edge nu permit extensiilor să folosească Ctrl+Tab, așa că comutatorul se deschide cu Alt+Y. Ghidul explică cum să schimbi comanda rapidă și cum să folosești Ctrl+Tab cu un program de remapare a tastelor.",
+  "ctrl_tab_text": "Chrome și Microsoft Edge nu permit extensiilor să folosească Ctrl+Tab, așa că comutatorul se deschide cu Alt+S (Control+S pe Mac). Ghidul explică cum să schimbi comanda rapidă și cum să folosești Ctrl+Tab cu un program de remapare a tastelor.",
   "guide_button": "Citește ghidul",
   "footer_license": "Licența MIT",
   "footer_releases": "Toate versiunile",

@@ -19,7 +19,7 @@ describe('isRelease', () => {
     expect(isRelease(up('Meta'))).toBe(true);
   });
 
-  it('is not a release while another of them is still held (Ctrl+Alt+Y)', () => {
+  it('is not a release while another of them is still held (Ctrl+Alt+S)', () => {
     expect(isRelease(up('Alt', { ctrlKey: true }))).toBe(false);
   });
 

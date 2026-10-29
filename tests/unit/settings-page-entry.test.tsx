@@ -12,7 +12,7 @@ const messages = await vi.hoisted(async () => (await import('./background-world'
 vi.mock('../../lib/messages', () => ({ sendMessage: messages.sendMessage, onMessage: messages.onMessage }));
 
 const shortcuts = vi.fn(async () => [
-  { name: 'next-tab', shortcut: 'Alt+Y' },
+  { name: 'next-tab', shortcut: 'Alt+S' },
   { name: 'previous-tab', shortcut: '' },
 ]);
 const root = document.documentElement;
@@ -49,7 +49,7 @@ describe('the settings page of the extension', () => {
     expect(root.dataset.theme).toBe('dark');
     expect(toggle('Compact').getAttribute('aria-checked')).toBe('false');
     expect(toggle('Show toolbar').getAttribute('aria-checked')).toBe('true');
-    expect(keys()).toEqual(['Alt+Y', 'Not set']);
+    expect(keys()).toEqual(['Alt+S', 'Not set']);
     expect(document.title).toBe('Better Tab Switcher settings');
   });
 
@@ -86,10 +86,10 @@ describe('the settings page of the extension', () => {
 
   it('shows the shortcuts changed meanwhile when the page is back in front', async () => {
     shortcuts.mockResolvedValue([
-      { name: 'previous-tab', shortcut: 'Alt+Shift+Y' },
+      { name: 'previous-tab', shortcut: 'Alt+Shift+S' },
       { name: 'next-tab', shortcut: 'Ctrl+Q' },
     ]);
     window.dispatchEvent(new Event('focus'));
-    await vi.waitFor(() => expect(keys()).toEqual(['Ctrl+Q', 'Alt+Shift+Y']));
+    await vi.waitFor(() => expect(keys()).toEqual(['Ctrl+Q', 'Alt+Shift+S']));
   });
 });

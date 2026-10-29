@@ -43,7 +43,7 @@
   "privacy_title": "Privato fin dalla progettazione",
   "privacy_text": "<p>Better Tab Switcher funziona solo all'interno del browser e non si collega mai a internet: niente account, niente tracciamento, nessun dato inviato.</p><ul><li>Le tue impostazioni sono salvate nel browser, su questo computer.</li><li>Quando la griglia mostra le <strong>Anteprime</strong>, le immagini delle tue schede restano solo in memoria, mai sul disco. Vengono cancellate quando chiudi la scheda, quando scegli <strong>Icone</strong> o quando chiudi il browser.</li><li>I siti che visiti non possono vedere quali schede hai aperto.</li></ul>",
   "ctrl_tab_title": "Come usare Ctrl+Tab",
-  "ctrl_tab_text": "Chrome e Microsoft Edge non permettono alle estensioni di usare Ctrl+Tab, perciò il selettore si apre con Alt+Y. La guida spiega come cambiare la scorciatoia e come usare Ctrl+Tab con un programma che rimappa i tasti.",
+  "ctrl_tab_text": "Chrome e Microsoft Edge non permettono alle estensioni di usare Ctrl+Tab, perciò il selettore si apre con Alt+S (Control+S su Mac). La guida spiega come cambiare la scorciatoia e come usare Ctrl+Tab con un programma che rimappa i tasti.",
   "guide_button": "Leggi la guida",
   "footer_license": "Licenza MIT",
   "footer_releases": "Tutte le versioni",

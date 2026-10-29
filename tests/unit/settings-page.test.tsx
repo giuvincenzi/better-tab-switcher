@@ -13,7 +13,7 @@ afterEach(() => {
 });
 
 /** The page with the settings kept in memory, as the settings page keeps them in storage. */
-function open(start: Partial<Settings> = {}, shortcuts = { next: 'Alt+Y', previous: 'Alt+Shift+Y' }) {
+function open(start: Partial<Settings> = {}, shortcuts = { next: 'Alt+S', previous: 'Alt+Shift+S' }) {
   const [settings, setSettings] = createSignal<Settings>({ ...defaultSettings, ...start });
   const saved: SettingsChange[] = [];
   const save = (change: SettingsChange) => {
@@ -146,9 +146,9 @@ describe('SettingsPage', () => {
   });
 
   it('shows the shortcuts, and opens the page to change them', () => {
-    const { host, handlers } = open({}, { next: 'Alt+Y', previous: '' });
+    const { host, handlers } = open({}, { next: 'Alt+S', previous: '' });
     const keys = [...host.querySelectorAll('kbd')].map((kbd) => kbd.textContent);
-    expect(keys).toEqual(['Alt+Y', 'Not set']);
+    expect(keys).toEqual(['Alt+S', 'Not set']);
     [...host.querySelectorAll('button')].find((button) => button.textContent === 'Change shortcut')?.click();
     expect(handlers.onChangeShortcut).toHaveBeenCalled();
     expect(host.querySelector('a[href="https://example.com/guide"]')?.textContent).toBe('How to use Ctrl+Tab');

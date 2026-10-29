@@ -81,19 +81,23 @@ export const selected = (page: Page) => switcher(page).locator('[role="option"][
  */
 export const testBrowser: BrowserName = process.env.E2E_BROWSER === 'msedge' ? 'edge' : 'chrome';
 
-/** The next and previous tab shortcuts' default keys, as the extension's manifest suggests them (wxt.config.ts). */
+/**
+ * The next and previous tab shortcuts' default keys, as the extension's manifest suggests them (wxt.config.ts) for the
+ * system the tests run on: the Mac has its own.
+ */
 export async function defaultShortcuts(worker: Worker): Promise<{ next: string; previous: string }> {
   const commands = await worker.evaluate(() => chrome.runtime.getManifest().commands);
   const keys = (name: string) => {
     const suggested = commands?.[name]?.suggested_key;
-    return (typeof suggested === 'string' ? suggested : suggested?.default) ?? '';
+    if (typeof suggested === 'string') return suggested;
+    return (process.platform === 'darwin' ? (suggested?.mac ?? suggested?.default) : suggested?.default) ?? '';
   };
   return { next: keys('next-tab'), previous: keys('previous-tab') };
 }
 
 /**
- * A shortcut as Chrome writes it on the system the tests run on: "Alt+Shift+Y" on Linux and Windows, the Mac's symbols
- * on macOS ("⌥⇧Y"), in the order Chrome puts them (⌃ ⌥ ⇧ ⌘).
+ * A shortcut as Chrome writes it on the system the tests run on: "Alt+Shift+S" on Linux and Windows, the Mac's symbols
+ * on macOS ("⌃⇧S"), in the order Chrome puts them (⌃ ⌥ ⇧ ⌘).
  */
 export function shortcutText(keys: string): string {
   if (process.platform !== 'darwin') return keys;

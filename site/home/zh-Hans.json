@@ -43,7 +43,7 @@
   "privacy_title": "从设计之初守护您的数据",
   "privacy_text": "<p>Better Tab Switcher 只在浏览器中运行，从不连接互联网：无需账号，没有跟踪，也不会向任何地方发送任何数据。</p><ul><li>您的设置保存在这台电脑的浏览器中。</li><li>当网格显示<strong>预览</strong>时，标签页的图片只保存在内存中，从不写入磁盘。关闭标签页、选择<strong>图标</strong>或关闭浏览器时，这些图片会被删除。</li><li>您访问的网站无法看到您打开了哪些标签页。</li></ul>",
   "ctrl_tab_title": "如何使用 Ctrl+Tab",
-  "ctrl_tab_text": "Chrome 和 Microsoft Edge 不允许扩展程序使用 Ctrl+Tab，因此切换器通过 Alt+Y 打开。指南介绍了如何更改快捷键，以及如何借助按键映射工具使用 Ctrl+Tab。",
+  "ctrl_tab_text": "Chrome 和 Microsoft Edge 不允许扩展程序使用 Ctrl+Tab，因此切换器通过 Alt+S（Mac 上为 Control+S） 打开。指南介绍了如何更改快捷键，以及如何借助按键映射工具使用 Ctrl+Tab。",
   "guide_button": "阅读指南",
   "footer_license": "MIT 许可证",
   "footer_releases": "所有版本",

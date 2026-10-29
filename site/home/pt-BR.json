@@ -43,7 +43,7 @@
   "privacy_title": "Privado desde a concepção",
   "privacy_text": "<p>O Better Tab Switcher funciona só dentro do seu navegador e nunca se conecta à internet: sem conta, sem rastreamento, nada é enviado para lugar nenhum.</p><ul><li>Suas configurações ficam salvas no seu navegador, neste computador.</li><li>Quando a grade mostra as <strong>Prévias</strong>, as imagens das suas guias ficam só na memória, nunca no disco. Elas são apagadas quando você fecha a guia, escolhe <strong>Ícones</strong> ou fecha o navegador.</li><li>Os sites que você visita não conseguem ver quais guias você tem abertas.</li></ul>",
   "ctrl_tab_title": "Como usar Ctrl+Tab",
-  "ctrl_tab_text": "O Chrome e o Microsoft Edge não permitem que extensões usem Ctrl+Tab, então o seletor abre com Alt+Y. O guia mostra como alterar o atalho e como usar Ctrl+Tab com um programa que remapeia as teclas.",
+  "ctrl_tab_text": "O Chrome e o Microsoft Edge não permitem que extensões usem Ctrl+Tab, então o seletor abre com Alt+S (Control+S no Mac). O guia mostra como alterar o atalho e como usar Ctrl+Tab com um programa que remapeia as teclas.",
   "guide_button": "Ler o guia",
   "footer_license": "Licença MIT",
   "footer_releases": "Todas as versões",

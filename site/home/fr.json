@@ -43,7 +43,7 @@
   "privacy_title": "Conçu pour respecter votre vie privée",
   "privacy_text": "<p>Better Tab Switcher fonctionne uniquement dans votre navigateur et ne se connecte jamais à Internet : aucun compte, aucun suivi, rien n'est envoyé nulle part.</p><ul><li>Vos paramètres sont enregistrés dans votre navigateur, sur cet ordinateur.</li><li>Lorsque la grille affiche les <strong>Aperçus</strong>, les images de vos onglets sont conservées uniquement en mémoire, jamais sur le disque. Elles sont supprimées quand vous fermez l'onglet, quand vous choisissez <strong>Icônes</strong> ou quand vous fermez le navigateur.</li><li>Les sites que vous consultez ne peuvent pas voir quels onglets vous avez ouverts.</li></ul>",
   "ctrl_tab_title": "Comment utiliser Ctrl+Tab",
-  "ctrl_tab_text": "Chrome et Microsoft Edge ne permettent pas aux extensions d'utiliser Ctrl+Tab : le sélecteur s'ouvre donc avec Alt+Y. Le guide explique comment modifier le raccourci et comment utiliser Ctrl+Tab avec un logiciel de remappage des touches.",
+  "ctrl_tab_text": "Chrome et Microsoft Edge ne permettent pas aux extensions d'utiliser Ctrl+Tab : le sélecteur s'ouvre donc avec Alt+S (Contrôle+S sur Mac). Le guide explique comment modifier le raccourci et comment utiliser Ctrl+Tab avec un logiciel de remappage des touches.",
   "guide_button": "Lire le guide",
   "footer_license": "Licence MIT",
   "footer_releases": "Toutes les versions",

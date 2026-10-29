@@ -43,7 +43,7 @@
   "privacy_title": "データを守る設計",
   "privacy_text": "<p>Better Tab Switcher はブラウザの中だけで動作し、インターネットに接続することはありません。アカウント登録もトラッキングもなく、データをどこにも送信しません。</p><ul><li>設定は、このパソコンのブラウザ内に保存されます。</li><li>グリッドで<strong>プレビュー</strong>を表示しているとき、タブの画像はメモリ上にだけ保持され、ディスクには保存されません。タブを閉じたとき、<strong>アイコン</strong>を選んだとき、またはブラウザを閉じたときに削除されます。</li><li>アクセスしたサイトに、開いているタブを知られることはありません。</li></ul>",
   "ctrl_tab_title": "Ctrl+Tab を使う方法",
-  "ctrl_tab_text": "Chrome と Microsoft Edge では拡張機能で Ctrl+Tab を使用できないため、切り替え画面は Alt+Y で開きます。ショートカットの変更方法と、キーの割り当てを変更するソフトで Ctrl+Tab を使う方法は、ガイドで説明しています。",
+  "ctrl_tab_text": "Chrome と Microsoft Edge では拡張機能で Ctrl+Tab を使用できないため、切り替え画面は Alt+S（Mac では Control+S） で開きます。ショートカットの変更方法と、キーの割り当てを変更するソフトで Ctrl+Tab を使う方法は、ガイドで説明しています。",
   "guide_button": "ガイドを読む",
   "footer_license": "MIT ライセンス",
   "footer_releases": "すべてのリリース",

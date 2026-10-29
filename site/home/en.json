@@ -44,7 +44,7 @@
   "privacy_title": "Private by design",
   "privacy_text": "<p>Better Tab Switcher works only inside your browser and never connects to the internet: no account, no tracking, nothing sent anywhere.</p><ul><li>Your settings are saved in your browser, on this computer.</li><li>With the grid showing <strong>Previews</strong>, the pictures of your tabs are kept only in memory, never on disk. They are deleted when the tab closes, when you choose <strong>Icons</strong> instead, or when you close the browser.</li><li>The sites you visit can't see which tabs you have open.</li></ul>",
   "ctrl_tab_title": "How to use Ctrl+Tab",
-  "ctrl_tab_text": "Chrome and Microsoft Edge don't let extensions use Ctrl+Tab, so the switcher opens with Alt+Y. The guide explains how to change the shortcut, and how to use Ctrl+Tab with a program that remaps keys.",
+  "ctrl_tab_text": "Chrome and Microsoft Edge don't let extensions use Ctrl+Tab, so the switcher opens with Alt+S (Control+S on a Mac). The guide explains how to change the shortcut, and how to use Ctrl+Tab with a program that remaps keys.",
   "guide_button": "Read the guide",
   "footer_license": "MIT License",
   "footer_releases": "All releases",

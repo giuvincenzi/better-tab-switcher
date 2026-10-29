@@ -43,7 +43,7 @@
   "privacy_title": "Privat von Grund auf",
   "privacy_text": "<p>Better Tab Switcher arbeitet nur in Ihrem Browser und stellt nie eine Verbindung zum Internet her: kein Konto, kein Tracking, nichts wird irgendwohin gesendet.</p><ul><li>Ihre Einstellungen werden in Ihrem Browser auf diesem Computer gespeichert.</li><li>Wenn das Raster <strong>Vorschauen</strong> anzeigt, werden die Bilder Ihrer Tabs nur im Arbeitsspeicher gehalten, nie auf der Festplatte. Sie werden gelöscht, wenn Sie den Tab schließen, <strong>Symbole</strong> wählen oder den Browser schließen.</li><li>Die Websites, die Sie besuchen, können nicht sehen, welche Tabs Sie geöffnet haben.</li></ul>",
   "ctrl_tab_title": "So verwenden Sie Strg+Tab",
-  "ctrl_tab_text": "In Chrome und Microsoft Edge können Erweiterungen Strg+Tab nicht verwenden, deshalb öffnet sich der Tab-Umschalter mit Alt+Y. In der Anleitung erfahren Sie, wie Sie die Tastenkombination ändern und wie Sie Strg+Tab mit einem Programm verwenden, das Tasten neu belegt.",
+  "ctrl_tab_text": "In Chrome und Microsoft Edge können Erweiterungen Strg+Tab nicht verwenden, deshalb öffnet sich der Tab-Umschalter mit Alt+S (Control+S auf dem Mac). In der Anleitung erfahren Sie, wie Sie die Tastenkombination ändern und wie Sie Strg+Tab mit einem Programm verwenden, das Tasten neu belegt.",
   "guide_button": "Zur Anleitung",
   "footer_license": "MIT-Lizenz",
   "footer_releases": "Alle Versionen",

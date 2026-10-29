@@ -19,7 +19,7 @@ const MODIFIERS = new Set(['Alt', 'Control', 'Meta']);
 
 /**
  * The release that opens the selected tab: the last of Alt, Ctrl and Cmd let go, whatever the shortcut is (the user
- * can change it in chrome://extensions/shortcuts). Shift doesn't count: Alt+Shift+Y goes back while Alt is held.
+ * can change it in chrome://extensions/shortcuts). Shift doesn't count: Alt+Shift+S goes back while Alt is held.
  */
 export function isRelease(key: Key): boolean {
   return key.type === 'keyup' && MODIFIERS.has(key.key) && !key.altKey && !key.ctrlKey && !key.metaKey;
