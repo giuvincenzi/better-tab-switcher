@@ -23,6 +23,12 @@ const LANGUAGES: Record<string, string> = {
 /** The texts that are only a global word: the same in every language, so only in English (i18n.md). */
 const GLOBAL_KEYS = ['Extension_Name', 'Browser_Chrome', 'Browser_Edge'];
 
+/**
+ * The texts that are a name the browser gives in each language, which some languages keep as in English (Chrome Web
+ * Store in Italian, French, Spanish, German, Portuguese) while others translate it: never taken for an English text.
+ */
+const NAME_KEYS = ['Browser_ChromeStore', 'Browser_EdgeStore'];
+
 /** A file's texts by key; Chrome's own messages (@@…) left out. */
 async function texts(file: string): Promise<Map<string, string>> {
   const messages = await parseMessagesFile(`locales/${file}.yml`);
@@ -72,7 +78,8 @@ describe('translations', () => {
     it('leaves no text empty, nor in English where the language has its own words', async () => {
       for (const [key, text] of await texts(file)) {
         expect(text.trim(), key).not.toBe('');
-        if (key !== 'Language_Tag' && text.length > 12) expect(text, key).not.toBe(english.get(key));
+        if (key !== 'Language_Tag' && !NAME_KEYS.includes(key) && text.length > 12)
+          expect(text, key).not.toBe(english.get(key));
       }
     });
   });

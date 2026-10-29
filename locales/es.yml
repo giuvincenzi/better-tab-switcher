@@ -1,4 +1,6 @@
 Language_Tag: es
+Browser_ChromeStore: Chrome Web Store
+Browser_EdgeStore: Complementos de Microsoft Edge
 Command_NextTab: Abrir el selector en la pestaña siguiente
 Command_PreviousTab: Abrir el selector en la pestaña anterior
 Switcher_Tabs: Pestañas abiertas, de la más reciente a la más antigua
@@ -43,7 +45,7 @@ Settings_DelayNote: Si pulsas y sueltas la combinación de teclas antes de este 
 Settings_StayOpen: Mantener abierto hasta que elijas una pestaña
 Settings_StayOpenNote: Al soltar las teclas de la combinación, no se cambia de pestaña. Elige una con Intro o con un clic.
 Settings_ChromePagesWindow: Abrir el selector en una ventana en las páginas de $1
-Settings_ChromePagesWindowNote: $1 no permite que las extensiones accedan a sus propias páginas, como Configuración, ni a su Web Store. En ellas, el selector se abre en una pequeña ventana aparte.
+Settings_ChromePagesWindowNote: $1 no permite que las extensiones accedan a sus propias páginas, como Configuración, ni a su tienda de extensiones, $2. En ellas, el selector se abre en una pequeña ventana aparte.
 Settings_AutoSelect: Selección automática
 Settings_AutoSelectNote: La pestaña seleccionada se abre al cabo de unos segundos. Una línea muestra el tiempo que queda.
 Settings_AutoSelectTime: Tiempo de selección automática

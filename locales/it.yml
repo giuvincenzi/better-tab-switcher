@@ -1,4 +1,6 @@
 Language_Tag: it
+Browser_ChromeStore: Chrome Web Store
+Browser_EdgeStore: Componenti aggiuntivi di Microsoft Edge
 Command_NextTab: Apri il selettore sulla scheda successiva
 Command_PreviousTab: Apri il selettore sulla scheda precedente
 Switcher_Tabs: Schede aperte, dalla più recente
@@ -43,7 +45,7 @@ Settings_DelayNote: Se premi e rilasci la scorciatoia prima di questo tempo, pas
 Settings_StayOpen: Resta aperto finché non scegli una scheda
 Settings_StayOpenNote: Quando rilasci i tasti della scorciatoia non cambi scheda. Scegli la scheda con Invio o con un clic.
 Settings_ChromePagesWindow: Apri il selettore in una finestra sulle pagine di $1
-Settings_ChromePagesWindowNote: $1 non permette alle estensioni di funzionare nelle sue pagine, come Impostazioni, né nel suo Web Store. Lì il selettore si apre in una piccola finestra separata.
+Settings_ChromePagesWindowNote: $1 non permette alle estensioni di funzionare nelle sue pagine, come Impostazioni, né nel suo store di estensioni, $2. Lì il selettore si apre in una piccola finestra separata.
 Settings_AutoSelect: Selezione automatica
 Settings_AutoSelectNote: La scheda selezionata si apre dopo qualche secondo. Una linea mostra il tempo che manca.
 Settings_AutoSelectTime: Tempo per la selezione automatica

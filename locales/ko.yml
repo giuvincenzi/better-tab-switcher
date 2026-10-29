@@ -1,4 +1,6 @@
 Language_Tag: ko
+Browser_ChromeStore: Chrome 웹 스토어
+Browser_EdgeStore: Microsoft Edge 추가 기능
 Command_NextTab: 다음 탭을 선택한 채로 탭 전환기 열기
 Command_PreviousTab: 이전 탭을 선택한 채로 탭 전환기 열기
 Switcher_Tabs: 열린 탭, 최근에 사용한 순서
@@ -43,7 +45,7 @@ Settings_DelayNote: 단축키를 이 시간보다 빨리 눌렀다 떼면 탭 �
 Settings_StayOpen: 탭을 선택할 때까지 열어 두기
 Settings_StayOpenNote: 단축키에서 손을 떼도 탭이 전환되지 않습니다. Enter 키를 누르거나 클릭해서 탭을 선택하세요.
 Settings_ChromePagesWindow: $1 자체 페이지에서는 탭 전환기를 별도 창으로 열기
-Settings_ChromePagesWindowNote: $1에서는 설정 같은 자체 페이지와 웹 스토어에서 확장 프로그램을 사용할 수 없습니다. 이런 페이지에서는 탭 전환기가 별도의 작은 창으로 열립니다.
+Settings_ChromePagesWindowNote: $1에서는 설정 같은 자체 페이지와 확장 프로그램 스토어($2)에서 확장 프로그램을 사용할 수 없습니다. 이런 페이지에서는 탭 전환기가 별도의 작은 창으로 열립니다.
 Settings_AutoSelect: 자동 선택
 Settings_AutoSelectNote: 선택한 탭이 몇 초 후에 열립니다. 남은 시간은 막대로 표시됩니다.
 Settings_AutoSelectTime: 자동 선택 시간

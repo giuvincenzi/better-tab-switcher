@@ -1,4 +1,6 @@
 Language_Tag: ja
+Browser_ChromeStore: Chrome ウェブストア
+Browser_EdgeStore: Microsoft Edge アドオン
 Command_NextTab: 次のタブを選択した状態で切り替え画面を開く
 Command_PreviousTab: 前のタブを選択した状態で切り替え画面を開く
 Switcher_Tabs: 開いているタブ（最近使用した順）
@@ -43,7 +45,7 @@ Settings_DelayNote: ショートカットをこれより素早く押して離す
 Settings_StayOpen: タブを選ぶまで開いたままにする
 Settings_StayOpenNote: ショートカットのキーを離してもタブは切り替わりません。Enter キーまたはクリックでタブを選んでください。
 Settings_ChromePagesWindow: $1 のページでは切り替え画面を別のウィンドウで開く
-Settings_ChromePagesWindowNote: $1 では、設定などのブラウザ自体のページやウェブストアで拡張機能を使用できません。そうしたページでは、切り替え画面が専用の小さなウィンドウで開きます。
+Settings_ChromePagesWindowNote: $1 では、設定などのブラウザ自体のページや拡張機能ストア（$2）で拡張機能を使用できません。そうしたページでは、切り替え画面が専用の小さなウィンドウで開きます。
 Settings_AutoSelect: 自動選択
 Settings_AutoSelectNote: 選択中のタブが数秒後に開きます。残り時間は線で表示されます。
 Settings_AutoSelectTime: 自動選択までの時間

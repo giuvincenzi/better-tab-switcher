@@ -1,4 +1,6 @@
 Language_Tag: pt-BR
+Browser_ChromeStore: Chrome Web Store
+Browser_EdgeStore: Complementos do Microsoft Edge
 Command_NextTab: Abrir o seletor na próxima guia
 Command_PreviousTab: Abrir o seletor na guia anterior
 Switcher_Tabs: Guias abertas, das mais recentes para as mais antigas
@@ -43,7 +45,7 @@ Settings_DelayNote: Pressione e solte o atalho em menos tempo que isso para muda
 Settings_StayOpen: Manter aberto até você escolher uma guia
 Settings_StayOpenNote: Soltar as teclas do atalho não muda de guia. Escolha uma guia com Enter ou com um clique.
 Settings_ChromePagesWindow: Abrir o seletor em uma janela nas páginas do $1
-Settings_ChromePagesWindowNote: O $1 não permite extensões nas próprias páginas, como Configurações, nem na Web Store dele. Nesses lugares, o seletor abre em uma pequena janela própria.
+Settings_ChromePagesWindowNote: O $1 não permite extensões nas próprias páginas, como Configurações, nem na loja de extensões dele, $2. Nesses lugares, o seletor abre em uma pequena janela própria.
 Settings_AutoSelect: Seleção automática
 Settings_AutoSelectNote: A guia selecionada abre depois de alguns segundos. Uma linha mostra o tempo restante.
 Settings_AutoSelectTime: Tempo da seleção automática

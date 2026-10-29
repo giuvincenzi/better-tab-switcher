@@ -12,6 +12,12 @@ Browser_Chrome: Chrome
 # GLOBAL: as Browser_Chrome, in Microsoft Edge.
 Browser_Edge: Microsoft Edge
 
+# The browser's extension store, by the name the browser gives it in this language, in Settings_ChromePagesWindowNote
+# (lib/browser.ts, STORE_NAME_TEXT).
+Browser_ChromeStore: Chrome Web Store
+# As Browser_ChromeStore, in Microsoft Edge.
+Browser_EdgeStore: Microsoft Edge Add-ons
+
 # The shortcut that opens the switcher with the next tab selected, listed in chrome://extensions/shortcuts.
 Command_NextTab: Open the switcher on the next tab
 
@@ -90,8 +96,9 @@ Settings_StayOpenNote: Releasing the shortcut's keys doesn't switch tabs. Choose
 # A setting: the switcher in a window of its own where the browser keeps extensions out. $1: the browser's name
 # (Browser_Chrome, Browser_Edge).
 Settings_ChromePagesWindow: Open the switcher in a window on $1's pages
-# Under Settings_ChromePagesWindow. $1: the browser's name (Browser_Chrome, Browser_Edge).
-Settings_ChromePagesWindowNote: $1 doesn't let extensions into its own pages, like Settings, or into its web store. There the switcher opens in a small window of its own.
+# Under Settings_ChromePagesWindow. $1: the browser's name (Browser_Chrome, Browser_Edge). $2: its extension store's
+# name (Browser_ChromeStore, Browser_EdgeStore), set apart so that no word around it depends on it.
+Settings_ChromePagesWindowNote: $1 doesn't let extensions into its own pages, like Settings, or into its extension store, $2. There the switcher opens in a small window of its own.
 Settings_AutoSelect: Auto-select
 Settings_AutoSelectNote: The selected tab opens after a few seconds. A line shows the time left.
 Settings_AutoSelectTime: Auto-select time

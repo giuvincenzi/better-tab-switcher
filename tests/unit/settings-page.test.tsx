@@ -154,20 +154,20 @@ describe('SettingsPage', () => {
     expect(host.querySelector('a[href="https://example.com/guide"]')?.textContent).toBe('How to use Ctrl+Tab');
   });
 
-  it('names the browser it runs in: Chrome, or Microsoft Edge in Edge', () => {
+  it('names the browser it runs in and its extension store: Chrome, or Microsoft Edge in Edge', () => {
     const userAgent = vi.spyOn(Navigator.prototype, 'userAgent', 'get');
     const chrome =
       'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36';
-    for (const [agent, name] of [
-      [chrome, 'Chrome'],
-      [`${chrome} Edg/156.0.0.0`, 'Microsoft Edge'],
+    for (const [agent, name, store] of [
+      [chrome, 'Chrome', 'Chrome Web Store'],
+      [`${chrome} Edg/156.0.0.0`, 'Microsoft Edge', 'Microsoft Edge Add-ons'],
     ]) {
       userAgent.mockReturnValue(agent as string);
       const { host } = open();
       expect(texts(host)).toContain(`${name} doesn't let extensions use Ctrl+Tab.`);
       expect(toggle(host, `Open the switcher in a window on ${name}'s pages`)).toBeTruthy();
       expect(texts(host)).toContain(
-        `${name} doesn't let extensions into its own pages, like Settings, or into its web store.`,
+        `${name} doesn't let extensions into its own pages, like Settings, or into its extension store, ${store}.`,
       );
       dispose?.();
     }

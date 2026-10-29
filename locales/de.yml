@@ -1,4 +1,6 @@
 Language_Tag: de
+Browser_ChromeStore: Chrome Web Store
+Browser_EdgeStore: Microsoft Edge-Add-Ons
 Command_NextTab: Tab-Umschalter beim nächsten Tab öffnen
 Command_PreviousTab: Tab-Umschalter beim vorherigen Tab öffnen
 Switcher_Tabs: Geöffnete Tabs, zuletzt verwendete zuerst
@@ -43,7 +45,7 @@ Settings_DelayNote: Wenn Sie die Tastenkombination innerhalb dieser Zeit drücke
 Settings_StayOpen: Geöffnet lassen, bis Sie einen Tab auswählen
 Settings_StayOpenNote: Wenn Sie die Tasten der Tastenkombination loslassen, wird der Tab nicht gewechselt. Wählen Sie einen Tab mit der Eingabetaste oder per Klick aus.
 Settings_ChromePagesWindow: Tab-Umschalter auf Seiten von $1 in einem eigenen Fenster öffnen
-Settings_ChromePagesWindowNote: Auf den eigenen Seiten von $1, etwa den Einstellungen, und im Web Store sind Erweiterungen nicht zugelassen. Dort öffnet sich der Tab-Umschalter in einem eigenen kleinen Fenster.
+Settings_ChromePagesWindowNote: Auf den eigenen Seiten von $1, etwa den Einstellungen, und in seinem Store für Erweiterungen, $2, sind Erweiterungen nicht zugelassen. Dort öffnet sich der Tab-Umschalter in einem eigenen kleinen Fenster.
 Settings_AutoSelect: Automatische Auswahl
 Settings_AutoSelectNote: Der ausgewählte Tab wird nach einigen Sekunden geöffnet. Eine Linie zeigt die verbleibende Zeit.
 Settings_AutoSelectTime: Zeit bis zur automatischen Auswahl

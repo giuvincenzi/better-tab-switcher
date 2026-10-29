@@ -1,4 +1,6 @@
 Language_Tag: fr
+Browser_ChromeStore: Chrome Web Store
+Browser_EdgeStore: Modules complémentaires Microsoft Edge
 Command_NextTab: Ouvrir le sélecteur sur l'onglet suivant
 Command_PreviousTab: Ouvrir le sélecteur sur l'onglet précédent
 Switcher_Tabs: Onglets ouverts, du plus récent au plus ancien
@@ -43,7 +45,7 @@ Settings_DelayNote: Si vous appuyez sur le raccourci et le relâchez plus vite q
 Settings_StayOpen: Rester ouvert jusqu'au choix d'un onglet
 Settings_StayOpenNote: Relâcher les touches du raccourci ne change pas d'onglet. Choisissez un onglet avec Entrée ou d'un clic.
 Settings_ChromePagesWindow: Ouvrir le sélecteur dans une fenêtre sur les pages de $1
-Settings_ChromePagesWindowNote: $1 n'autorise pas les extensions sur ses propres pages, comme les Paramètres, ni sur son Web Store. Sur ces pages, le sélecteur s'ouvre dans une petite fenêtre à part.
+Settings_ChromePagesWindowNote: $1 n'autorise pas les extensions sur ses propres pages, comme les Paramètres, ni sur sa boutique d'extensions, $2. Sur ces pages, le sélecteur s'ouvre dans une petite fenêtre à part.
 Settings_AutoSelect: Sélection automatique
 Settings_AutoSelectNote: L'onglet sélectionné s'ouvre au bout de quelques secondes. Une ligne indique le temps restant.
 Settings_AutoSelectTime: Délai de sélection automatique

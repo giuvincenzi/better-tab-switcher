@@ -1,4 +1,6 @@
 Language_Tag: ro
+Browser_ChromeStore: Magazinul web Chrome
+Browser_EdgeStore: Completări pentru Microsoft Edge
 Command_NextTab: Deschide comutatorul cu fila următoare selectată
 Command_PreviousTab: Deschide comutatorul cu fila anterioară selectată
 Switcher_Tabs: File deschise, de la cea mai recentă
@@ -43,7 +45,7 @@ Settings_DelayNote: Dacă apeși și eliberezi comanda rapidă mai repede de at�
 Settings_StayOpen: Rămâne deschis până alegi o filă
 Settings_StayOpenNote: Când eliberezi tastele comenzii rapide, fila nu se schimbă. Alege o filă cu Enter sau cu un clic.
 Settings_ChromePagesWindow: Deschide comutatorul într-o fereastră pe paginile $1
-Settings_ChromePagesWindowNote: $1 nu permite extensiilor să acceseze paginile proprii, cum ar fi Setări, și nici magazinul său web. Acolo, comutatorul se deschide într-o fereastră mică separată.
+Settings_ChromePagesWindowNote: $1 nu permite extensiilor să acceseze paginile proprii, cum ar fi Setări, și nici magazinul său de extensii, $2. Acolo, comutatorul se deschide într-o fereastră mică separată.
 Settings_AutoSelect: Selectare automată
 Settings_AutoSelectNote: Fila selectată se deschide după câteva secunde. O linie arată timpul rămas.
 Settings_AutoSelectTime: Timp până la selectarea automată
