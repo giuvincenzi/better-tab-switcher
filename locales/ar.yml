@@ -9,7 +9,7 @@ Switcher_Settings: جميع الإعدادات
 Switcher_CloseTab: إغلاق علامة التبويب
 Switcher_Pinned: مثبّتة
 Switcher_PlayingAudio: يتم تشغيل الصوت
-Switcher_Sleeping: في وضع السكون
+Switcher_Sleeping: غير نشِطة
 Switcher_Window: النافذة $1
 Settings_Title: إعدادات Better Tab Switcher
 Settings_Sections: أقسام الإعدادات
@@ -27,7 +27,7 @@ Settings_GridShow: إظهار
 Settings_GridShowPreviews: المعاينات
 Settings_GridShowIcons: الرموز
 Settings_GridShowNote: يعرض خيار «المعاينات» صورة لكل علامة تبويب، أما خيار «الرموز» فيعرض رمز كل موقع فقط.
-Settings_Compact: مضغوط
+Settings_Compact: العرض المكثّف
 Settings_CompactNote: صفوف أقل ارتفاعًا لتتسع لعدد أكبر من علامات التبويب.
 Settings_ListRows: علامات التبويب المعروضة قبل التمرير
 Settings_RowsFit: بحجم الشاشة
@@ -39,24 +39,24 @@ Settings_ScopeAll: جميع النوافذ
 Settings_ScopeNote: عند اختيار جميع النوافذ، تُظهر كل علامة تبويب من نافذة أخرى رقم نافذتها.
 Settings_ShowPinned: إظهار علامات التبويب المثبّتة
 Settings_Delay: المهلة قبل ظهور مبدّل علامات التبويب
-Settings_DelayNote: عند الضغط بسرعة أكبر، يتم الانتقال إلى علامة التبويب السابقة بدون إظهار مبدّل علامات التبويب.
+Settings_DelayNote: إذا ضغطت على الاختصار وأفلتّه خلال مدة أقصر من هذه، يتم الانتقال إلى علامة التبويب السابقة بدون إظهار مبدّل علامات التبويب.
 Settings_StayOpen: البقاء مفتوحًا إلى أن تختار علامة تبويب
 Settings_StayOpenNote: لن يؤدي ترك مفاتيح الاختصار إلى التبديل بين علامات التبويب. اختر علامة تبويب بالضغط على Enter أو بالنقر عليها.
-Settings_ChromePagesWindow: استخدام نافذة في صفحات $1
-Settings_ChromePagesWindowNote: لا يسمح متصفّح $1 للإضافات بالعمل في صفحاته الخاصة، مثل صفحة الإعدادات، ولا في متجره الإلكتروني. لذلك يُفتح مبدّل علامات التبويب في هذه الصفحات ضمن نافذة صغيرة خاصة به.
+Settings_ChromePagesWindow: فتح مبدّل علامات التبويب في نافذة على صفحات $1
+Settings_ChromePagesWindowNote: لا يسمح متصفّح $1 للإضافات بالعمل في صفحاته الخاصة، مثل صفحة الإعدادات، ولا في سوقه الإلكتروني. لذلك يُفتح مبدّل علامات التبويب في هذه الصفحات ضمن نافذة صغيرة خاصة به.
 Settings_AutoSelect: الاختيار التلقائي
 Settings_AutoSelectNote: تُفتح علامة التبويب المحدّدة بعد بضع ثوانٍ، ويوضّح خط الوقت المتبقي.
 Settings_AutoSelectTime: مدة الاختيار التلقائي
 Settings_TabDetails: تفاصيل علامة التبويب
 Settings_Address: عنوان الموقع الإلكتروني
 Settings_LongAddress: عناوين المواقع الإلكترونية الطويلة
-Settings_LongAddressNote: أو تمريرها في علامة التبويب المحدّدة.
+Settings_LongAddressNote: يتم اقتطاعها باستخدام «…» أو تمريرها في علامة التبويب المحدّدة لعرضها كاملة.
 Settings_LongAddressCut: اقتطاع
 Settings_LongAddressScroll: تمرير
 Settings_PinnedIcon: رمز علامة التبويب المثبّتة
 Settings_AudioIcon: رمز تشغيل الصوت
-Settings_Sleeping: علامات التبويب في وضع السكون
-Settings_SleepingNote: تحمل علامات التبويب في وضع السكون رمزًا وتظهر باللون الرمادي.
+Settings_Sleeping: علامات التبويب غير النشطة
+Settings_SleepingNote: تحمل علامات التبويب غير النشطة رمزًا وتظهر باللون الرمادي.
 Settings_GroupColor: لون مجموعة علامات التبويب
 Settings_LastUsed: آخر استخدام
 Settings_LastUsedNote: على سبيل المثال، $1.

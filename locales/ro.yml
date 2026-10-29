@@ -39,10 +39,10 @@ Settings_ScopeAll: Toate ferestrele
 Settings_ScopeNote: Cu toate ferestrele, filele din alte ferestre arată numărul ferestrei lor.
 Settings_ShowPinned: Afișează filele fixate
 Settings_Delay: Întârziere până la afișarea comutatorului
-Settings_DelayNote: O apăsare mai scurtă trece la fila anterioară fără să afișeze comutatorul.
+Settings_DelayNote: Dacă apeși și eliberezi comanda rapidă mai repede de atât, treci la fila anterioară fără să se afișeze comutatorul.
 Settings_StayOpen: Rămâne deschis până alegi o filă
 Settings_StayOpenNote: Când eliberezi tastele comenzii rapide, fila nu se schimbă. Alege o filă cu Enter sau cu un clic.
-Settings_ChromePagesWindow: Folosește o fereastră pe paginile $1
+Settings_ChromePagesWindow: Deschide comutatorul într-o fereastră pe paginile $1
 Settings_ChromePagesWindowNote: $1 nu permite extensiilor să acceseze paginile proprii, cum ar fi Setări, și nici magazinul său web. Acolo, comutatorul se deschide într-o fereastră mică separată.
 Settings_AutoSelect: Selectare automată
 Settings_AutoSelectNote: Fila selectată se deschide după câteva secunde. O linie arată timpul rămas.
@@ -50,7 +50,7 @@ Settings_AutoSelectTime: Timp până la selectarea automată
 Settings_TabDetails: Detaliile filelor
 Settings_Address: Adresa site-ului
 Settings_LongAddress: Adresele lungi ale site-urilor
-Settings_LongAddressNote: Sau le poți derula pe fila selectată.
+Settings_LongAddressNote: Se scurtează cu „…” sau se derulează pe fila selectată, ca să apară întregi.
 Settings_LongAddressCut: Scurtate
 Settings_LongAddressScroll: Derulate
 Settings_PinnedIcon: Pictograma filei fixate

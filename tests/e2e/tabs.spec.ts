@@ -58,7 +58,7 @@ test.describe('which tabs the switcher lists @tabs', () => {
     await expect(titles(page)).toHaveText(['delta', 'gamma', 'alpha']);
   });
 
-  test('marks pinned and sleeping tabs', async ({ context, serviceWorker }) => {
+  test('marks pinned and inactive tabs', async ({ context, serviceWorker }) => {
     const [, , current] = await openPages(context, ['alpha', 'beta', 'gamma']);
     const page = current as Page;
     const [alpha, beta] = await Promise.all(['alpha', 'beta'].map((t) => tabIdOf(serviceWorker, t)));
@@ -72,7 +72,7 @@ test.describe('which tabs the switcher lists @tabs', () => {
     await showSwitcher(serviceWorker, 'next', 'icon');
     await expect(rows(page)).toHaveCount(3);
     await expect(rows(page).filter({ hasText: 'alpha' })).toHaveAccessibleName('alpha, Pinned');
-    await expect(rows(page).filter({ hasText: 'beta' })).toHaveAccessibleName('beta, Sleeping');
+    await expect(rows(page).filter({ hasText: 'beta' })).toHaveAccessibleName('beta, Inactive');
     await expect(rows(page).filter({ hasText: 'gamma' })).toHaveAccessibleName('gamma');
   });
 

@@ -24,7 +24,9 @@ test.describe('settings page @settings', () => {
     const page = await openSettings(context, extensionId);
     await expect(
       page.getByRole('spinbutton', { name: 'Delay before the switcher appears' }),
-    ).toHaveAccessibleDescription('milliseconds A quicker tap switches to the previous tab without showing it.');
+    ).toHaveAccessibleDescription(
+      'milliseconds Press and release the shortcut quicker than this to switch to the previous tab without showing the switcher.',
+    );
     await expect(page.getByRole('spinbutton', { name: 'Auto-select time' })).toHaveAccessibleDescription('seconds');
   });
 

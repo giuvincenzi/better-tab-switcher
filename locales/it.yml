@@ -9,7 +9,7 @@ Switcher_Settings: Tutte le impostazioni
 Switcher_CloseTab: Chiudi scheda
 Switcher_Pinned: Fissata
 Switcher_PlayingAudio: Audio in riproduzione
-Switcher_Sleeping: In sospensione
+Switcher_Sleeping: Non attiva
 Switcher_Window: Finestra $1
 Settings_Title: Impostazioni di Better Tab Switcher
 Settings_Sections: Sezioni delle impostazioni
@@ -39,24 +39,24 @@ Settings_ScopeAll: Tutte le finestre
 Settings_ScopeNote: Con Tutte le finestre, le schede delle altre finestre mostrano il numero della finestra in cui si trovano.
 Settings_ShowPinned: Mostra le schede fissate
 Settings_Delay: Attesa prima che compaia il selettore
-Settings_DelayNote: Se premi e rilasci più in fretta, passi alla scheda precedente senza vedere il selettore.
+Settings_DelayNote: Se premi e rilasci la scorciatoia prima di questo tempo, passi alla scheda precedente senza vedere il selettore.
 Settings_StayOpen: Resta aperto finché non scegli una scheda
 Settings_StayOpenNote: Quando rilasci i tasti della scorciatoia non cambi scheda. Scegli la scheda con Invio o con un clic.
-Settings_ChromePagesWindow: Usa una finestra sulle pagine di $1
-Settings_ChromePagesWindowNote: $1 non permette alle estensioni di funzionare nelle sue pagine, come Impostazioni, né nel suo web store. Lì il selettore si apre in una piccola finestra separata.
+Settings_ChromePagesWindow: Apri il selettore in una finestra sulle pagine di $1
+Settings_ChromePagesWindowNote: $1 non permette alle estensioni di funzionare nelle sue pagine, come Impostazioni, né nel suo Web Store. Lì il selettore si apre in una piccola finestra separata.
 Settings_AutoSelect: Selezione automatica
 Settings_AutoSelectNote: La scheda selezionata si apre dopo qualche secondo. Una linea mostra il tempo che manca.
 Settings_AutoSelectTime: Tempo per la selezione automatica
 Settings_TabDetails: Dettagli delle schede
 Settings_Address: Indirizzo del sito web
 Settings_LongAddress: Indirizzi web lunghi
-Settings_LongAddressNote: Oppure falli scorrere sulla scheda selezionata.
+Settings_LongAddressNote: Si possono accorciare con “…” oppure far scorrere sulla scheda selezionata per vederli per intero.
 Settings_LongAddressCut: Accorciati
 Settings_LongAddressScroll: A scorrimento
 Settings_PinnedIcon: Icona delle schede fissate
 Settings_AudioIcon: Icona dell'audio in riproduzione
-Settings_Sleeping: Schede in sospensione
-Settings_SleepingNote: Le schede in sospensione hanno un'icona e appaiono in grigio.
+Settings_Sleeping: Schede non attive
+Settings_SleepingNote: Le schede non attive hanno un'icona e appaiono in grigio.
 Settings_GroupColor: Colore del gruppo di schede
 Settings_LastUsed: Ultimo utilizzo
 Settings_LastUsedNote: Ad esempio, $1.

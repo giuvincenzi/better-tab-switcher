@@ -39,18 +39,18 @@ Settings_ScopeAll: Todas as janelas
 Settings_ScopeNote: Com todas as janelas, cada guia de outra janela mostra o número da janela dela.
 Settings_ShowPinned: Mostrar guias fixadas
 Settings_Delay: Atraso antes de o seletor aparecer
-Settings_DelayNote: Um toque mais rápido muda para a guia anterior sem mostrar o seletor.
+Settings_DelayNote: Pressione e solte o atalho em menos tempo que isso para mudar para a guia anterior sem mostrar o seletor.
 Settings_StayOpen: Manter aberto até você escolher uma guia
 Settings_StayOpenNote: Soltar as teclas do atalho não muda de guia. Escolha uma guia com Enter ou com um clique.
-Settings_ChromePagesWindow: Usar uma janela nas páginas do $1
-Settings_ChromePagesWindowNote: O $1 não permite extensões nas próprias páginas, como Configurações, nem na loja de extensões dele. Nesses lugares, o seletor abre em uma pequena janela própria.
+Settings_ChromePagesWindow: Abrir o seletor em uma janela nas páginas do $1
+Settings_ChromePagesWindowNote: O $1 não permite extensões nas próprias páginas, como Configurações, nem na Web Store dele. Nesses lugares, o seletor abre em uma pequena janela própria.
 Settings_AutoSelect: Seleção automática
 Settings_AutoSelectNote: A guia selecionada abre depois de alguns segundos. Uma linha mostra o tempo restante.
 Settings_AutoSelectTime: Tempo da seleção automática
 Settings_TabDetails: Detalhes das guias
 Settings_Address: Endereço do site
 Settings_LongAddress: Endereços de sites longos
-Settings_LongAddressNote: Ou faça-os rolar na guia selecionada.
+Settings_LongAddressNote: Eles são encurtados com “…” ou rolam na guia selecionada para aparecerem por inteiro.
 Settings_LongAddressCut: Encurtar
 Settings_LongAddressScroll: Rolar
 Settings_PinnedIcon: Ícone de guia fixada

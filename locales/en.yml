@@ -36,10 +36,11 @@ Switcher_Settings: All settings
 # The button on a tab, shown under the mouse, that closes it.
 Switcher_CloseTab: Close tab
 
-# A tab's icons, for screen readers and as tooltips.
+# A tab's icons, for screen readers and as tooltips. Switcher_Sleeping: a tab Chrome took out of memory (Memory Saver):
+# Chrome's own word for it ("inactive tab").
 Switcher_Pinned: Pinned
 Switcher_PlayingAudio: Playing audio
-Switcher_Sleeping: Sleeping
+Switcher_Sleeping: Inactive
 
 # A tab's badge with "All windows": the number of the window it is in. $1: the number (2, 3…).
 Switcher_Window: Window $1
@@ -83,12 +84,12 @@ Settings_ScopeAll: All windows
 Settings_ScopeNote: With all windows, each tab from another window shows its window's number.
 Settings_ShowPinned: Show pinned tabs
 Settings_Delay: Delay before the switcher appears
-Settings_DelayNote: A quicker tap switches to the previous tab without showing it.
+Settings_DelayNote: Press and release the shortcut quicker than this to switch to the previous tab without showing the switcher.
 Settings_StayOpen: Stay open until you choose a tab
 Settings_StayOpenNote: Releasing the shortcut's keys doesn't switch tabs. Choose a tab with Enter or a click.
 # A setting: the switcher in a window of its own where the browser keeps extensions out. $1: the browser's name
 # (Browser_Chrome, Browser_Edge).
-Settings_ChromePagesWindow: Use a window on $1's pages
+Settings_ChromePagesWindow: Open the switcher in a window on $1's pages
 # Under Settings_ChromePagesWindow. $1: the browser's name (Browser_Chrome, Browser_Edge).
 Settings_ChromePagesWindowNote: $1 doesn't let extensions into its own pages, like Settings, or into its web store. There the switcher opens in a small window of its own.
 Settings_AutoSelect: Auto-select
@@ -99,13 +100,14 @@ Settings_AutoSelectTime: Auto-select time
 Settings_TabDetails: Tab details
 Settings_Address: Website address
 Settings_LongAddress: Long website addresses
-Settings_LongAddressNote: Or scroll them on the selected tab.
+Settings_LongAddressNote: Cut short with “…”, or scrolling on the selected tab to show them whole.
 Settings_LongAddressCut: Cut short
 Settings_LongAddressScroll: Scroll
 Settings_PinnedIcon: Pinned tab icon
 Settings_AudioIcon: Playing audio icon
-Settings_Sleeping: Sleeping tabs
-Settings_SleepingNote: Sleeping tabs get an icon and are shown in grey.
+# Tabs Chrome took out of memory (Memory Saver), with Chrome's own words ("inactive tabs").
+Settings_Sleeping: Inactive tabs
+Settings_SleepingNote: Inactive tabs get an icon and are shown in grey.
 Settings_GroupColor: Tab group color
 Settings_LastUsed: Last used
 # $1: a time written as the switcher writes it, in the language in use ("15 min ago").

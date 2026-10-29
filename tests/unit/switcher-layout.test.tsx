@@ -192,7 +192,7 @@ describe('Switcher tab details in every view', () => {
   ] as const) {
     it(`greys a sleeping tab, and names it so, in the ${view === 'list' ? 'list' : `grid of ${gridShow}`}`, () => {
       const { host } = openSwitcher({ view, gridShow }, { tabs: [...tabs, sleepy] });
-      const sleeping = option(host, 'Sleeping tab, Sleeping');
+      const sleeping = option(host, 'Sleeping tab, Inactive');
       expect(Number(getComputedStyle(sleeping).opacity)).toBeLessThan(1);
       expect(Number(getComputedStyle(option(host, 'Q4 planning')).opacity)).toBe(1);
     });

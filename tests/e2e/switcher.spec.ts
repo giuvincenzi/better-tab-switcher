@@ -116,7 +116,7 @@ test.describe('switcher motion @switcher', () => {
 });
 
 test.describe("Chrome's own pages @switcher", () => {
-  test("does nothing on a page Chrome keeps extensions out of, with Use a window on Chrome's pages off", async ({
+  test("does nothing on a page Chrome keeps extensions out of, with Open the switcher in a window on Chrome's pages off", async ({
     context,
     serviceWorker,
   }) => {
@@ -134,7 +134,7 @@ test.describe("Chrome's own pages @switcher", () => {
     );
   });
 
-  test("opens in a window of its own there, with Use a window on Chrome's pages (the default)", async ({
+  test("opens in a window of its own there, with Open the switcher in a window on Chrome's pages (the default)", async ({
     context,
     serviceWorker,
   }) => {

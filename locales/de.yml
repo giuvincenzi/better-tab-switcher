@@ -39,10 +39,10 @@ Settings_ScopeAll: Aus allen Fenstern
 Settings_ScopeNote: Bei Tabs aus allen Fenstern zeigt jeder Tab aus einem anderen Fenster die Nummer seines Fensters.
 Settings_ShowPinned: Angepinnte Tabs anzeigen
 Settings_Delay: Verzögerung, bis der Tab-Umschalter erscheint
-Settings_DelayNote: Bei einem kürzeren Tastendruck wechseln Sie direkt zum vorherigen Tab, ohne dass der Tab-Umschalter erscheint.
+Settings_DelayNote: Wenn Sie die Tastenkombination innerhalb dieser Zeit drücken und wieder loslassen, wechseln Sie zum vorherigen Tab, ohne dass der Tab-Umschalter erscheint.
 Settings_StayOpen: Geöffnet lassen, bis Sie einen Tab auswählen
 Settings_StayOpenNote: Wenn Sie die Tasten der Tastenkombination loslassen, wird der Tab nicht gewechselt. Wählen Sie einen Tab mit der Eingabetaste oder per Klick aus.
-Settings_ChromePagesWindow: Eigenes Fenster auf Seiten von $1
+Settings_ChromePagesWindow: Tab-Umschalter auf Seiten von $1 in einem eigenen Fenster öffnen
 Settings_ChromePagesWindowNote: Auf den eigenen Seiten von $1, etwa den Einstellungen, und im Web Store sind Erweiterungen nicht zugelassen. Dort öffnet sich der Tab-Umschalter in einem eigenen kleinen Fenster.
 Settings_AutoSelect: Automatische Auswahl
 Settings_AutoSelectNote: Der ausgewählte Tab wird nach einigen Sekunden geöffnet. Eine Linie zeigt die verbleibende Zeit.
@@ -50,7 +50,7 @@ Settings_AutoSelectTime: Zeit bis zur automatischen Auswahl
 Settings_TabDetails: Tab-Details
 Settings_Address: Webadresse
 Settings_LongAddress: Lange Webadressen
-Settings_LongAddressNote: Sie können sie auch beim ausgewählten Tab durchlaufen lassen.
+Settings_LongAddressNote: Sie werden mit „…“ gekürzt oder laufen beim ausgewählten Tab durch, damit sie vollständig zu sehen sind.
 Settings_LongAddressCut: Kürzen
 Settings_LongAddressScroll: Durchlaufen lassen
 Settings_PinnedIcon: Symbol für angepinnte Tabs

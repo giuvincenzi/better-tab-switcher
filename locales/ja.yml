@@ -9,7 +9,7 @@ Switcher_Settings: すべての設定
 Switcher_CloseTab: タブを閉じる
 Switcher_Pinned: 固定タブ
 Switcher_PlayingAudio: 音声を再生中
-Switcher_Sleeping: スリープ中
+Switcher_Sleeping: アクティブでないタブ
 Switcher_Window: ウィンドウ $1
 Settings_Title: Better Tab Switcher の設定
 Settings_Sections: 設定のセクション
@@ -39,10 +39,10 @@ Settings_ScopeAll: すべてのウィンドウ
 Settings_ScopeNote: 「すべてのウィンドウ」では、別のウィンドウにあるタブにそのウィンドウの番号が表示されます。
 Settings_ShowPinned: 固定タブを表示
 Settings_Delay: 切り替え画面が表示されるまでの時間
-Settings_DelayNote: これより素早く押すと、切り替え画面を表示せずに直前のタブに切り替わります。
+Settings_DelayNote: ショートカットをこれより素早く押して離すと、切り替え画面を表示せずに直前のタブに切り替わります。
 Settings_StayOpen: タブを選ぶまで開いたままにする
 Settings_StayOpenNote: ショートカットのキーを離してもタブは切り替わりません。Enter キーまたはクリックでタブを選んでください。
-Settings_ChromePagesWindow: $1 のページでは別のウィンドウを使う
+Settings_ChromePagesWindow: $1 のページでは切り替え画面を別のウィンドウで開く
 Settings_ChromePagesWindowNote: $1 では、設定などのブラウザ自体のページやウェブストアで拡張機能を使用できません。そうしたページでは、切り替え画面が専用の小さなウィンドウで開きます。
 Settings_AutoSelect: 自動選択
 Settings_AutoSelectNote: 選択中のタブが数秒後に開きます。残り時間は線で表示されます。
@@ -50,13 +50,13 @@ Settings_AutoSelectTime: 自動選択までの時間
 Settings_TabDetails: タブの詳細
 Settings_Address: ウェブサイトのアドレス
 Settings_LongAddress: 長いウェブサイトのアドレス
-Settings_LongAddressNote: 選択中のタブではスクロール表示にすることもできます。
+Settings_LongAddressNote: "「…」で省略するか、選択中のタブではスクロールして全体を表示します。"
 Settings_LongAddressCut: 省略する
 Settings_LongAddressScroll: スクロールする
 Settings_PinnedIcon: 固定タブのアイコン
 Settings_AudioIcon: 音声再生中のアイコン
-Settings_Sleeping: スリープ中のタブ
-Settings_SleepingNote: スリープ中のタブにはアイコンが付き、グレーで表示されます。
+Settings_Sleeping: アクティブでないタブ
+Settings_SleepingNote: アクティブでないタブにはアイコンが付き、グレーで表示されます。
 Settings_GroupColor: タブグループの色
 Settings_LastUsed: 最後に使用した時間
 Settings_LastUsedNote: 「$1」のように表示されます。

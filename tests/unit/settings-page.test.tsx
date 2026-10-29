@@ -165,7 +165,7 @@ describe('SettingsPage', () => {
       userAgent.mockReturnValue(agent as string);
       const { host } = open();
       expect(texts(host)).toContain(`${name} doesn't let extensions use Ctrl+Tab.`);
-      expect(toggle(host, `Use a window on ${name}'s pages`)).toBeTruthy();
+      expect(toggle(host, `Open the switcher in a window on ${name}'s pages`)).toBeTruthy();
       expect(texts(host)).toContain(
         `${name} doesn't let extensions into its own pages, like Settings, or into its web store.`,
       );
@@ -214,12 +214,16 @@ const switches: [string, (settings: Settings) => boolean, (on: boolean) => Setti
   ['Compact', (s) => s.compact, (compact) => ({ compact })],
   ['Show pinned tabs', (s) => s.showPinned, (showPinned) => ({ showPinned })],
   ['Stay open until you choose a tab', (s) => s.stayOpen, (stayOpen) => ({ stayOpen })],
-  ["Use a window on Chrome's pages", (s) => s.chromePagesWindow, (chromePagesWindow) => ({ chromePagesWindow })],
+  [
+    "Open the switcher in a window on Chrome's pages",
+    (s) => s.chromePagesWindow,
+    (chromePagesWindow) => ({ chromePagesWindow }),
+  ],
   ['Auto-select', (s) => s.autoSelect, (autoSelect) => ({ autoSelect })],
   ['Website address', (s) => s.details.address, (address) => ({ details: { address } })],
   ['Pinned tab icon', (s) => s.details.pinnedIcon, (pinnedIcon) => ({ details: { pinnedIcon } })],
   ['Playing audio icon', (s) => s.details.audioIcon, (audioIcon) => ({ details: { audioIcon } })],
-  ['Sleeping tabs', (s) => s.details.sleeping, (sleeping) => ({ details: { sleeping } })],
+  ['Inactive tabs', (s) => s.details.sleeping, (sleeping) => ({ details: { sleeping } })],
   ['Tab group color', (s) => s.details.groupColor, (groupColor) => ({ details: { groupColor } })],
   ['Last used', (s) => s.details.lastUsed, (lastUsed) => ({ details: { lastUsed } })],
 ];
