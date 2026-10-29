@@ -8,7 +8,7 @@
 // - icon-128.png, logo-300.png: the extension's icon (Chrome's store icon, Edge's logo, 300×300 recommended).
 // - screenshot-<n>-<scene>.png: the site's views (site/visuals/), at the 1280×800 both stores take.
 // - privacy.txt: the answers of both stores' Privacy page, one per permission of the manifest.
-import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { chromium } from '@playwright/test';
 import { HOME_LANGUAGES, readExtensionTexts, SITE_URL } from './languages.mjs';
@@ -73,6 +73,8 @@ const plain = (html) =>
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 
+// Emptied first: a file the kit no longer has (a view renamed or removed) must not stay there to be uploaded.
+rmSync(out, { recursive: true, force: true });
 mkdirSync(out, { recursive: true });
 
 // The descriptions.
