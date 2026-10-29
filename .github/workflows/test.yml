@@ -11,7 +11,7 @@
 # The end-to-end tests run in every browser of E2E_BROWSERS on every system of E2E_SYSTEMS, in E2E_GROUPS groups each,
 # every group on its own machine at the same time (e2e_<system>_<browser>_group_<n>), split by Playwright's --shard;
 # e2e_test checks that in every browser on every system each test ran once and passed (testing.md, "End-to-end tests
-# in groups").
+# in groups"), and that the site and the README passed site_test.
 name: test
 
 on:
@@ -39,6 +39,7 @@ jobs:
       lint: ${{ steps.decide.outputs.lint }}
       unit: ${{ steps.decide.outputs.unit }}
       e2e: ${{ steps.decide.outputs.e2e }}
+      site: ${{ steps.decide.outputs.site }}
       unit_groups: ${{ steps.matrix.outputs.unit_groups }}
       e2e_groups: ${{ steps.matrix.outputs.e2e_groups }}
       e2e_systems: ${{ steps.matrix.outputs.e2e_systems }}
@@ -67,6 +68,7 @@ jobs:
           lint=true
           unit=true
           e2e=true
+          site=true
           if [ ${#range[@]} -gt 0 ] && files=$(git diff --name-only "${range[@]}"); then
             # Each check runs when a file it reads changed (testing.md, "Which changes run the tests on GitHub").
             # Lint and types: the kinds of file Biome checks (biome.json: all but Markdown, and only the kinds it knows)
@@ -74,12 +76,17 @@ jobs:
             # workflow.
             lintable='\.(ts|tsx|js|mjs|cjs|json|jsonc|css|ya?ml|html|svg)$'
             build='^(entrypoints/|components/|lib/|styles/|locales/|public/|wxt\.config\.ts$|tsconfig\.json$|package(-lock)?\.json$|\.tool-versions$|\.gitattributes$|\.github/workflows/test\.yml$)'
+            # The site: its sources and scripts, the README it checks, and what it reads from the extension (the
+            # description and store names in locales/, the logo in public/icon/).
+            site_files='^(site/|scripts/(site|site-serve|check-readme)\.mjs$|README\.md$|locales/|public/icon/|package(-lock)?\.json$|\.tool-versions$|\.github/workflows/test\.yml$)'
             lint=false
             unit=false
             e2e=false
+            site=false
             if grep -qE "$lintable" <<< "$files"; then lint=true; fi
             if grep -qE "$build|^tests/unit/|^vitest\.config\.ts$|^site/home/" <<< "$files"; then unit=true; fi
             if grep -qE "$build|^tests/e2e/|^playwright\.config\.ts$" <<< "$files"; then e2e=true; fi
+            if grep -qE "$site_files" <<< "$files"; then site=true; fi
             # The merge of a release pull request (the version in package.json changed): publish_release runs
             # everything on this commit.
             version() { git show "$1:package.json" 2>/dev/null | node -p 'JSON.parse(require("fs").readFileSync(0)).version' 2>/dev/null; }
@@ -87,14 +94,16 @@ jobs:
               lint=false
               unit=false
               e2e=false
+              site=false
             fi
           fi
           {
             echo "lint=$lint"
             echo "unit=$unit"
             echo "e2e=$e2e"
+            echo "site=$site"
           } >> "$GITHUB_OUTPUT"
-          echo "Lint and types: $lint. Unit tests: $unit. End-to-end tests: $e2e (testing.md)." >> "$GITHUB_STEP_SUMMARY"
+          echo "Lint and types: $lint. Unit tests: $unit. End-to-end tests: $e2e. Site: $site (testing.md)." >> "$GITHUB_STEP_SUMMARY"
 
       # UNIT_GROUPS and E2E_GROUPS (2) -> [1,2], E2E_SYSTEMS -> [{"name":"linux","runner":"ubuntu-latest"}, ...], the
       # matrices of unit_group and e2e_group: a matrix cannot read env, so they are written once at the top and turned
@@ -303,6 +312,44 @@ jobs:
           if failed or problems:
               sys.exit(1)
 
+  # The website and the README (docs.md, discoverability.md): the README says the home's title and description, and the
+  # whole site builds as make docs builds it (every home text in every language, every view's picture drawn), publishing
+  # nothing. e2e_test checks its result, so a broken site blocks the merge instead of the release.
+  site_test:
+    needs: decide_which_tests_run
+    if: needs.decide_which_tests_run.outputs.site == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout_code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # the site builds the guide of every release tag
+
+      - name: install_node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .tool-versions
+          cache: npm
+
+      - name: install_dependencies
+        run: npm ci
+
+      - name: check_readme
+        run: node scripts/check-readme.mjs
+
+      - name: restore_browsers
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-site-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      # The pictures of the home's carousel are drawn from site/visuals/ in Playwright's headless Chromium.
+      - name: install_chromium
+        run: npx playwright install --with-deps --only-shell chromium
+
+      - name: build_site
+        run: node scripts/site.mjs --preview
+
   # The extension, built once for every end-to-end group: the published build, whose manifest the tests check, and the
   # test build (the published one plus the hook the tests open the switcher with). The same files on every system.
   build_extension:
@@ -479,12 +526,20 @@ jobs:
           retention-days: 7
 
   # The required check: green only when in every browser on every system every end-to-end test ran exactly once and
-  # passed, or when none was needed.
+  # passed, or when none was needed, and the site built (site_test) or was not needed.
   e2e_test:
-    needs: [decide_which_tests_run, e2e_group]
+    needs: [decide_which_tests_run, e2e_group, site_test]
     if: always()
     runs-on: ubuntu-latest
     steps:
+      - name: check_site
+        env:
+          SITE: ${{ needs.decide_which_tests_run.outputs.site }}
+          SITE_RESULT: ${{ needs.site_test.result }}
+        run: |
+          if [ "$SITE" != true ]; then echo "Site not needed: no changed file is one it reads." | tee -a "$GITHUB_STEP_SUMMARY"; exit 0; fi
+          if [ "$SITE_RESULT" != success ]; then echo "::error::The site or the README: $SITE_RESULT (job site_test)."; exit 1; fi
+
       - name: skip_if_not_needed
         id: needed
         env:

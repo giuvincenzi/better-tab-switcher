@@ -18,7 +18,7 @@ paths:
   - the home page of every language (`scripts/site.mjs`): the page title ("Better Tab Switcher: " + title), the
     description for search engines, the link previews and the `SoftwareApplication` structured data;
   - `README.md`: title + ". " + description between its "Title and description" comments, checked by the test workflow
-    (`readme_test`, `scripts/check-readme.mjs`);
+    (`site_test`, `scripts/check-readme.mjs`);
   - the repository's About on GitHub: title + ". " + description, set by hand
     (`gh repo edit --description "…"`) whenever they change: the workflows' token has no Administration permission, and a
     personal token with it would be a secret only for this.

@@ -45,11 +45,14 @@ they depend on changes: a change that breaks them fails the pull request (`e2e_t
 release. Not when `publish_release` calls the tests: the release's screenshots were taken by `create_release_pr`, and a
 machine problem there would block the release for nothing in the extension.
 
-`readme_test` checks the README against the home page's texts, publishing nothing (`discoverability.md`); `e2e_test`
-checks its result, so it blocks the merge.
+`site_test` checks the README against the home page's texts (`discoverability.md`) and builds the whole site as
+`make docs` does, every view's picture drawn, publishing nothing; `e2e_test` checks its result, so a broken site blocks
+the merge instead of the release. It runs when the site or what it reads changes: `site/`, `scripts/site.mjs`,
+`scripts/site-serve.mjs`, `scripts/check-readme.mjs`, `README.md`, `locales/`, `public/icon/`, the dependencies,
+`.tool-versions` and the workflow.
 
-Nothing else is read by the builds or the tests (`.claude/`, the rest of `site/`, the other Markdown files,
-`LICENSE`, `Makefile`, the other `scripts/`, the other workflows). When the extension, the tests or a test
+Nothing else is read by the builds or the tests (`.claude/`, the other Markdown files, `LICENSE`, `Makefile`, the other
+`scripts/`, the other workflows). When the extension, the tests or a test
 starts reading another file or folder, add it to this table and to the patterns of `decide_which_tests_run` in the
 same pull request.
 
