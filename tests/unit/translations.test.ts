@@ -33,6 +33,13 @@ const NAME_KEYS = ['Browser_ChromeStore', 'Browser_EdgeStore'];
 /** The most a store shows of the extension's description (the manifest's description): the Chrome Web Store's limit. */
 const DESCRIPTION_LIMIT = 132;
 
+/**
+ * The most of the home page's title ("Better Tab Switcher: " and the title) search engines show whole: about 60
+ * characters (discoverability.md).
+ */
+const PAGE_TITLE_LIMIT = 60;
+const pageTitle = (title: string | undefined) => `Better Tab Switcher: ${title ?? ''}`;
+
 /** The home page's texts in a language (site/home/<tag>.json). */
 const homeTexts = (tag: string): Record<string, string> => JSON.parse(readFileSync(`site/home/${tag}.json`, 'utf8'));
 
@@ -67,6 +74,7 @@ describe('translations', () => {
     const files = readdirSync('site/home').map((name) => name.replace(/\.json$/, ''));
     expect(files.sort()).toEqual(['en', ...Object.values(LANGUAGES)].sort());
     expect(Object.keys(homeTexts('en')).sort()).toEqual(['slogan', 'title']);
+    expect(pageTitle(homeTexts('en').title).length).toBeLessThanOrEqual(PAGE_TITLE_LIMIT);
   });
 
   it('mark as GLOBAL in English exactly the global keys', () => {
@@ -99,6 +107,7 @@ describe('translations', () => {
           .sort(),
       );
       expect(home.title).toContain('Alt+Tab');
+      expect(pageTitle(home.title).length).toBeLessThanOrEqual(PAGE_TITLE_LIMIT);
       expect(home.title).not.toBe(homeTexts('en').title);
     });
 
