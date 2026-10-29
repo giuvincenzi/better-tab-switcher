@@ -6,9 +6,9 @@ import { openPages, useSettings } from './helpers';
 // ends: to know why macOS once got the switcher's window instead.
 test.setTimeout(300_000);
 
-for (const view of ['grid', 'list'] as const) {
+for (const view of ['grid', 'grid-resized'] as const) {
   test(`probe first opening ${view}`, async ({ context, serviceWorker }) => {
-    await useSettings(serviceWorker, { view });
+    await useSettings(serviceWorker, { view: 'grid' });
     await serviceWorker.evaluate(() => {
       const log: string[] = [];
       Object.assign(globalThis, { probeLog: log });
@@ -34,9 +34,10 @@ for (const view of ['grid', 'list'] as const) {
       }) as never;
     });
     const results: string[] = [];
-    for (let run = 0; run < 8; run++) {
+    for (let run = 0; run < 12; run++) {
       const [page] = (await openPages(context, [`run${run}-a`, `run${run}-b`])).slice(-1) as [Page];
       await page.bringToFront();
+      if (view === 'grid-resized') await page.setViewportSize({ width: 600, height: 800 });
       await serviceWorker.evaluate(() => {
         (globalThis as unknown as { probeLog: string[] }).probeLog.length = 0;
       });
