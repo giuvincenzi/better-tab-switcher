@@ -80,7 +80,7 @@ Settings_GridShowIcons: Icons
 Settings_GridShowNote: Previews shows a picture of each tab, Icons only each site's icon.
 # List only. Settings_Compact is also in the switcher's toolbar.
 Settings_Compact: Compact
-Settings_CompactNote: Lower rows, so more tabs fit.
+Settings_CompactNote: Shorter rows, so more tabs fit.
 Settings_ListRows: Tabs shown before scrolling
 # The choice of rows that shows as many as the screen's height allows, and its note.
 Settings_RowsFit: Fit the screen

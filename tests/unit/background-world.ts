@@ -19,6 +19,10 @@ export interface World {
   sandboxed: Set<number>;
   /** The keys a page got while the switcher's frame was loading, by tab: the holder gives them with showFrame. */
   keysWhileLoading: Map<number, Key[]>;
+  /** Pages whose holder makes the switcher's frame at the next showFrame (the first time, or after the page took it out). */
+  frameToMake: Set<number>;
+  /** How long the switcher takes to answer showSwitcher in a page (0: at once). */
+  showMs: number;
   /** Pages that hang (a script that never ends): their messages and scripts never get an answer. */
   hung: Set<number>;
   /** The switcher's own window is open and its page listens. */
@@ -38,6 +42,8 @@ export function newWorld(more: Partial<World> = {}): World {
     injected: new Set(),
     sandboxed: new Set(),
     keysWhileLoading: new Map(),
+    frameToMake: new Set(),
+    showMs: 0,
     hung: new Set(),
     windowListening: false,
     received: [],
@@ -62,8 +68,12 @@ export function deliverTo(world: World) {
       throw new Error('Could not establish connection. Receiving end does not exist.');
     if (!inWindow && !HOLDER_MESSAGES.has(type) && world.sandboxed.has(tabId))
       throw new Error('The message port closed before a response was received.');
+    if (type === 'showSwitcher' && world.showMs > 0) await new Promise((later) => setTimeout(later, world.showMs));
     world.received.push({ type, data, tabId });
-    if (type === 'showFrame') return { canSeeRelease: true, keys: world.keysWhileLoading.get(tabId) ?? [] };
+    if (type === 'showFrame') {
+      const madeNow = world.frameToMake.delete(tabId);
+      return { canSeeRelease: true, keys: world.keysWhileLoading.get(tabId) ?? [], madeNow };
+    }
   };
 }
 

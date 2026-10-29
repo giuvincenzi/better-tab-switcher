@@ -248,6 +248,21 @@ describe('a page that hangs (a script that never ends)', () => {
     expect(browser.windows.create).not.toHaveBeenCalled();
   });
 
+  it('gives the switcher its first showing in a frame just made the time of a first opening, not the next ones', async () => {
+    // Over 1 s once on a busy macOS machine: more than a page has to answer, less than a first opening has.
+    world.showMs = PAGE_ANSWER_MS * 2;
+    expect(world.showMs).toBeLessThan(FIRST_TIME_MS);
+    world.frameToMake.add(11);
+    await waited(shortcut());
+    expect(sent('showSwitcher').map((m) => m.tabId)).toEqual([11]);
+    expect(browser.windows.create).not.toHaveBeenCalled();
+    // In a frame already there, as slow a switcher is taken for a page that hangs: it shows in its own window.
+    world.currentTabId = 12;
+    await waited(shortcut());
+    expect(sent('showSwitcher').map((m) => m.tabId)).toEqual([11]);
+    expect(browser.windows.create).toHaveBeenCalledTimes(1);
+  });
+
   it('puts nothing more into a page that hangs: no script, and the switcher in its own window after one wait', async () => {
     world.hung.add(11);
     const request = shortcut();

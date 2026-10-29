@@ -34,6 +34,8 @@ export interface FrameShown {
   canSeeRelease: boolean;
   /** The keys the page got while the frame was loading, for the switcher once it is there (pressKey). */
   keys: Key[];
+  /** The frame was made for this showing: the switcher shows in it for the first time, which takes longer. */
+  madeNow: boolean;
 }
 
 /** A tab's new preview. */

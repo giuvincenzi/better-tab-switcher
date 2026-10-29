@@ -17,12 +17,14 @@ export default defineContentScript({
       const canSeeRelease = document.hasFocus();
       let shown = await holder;
       // A page that rebuilds itself can take the frame out: it is made again.
+      let madeNow = false;
       if (!shown?.inPage()) {
         shown?.remove();
         holder = holdFrame(ctx);
         shown = await holder;
+        madeNow = true;
       }
-      return { canSeeRelease, keys: await shown.show() };
+      return { canSeeRelease, keys: await shown.show(), madeNow };
     });
     onMessage('hideFrame', async () => (await holder)?.hide());
   },

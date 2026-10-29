@@ -146,24 +146,28 @@ function isWhereTheUserIs(open: OpenSwitcher, current: Browser.tabs.Tab | undefi
 export const PAGE_ANSWER_MS = 1000;
 
 /**
- * How long each step of putting the switcher into a page the first time can take: its frame's holder (the script), then
- * the frame. The script took at most 23 ms on GitHub's Linux, Windows and macOS machines, in Chromium and Microsoft
- * Edge; a whole first opening with the frame, at most 360 ms on a computer slowed down 6 times. The limit is far above
- * both, so a page that is only slow is never taken for one that hangs.
+ * How long each step of putting the switcher into a page the first time can take: its frame's holder (the script), the
+ * frame, then the switcher's first showing in the new frame (and the keys pressed meanwhile). The script took at most
+ * 23 ms on GitHub's Linux, Windows and macOS machines, in Chromium and Microsoft Edge; a whole first opening with the
+ * frame, at most 360 ms on a computer slowed down 6 times, but over 1 s once on a busy macOS machine, past
+ * PAGE_ANSWER_MS. The limit is far above all of them, so a page that is only slow is never taken for one that hangs.
  */
 export const FIRST_TIME_MS = 5000;
 
-/** A page that doesn't answer: it hangs, or is paused. */
+/** A page that doesn't answer: it hangs, or is paused. Says what it didn't answer, and the time it had. */
 class NoAnswer extends Error {
-  constructor() {
-    super('The page did not answer.');
+  constructor(what: string, limitMs: number) {
+    super(`The page did not answer ${what} within ${limitMs} ms.`);
   }
 }
 
-/** What a page was sent, or NoAnswer when the page doesn't answer within the limit (PAGE_ANSWER_MS by default). */
-function answered<T>(sent: Promise<T>, limitMs = PAGE_ANSWER_MS): Promise<T> {
+/**
+ * What a page was sent, or NoAnswer when the page doesn't answer within the limit (PAGE_ANSWER_MS by default). `what`
+ * names the message or script in the error.
+ */
+function answered<T>(sent: Promise<T>, limitMs = PAGE_ANSWER_MS, what = 'a message'): Promise<T> {
   return new Promise((resolve, reject) => {
-    const late = setTimeout(() => reject(new NoAnswer()), limitMs);
+    const late = setTimeout(() => reject(new NoAnswer(what, limitMs)), limitMs);
     sent.then(
       (value) => {
         clearTimeout(late);
@@ -230,9 +234,11 @@ async function showInPage(current: Browser.tabs.Tab, snapshot: SwitcherSnapshot,
  */
 async function sendSnapshot(tabId: number, snapshot: SwitcherSnapshot): Promise<boolean> {
   try {
-    const { canSeeRelease, keys } = await showFrame(tabId);
-    await answered(sendMessage('showSwitcher', { ...snapshot, canSeeRelease }, tabId));
-    for (const key of keys) await answered(sendMessage('pressKey', key, tabId));
+    const { canSeeRelease, keys, madeNow } = await showFrame(tabId);
+    // In a frame just made, the switcher shows for the first time: it has the time of a first opening.
+    const limitMs = madeNow ? FIRST_TIME_MS : PAGE_ANSWER_MS;
+    await answered(sendMessage('showSwitcher', { ...snapshot, canSeeRelease }, tabId), limitMs, 'showSwitcher');
+    for (const key of keys) await answered(sendMessage('pressKey', key, tabId), limitMs, 'pressKey');
     return true;
   } catch (error) {
     // Never quietly: why the switcher didn't show in the page (in the background's console).
@@ -245,14 +251,18 @@ async function sendSnapshot(tabId: number, snapshot: SwitcherSnapshot): Promise<
 
 /** Shows the switcher's frame over the page, putting its holder in the page the first time. */
 async function showFrame(tabId: number): Promise<FrameShown> {
-  const show = (limitMs?: number) => answered(sendMessage('showFrame', undefined, tabId), limitMs);
+  const show = (limitMs?: number) => answered(sendMessage('showFrame', undefined, tabId), limitMs, 'showFrame');
   try {
     return await show();
   } catch (error) {
     // The page hangs: nothing more is tried there. Otherwise the holder isn't in the page yet.
     if (error instanceof NoAnswer) throw error;
   }
-  await answered(browser.scripting.executeScript({ target: { tabId }, files: [SWITCHER_SCRIPT] }), FIRST_TIME_MS);
+  await answered(
+    browser.scripting.executeScript({ target: { tabId }, files: [SWITCHER_SCRIPT] }),
+    FIRST_TIME_MS,
+    'the script of the frame',
+  );
   return show(FIRST_TIME_MS);
 }
 
