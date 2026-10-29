@@ -45,11 +45,16 @@ they depend on changes: a change that breaks them fails the pull request (`e2e_t
 release. Not when `publish_release` calls the tests: the release's screenshots were taken by `create_release_pr`, and a
 machine problem there would block the release for nothing in the extension.
 
-`site_test` checks the README against the home page's texts (`discoverability.md`) and builds the whole site as
+`build_extension` also checks that `third-party.json` lists exactly the packages built into the extension (`make
+third-party`, `docs.md`, "Third-party components"); `third-party.json` and its scripts are read by the build, so they
+start the builds' checks like the extension's sources.
+
+`site_test` checks the README against the home page's texts and the list of third-party components (`discoverability.md`,
+`docs.md`) and builds the whole site as
 `make docs` does, every view's picture drawn, publishing nothing; `e2e_test` checks its result, so a broken site blocks
 the merge instead of the release. It runs when the site or what it reads changes: `site/`, `scripts/site.mjs`,
-`scripts/site-serve.mjs`, `scripts/check-readme.mjs`, `README.md`, `locales/`, `public/icon/`, the dependencies,
-`.tool-versions` and the workflow.
+`scripts/site-serve.mjs`, `scripts/check-readme.mjs`, `scripts/third-party.mjs`, `README.md`, `third-party.json`,
+`locales/`, `public/icon/`, the dependencies, `.tool-versions` and the workflow.
 
 Nothing else is read by the builds or the tests (`.claude/`, the other Markdown files, `LICENSE`, `Makefile`, the other
 `scripts/`, the other workflows). When the extension, the tests or a test

@@ -33,11 +33,27 @@ The address is the repository's custom domain (Settings › Pages; a CNAME recor
 
 ## README
 
-`README.md` is short: it presents Better Tab Switcher and links to the website, the user guide and the stores' pages,
-and never repeats what the website or the guide already say. Its title and description come from `site/home/en.json`
-and are checked by the test workflow (`discoverability.md`). It ends with "Feedback" (a link to open an issue),
-"Development" (see `.claude/rules/`) and "License", with the third-party components the extension ships (npm packages in the built extension and their
-dependencies, assets) and the attribution their licenses ask for.
+`README.md` is short, laid out as puppymacro's: the logo, the name, the slogan, the badges (version, license, CI), then
+the links to the website and the user guide (and to each store's page once the extension is there), and never repeats
+what the website or the guide already say. Its slogan, title and description come from `site/home/en.json` and
+`locales/en.yml` and are checked by the test workflow (`discoverability.md`). It ends with "Feedback" (a link to open an
+issue), "Development" (see `.claude/rules/`) and "License", with the third-party components the extension ships.
+
+## Third-party components
+
+The code of some npm packages ends up in the extension: the ones we chose and their own dependencies. Their licenses ask
+for their notice in every copy of that code, and the stores' zip is one.
+
+- **`third-party.json` lists them**, one entry each: package, name, repository, license and its copyright line (from
+  the package's license file, or its repository's when the package has none). It is the one list.
+- **The build writes `third-party-licenses.txt`** into the extension from that list (`wxt.config.ts`,
+  `scripts/third-party.mjs`); the README's "License" lists the same components (checked by `site_test`).
+- **`make third-party` checks the list against the build** (`scripts/check-third-party.mjs`): it builds the published
+  extension with source maps and reads which packages the code comes from. On GitHub it runs in `build_extension`, so a
+  dependency added or dropped without updating the list fails the pull request (`testing.md`).
+- A new package needs the user's approval (`architecture.md`); the plan says its license, and a license other than MIT
+  gets its text added to `scripts/third-party.mjs` in the same change. Assets (images, fonts) from others shipped in the
+  extension get their entry the same way.
 
 ## Every user-visible change updates the documentation
 

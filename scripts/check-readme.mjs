@@ -1,9 +1,10 @@
 // Checks that README.md says the slogan, the title and the description (discoverability.md): the slogan of
 // site/home/en.json in its italic line under the name, and between its "Title and description" comments
 // "<title>. <description>", the title of site/home/en.json and the description of locales/en.yml (Extension_Description).
-// Run by the test workflow (site_test).
+// Also that it lists every third-party component of third-party.json (docs.md). Run by the test workflow (site_test).
 import { readFileSync } from 'node:fs';
 import { parseMessagesFile } from '@wxt-dev/i18n/build';
+import { readThirdParty } from './third-party.mjs';
 
 const { title, slogan } = JSON.parse(readFileSync('site/home/en.json', 'utf8'));
 const messages = await parseMessagesFile('locales/en.yml');
@@ -21,4 +22,12 @@ if (actual !== expected) {
 if (!readme.includes(`<p align="center"><i>${slogan}</i></p>`)) {
   throw new Error(`README.md does not say the slogan. Write under its name:\n<p align="center"><i>${slogan}</i></p>`);
 }
-console.log('README.md says the slogan, title and description of site/home/en.json and locales/en.yml.');
+const missing = readThirdParty().filter((component) => !readme.includes(`[${component.title}](${component.url})`));
+if (missing.length) {
+  throw new Error(
+    `README.md doesn't list these third-party components (third-party.json):\n${missing
+      .map((component) => `- [${component.title}](${component.url}) (${component.license})`)
+      .join('\n')}`,
+  );
+}
+console.log('README.md says the slogan, title and description, and lists the third-party components.');

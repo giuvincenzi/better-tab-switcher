@@ -75,10 +75,10 @@ jobs:
             # and tsc a part of them. The tests: the files the build of the extension reads, their own files and this
             # workflow.
             lintable='\.(ts|tsx|js|mjs|cjs|json|jsonc|css|ya?ml|html|svg)$'
-            build='^(entrypoints/|components/|lib/|styles/|locales/|public/|wxt\.config\.ts$|tsconfig\.json$|package(-lock)?\.json$|\.tool-versions$|\.gitattributes$|\.github/workflows/test\.yml$)'
+            build='^(entrypoints/|components/|lib/|styles/|locales/|public/|wxt\.config\.ts$|third-party\.json$|scripts/(check-)?third-party\.mjs$|tsconfig\.json$|package(-lock)?\.json$|\.tool-versions$|\.gitattributes$|\.github/workflows/test\.yml$)'
             # The site: its sources and scripts, the README it checks, and what it reads from the extension (the
             # description and store names in locales/, the logo in public/icon/).
-            site_files='^(site/|scripts/(site|site-serve|check-readme)\.mjs$|README\.md$|locales/|public/icon/|package(-lock)?\.json$|\.tool-versions$|\.github/workflows/test\.yml$)'
+            site_files='^(site/|scripts/(site|site-serve|check-readme|third-party)\.mjs$|README\.md$|third-party\.json$|locales/|public/icon/|package(-lock)?\.json$|\.tool-versions$|\.github/workflows/test\.yml$)'
             lint=false
             unit=false
             e2e=false
@@ -371,6 +371,11 @@ jobs:
 
       - name: build_extension
         run: npx wxt build && npx wxt build --mode e2e
+
+      # third-party.json lists exactly the packages whose code is in the extension, and the build writes their licenses
+      # (docs.md, "Third-party components").
+      - name: check_third_party
+        run: npm run third-party
 
       - name: save_builds
         uses: actions/upload-artifact@v7

@@ -1,9 +1,16 @@
 import { defineConfig } from 'wxt';
+import { licensesText } from './scripts/third-party.mjs';
 
 // See https://wxt.dev/api/reference/wxt/interfaces/inlineconfig.html
 export default defineConfig({
   modules: ['@wxt-dev/module-solid', '@wxt-dev/i18n/module'],
   imports: false,
+  hooks: {
+    // The licenses of the third-party code in the extension, in every build (third-party.json, docs.md).
+    'build:publicAssets': (_wxt, files) => {
+      files.push({ relativeDest: 'third-party-licenses.txt', contents: licensesText() });
+    },
+  },
   manifest: ({ mode }) => ({
     default_locale: 'en',
     name: '__MSG_Extension_Name__',

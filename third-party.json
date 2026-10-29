@@ -1,0 +1,96 @@
+{
+  "$comment": "The npm packages whose code is in the extension (docs.md, Third-party components): the build writes their licenses into third-party-licenses.txt, the README lists them, and scripts/check-third-party.mjs checks this list against the build.",
+  "packages": [
+    {
+      "name": "solid-js",
+      "title": "Solid",
+      "url": "https://github.com/solidjs/solid",
+      "license": "MIT",
+      "copyright": "Copyright (c) 2016-2025 Ryan Carniato"
+    },
+    {
+      "name": "wxt",
+      "title": "WXT",
+      "url": "https://github.com/wxt-dev/wxt",
+      "license": "MIT",
+      "copyright": "Copyright (c) 2023 Aaron"
+    },
+    {
+      "name": "@wxt-dev/storage",
+      "title": "@wxt-dev/storage",
+      "url": "https://github.com/wxt-dev/wxt/tree/main/packages/storage",
+      "license": "MIT",
+      "copyright": "Copyright (c) 2023 Aaron"
+    },
+    {
+      "name": "@wxt-dev/i18n",
+      "title": "@wxt-dev/i18n",
+      "url": "https://github.com/wxt-dev/wxt/tree/main/packages/i18n",
+      "license": "MIT",
+      "copyright": "Copyright (c) 2023 Aaron"
+    },
+    {
+      "name": "@wxt-dev/browser",
+      "title": "@wxt-dev/browser",
+      "url": "https://github.com/wxt-dev/wxt/tree/main/packages/browser",
+      "license": "MIT",
+      "copyright": "Copyright (c) 2023 Aaron"
+    },
+    {
+      "name": "@webext-core/messaging",
+      "title": "@webext-core/messaging",
+      "url": "https://github.com/aklinker1/webext-core/tree/main/packages/messaging",
+      "license": "MIT",
+      "copyright": "Copyright (c) 2022 Aaron"
+    },
+    {
+      "name": "@webext-core/isolated-element",
+      "title": "@webext-core/isolated-element",
+      "url": "https://github.com/aklinker1/webext-core/tree/main/packages/isolated-element",
+      "license": "MIT",
+      "copyright": "Copyright (c) 2022 Aaron"
+    },
+    {
+      "name": "@aklinker1/zero-serialize-error",
+      "title": "zero-serialize-error",
+      "url": "https://github.com/aklinker1/zero-serialize-error",
+      "license": "MIT",
+      "copyright": "Copyright (c) 2026 Aaron"
+    },
+    {
+      "name": "@1natsu/wait-element",
+      "title": "wait-element",
+      "url": "https://github.com/1natsu172/wait-element",
+      "license": "MIT",
+      "copyright": "Copyright (c) 1natsu172 (https://1natsu172.mit-license.org)"
+    },
+    {
+      "name": "defu",
+      "title": "defu",
+      "url": "https://github.com/unjs/defu",
+      "license": "MIT",
+      "copyright": "Copyright (c) Pooya Parsa <pooya@pi0.io>"
+    },
+    {
+      "name": "is-potential-custom-element-name",
+      "title": "is-potential-custom-element-name",
+      "url": "https://github.com/mathiasbynens/is-potential-custom-element-name",
+      "license": "MIT",
+      "copyright": "Copyright Mathias Bynens <https://mathiasbynens.be/>"
+    },
+    {
+      "name": "many-keys-map",
+      "title": "many-keys-map",
+      "url": "https://github.com/fregante/many-keys-map",
+      "license": "MIT",
+      "copyright": "Copyright (c) Federico Brigante <me@fregante.com> (https://fregante.com)"
+    },
+    {
+      "name": "superlock",
+      "title": "superlock",
+      "url": "https://github.com/Kikobeats/superlock",
+      "license": "MIT",
+      "copyright": "Copyright © 2022 Kiko Beats <josefrancisco.verdu@gmail.com> (kikobeats.com)"
+    }
+  ]
+}

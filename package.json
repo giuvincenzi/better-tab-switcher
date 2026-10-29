@@ -12,7 +12,8 @@
     "test": "vitest run",
     "e2e": "wxt build && wxt build --mode e2e && playwright test",
     "postinstall": "wxt prepare",
-    "icons": "node scripts/icons.mjs"
+    "icons": "node scripts/icons.mjs",
+    "third-party": "node scripts/check-third-party.mjs"
   },
   "dependencies": {
     "@webext-core/messaging": "^4.0.1",

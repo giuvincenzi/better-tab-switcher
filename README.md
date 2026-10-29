@@ -25,4 +25,18 @@ See [.claude/rules/](.claude/rules/).
 
 ## License
 
-[MIT](LICENSE).
+[MIT](LICENSE). Third-party components in the extension, with their licenses in its `third-party-licenses.txt`:
+
+- [Solid](https://github.com/solidjs/solid) (MIT)
+- [WXT](https://github.com/wxt-dev/wxt) (MIT)
+- [@wxt-dev/storage](https://github.com/wxt-dev/wxt/tree/main/packages/storage) (MIT)
+- [@wxt-dev/i18n](https://github.com/wxt-dev/wxt/tree/main/packages/i18n) (MIT)
+- [@wxt-dev/browser](https://github.com/wxt-dev/wxt/tree/main/packages/browser) (MIT)
+- [@webext-core/messaging](https://github.com/aklinker1/webext-core/tree/main/packages/messaging) (MIT)
+- [@webext-core/isolated-element](https://github.com/aklinker1/webext-core/tree/main/packages/isolated-element) (MIT)
+- [zero-serialize-error](https://github.com/aklinker1/zero-serialize-error) (MIT)
+- [wait-element](https://github.com/1natsu172/wait-element) (MIT)
+- [defu](https://github.com/unjs/defu) (MIT)
+- [is-potential-custom-element-name](https://github.com/mathiasbynens/is-potential-custom-element-name) (MIT)
+- [many-keys-map](https://github.com/fregante/many-keys-map) (MIT)
+- [superlock](https://github.com/Kikobeats/superlock) (MIT)
