@@ -1,6 +1,6 @@
 import type { Page, Worker } from '@playwright/test';
 import { expect, test } from './fixtures';
-import { activeTitle, openPages, rows, selected, showSwitcher, switcher, useSettings } from './helpers';
+import { activeTitle, named, openPages, rows, selected, showSwitcher, switcher, useSettings } from './helpers';
 
 const pictures = (page: Page) => rows(page).locator('img[src^="data:image/webp"]');
 
@@ -39,12 +39,12 @@ test.describe('grid @grid', () => {
     // Both rows of tiles in sight: the grid scrolls only when the page is too low for it.
     const grid = switcher(page).locator('[role="listbox"]');
     expect(await grid.evaluate((list) => list.scrollHeight - list.clientHeight)).toBe(0);
-    await expect(selected(page)).toHaveAccessibleName('gamma');
+    await expect(selected(page)).toHaveAccessibleName(named('gamma'));
     await page.keyboard.press('ArrowDown');
-    await expect(selected(page)).toHaveAccessibleName('alpha');
+    await expect(selected(page)).toHaveAccessibleName(named('alpha'));
     await page.keyboard.press('ArrowUp');
     await page.keyboard.press('ArrowLeft');
-    await expect(selected(page)).toHaveAccessibleName('delta');
+    await expect(selected(page)).toHaveAccessibleName(named('delta'));
     await page.keyboard.press('Enter');
     await expect.poll(() => activeTitle(serviceWorker)).toBe('delta');
   });
@@ -159,15 +159,15 @@ test.describe('grid of icons @grid', () => {
     expect(columns).toBeLessThanOrEqual(9);
     // The selected tab's name, under the icons.
     const name = switcher(page).locator('[aria-hidden="true"]', { hasText: /^\w+$/ });
-    await expect(selected(page)).toHaveAccessibleName('tab11');
+    await expect(selected(page)).toHaveAccessibleName(named('tab11'));
     await expect(name).toHaveText('tab11');
     await page.keyboard.press('ArrowRight');
-    await expect(selected(page)).toHaveAccessibleName(order[2] as string);
+    await expect(selected(page)).toHaveAccessibleName(named(order[2] as string));
     await page.keyboard.press('ArrowDown');
-    await expect(selected(page)).toHaveAccessibleName(order[2 + columns] as string);
+    await expect(selected(page)).toHaveAccessibleName(named(order[2 + columns] as string));
     await expect(name).toHaveText(order[2 + columns] as string);
     await page.keyboard.press('ArrowLeft');
-    await expect(selected(page)).toHaveAccessibleName(order[1 + columns] as string);
+    await expect(selected(page)).toHaveAccessibleName(named(order[1 + columns] as string));
     await page.keyboard.press('Enter');
     await expect.poll(() => activeTitle(serviceWorker)).toBe(order[1 + columns]);
   });
@@ -195,7 +195,7 @@ test.describe('grid tiles @grid', () => {
     await showSwitcher(serviceWorker, 'next', 'icon');
     await rows(page).filter({ hasText: 'alpha' }).click({ button: 'middle' });
     await expect(rows(page)).toHaveCount(2);
-    await expect(selected(page)).toHaveAccessibleName('beta');
+    await expect(selected(page)).toHaveAccessibleName(named('beta'));
     await expect
       .poll(() => serviceWorker.evaluate(async () => (await chrome.tabs.query({})).map((t) => t.title).sort()))
       .toEqual(['beta', 'gamma']);

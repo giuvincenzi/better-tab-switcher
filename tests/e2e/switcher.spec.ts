@@ -1,6 +1,17 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures';
-import { activeTitle, closeBy, openPages, rows, selected, showSwitcher, switcher, useSettings } from './helpers';
+import {
+  activeTitle,
+  closeBy,
+  named,
+  openPages,
+  rowNames,
+  rows,
+  selected,
+  showSwitcher,
+  switcher,
+  useSettings,
+} from './helpers';
 
 test.describe('switcher in a page @switcher', () => {
   test('lists the tabs most recently used first, the previous one selected', async ({ context, serviceWorker }) => {
@@ -8,7 +19,7 @@ test.describe('switcher in a page @switcher', () => {
     await showSwitcher(serviceWorker);
     const page = current as Page;
     await expect(rows(page)).toHaveCount(3);
-    await expect(rows(page).locator('img + div')).toHaveText(['gamma', 'beta', 'alpha']);
+    await expect.poll(() => rowNames(page)).toEqual([named('gamma'), named('beta'), named('alpha')]);
     await expect(selected(page)).toContainText('beta');
   });
 

@@ -2,12 +2,14 @@ import { createSignal, For, type JSX, onCleanup, onMount } from 'solid-js';
 import { i18n } from '#i18n';
 import type { Settings } from '../../lib/settings/settings';
 import type { SettingsChange } from '../../lib/settings/store';
+import type { Shortcuts } from '../../lib/shortcuts';
 import styles from './SettingsPage.module.css';
 import {
   AppearanceSection,
   DetailsSection,
   ResetSection,
   type SectionId,
+  ShortcutsDialog,
   ShortcutsSection,
   SwitchingSection,
   sectionIds,
@@ -18,7 +20,9 @@ export interface SettingsPageProps {
   settings: Settings;
   save: (change: SettingsChange) => void;
   /** The shortcuts as Chrome writes them, "" when one has none. */
-  shortcuts: { next: string; previous: string };
+  shortcuts: Shortcuts;
+  /** Opened after the install because a shortcut has no keys: the shortcuts' dialog shows first (lib/shortcuts.ts). */
+  askShortcuts?: boolean;
   language: string;
   /** Now, for the example of "last used", in milliseconds since 1970. */
   now: number;
@@ -51,6 +55,7 @@ function sectionAtTop(): SectionId {
 /** The settings page: it looks like Chrome's settings, with a sidebar to its sections. */
 export function SettingsPage(props: SettingsPageProps): JSX.Element {
   const [current, setCurrent] = createSignal<SectionId>('appearance');
+  const [askingShortcuts, setAskingShortcuts] = createSignal(props.askShortcuts ?? false);
   // A section chosen in the sidebar stays marked while the page goes to it, and after: the last sections can't reach
   // the top of the window. Until the user scrolls the page.
   let chosen = false;
@@ -113,6 +118,13 @@ export function SettingsPage(props: SettingsPageProps): JSX.Element {
           <ResetSection onRestore={props.onRestore} />
         </main>
       </div>
+      <ShortcutsDialog
+        open={askingShortcuts()}
+        shortcuts={props.shortcuts}
+        guideUrl={props.guideUrl}
+        onChangeShortcut={props.onChangeShortcut}
+        onClose={() => setAskingShortcuts(false)}
+      />
     </div>
   );
 }

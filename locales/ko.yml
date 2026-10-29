@@ -52,8 +52,10 @@ Settings_AutoSelectNote: 선택한 탭이 몇 초 후에 열립니다. 남은 �
 Settings_AutoSelectTime: 자동 선택 시간
 Settings_TabDetails: 탭 세부정보
 Settings_Address: 웹사이트 주소
+Settings_FullAddress: 전체 주소
+Settings_FullAddressNote: 사이트만이 아니라 페이지의 전체 주소를 표시합니다.
 Settings_LongAddress: 긴 웹사이트 주소
-Settings_LongAddressNote: '"…"로 줄여서 표시하거나, 선택한 탭에서는 스크롤해서 전체 주소를 보여 줍니다.'
+Settings_LongAddressNote: 선택한 탭에서는 스크롤해서 전체 주소를 보여 주거나, "…"로 줄여서 표시합니다.
 Settings_LongAddressCut: 줄여서 표시
 Settings_LongAddressScroll: 스크롤
 Settings_PinnedIcon: 고정 탭 아이콘
@@ -72,6 +74,15 @@ Settings_PreviousTab: 이전 탭
 Settings_PreviousTabNote: 탭 전환기를 열고 이전 탭을 선택합니다.
 Settings_ChangeShortcut: 단축키 변경
 Settings_NoShortcut: 설정 안됨
+Settings_IconShortcut: 툴바 아이콘
+Settings_IconShortcutNote: 툴바 아이콘을 클릭한 것처럼 탭 전환기를 엽니다. 탭을 선택할 때까지 열려 있습니다.
+Settings_ShortcutMissing: 키가 지정되지 않은 단축키가 있습니다. 다른 확장 프로그램에서 이미 사용 중인 키일 수 있습니다. $1 버튼으로 원하는 키를 지정하세요.
+Settings_ShortcutsDialogTitle: 단축키 설정
+Settings_ShortcutsDialogText: Better Tab Switcher가 설치되었습니다. 열 때 사용할 키를 선택하세요.
 Settings_Reset: 설정 초기화
 Settings_RestoreDefaults: 설정을 기본값으로 복원
 Settings_Restore: 복원
+Settings_RestoreTitle: 설정을 기본값으로 복원하시겠습니까?
+Settings_RestoreText: 모든 설정이 Better Tab Switcher를 설치했을 때로 돌아갑니다. 키보드 단축키는 그대로 유지됩니다.
+Dialog_Done: 완료
+Dialog_Cancel: 취소

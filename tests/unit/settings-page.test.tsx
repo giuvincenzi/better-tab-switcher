@@ -13,7 +13,11 @@ afterEach(() => {
 });
 
 /** The page with the settings kept in memory, as the settings page keeps them in storage. */
-function open(start: Partial<Settings> = {}, shortcuts = { next: 'Alt+S', previous: 'Alt+Shift+S' }) {
+function open(
+  start: Partial<Settings> = {},
+  shortcuts = { next: 'Alt+S', previous: 'Alt+Shift+S', icon: '' },
+  askShortcuts = false,
+) {
   const [settings, setSettings] = createSignal<Settings>({ ...defaultSettings, ...start });
   const saved: SettingsChange[] = [];
   const save = (change: SettingsChange) => {
@@ -29,6 +33,7 @@ function open(start: Partial<Settings> = {}, shortcuts = { next: 'Alt+S', previo
         settings={settings()}
         save={save}
         shortcuts={shortcuts}
+        askShortcuts={askShortcuts}
         language="en"
         now={Date.UTC(2026, 9, 28, 12)}
         iconUrl=""
@@ -92,16 +97,16 @@ describe('SettingsPage', () => {
   it('saves a switch at once', () => {
     const { host, saved } = open();
     const compact = toggle(host, 'Compact');
-    expect(compact.getAttribute('aria-checked')).toBe('true');
-    compact.click();
-    expect(saved).toEqual([{ compact: false }]);
     expect(compact.getAttribute('aria-checked')).toBe('false');
+    compact.click();
+    expect(saved).toEqual([{ compact: true }]);
+    expect(compact.getAttribute('aria-checked')).toBe('true');
   });
 
   it('saves a tab detail on its own', () => {
     const { host, saved } = open();
     toggle(host, 'Last used').click();
-    expect(saved).toEqual([{ details: { lastUsed: true } }]);
+    expect(saved).toEqual([{ details: { lastUsed: false } }]);
   });
 
   it('keeps numbers within their limits', () => {
@@ -132,11 +137,43 @@ describe('SettingsPage', () => {
     expect(number(host, 'Auto-select time').disabled).toBe(false);
   });
 
-  it('turns on the long addresses choice only with the website address', () => {
-    const { host } = open();
-    expect(select(host, 'Long website addresses').disabled).toBe(true);
-    toggle(host, 'Website address').click();
+  it('turns on Full address and the long addresses choice only with the website address', () => {
+    const { host, saved } = open();
+    expect(toggle(host, 'Full address').disabled).toBe(false);
     expect(select(host, 'Long website addresses').disabled).toBe(false);
+    toggle(host, 'Website address').click();
+    expect(toggle(host, 'Full address').disabled).toBe(true);
+    expect(select(host, 'Long website addresses').disabled).toBe(true);
+    toggle(host, 'Full address').click();
+    expect(saved).toEqual([{ details: { address: false } }]);
+    toggle(host, 'Website address').click();
+    expect(toggle(host, 'Full address').disabled).toBe(false);
+    expect(select(host, 'Long website addresses').disabled).toBe(false);
+  });
+
+  it('lists the tab details in their order: the icons, the last used time, then the address and its two settings', () => {
+    const { host } = open();
+    const labels = [...host.querySelectorAll('#details [aria-labelledby]')].map(
+      (element) => document.getElementById(element.getAttribute('aria-labelledby') ?? '')?.textContent,
+    );
+    expect(labels).toEqual([
+      'Pinned tab icon',
+      'Playing audio icon',
+      'Inactive tabs',
+      'Tab group color',
+      'Last used',
+      'Website address',
+      'Full address',
+      'Long website addresses',
+    ]);
+  });
+
+  it('explains Full address and the long addresses choice under their names', () => {
+    const { host } = open();
+    expect(describedBy(toggle(host, 'Full address'))).toBe('The whole address of the page, not only the site.');
+    expect(describedBy(select(host, 'Long website addresses'))).toBe(
+      'Scrolling on the selected tab to show them whole, or cut short with “…”.',
+    );
   });
 
   it('writes the units and the example in the language in use', () => {
@@ -146,9 +183,9 @@ describe('SettingsPage', () => {
   });
 
   it('shows the shortcuts, and opens the page to change them', () => {
-    const { host, handlers } = open({}, { next: 'Alt+S', previous: '' });
+    const { host, handlers } = open({}, { next: 'Alt+S', previous: '', icon: '' });
     const keys = [...host.querySelectorAll('kbd')].map((kbd) => kbd.textContent);
-    expect(keys).toEqual(['Alt+S', 'Not set']);
+    expect(keys).toEqual(['Alt+S', 'Not set', 'Not set']);
     [...host.querySelectorAll('button')].find((button) => button.textContent === 'Change shortcut')?.click();
     expect(handlers.onChangeShortcut).toHaveBeenCalled();
     expect(host.querySelector('a[href="https://example.com/guide"]')?.textContent).toBe('How to use Ctrl+Tab');
@@ -174,11 +211,21 @@ describe('SettingsPage', () => {
     userAgent.mockRestore();
   });
 
-  it('restores the default settings', () => {
+  it('restores the default settings once the user confirms it, and nothing when the user cancels', async () => {
     const { host, handlers } = open();
-    const restore = [...host.querySelectorAll('button')].find((button) => button.textContent === 'Restore');
-    restore?.click();
-    expect(handlers.onRestore).toHaveBeenCalled();
+    const button = (within: ParentNode, text: string) =>
+      [...within.querySelectorAll('button')].find((b) => b.textContent === text) as HTMLButtonElement;
+    button(host, 'Restore').click();
+    const dialog = host.querySelector('dialog[open]') as HTMLDialogElement;
+    expect(dialog.getAttribute('role')).toBe('alertdialog');
+    expect(dialog.querySelector('h2')?.textContent).toBe('Restore default settings?');
+    button(dialog, 'Cancel').click();
+    await vi.waitFor(() => expect(host.querySelector('dialog[open]')).toBeNull());
+    expect(handlers.onRestore).not.toHaveBeenCalled();
+    button(host, 'Restore').click();
+    button(host.querySelector('dialog[open]') as HTMLDialogElement, 'Restore').click();
+    expect(handlers.onRestore).toHaveBeenCalledTimes(1);
+    await vi.waitFor(() => expect(host.querySelector('dialog[open]')).toBeNull());
   });
 });
 
@@ -186,7 +233,7 @@ describe('SettingsPage', () => {
 const notDefaults: Settings = {
   theme: 'dark',
   view: 'list',
-  compact: false,
+  compact: true,
   listRows: 'fit',
   gridShow: 'icons',
   scope: 'all',
@@ -198,13 +245,14 @@ const notDefaults: Settings = {
   toolbar: false,
   chromePagesWindow: false,
   details: {
-    address: true,
-    longAddress: 'scroll',
+    address: false,
+    fullAddress: false,
+    longAddress: 'cut',
     pinnedIcon: false,
     audioIcon: false,
     sleeping: false,
     groupColor: false,
-    lastUsed: true,
+    lastUsed: false,
   },
 };
 
@@ -221,6 +269,7 @@ const switches: [string, (settings: Settings) => boolean, (on: boolean) => Setti
   ],
   ['Auto-select', (s) => s.autoSelect, (autoSelect) => ({ autoSelect })],
   ['Website address', (s) => s.details.address, (address) => ({ details: { address } })],
+  ['Full address', (s) => s.details.fullAddress, (fullAddress) => ({ details: { fullAddress } })],
   ['Pinned tab icon', (s) => s.details.pinnedIcon, (pinnedIcon) => ({ details: { pinnedIcon } })],
   ['Playing audio icon', (s) => s.details.audioIcon, (audioIcon) => ({ details: { audioIcon } })],
   ['Inactive tabs', (s) => s.details.sleeping, (sleeping) => ({ details: { sleeping } })],
@@ -250,7 +299,7 @@ describe('SettingsPage, every setting', () => {
     expect(select(host, 'Show tabs from').value).toBe('all');
     expect(number(host, 'Delay before the switcher appears').value).toBe('400');
     expect(number(host, 'Auto-select time').value).toBe('7');
-    expect(select(host, 'Long website addresses').value).toBe('scroll');
+    expect(select(host, 'Long website addresses').value).toBe('cut');
   });
 
   it("shows the grid's choice as saved", () => {
@@ -265,8 +314,14 @@ describe('SettingsPage, every setting', () => {
       for (const [label, value, changeOf] of switches) {
         const { host, saved } = open(start);
         toggle(host, label).click();
-        expect(saved, label).toEqual([changeOf(!value(start))]);
-        expect(toggle(host, label).getAttribute('aria-checked'), label).toBe(String(!value(start)));
+        if (label === 'Full address' && !start.details.address) {
+          // Turned off with the website address: the click changes nothing.
+          expect(saved, label).toEqual([]);
+          expect(toggle(host, label).getAttribute('aria-checked'), label).toBe(String(value(start)));
+        } else {
+          expect(saved, label).toEqual([changeOf(!value(start))]);
+          expect(toggle(host, label).getAttribute('aria-checked'), label).toBe(String(!value(start)));
+        }
         dispose?.();
       }
     }
@@ -280,6 +335,7 @@ describe('SettingsPage, every setting', () => {
       ['Theme', 'device', { theme: 'device' }],
       ['Show tabs from', 'all', { scope: 'all' }],
       ['Tabs shown before scrolling', '6', { listRows: 6 }],
+      ['Long website addresses', 'cut', { details: { longAddress: 'cut' } }],
       ['Long website addresses', 'scroll', { details: { longAddress: 'scroll' } }],
     ];
     for (const [label, value, expected] of choices) {
@@ -294,7 +350,7 @@ describe('SettingsPage, every setting', () => {
     const labels = (name: string) => [...select(host, name).options].map((option) => option.textContent);
     expect(labels('Theme')).toEqual(['Device theme', 'Light', 'Dark']);
     expect(labels('Show tabs from')).toEqual(['This window', 'All windows']);
-    expect(labels('Long website addresses')).toEqual(['Cut short', 'Scroll']);
+    expect(labels('Long website addresses')).toEqual(['Scroll', 'Cut short']);
   });
 
   it("saves the grid's choice between previews and icons", () => {
@@ -342,17 +398,19 @@ describe('SettingsPage, every setting', () => {
     expect(number(host, 'Auto-select time').disabled).toBe(true);
   });
 
-  it('shows the auto-select time and the long addresses faded while what they depend on is off', () => {
-    const { host } = open();
+  it('shows the auto-select time, Full address and the long addresses faded while what they depend on is off', () => {
+    const { host } = open({ details: { ...defaultSettings.details, address: false } });
     const row = (name: string) =>
       [...host.querySelectorAll('div[id]')].find((element) => element.textContent === name)?.parentElement
         ?.parentElement as HTMLElement;
     expect(Number(getComputedStyle(row('Auto-select time')).opacity)).toBeLessThan(1);
+    expect(Number(getComputedStyle(row('Full address')).opacity)).toBeLessThan(1);
     expect(Number(getComputedStyle(row('Long website addresses')).opacity)).toBeLessThan(1);
     expect(Number(getComputedStyle(row('Delay before the switcher appears')).opacity)).toBe(1);
     toggle(host, 'Auto-select').click();
     toggle(host, 'Website address').click();
     expect(Number(getComputedStyle(row('Auto-select time')).opacity)).toBe(1);
+    expect(Number(getComputedStyle(row('Full address')).opacity)).toBe(1);
     expect(Number(getComputedStyle(row('Long website addresses')).opacity)).toBe(1);
   });
 });
@@ -432,10 +490,10 @@ describe('SettingsPage, with the keyboard', () => {
     const compact = toggle(host, 'Compact');
     compact.focus();
     await userEvent.keyboard(' ');
-    expect(saved).toEqual([{ compact: false }]);
+    expect(saved).toEqual([{ compact: true }]);
     await userEvent.keyboard('{Enter}');
-    expect(saved).toEqual([{ compact: false }, { compact: true }]);
-    expect(compact.getAttribute('aria-checked')).toBe('true');
+    expect(saved).toEqual([{ compact: true }, { compact: false }]);
+    expect(compact.getAttribute('aria-checked')).toBe('false');
   });
 
   it('chooses the view with the arrow keys', async () => {
@@ -454,7 +512,7 @@ describe('SettingsPage, with the keyboard', () => {
   });
 
   it('reaches the switches, lists and buttons with Tab, and skips the controls turned off', async () => {
-    const { host } = open();
+    const { host } = open({ details: { ...defaultSettings.details, address: false } });
     const reached: Element[] = [];
     (host.querySelector('a') as HTMLElement).focus();
     for (let i = 0; i < 40 && host.contains(document.activeElement); i++) {
@@ -466,27 +524,62 @@ describe('SettingsPage, with the keyboard', () => {
     expect(reached).toContain(number(host, 'Delay before the switcher appears'));
     expect(reached).toContain(button(host, 'Restore')[0]);
     expect(reached).not.toContain(number(host, 'Auto-select time'));
+    expect(reached).not.toContain(toggle(host, 'Full address'));
     expect(reached).not.toContain(select(host, 'Long website addresses'));
   });
 });
 
 describe('SettingsPage, shortcuts and restore', () => {
   it('shows "Not set" for each shortcut the browser gives none', () => {
-    const { host } = open({}, { next: '', previous: '' });
-    expect([...host.querySelectorAll('kbd')].map((kbd) => kbd.textContent)).toEqual(['Not set', 'Not set']);
+    const { host } = open({}, { next: '', previous: '', icon: '' });
+    expect([...host.querySelectorAll('kbd')].map((kbd) => kbd.textContent)).toEqual(['Not set', 'Not set', 'Not set']);
   });
 
-  it('shows the shortcuts as the browser writes them', () => {
-    const { host } = open({}, { next: 'Ctrl+Shift+Comma', previous: '⌥⇧Y' });
-    expect([...host.querySelectorAll('kbd')].map((kbd) => kbd.textContent)).toEqual(['Ctrl+Shift+Comma', '⌥⇧Y']);
+  it("shows the shortcuts as the browser writes them, the toolbar icon's third", () => {
+    const { host } = open({}, { next: 'Ctrl+Shift+Comma', previous: '⌃⇧S', icon: 'Alt+K' });
+    expect([...host.querySelectorAll('kbd')].map((kbd) => kbd.textContent)).toEqual([
+      'Ctrl+Shift+Comma',
+      '⌃⇧S',
+      'Alt+K',
+    ]);
+    expect(host.textContent).toContain('Toolbar icon');
+  });
+
+  it("warns, after the section's note, when the next or previous tab shortcut has no keys, not for the icon's", () => {
+    const warning = (shortcuts: { next: string; previous: string; icon: string }) => {
+      const { host } = open({}, shortcuts);
+      const text = host.querySelector('#shortcuts [role="status"]')?.textContent ?? null;
+      dispose?.();
+      host.remove();
+      return text;
+    };
+    const missing =
+      'A shortcut has no keys, maybe because another extension already uses them. Choose your own keys with Change shortcut.';
+    expect(warning({ next: '', previous: 'Alt+Shift+S', icon: '' })).toBe(missing);
+    expect(warning({ next: 'Alt+S', previous: '', icon: '' })).toBe(missing);
+    expect(warning({ next: 'Alt+S', previous: 'Alt+Shift+S', icon: '' })).toBeNull();
+  });
+
+  it("opens on the shortcuts' dialog when asked (after the install), with the same section, closed with Done", async () => {
+    const { host } = open({}, { next: '', previous: 'Alt+Shift+S', icon: '' }, true);
+    const dialog = host.querySelector('dialog[open]') as HTMLDialogElement;
+    expect(dialog.querySelector('h2')?.textContent).toBe('Choose your keyboard shortcuts');
+    expect(dialog.querySelector('[role="status"]')).not.toBeNull();
+    expect([...dialog.querySelectorAll('kbd')].map((kbd) => kbd.textContent)).toEqual([
+      'Not set',
+      'Alt+Shift+S',
+      'Not set',
+    ]);
+    [...dialog.querySelectorAll('button')].find((button) => button.textContent === 'Done')?.click();
+    await vi.waitFor(() => expect(host.querySelector('dialog[open]')).toBeNull());
   });
 
   it('has a button to change each shortcut, named by its shortcut', () => {
     const { host, handlers } = open();
     const buttons = button(host, 'Change shortcut');
-    expect(buttons.map(describedBy)).toEqual(['Next tab', 'Previous tab']);
+    expect(buttons.map(describedBy)).toEqual(['Next tab', 'Previous tab', 'Toolbar icon']);
     for (const element of buttons) element.click();
-    expect(handlers.onChangeShortcut).toHaveBeenCalledTimes(2);
+    expect(handlers.onChangeShortcut).toHaveBeenCalledTimes(3);
   });
 
   it('opens the guide in a new tab', () => {
@@ -502,6 +595,8 @@ describe('SettingsPage, shortcuts and restore', () => {
     expect(others).toEqual([]);
     expect(describedBy(restore as Element)).toBe('Restore default settings');
     restore?.click();
+    // The confirmation's own Restore.
+    button(host.querySelector('dialog[open]') as HTMLElement, 'Restore')[0]?.click();
     expect(handlers.onRestore).toHaveBeenCalledTimes(1);
     expect(saved).toEqual([]);
   });

@@ -11,11 +11,12 @@ import {
   showSwitcher,
   switcher,
   testBrowser,
+  useSettings,
 } from './helpers';
 
-async function openSettings(context: BrowserContext, extensionId: string): Promise<Page> {
+async function openSettings(context: BrowserContext, extensionId: string, query = ''): Promise<Page> {
   const page = await context.newPage();
-  await page.goto(`chrome-extension://${extensionId}/options.html`);
+  await page.goto(`chrome-extension://${extensionId}/options.html${query}`);
   return page;
 }
 
@@ -98,7 +99,12 @@ test.describe('settings page @settings', () => {
   test("opens the browser's shortcuts page to change a shortcut", async ({ context, extensionId, serviceWorker }) => {
     const settings = await openSettings(context, extensionId);
     const defaults = await defaultShortcuts(serviceWorker);
-    await expect(settings.locator('kbd')).toHaveText([shortcutText(defaults.next), shortcutText(defaults.previous)]);
+    // The toolbar icon's, third, has no keys unless the user gives it some.
+    await expect(settings.locator('kbd')).toHaveText([
+      shortcutText(defaults.next),
+      shortcutText(defaults.previous),
+      'Not set',
+    ]);
     const opened = context.waitForEvent('page', (tab) => tab.url() === shortcutsPageUrl(testBrowser));
     await settings.getByRole('button', { name: 'Change shortcut' }).first().click();
     await opened;
@@ -108,9 +114,28 @@ test.describe('settings page @settings', () => {
     const settings = await openSettings(context, extensionId);
     const compact = settings.getByRole('switch', { name: 'Compact' });
     await compact.click();
-    await expect(compact).not.toBeChecked();
-    await settings.getByRole('button', { name: 'Restore' }).click();
     await expect(compact).toBeChecked();
+    await settings.getByRole('button', { name: 'Restore' }).click();
+    // Nothing yet: the user confirms it first.
+    const confirmation = settings.getByRole('alertdialog', { name: 'Restore default settings?' });
+    await expect(confirmation).toBeVisible();
+    await expect(compact).toBeChecked();
+    await confirmation.getByRole('button', { name: 'Restore' }).click();
+    await expect(confirmation).toBeHidden();
+    await expect(compact).not.toBeChecked();
+  });
+
+  test('opens on the shortcuts dialog the install asks for, with the shortcuts section, closed with Done', async ({
+    context,
+    extensionId,
+  }) => {
+    const settings = await openSettings(context, extensionId, '?shortcuts');
+    const dialog = settings.getByRole('dialog', { name: 'Choose your keyboard shortcuts' });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('heading', { name: 'Keyboard shortcuts', exact: true })).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Change shortcut' })).toHaveCount(3);
+    await dialog.getByRole('button', { name: 'Done' }).click();
+    await expect(dialog).toBeHidden();
   });
 
   test("takes the switcher's toolbar away from the next switcher with Show toolbar off", async ({
@@ -138,6 +163,8 @@ test.describe("the switcher's toolbar @settings", () => {
     context,
     serviceWorker,
   }) => {
+    // On by default: off here, for the toolbar to turn it on.
+    await useSettings(serviceWorker, { details: { address: false } } as never);
     const [, current] = await openPages(context, ['alpha', 'beta']);
     const page = current as Page;
     await showSwitcher(serviceWorker, 'next', 'icon');
@@ -146,14 +173,14 @@ test.describe("the switcher's toolbar @settings", () => {
     await expect(selected(page)).toHaveAccessibleName('alpha');
     await address.click();
     await expect(address).toHaveAttribute('aria-pressed', 'true');
-    await expect(selected(page)).toHaveAccessibleName('alpha, bts.test');
+    await expect(selected(page)).toHaveAccessibleName('alpha, bts.test/alpha');
     await expect(rows(page).getByText('bts.test')).toHaveCount(2);
     // The click left the keyboard on the tabs: Esc closes without opening one.
     await page.keyboard.press('Escape');
     await expect(rows(page)).toHaveCount(0);
     expect(await activeTitle(serviceWorker)).toBe('beta');
     await showSwitcher(serviceWorker, 'next', 'icon');
-    await expect(selected(page)).toHaveAccessibleName('alpha, bts.test');
+    await expect(selected(page)).toHaveAccessibleName('alpha, bts.test/alpha');
     await expect(address).toHaveAttribute('aria-pressed', 'true');
   });
 });
@@ -169,13 +196,14 @@ test.describe('settings changed in two pages at once @settings', () => {
         };
         return [settings?.toolbar, settings?.compact];
       });
+    // Show toolbar starts on and Compact off (the defaults): each click turns both the other way.
     for (const on of [false, true, false, true, false, true, false, true, false, true]) {
       // The same moment in both pages: each one changes its own setting.
       await Promise.all([
         first.getByRole('switch', { name: 'Show toolbar' }).click(),
         second.getByRole('switch', { name: 'Compact' }).click(),
       ]);
-      await expect.poll(saved).toEqual([on, on]);
+      await expect.poll(saved).toEqual([on, !on]);
     }
   });
 });

@@ -98,6 +98,14 @@ export const button = (host: HTMLElement, name: string) =>
   host.querySelector(`button[aria-label="${name}"]`) as HTMLButtonElement;
 /** The panel: the box around the toolbar and the tabs. */
 export const panel = (host: HTMLElement) => (host.firstElementChild as HTMLElement).firstElementChild as HTMLElement;
+/**
+ * The auto-select line's animation under `element`, if it runs: the selected tab's address scrolling (on by default) is
+ * another animation.
+ */
+export const autoSelectLine = (element: HTMLElement) =>
+  element
+    .getAnimations({ subtree: true })
+    .find((animation) => animation instanceof CSSAnimation && animation.animationName.includes('auto-select'));
 export const columnsShown = (host: HTMLElement) =>
   getComputedStyle(listbox(host)).gridTemplateColumns.split(' ').length;
 

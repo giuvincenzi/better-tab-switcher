@@ -12,6 +12,7 @@ import { applyLanguage, languageInUse } from '../../lib/i18n/language';
 import { CTRL_TAB_GUIDE_URL } from '../../lib/links';
 import { sendMessage } from '../../lib/messages';
 import { loadSettings, watchSettings } from '../../lib/settings/store';
+import { readShortcuts } from '../../lib/shortcuts';
 
 // The settings page: every change is saved at once by the background, the one writer of the settings
 // (lib/settings/service.ts), and the page follows changes made elsewhere (another settings page, Restore) and the
@@ -31,18 +32,13 @@ watchSettings((saved) => {
 // Back from chrome://extensions/shortcuts, the page shows the new keys.
 window.addEventListener('focus', async () => setShortcuts(await readShortcuts()));
 
-async function readShortcuts() {
-  const commands = await browser.commands.getAll();
-  const keys = (name: string) => commands.find((command) => command.name === name)?.shortcut ?? '';
-  return { next: keys('next-tab'), previous: keys('previous-tab') };
-}
-
 render(
   () => (
     <SettingsPage
       settings={settings()}
       save={(change) => void sendMessage('saveSettings', change)}
       shortcuts={shortcuts()}
+      askShortcuts={new URLSearchParams(location.search).has('shortcuts')}
       language={languageInUse()}
       now={Date.now()}
       iconUrl={browser.runtime.getURL('/icon/128.png')}

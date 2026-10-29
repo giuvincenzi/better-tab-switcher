@@ -110,8 +110,11 @@ Settings_AutoSelectTime: Auto-select time
 # Section: what each tab shows.
 Settings_TabDetails: Tab details
 Settings_Address: Website address
+# Under Settings_Address, for it: the page's whole address, or only its site.
+Settings_FullAddress: Full address
+Settings_FullAddressNote: The whole address of the page, not only the site.
 Settings_LongAddress: Long website addresses
-Settings_LongAddressNote: Cut short with “…”, or scrolling on the selected tab to show them whole.
+Settings_LongAddressNote: Scrolling on the selected tab to show them whole, or cut short with “…”.
 Settings_LongAddressCut: Cut short
 Settings_LongAddressScroll: Scroll
 Settings_PinnedIcon: Pinned tab icon
@@ -138,9 +141,25 @@ Settings_PreviousTabNote: Opens the switcher and moves the selection to the prev
 Settings_ChangeShortcut: Change shortcut
 # In place of the keys, when a shortcut has none.
 Settings_NoShortcut: Not set
+# The browser's own shortcut for the toolbar icon, the third of the section.
+Settings_IconShortcut: Toolbar icon
+Settings_IconShortcutNote: Opens the switcher like a click on the toolbar icon. It stays open until you choose a tab.
+# A warning under the section's note when the next or previous tab shortcut has no keys. $1: the button's text
+# (Settings_ChangeShortcut).
+Settings_ShortcutMissing: A shortcut has no keys, maybe because another extension already uses them. Choose your own keys with $1.
+# The dialog that opens after the install when a shortcut has no keys: its title, its sentence.
+Settings_ShortcutsDialogTitle: Choose your keyboard shortcuts
+Settings_ShortcutsDialogText: Better Tab Switcher is installed. Choose the keys that open it.
 
 # Section: back to the default settings.
 Settings_Reset: Reset
 Settings_RestoreDefaults: Restore default settings
-# The button of Settings_RestoreDefaults.
+# The button of Settings_RestoreDefaults, and of its confirmation.
 Settings_Restore: Restore
+# The confirmation before every setting goes back to its default: its title, its sentence.
+Settings_RestoreTitle: Restore default settings?
+Settings_RestoreText: Every setting goes back to how it was when you installed Better Tab Switcher. Your keyboard shortcuts stay as they are.
+
+# A dialog's buttons: closing it once the user has done what it asks, closing it without doing what it asks.
+Dialog_Done: Done
+Dialog_Cancel: Cancel

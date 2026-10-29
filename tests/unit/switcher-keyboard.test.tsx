@@ -31,12 +31,12 @@ afterEach(async () => {
 describe('Switcher keyboard in the list', () => {
   it('selects the last tab when opened going back', () => {
     const { host } = openSwitcher({}, { direction: 'previous' });
-    expect(selectedName(host)).toBe('Running plan');
+    expect(selectedName(host)).toBe('Running plan, example.com/4');
   });
 
   it('selects the only tab when there is one, and opens it on release', () => {
     const { host, press, handlers } = openSwitcher({}, { tabs: [tabs[0] as (typeof tabs)[0]] });
-    expect(selectedName(host)).toBe('Pull request #12');
+    expect(selectedName(host)).toBe('Pull request #12, example.com/1');
     press('Alt', 'keyup');
     expect(handlers.onOpen).toHaveBeenCalledWith(tabs[0]);
   });
@@ -44,16 +44,16 @@ describe('Switcher keyboard in the list', () => {
   it('goes round: down from the last tab to the first, up from the first to the last', () => {
     const { host, press } = openSwitcher({}, { direction: 'previous' });
     press('ArrowDown');
-    expect(selectedName(host)).toBe('Pull request #12');
+    expect(selectedName(host)).toBe('Pull request #12, example.com/1');
     press('ArrowUp');
-    expect(selectedName(host)).toBe('Running plan');
+    expect(selectedName(host)).toBe('Running plan, example.com/4');
   });
 
   it('ignores left and right in the list', () => {
     const { host, press } = openSwitcher();
     press('ArrowRight');
     press('ArrowLeft');
-    expect(selectedName(host)).toBe('Inbox (3)');
+    expect(selectedName(host)).toBe('Inbox (3), example.com/2');
   });
 
   it('ignores the release of Shift, which goes back with Alt held', () => {
@@ -66,7 +66,7 @@ describe('Switcher keyboard in the list', () => {
     const { host } = openSwitcher({ listRows: 6 }, { tabs: manyTabs(30), direction: 'previous' });
     const list = listbox(host).getBoundingClientRect();
     const selected = host.querySelector('[aria-selected="true"]') as HTMLElement;
-    expect(selected.getAttribute('aria-label')).toBe('Tab 30');
+    expect(selected.getAttribute('aria-label')).toBe('Tab 30, example.com/30');
     const row = selected.getBoundingClientRect();
     expect(row.top).toBeGreaterThanOrEqual(list.top);
     expect(row.bottom).toBeLessThanOrEqual(list.bottom + 0.5);
@@ -115,7 +115,7 @@ describe('Switcher keyboard while searching', () => {
     const { host, press } = openSwitcher();
     typeInSearch(host, 'plan');
     press('ArrowDown');
-    expect(selectedName(host)).toBe('Q4 planning');
+    expect(selectedName(host)).toBe('Q4 planning, example.com/3');
     expect(document.activeElement).toBe(listbox(host));
     press('ArrowUp');
     expect(selectedName(host)).toBeUndefined();
@@ -142,7 +142,7 @@ describe('Switcher keyboard while searching', () => {
     const { host } = openSwitcher();
     typeInSearch(host, 'plan');
     typeInSearch(host, '');
-    expect(names(host)).toEqual(tabs.map((t) => t.title));
+    expect(names(host)).toEqual(tabs.map((t) => `${t.title}, example.com/${t.id}`));
   });
 
   it('leaves left and right to the search field in the grid', () => {
@@ -171,32 +171,32 @@ describe('Switcher keyboard in the grid', () => {
   it('stays put going down where the last row has no tab under it', async () => {
     const { host, press } = await openFive();
     press('ArrowRight');
-    expect(selectedName(host)).toBe('C');
+    expect(selectedName(host)).toBe('C, example.com/3');
     press('ArrowDown');
-    expect(selectedName(host)).toBe('C');
+    expect(selectedName(host)).toBe('C, example.com/3');
   });
 
   it('goes down onto the shorter last row, then no further', async () => {
     const { host, press } = await openFive();
     press('ArrowDown');
-    expect(selectedName(host)).toBe('E');
+    expect(selectedName(host)).toBe('E, example.com/5');
     press('ArrowDown');
-    expect(selectedName(host)).toBe('E');
+    expect(selectedName(host)).toBe('E, example.com/5');
     press('ArrowUp');
-    expect(selectedName(host)).toBe('B');
+    expect(selectedName(host)).toBe('B, example.com/2');
   });
 
   it('stays in the first row going up, when not searching', async () => {
     const { host, press } = await openFive();
     press('ArrowUp');
-    expect(selectedName(host)).toBe('B');
+    expect(selectedName(host)).toBe('B, example.com/2');
   });
 
   it('goes up from the first row to the search field while searching', async () => {
     const { host, press } = await openFive();
     typeInSearch(host, ' ');
     press('ArrowDown');
-    expect(selectedName(host)).toBe('B');
+    expect(selectedName(host)).toBe('B, example.com/2');
     press('ArrowUp');
     expect(selectedName(host)).toBeUndefined();
     expect(document.activeElement).toBe(searchField(host));
@@ -206,12 +206,12 @@ describe('Switcher keyboard in the grid', () => {
     const { host, press } = await openFive();
     press('ArrowRight');
     press('ArrowRight');
-    expect(selectedName(host)).toBe('D');
+    expect(selectedName(host)).toBe('D, example.com/4');
     press('ArrowRight');
     press('ArrowRight');
-    expect(selectedName(host)).toBe('A');
+    expect(selectedName(host)).toBe('A, example.com/1');
     press('ArrowLeft');
-    expect(selectedName(host)).toBe('E');
+    expect(selectedName(host)).toBe('E, example.com/5');
   });
 
   it("moves a whole row of the grid's columns in the grid of icons too", async () => {
@@ -222,7 +222,7 @@ describe('Switcher keyboard in the grid', () => {
     const { host, press } = openSwitcher({ view: 'grid', gridShow: 'icons' }, { tabs: many });
     expect(columnsShown(host)).toBe(columns);
     press('ArrowDown');
-    expect(selectedName(host)).toBe(`Tab ${2 + columns}`);
+    expect(selectedName(host)).toBe(`Tab ${2 + columns}, example.com/${2 + columns}`);
   });
 });
 
@@ -236,7 +236,7 @@ describe('Switcher keyboard in the toolbar', () => {
     compact.focus();
     keyOn(compact, 'ArrowDown');
     keyOn(compact, 'Enter');
-    expect(selectedName(host)).toBe('Inbox (3)');
+    expect(selectedName(host)).toBe('Inbox (3), example.com/2');
     expect(handlers.onOpen).not.toHaveBeenCalled();
   });
 
@@ -252,8 +252,8 @@ describe('Switcher keyboard in the toolbar', () => {
     const { host, press } = openSwitcher();
     (host.querySelector('input[type="radio"][value="grid"]') as HTMLInputElement).click();
     expect(options(host)).toHaveLength(4);
-    expect(selectedName(host)).toBe('Inbox (3)');
+    expect(selectedName(host)).toBe('Inbox (3), example.com/2');
     press('ArrowLeft');
-    expect(selectedName(host)).toBe('Pull request #12');
+    expect(selectedName(host)).toBe('Pull request #12, example.com/1');
   });
 });

@@ -1,10 +1,13 @@
-import { type JSX, Show } from 'solid-js';
+import { createSignal, type JSX, Show } from 'solid-js';
 import { i18n } from '#i18n';
 import { BROWSER_NAME_TEXT, browserName, STORE_NAME_TEXT } from '../../lib/browser';
 import { timeAgo } from '../../lib/i18n/time';
 import { limits, ROW_CHOICES, type RowCount, type Settings, type TabDetails } from '../../lib/settings/settings';
 import type { SettingsChange } from '../../lib/settings/store';
+import { type Shortcuts, shortcutMissing } from '../../lib/shortcuts';
 import { Button } from '../ui/Button';
+import { Dialog } from '../ui/Dialog';
+import { Notice } from '../ui/Notice';
 import { NumberField } from '../ui/NumberField';
 import { SegmentedControl } from '../ui/SegmentedControl';
 import { Select, type SelectOption } from '../ui/Select';
@@ -187,10 +190,11 @@ export function SwitchingSection(props: SectionProps): JSX.Element {
 }
 
 export function DetailsSection(props: SectionProps & { now: number }): JSX.Element {
-  const detail = (key: Exclude<keyof TabDetails, 'longAddress'>, label: string, note?: string) => (
+  const detail = (key: Exclude<keyof TabDetails, 'longAddress'>, label: string, note?: string, dim?: boolean) => (
     <ToggleRow
       label={label}
       note={note}
+      dim={dim}
       checked={props.settings.details[key]}
       onChange={(on) => props.save({ details: { [key]: on } })}
     />
@@ -198,7 +202,19 @@ export function DetailsSection(props: SectionProps & { now: number }): JSX.Eleme
   const fifteenMinutesAgo = () => timeAgo(props.now - 15 * 60_000, props.now, props.language);
   return (
     <SettingsSection id="details" title={sectionTitle('details')}>
+      {detail('pinnedIcon', i18n.t('Settings_PinnedIcon'))}
+      {detail('audioIcon', i18n.t('Settings_AudioIcon'))}
+      {detail('sleeping', i18n.t('Settings_Sleeping'), i18n.t('Settings_SleepingNote'))}
+      {detail('groupColor', i18n.t('Settings_GroupColor'))}
+      {detail('lastUsed', i18n.t('Settings_LastUsed'), i18n.t('Settings_LastUsedNote', [fifteenMinutesAgo()]))}
+      {/* The address last, with the two settings that apply to it: faded while it is off. */}
       {detail('address', i18n.t('Settings_Address'))}
+      {detail(
+        'fullAddress',
+        i18n.t('Settings_FullAddress'),
+        i18n.t('Settings_FullAddressNote'),
+        !props.settings.details.address,
+      )}
       <SettingRow
         label={i18n.t('Settings_LongAddress')}
         note={i18n.t('Settings_LongAddressNote')}
@@ -207,8 +223,8 @@ export function DetailsSection(props: SectionProps & { now: number }): JSX.Eleme
           <Select
             value={props.settings.details.longAddress}
             options={[
-              { value: 'cut', label: i18n.t('Settings_LongAddressCut') },
               { value: 'scroll', label: i18n.t('Settings_LongAddressScroll') },
+              { value: 'cut', label: i18n.t('Settings_LongAddressCut') },
             ]}
             labelledBy={ids.label}
             describedBy={ids.note}
@@ -217,18 +233,15 @@ export function DetailsSection(props: SectionProps & { now: number }): JSX.Eleme
           />
         )}
       />
-      {detail('pinnedIcon', i18n.t('Settings_PinnedIcon'))}
-      {detail('audioIcon', i18n.t('Settings_AudioIcon'))}
-      {detail('sleeping', i18n.t('Settings_Sleeping'), i18n.t('Settings_SleepingNote'))}
-      {detail('groupColor', i18n.t('Settings_GroupColor'))}
-      {detail('lastUsed', i18n.t('Settings_LastUsed'), i18n.t('Settings_LastUsedNote', [fifteenMinutesAgo()]))}
     </SettingsSection>
   );
 }
 
 export interface ShortcutsSectionProps {
   /** The shortcuts as Chrome writes them, "" when one has none. */
-  shortcuts: { next: string; previous: string };
+  shortcuts: Shortcuts;
+  /** The section's id: "shortcuts" in the page, another one where it shows a second time (the shortcuts' dialog). */
+  id?: string;
   /** The user guide's page about Ctrl+Tab. */
   guideUrl: string;
   onChangeShortcut: () => void;
@@ -251,7 +264,7 @@ export function ShortcutsSection(props: ShortcutsSectionProps): JSX.Element {
   );
   return (
     <SettingsSection
-      id="shortcuts"
+      id={props.id ?? 'shortcuts'}
       title={sectionTitle('shortcuts')}
       note={
         <>
@@ -261,35 +274,100 @@ export function ShortcutsSection(props: ShortcutsSectionProps): JSX.Element {
           </a>
         </>
       }
+      notice={
+        <Show when={shortcutMissing(props.shortcuts)}>
+          <Notice>{i18n.t('Settings_ShortcutMissing', [i18n.t('Settings_ChangeShortcut')])}</Notice>
+        </Show>
+      }
     >
       {row(i18n.t('Settings_NextTab'), i18n.t('Settings_NextTabNote'), props.shortcuts.next)}
       {row(i18n.t('Settings_PreviousTab'), i18n.t('Settings_PreviousTabNote'), props.shortcuts.previous)}
+      {row(i18n.t('Settings_IconShortcut'), i18n.t('Settings_IconShortcutNote'), props.shortcuts.icon)}
     </SettingsSection>
   );
 }
 
+/**
+ * Just installed with a shortcut the browser left without keys (lib/shortcuts.ts): the shortcuts' section alone, in a
+ * dialog over the settings page, until the user is done.
+ */
+export function ShortcutsDialog(props: ShortcutsSectionProps & { open: boolean; onClose: () => void }): JSX.Element {
+  return (
+    <Dialog
+      open={props.open}
+      title={i18n.t('Settings_ShortcutsDialogTitle')}
+      description={i18n.t('Settings_ShortcutsDialogText')}
+      onClose={() => props.onClose()}
+      actions={
+        <Button primary onClick={() => props.onClose()}>
+          {i18n.t('Dialog_Done')}
+        </Button>
+      }
+    >
+      <ShortcutsSection {...props} id="shortcuts-dialog" />
+    </Dialog>
+  );
+}
+
 export function ResetSection(props: { onRestore: () => void }): JSX.Element {
+  // Every setting at once, with no way back: the user confirms it first.
+  const [asking, setAsking] = createSignal(false);
   return (
     <SettingsSection id="reset" title={sectionTitle('reset')}>
       <SettingRow
         label={i18n.t('Settings_RestoreDefaults')}
         control={(ids) => (
-          <Button describedBy={ids.label} onClick={() => props.onRestore()}>
+          <Button describedBy={ids.label} onClick={() => setAsking(true)}>
             {i18n.t('Settings_Restore')}
           </Button>
         )}
+      />
+      <Dialog
+        open={asking()}
+        alert
+        title={i18n.t('Settings_RestoreTitle')}
+        description={i18n.t('Settings_RestoreText')}
+        onClose={() => setAsking(false)}
+        actions={
+          <>
+            <Button onClick={() => setAsking(false)}>{i18n.t('Dialog_Cancel')}</Button>
+            <Button
+              primary
+              onClick={() => {
+                setAsking(false);
+                props.onRestore();
+              }}
+            >
+              {i18n.t('Settings_Restore')}
+            </Button>
+          </>
+        }
       />
     </SettingsSection>
   );
 }
 
-function ToggleRow(props: { label: string; note?: string; checked: boolean; onChange: (on: boolean) => void }) {
+function ToggleRow(props: {
+  label: string;
+  note?: string;
+  /** It doesn't apply now (it depends on a setting that is off): faded, its switch disabled. */
+  dim?: boolean;
+  checked: boolean;
+  onChange: (on: boolean) => void;
+}) {
   return (
     <SettingRow
       label={props.label}
       note={props.note}
+      dim={props.dim}
       control={(ids) => (
-        <Toggle checked={props.checked} labelledBy={ids.label} describedBy={ids.note} onChange={props.onChange} />
+        <Toggle
+          checked={props.checked}
+          labelledBy={ids.label}
+          describedBy={ids.note}
+          disabled={props.dim}
+          onChange={props.onChange}
+        />
       )}
     />
   );

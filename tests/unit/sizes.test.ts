@@ -131,9 +131,12 @@ describe('tiles', () => {
     const { tileSpace, tileLine } = sizes.grid;
     const withDetails = (address: boolean, lastUsed: boolean) =>
       tileHeight({ ...grid, details: { ...grid.details, address, lastUsed } });
-    expect(withDetails(false, true)).toBe(tileHeight(grid) + tileSpace + tileLine);
-    expect(withDetails(true, false)).toBe(tileHeight(grid) + tileSpace + tileLine - ADDRESS_TUCK);
-    expect(withDetails(true, true)).toBe(tileHeight(grid) + 2 * (tileSpace + tileLine) - ADDRESS_TUCK);
+    const bare = withDetails(false, false);
+    expect(withDetails(false, true)).toBe(bare + tileSpace + tileLine);
+    expect(withDetails(true, false)).toBe(bare + tileSpace + tileLine - ADDRESS_TUCK);
+    expect(withDetails(true, true)).toBe(bare + 2 * (tileSpace + tileLine) - ADDRESS_TUCK);
+    // Both are on by default.
+    expect(tileHeight(grid)).toBe(withDetails(true, true));
   });
 
   it('makes a tile 208 px wide at the default text size: the preview, its padding and its border', () => {

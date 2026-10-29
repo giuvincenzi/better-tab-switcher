@@ -1,5 +1,6 @@
 import { render } from 'solid-js/web';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { addressOf } from '../../components/switcher/TabParts';
 import { TabRow, type TabRowProps } from '../../components/switcher/TabRow';
 import { defaultSettings } from '../../lib/settings/settings';
 import type { SwitcherTab } from '../../lib/tabs/tabs';
@@ -51,10 +52,12 @@ function row(props: Partial<TabRowProps> = {}) {
 }
 
 describe('TabRow', () => {
-  it('shows the title and is named after it', () => {
+  it('shows the title and is named after it and its address, by default', () => {
     const element = row();
     expect(element.textContent).toContain('Q4 planning');
-    expect(element.getAttribute('aria-label')).toBe('Q4 planning');
+    expect(element.getAttribute('aria-label')).toBe(
+      'Q4 planning, mail.workspace.example-international-holdings.com/inbox',
+    );
     expect(element.getAttribute('aria-selected')).toBe('false');
   });
 
@@ -65,7 +68,9 @@ describe('TabRow', () => {
 
   it('shows the icons of a pinned tab playing audio, by default', () => {
     const element = row({ tab: { ...tab, pinned: true, audible: true } });
-    expect(element.getAttribute('aria-label')).toBe('Q4 planning, Pinned, Playing audio');
+    expect(element.getAttribute('aria-label')).toBe(
+      'Q4 planning, mail.workspace.example-international-holdings.com/inbox, Pinned, Playing audio',
+    );
     expect(element.querySelector('[data-icon="pin"]')).not.toBeNull();
     expect(element.querySelector('[data-icon="audio"]')).not.toBeNull();
   });
@@ -90,8 +95,8 @@ describe('TabRow', () => {
     expect(dot).not.toBeNull();
   });
 
-  it('cuts a long address with an ellipsis, by default', () => {
-    const element = row({ details: { ...defaultSettings.details, address: true } });
+  it('cuts a long address with an ellipsis when long addresses are cut', () => {
+    const element = row({ details: { ...defaultSettings.details, address: true, longAddress: 'cut' } });
     const address = [...element.querySelectorAll('span')].find(
       (s) => s.childElementCount === 0 && s.textContent?.startsWith('mail.workspace'),
     );
@@ -104,14 +109,16 @@ describe('TabRow', () => {
   it('shows the window of a tab from another window', () => {
     const element = row({ tab: { ...tab, windowLabel: '2' } });
     expect(element.querySelector('[data-icon="window"]')?.parentElement?.textContent).toBe('2');
-    expect(element.getAttribute('aria-label')).toBe('Q4 planning, Window 2');
+    expect(element.getAttribute('aria-label')).toBe(
+      'Q4 planning, mail.workspace.example-international-holdings.com/inbox, Window 2',
+    );
   });
 
-  it('says when it was last used, when that is on', () => {
-    expect(row().textContent).not.toContain('ago');
+  it('says when it was last used, by default, and not when that is off', () => {
+    expect(row().textContent).toContain('15 min. ago');
     dispose?.();
-    const element = row({ details: { ...defaultSettings.details, lastUsed: true } });
-    expect(element.textContent).toContain('15 min. ago');
+    const element = row({ details: { ...defaultSettings.details, lastUsed: false } });
+    expect(element.textContent).not.toContain('ago');
   });
 
   it('opens its tab on a click, and closes it with its close button without opening it', () => {
@@ -140,9 +147,20 @@ describe('TabRow', () => {
     expect(onChoose).not.toHaveBeenCalled();
   });
 
-  it('names the row with its website address when that is on', () => {
-    const element = row({ details: { ...defaultSettings.details, address: true } });
+  it('names the row with its whole website address, without https://, when Full address is on', () => {
+    const element = row({ details: { ...defaultSettings.details, address: true, fullAddress: true } });
+    expect(element.getAttribute('aria-label')).toBe(
+      'Q4 planning, mail.workspace.example-international-holdings.com/inbox',
+    );
+    expect(element.textContent).toContain('mail.workspace.example-international-holdings.com/inbox');
+    expect(element.textContent).not.toContain('https://');
+  });
+
+  it('names the row with only the site when Full address is off, and shows only the site', () => {
+    const element = row({ details: { ...defaultSettings.details, address: true, fullAddress: false } });
     expect(element.getAttribute('aria-label')).toBe('Q4 planning, mail.workspace.example-international-holdings.com');
+    expect(element.textContent).toContain('mail.workspace.example-international-holdings.com');
+    expect(element.textContent).not.toContain('/inbox');
   });
 
   it('leaves out of the name and the row the details that are off', () => {
@@ -152,15 +170,25 @@ describe('TabRow', () => {
       audioIcon: false,
       sleeping: false,
       groupColor: false,
+      address: false,
+      lastUsed: false,
     };
     const element = row({ tab: { ...tab, pinned: true, audible: true, sleeping: true, groupColor: 'blue' }, details });
     expect(element.getAttribute('aria-label')).toBe('Q4 planning');
+    expect(element.textContent).not.toContain('mail.workspace');
+    expect(element.textContent).not.toContain('ago');
     expect(element.querySelector('[data-icon="audio"]')).toBeNull();
     expect(element.querySelector('[style*="--bts-group-"]')).toBeNull();
   });
 
   it('shows the window of a tab from another window whatever the details', () => {
-    const details = { ...defaultSettings.details, pinnedIcon: false, audioIcon: false, sleeping: false };
+    const details = {
+      ...defaultSettings.details,
+      address: false,
+      pinnedIcon: false,
+      audioIcon: false,
+      sleeping: false,
+    };
     const element = row({ tab: { ...tab, windowLabel: '3' }, details });
     expect(element.getAttribute('aria-label')).toBe('Q4 planning, Window 3');
   });
@@ -231,5 +259,33 @@ describe('TabRow address', () => {
     const full = row({ compact: false, details });
     const under = address(full).text.getBoundingClientRect();
     expect(under.top).toBeGreaterThanOrEqual(title(full).bottom - 1);
+  });
+});
+
+describe('addressOf', () => {
+  it('gives the whole address without http:// or https:// with Full address on', () => {
+    expect(addressOf('https://github.com/a/b', true)).toBe('github.com/a/b');
+    expect(addressOf('http://bts.test/beta?q=1#top', true)).toBe('bts.test/beta?q=1#top');
+  });
+
+  it('gives only the site with Full address off', () => {
+    expect(addressOf('https://github.com/a/b', false)).toBe('github.com');
+    expect(addressOf('http://localhost:8080/page', false)).toBe('localhost:8080');
+  });
+
+  it('keeps an address with no site whole, Full address on or off', () => {
+    for (const full of [true, false]) {
+      expect(addressOf('file:///home/me/notes.txt', full)).toBe('file:///home/me/notes.txt');
+      expect(addressOf('about:blank', full)).toBe('about:blank');
+    }
+  });
+
+  it('keeps the scheme of an address that is not a web page, with Full address on', () => {
+    expect(addressOf('chrome://settings/', true)).toBe('chrome://settings/');
+  });
+
+  it('gives the address as it is when it cannot be read', () => {
+    expect(addressOf('not an address', true)).toBe('not an address');
+    expect(addressOf('not an address', false)).toBe('not an address');
   });
 });

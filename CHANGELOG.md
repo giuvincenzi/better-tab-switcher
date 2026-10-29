@@ -7,8 +7,8 @@
 - The switcher: Alt+S opens it on the next tab and Alt+Shift+S on the previous one (Control+S and Control+Shift+S on
   a Mac), the toolbar icon opens it too. It shows the tabs most recently used first, centered over the page; releasing
   the key held opens the selected tab.
-- The list view, with Compact rows, and the grid view, which fits the screen by itself: a preview of each tab, kept
-  in memory only, or only each site's icon.
+- The list view, with Compact rows as an option, and the grid view, which fits the screen by itself: a preview of each
+  tab, kept in memory only, or only each site's icon.
 - The switcher's toolbar: the search field in the middle, buttons for the view, its options, the website address, the
   last used time and the settings. It can be turned off (Show toolbar).
 - Auto-select, Stay open until you choose a tab, and tabs from all windows.
@@ -20,5 +20,10 @@
   read nor search for a tab's title.
 - Works in Chrome and in Microsoft Edge: the settings name the browser they run in and open its shortcuts page.
 - Close a tab from the switcher with its close button or with the mouse's middle button.
-- Tab details: website address, pinned, playing audio and inactive tab icons, tab group color, last used.
-- The settings page, in the device's, light or dark theme.
+- Tab details: pinned, playing audio and inactive tab icons, tab group color, last used, and the website address,
+  the page's whole address or only its site, scrolling on the selected tab when it is long.
+- The settings page, in the device's, light or dark theme. Restore default settings asks you to confirm it.
+- Keyboard shortcuts in the settings, the toolbar icon's too, with a warning when one has no keys. Installed while
+  another extension uses its keys, Better Tab Switcher opens its settings to let you choose others.
+- The switcher shows over any page, also on sites that say they support dark mode and on sites that isolate
+  themselves, like WhatsApp Web; it closes when you go to another window or another program.

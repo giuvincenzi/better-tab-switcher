@@ -17,17 +17,17 @@ beforeEach(() => {
 describe('the settings changed from the pages', () => {
   it('keeps both of two changes saved at the same moment from two pages', async () => {
     await Promise.all([
-      messages.ask('saveSettings', { compact: false }),
+      messages.ask('saveSettings', { compact: true }),
       messages.ask('saveSettings', { toolbar: false }),
-      messages.ask('saveSettings', { details: { address: true } }),
-      messages.ask('saveSettings', { details: { lastUsed: true } }),
+      messages.ask('saveSettings', { details: { address: false } }),
+      messages.ask('saveSettings', { details: { lastUsed: false } }),
     ]);
     const settings = await loadSettings();
     expect([settings.compact, settings.toolbar, settings.details.address, settings.details.lastUsed]).toEqual([
+      true,
       false,
       false,
-      true,
-      true,
+      false,
     ]);
   });
 
@@ -35,9 +35,9 @@ describe('the settings changed from the pages', () => {
     await Promise.all([
       messages.ask('saveSettings', { theme: 'dark' }),
       messages.ask('restoreDefaultSettings'),
-      messages.ask('saveSettings', { compact: false }),
+      messages.ask('saveSettings', { compact: true }),
     ]);
-    expect(await loadSettings()).toEqual({ ...defaultSettings, compact: false });
+    expect(await loadSettings()).toEqual({ ...defaultSettings, compact: true });
   });
 
   it('gives back the settings as saved', async () => {

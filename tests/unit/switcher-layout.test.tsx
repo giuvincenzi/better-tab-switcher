@@ -3,6 +3,7 @@ import { page } from 'vitest/browser';
 import { defaultSettings, type Settings } from '../../lib/settings/settings';
 import { DEFAULT_EM_PX, gridColumns, sizes, tileWidth } from '../../lib/switcher/sizes';
 import {
+  autoSelectLine,
   button,
   closeAll,
   columnsShown,
@@ -55,7 +56,7 @@ describe('Switcher frame', () => {
   });
 
   it('grows taller in the grid when the website address is turned on, as the tiles grow', () => {
-    const { host } = openSwitcher({ view: 'grid' });
+    const { host } = openSwitcher({ view: 'grid', details: { ...defaultSettings.details, address: false } });
     const before = size(panel(host)).height;
     button(host, 'Website address').click();
     const tile = options(host)[0] as HTMLElement;
@@ -129,7 +130,7 @@ describe('Switcher sizes', () => {
     const long = tab(9, 'A very long title '.repeat(20));
     const { host } = openSwitcher({}, { tabs: [...tabs, long] });
     expect(size(panel(host)).width).toBe(512);
-    const title = [...option(host, long.title).querySelectorAll('span')].find(
+    const title = [...option(host, `${long.title}, example.com/9`).querySelectorAll('span')].find(
       (span) => span.childElementCount === 0 && span.textContent === long.title,
     ) as HTMLElement;
     expect(title.scrollWidth).toBeGreaterThan(title.clientWidth);
@@ -139,7 +140,7 @@ describe('Switcher sizes', () => {
   it('keeps a tile its width with a long title, the title cut', () => {
     const long = tab(9, 'A very long title '.repeat(20));
     const { host } = openSwitcher({ view: 'grid' }, { tabs: [...tabs, long] });
-    const tile = option(host, long.title);
+    const tile = option(host, `${long.title}, example.com/9`);
     expect(tile.getBoundingClientRect().width).toBe(tileWidth * DEFAULT_EM_PX);
     const title = [...tile.querySelectorAll('span')].find(
       (span) => span.childElementCount === 0 && span.textContent === long.title,
@@ -168,7 +169,9 @@ describe('Switcher in the grid of icons', () => {
 
   it('names each icon after its tab, as the list does', () => {
     const { host } = openSwitcher({ view: 'grid', gridShow: 'icons' });
-    expect(options(host).map((icon) => icon.getAttribute('aria-label'))).toEqual(tabs.map((t) => t.title));
+    expect(options(host).map((icon) => icon.getAttribute('aria-label'))).toEqual(
+      tabs.map((t) => `${t.title}, example.com/${t.id}`),
+    );
   });
 
   it('cuts a long title under the icons, never widening the switcher', () => {
@@ -192,9 +195,9 @@ describe('Switcher tab details in every view', () => {
   ] as const) {
     it(`greys a sleeping tab, and names it so, in the ${view === 'list' ? 'list' : `grid of ${gridShow}`}`, () => {
       const { host } = openSwitcher({ view, gridShow }, { tabs: [...tabs, sleepy] });
-      const sleeping = option(host, 'Sleeping tab, Inactive');
+      const sleeping = option(host, 'Sleeping tab, example.com/5, Inactive');
       expect(Number(getComputedStyle(sleeping).opacity)).toBeLessThan(1);
-      expect(Number(getComputedStyle(option(host, 'Q4 planning')).opacity)).toBe(1);
+      expect(Number(getComputedStyle(option(host, 'Q4 planning, example.com/3')).opacity)).toBe(1);
     });
   }
 
@@ -204,12 +207,12 @@ describe('Switcher tab details in every view', () => {
       { view: 'grid', details: { ...defaultSettings.details, address: true } },
       { tabs: [...tabs, pinned] },
     );
-    expect(option(host, 'Docs, docs.example.org, Pinned, Window 2')).not.toBeNull();
+    expect(option(host, 'Docs, docs.example.org/a, Pinned, Window 2')).not.toBeNull();
   });
 
   it('shows the last used time in a tile when it is on', () => {
     const { host } = openSwitcher({ view: 'grid', details: { ...defaultSettings.details, lastUsed: true } });
-    expect(option(host, 'Q4 planning').textContent).toMatch(/ago/);
+    expect(option(host, 'Q4 planning, example.com/3').textContent).toMatch(/ago/);
   });
 });
 
@@ -225,8 +228,8 @@ describe('Switcher right to left', () => {
   it('lays the grid out from the right', () => {
     document.body.dir = 'rtl';
     const { host } = openSwitcher({ view: 'grid' });
-    const first = option(host, 'Pull request #12').getBoundingClientRect();
-    const second = option(host, 'Inbox (3)').getBoundingClientRect();
+    const first = option(host, 'Pull request #12, example.com/1').getBoundingClientRect();
+    const second = option(host, 'Inbox (3), example.com/2').getBoundingClientRect();
     expect(first.left).toBeGreaterThan(second.right);
   });
 
@@ -250,10 +253,10 @@ describe('Switcher right to left', () => {
     for (const dir of ['ltr', 'rtl'] as const) {
       document.body.dir = dir;
       const { host } = openSwitcher({ view: 'grid', details: { ...defaultSettings.details, address: true } });
-      const tile = option(host, 'Inbox (3), example.com');
+      const tile = option(host, 'Inbox (3), example.com/2');
       const icon = (tile.querySelector('img') as HTMLElement).getBoundingClientRect();
       const address = [...tile.querySelectorAll('span')]
-        .find((span) => span.children.length === 0 && span.textContent === 'example.com')
+        .find((span) => span.children.length === 0 && span.textContent === 'example.com/2')
         ?.getBoundingClientRect() as DOMRect;
       if (dir === 'ltr') expect(address.left, dir).toBeGreaterThanOrEqual(icon.right);
       else expect(address.right, dir).toBeLessThanOrEqual(icon.left);
@@ -273,11 +276,11 @@ describe('Switcher right to left', () => {
       [...option(switcher, `${name}, ${address}`).querySelectorAll('span')].find(
         (span) => span.childElementCount === 0 && span.textContent === address,
       ) as HTMLElement;
-    const longText = text('Mail', host);
+    const longText = text('Mail', `${host}/inbox`);
     const longPlace = (longText.parentElement as HTMLElement).getBoundingClientRect();
     expect(longText.getBoundingClientRect().width).toBeGreaterThan(longPlace.width);
     expect(longText.getBoundingClientRect().left).toBeCloseTo(longPlace.left, 0);
-    const shortText = text('Inbox (3)', 'example.com');
+    const shortText = text('Inbox (3)', 'example.com/2');
     const shortPlace = (shortText.parentElement as HTMLElement).getBoundingClientRect();
     expect(shortText.getBoundingClientRect().right).toBeCloseTo(shortPlace.right, 0);
   });
@@ -286,7 +289,7 @@ describe('Switcher right to left', () => {
     document.body.dir = 'rtl';
     const { host } = openSwitcher({ autoSelect: true, autoSelectSeconds: 10 });
     const selected = host.querySelector('[aria-selected="true"]') as HTMLElement;
-    const animation = selected.getAnimations({ subtree: true })[0] as Animation;
+    const animation = autoSelectLine(selected) as Animation;
     animation.pause();
     animation.currentTime = 5000;
     const line = ((animation.effect as KeyframeEffect).target as HTMLElement).getBoundingClientRect();

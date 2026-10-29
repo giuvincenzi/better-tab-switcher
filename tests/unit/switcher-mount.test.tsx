@@ -102,14 +102,14 @@ describe('mountSwitcher', () => {
 
   it('opens the chosen tab in its window, once the switcher is done', () => {
     const { onDone } = mount();
-    tile('Q4 planning').click();
+    tile('Q4 planning, example.com/3').click();
     expect(onDone).toHaveBeenCalledOnce();
     expect(messages).toHaveBeenCalledWith('openTab', 3);
   });
 
   it('asks the background to close a tab and stays open', () => {
     const { onDone } = mount();
-    (tile('Q4 planning').querySelector('button[aria-label="Close tab"]') as HTMLButtonElement).click();
+    (tile('Q4 planning, example.com/3').querySelector('button[aria-label="Close tab"]') as HTMLButtonElement).click();
     expect(messages).toHaveBeenCalledWith('closeTab', 3);
     expect(onDone).not.toHaveBeenCalled();
   });
@@ -124,32 +124,32 @@ describe('mountSwitcher', () => {
   it('sends a change made in the toolbar to the background, which saves the settings', () => {
     mount();
     (document.querySelector('button[aria-label="Compact"]') as HTMLButtonElement).click();
-    expect(messages).toHaveBeenCalledWith('saveSettings', { compact: false });
+    expect(messages).toHaveBeenCalledWith('saveSettings', { compact: true });
   });
 
   it('moves the selection each time the shortcut is pressed again', () => {
     const { handle } = mount();
-    expect(selectedName()).toBe('Inbox (3)');
+    expect(selectedName()).toBe('Inbox (3), example.com/2');
     handle.move('next');
-    expect(selectedName()).toBe('Q4 planning');
+    expect(selectedName()).toBe('Q4 planning, example.com/3');
     handle.move('previous');
-    expect(selectedName()).toBe('Inbox (3)');
+    expect(selectedName()).toBe('Inbox (3), example.com/2');
   });
 
   it('shows the previews the background already has, for the tabs shown', async () => {
     mount({ view: 'grid' });
     expect(messages).toHaveBeenCalledWith('getPreviews', [1, 2, 3, 4]);
     savedPreviews({ 3: 'data:image/webp;base64,c2F2ZWQ=' });
-    await vi.waitFor(() => expect(picture('Q4 planning')).toBe('data:image/webp;base64,c2F2ZWQ='));
+    await vi.waitFor(() => expect(picture('Q4 planning, example.com/3')).toBe('data:image/webp;base64,c2F2ZWQ='));
   });
 
   it('keeps a preview that arrived while the saved ones were on their way: it is newer', async () => {
     const { handle } = mount({ view: 'grid' });
     handle.showPreview({ tabId: 3, picture: 'data:image/webp;base64,bmV3' });
-    expect(picture('Q4 planning')).toBe('data:image/webp;base64,bmV3');
+    expect(picture('Q4 planning, example.com/3')).toBe('data:image/webp;base64,bmV3');
     savedPreviews({ 3: 'data:image/webp;base64,b2xk', 4: 'data:image/webp;base64,c2F2ZWQ=' });
-    await vi.waitFor(() => expect(picture('Running plan')).toBe('data:image/webp;base64,c2F2ZWQ='));
-    expect(picture('Q4 planning')).toBe('data:image/webp;base64,bmV3');
+    await vi.waitFor(() => expect(picture('Running plan, example.com/4')).toBe('data:image/webp;base64,c2F2ZWQ='));
+    expect(picture('Q4 planning, example.com/3')).toBe('data:image/webp;base64,bmV3');
   });
 
   it("shows itself once the page's picture is taken", async () => {

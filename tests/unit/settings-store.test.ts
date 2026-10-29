@@ -13,19 +13,19 @@ describe('settings store', () => {
   });
 
   it('saves a change and keeps the other settings', async () => {
-    await saveSettings({ view: 'grid', details: { address: true } });
+    await saveSettings({ view: 'grid', details: { address: false } });
     const settings = await loadSettings();
     expect(settings.view).toBe('grid');
-    expect(settings.details.address).toBe(true);
+    expect(settings.details.address).toBe(false);
     expect(settings.details.pinnedIcon).toBe(defaultSettings.details.pinnedIcon);
     expect(settings.compact).toBe(defaultSettings.compact);
   });
 
   it('leaves a setting as it is when a change gives it an invalid value', async () => {
-    await saveSettings({ delayMs: 200, theme: 'dark', details: { longAddress: 'scroll' } });
+    await saveSettings({ delayMs: 200, theme: 'dark', details: { longAddress: 'cut' } });
     await saveSettings({ delayMs: -5, theme: 'sepia' as never, details: { longAddress: 'wrap' as never } });
     const settings = await loadSettings();
-    expect([settings.delayMs, settings.theme, settings.details.longAddress]).toEqual([200, 'dark', 'scroll']);
+    expect([settings.delayMs, settings.theme, settings.details.longAddress]).toEqual([200, 'dark', 'cut']);
   });
 
   it('restores the defaults', async () => {
@@ -43,10 +43,10 @@ describe('settings store', () => {
   });
 
   it('reads the settings where every earlier version saved them', async () => {
-    await storage.setItem('local:settings', { theme: 'dark', details: { address: true } });
+    await storage.setItem('local:settings', { theme: 'dark', details: { address: false } });
     const settings = await loadSettings();
     expect(settings.theme).toBe('dark');
-    expect(settings.details.address).toBe(true);
+    expect(settings.details.address).toBe(false);
   });
 
   it('never writes the defaults: a new install and a restore leave nothing saved', async () => {
@@ -58,10 +58,10 @@ describe('settings store', () => {
   });
 
   it('keeps the tab details saved before when one more changes', async () => {
-    await saveSettings({ details: { address: true } });
-    await saveSettings({ details: { lastUsed: true } });
+    await saveSettings({ details: { address: false } });
+    await saveSettings({ details: { lastUsed: false } });
     await saveSettings({ theme: 'dark' });
-    expect((await loadSettings()).details).toEqual({ ...defaultSettings.details, address: true, lastUsed: true });
+    expect((await loadSettings()).details).toEqual({ ...defaultSettings.details, address: false, lastUsed: false });
   });
 
   it('writes no invalid value to the storage, for any page that reads it', async () => {
@@ -79,13 +79,13 @@ describe('settings store', () => {
 
   it('keeps the valid settings of damaged saved data when a change is saved', async () => {
     await storage.setItem('local:settings', { theme: 'dark', view: 'mosaic', delayMs: 'slow', details: 'none' });
-    await saveSettings({ compact: false });
-    expect(await loadSettings()).toEqual({ ...defaultSettings, theme: 'dark', compact: false });
-    expect(await storage.getItem('local:settings')).toEqual({ ...defaultSettings, theme: 'dark', compact: false });
+    await saveSettings({ compact: true });
+    expect(await loadSettings()).toEqual({ ...defaultSettings, theme: 'dark', compact: true });
+    expect(await storage.getItem('local:settings')).toEqual({ ...defaultSettings, theme: 'dark', compact: true });
   });
 
   it('tells the watchers the defaults when the settings are restored', async () => {
-    await saveSettings({ theme: 'dark', details: { address: true } });
+    await saveSettings({ theme: 'dark', details: { address: false } });
     const onChange = vi.fn();
     const stop = watchSettings(onChange);
     await restoreDefaultSettings();

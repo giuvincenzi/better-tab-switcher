@@ -686,7 +686,7 @@ kbd {
   margin: 10px 0 0;
   padding-inline-start: 20px;
 }
-.privacy-text li + li {
+.privacy-text :where(li + li) {
   margin-top: 6px;
 }
 .privacy .privacy-label {

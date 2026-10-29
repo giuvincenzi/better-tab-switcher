@@ -7,6 +7,8 @@ interface SettingsSectionProps {
   title: string;
   /** Under the title, before the rows. */
   note?: JSX.Element;
+  /** After the note, before the rows: something the user has to do (components/ui/Notice). */
+  notice?: JSX.Element;
   children: JSX.Element;
 }
 
@@ -23,6 +25,7 @@ export function SettingsSection(props: SettingsSectionProps): JSX.Element {
           <p class={styles.note}>{props.note}</p>
         </Show>
       </div>
+      {props.notice}
       <div class={styles.card}>{props.children}</div>
     </section>
   );

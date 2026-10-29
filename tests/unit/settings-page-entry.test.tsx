@@ -38,7 +38,7 @@ describe('the settings page of the extension', () => {
       await messages.ask(type, data);
     };
     (fakeBrowser.commands as { getAll: unknown }).getAll = shortcuts;
-    await saveSettings({ theme: 'dark', compact: false });
+    await saveSettings({ theme: 'dark', compact: true, details: { ...defaultSettings.details, lastUsed: false } });
     const host = document.createElement('div');
     host.id = 'settings';
     document.body.append(host);
@@ -47,9 +47,10 @@ describe('the settings page of the extension', () => {
 
   it('opens with the saved settings, their theme and the shortcuts the browser gives', () => {
     expect(root.dataset.theme).toBe('dark');
-    expect(toggle('Compact').getAttribute('aria-checked')).toBe('false');
+    expect(toggle('Compact').getAttribute('aria-checked')).toBe('true');
+    expect(toggle('Last used').getAttribute('aria-checked')).toBe('false');
     expect(toggle('Show toolbar').getAttribute('aria-checked')).toBe('true');
-    expect(keys()).toEqual(['Alt+S', 'Not set']);
+    expect(keys()).toEqual(['Alt+S', 'Not set', 'Not set']);
     expect(document.title).toBe('Better Tab Switcher settings');
   });
 
@@ -68,10 +69,19 @@ describe('the settings page of the extension', () => {
 
   it('restores the defaults: nothing saved, the page and its theme as at the first install', async () => {
     button('Restore').click();
+    // The confirmation's own Restore.
+    (
+      [...(document.querySelector('dialog[open]') as HTMLElement).querySelectorAll('button')].find(
+        (b) => b.textContent === 'Restore',
+      ) as HTMLButtonElement
+    ).click();
     await vi.waitFor(async () => expect(await fakeBrowser.storage.local.get('settings')).toEqual({}));
     await vi.waitFor(() => expect(root.dataset.theme).toBe(defaultSettings.theme));
-    await vi.waitFor(() => expect(toggle('Compact').getAttribute('aria-checked')).toBe('true'));
+    await vi.waitFor(() => expect(toggle('Compact').getAttribute('aria-checked')).toBe('false'));
     expect(toggle('Show toolbar').getAttribute('aria-checked')).toBe('true');
+    expect(toggle('Website address').getAttribute('aria-checked')).toBe('true');
+    expect(toggle('Full address').getAttribute('aria-checked')).toBe('true');
+    expect(toggle('Last used').getAttribute('aria-checked')).toBe('true');
   });
 
   it("opens the browser's page of the shortcuts to change one", async () => {
@@ -79,17 +89,18 @@ describe('the settings page of the extension', () => {
     for (const change of document.querySelectorAll('button')) {
       if (change.textContent === 'Change shortcut') change.click();
     }
-    await vi.waitFor(() => expect(create).toHaveBeenCalledTimes(2));
+    await vi.waitFor(() => expect(create).toHaveBeenCalledTimes(3));
     expect(create).toHaveBeenCalledWith({ url: shortcutsPageUrl() });
     create.mockRestore();
   });
 
   it('shows the shortcuts changed meanwhile when the page is back in front', async () => {
     shortcuts.mockResolvedValue([
+      { name: '_execute_action', shortcut: 'Alt+K' },
       { name: 'previous-tab', shortcut: 'Alt+Shift+S' },
       { name: 'next-tab', shortcut: 'Ctrl+Q' },
     ]);
     window.dispatchEvent(new Event('focus'));
-    await vi.waitFor(() => expect(keys()).toEqual(['Ctrl+Q', 'Alt+Shift+S']));
+    await vi.waitFor(() => expect(keys()).toEqual(['Ctrl+Q', 'Alt+Shift+S', 'Alt+K']));
   });
 });

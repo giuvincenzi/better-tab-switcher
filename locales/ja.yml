@@ -52,8 +52,10 @@ Settings_AutoSelectNote: 選択中のタブが数秒後に開きます。残り�
 Settings_AutoSelectTime: 自動選択までの時間
 Settings_TabDetails: タブの詳細
 Settings_Address: ウェブサイトのアドレス
+Settings_FullAddress: アドレス全体
+Settings_FullAddressNote: サイトだけでなく、ページのアドレス全体を表示します。
 Settings_LongAddress: 長いウェブサイトのアドレス
-Settings_LongAddressNote: "「…」で省略するか、選択中のタブではスクロールして全体を表示します。"
+Settings_LongAddressNote: 選択中のタブではスクロールして全体を表示するか、「…」で省略します。
 Settings_LongAddressCut: 省略する
 Settings_LongAddressScroll: スクロールする
 Settings_PinnedIcon: 固定タブのアイコン
@@ -72,6 +74,15 @@ Settings_PreviousTab: 前のタブ
 Settings_PreviousTabNote: 切り替え画面を開き、前のタブを選択します。
 Settings_ChangeShortcut: ショートカットを変更
 Settings_NoShortcut: 未設定
+Settings_IconShortcut: ツールバーのアイコン
+Settings_IconShortcutNote: ツールバーのアイコンをクリックしたときと同じように、切り替え画面を開きます。タブを選ぶまで開いたままになります。
+Settings_ShortcutMissing: キーが設定されていないショートカットがあります。別の拡張機能がすでにそのキーを使用している可能性があります。「$1」で好きなキーを設定してください。
+Settings_ShortcutsDialogTitle: キーボード ショートカットの設定
+Settings_ShortcutsDialogText: Better Tab Switcher がインストールされました。開くときに使うキーを選んでください。
 Settings_Reset: リセット
 Settings_RestoreDefaults: 設定を元の既定値に戻す
 Settings_Restore: リセット
+Settings_RestoreTitle: 設定を元の既定値に戻しますか？
+Settings_RestoreText: すべての設定が、Better Tab Switcher をインストールしたときの状態に戻ります。キーボード ショートカットは変更されません。
+Dialog_Done: 完了
+Dialog_Cancel: キャンセル

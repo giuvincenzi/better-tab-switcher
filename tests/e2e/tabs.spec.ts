@@ -3,17 +3,17 @@ import { expect, test } from './fixtures';
 import {
   activeTitle,
   focusedWindows,
+  named,
   openPages,
   openWindow,
   recordFocusedWindows,
+  rowNames,
   rows,
   selected,
   showSwitcher,
   switcher,
   useSettings,
 } from './helpers';
-
-const titles = (page: Page) => rows(page).locator('img + div');
 
 function tabIdOf(worker: Worker, title: string): Promise<number> {
   return worker.evaluate(async (t) => (await chrome.tabs.query({ title: t }))[0]?.id as number, title);
@@ -28,7 +28,7 @@ test.describe('which tabs the switcher lists @tabs', () => {
     const delta = await openWindow(context, serviceWorker, 'delta');
     await openWindowTab(delta, 'epsilon');
     await showSwitcher(serviceWorker, 'next', 'icon');
-    await expect(titles(delta)).toHaveText(['delta', 'epsilon']);
+    await expect.poll(() => rowNames(delta)).toEqual([named('delta'), named('epsilon')]);
   });
 
   test("lists every window's tabs with All windows, each other window's with its number", async ({
@@ -40,9 +40,9 @@ test.describe('which tabs the switcher lists @tabs', () => {
     const delta = await openWindow(context, serviceWorker, 'delta');
     await showSwitcher(serviceWorker, 'next', 'icon');
     await expect(rows(delta)).toHaveCount(3);
-    await expect(rows(delta).first()).toHaveAccessibleName('delta');
-    await expect(rows(delta).filter({ hasText: 'alpha' })).toHaveAccessibleName('alpha, Window 2');
-    await expect(rows(delta).filter({ hasText: 'beta' })).toHaveAccessibleName('beta, Window 2');
+    await expect(rows(delta).first()).toHaveAccessibleName(named('delta'));
+    await expect(rows(delta).filter({ hasText: 'alpha' })).toHaveAccessibleName('alpha, bts.test/alpha, Window 2');
+    await expect(rows(delta).filter({ hasText: 'beta' })).toHaveAccessibleName('beta, bts.test/beta, Window 2');
   });
 
   test('hides the pinned tabs, but the current one, with Show pinned tabs off', async ({ context, serviceWorker }) => {
@@ -55,7 +55,7 @@ test.describe('which tabs the switcher lists @tabs', () => {
       ids,
     );
     await showSwitcher(serviceWorker, 'next', 'icon');
-    await expect(titles(page)).toHaveText(['delta', 'gamma', 'alpha']);
+    await expect.poll(() => rowNames(page)).toEqual(['delta, bts.test/delta, Pinned', named('gamma'), named('alpha')]);
   });
 
   test('marks pinned and inactive tabs', async ({ context, serviceWorker }) => {
@@ -71,9 +71,9 @@ test.describe('which tabs the switcher lists @tabs', () => {
     );
     await showSwitcher(serviceWorker, 'next', 'icon');
     await expect(rows(page)).toHaveCount(3);
-    await expect(rows(page).filter({ hasText: 'alpha' })).toHaveAccessibleName('alpha, Pinned');
-    await expect(rows(page).filter({ hasText: 'beta' })).toHaveAccessibleName('beta, Inactive');
-    await expect(rows(page).filter({ hasText: 'gamma' })).toHaveAccessibleName('gamma');
+    await expect(rows(page).filter({ hasText: 'alpha' })).toHaveAccessibleName('alpha, bts.test/alpha, Pinned');
+    await expect(rows(page).filter({ hasText: 'beta' })).toHaveAccessibleName('beta, bts.test/beta, Inactive');
+    await expect(rows(page).filter({ hasText: 'gamma' })).toHaveAccessibleName(named('gamma'));
   });
 
   test('lists 60 tabs, the selection scrolled into sight', async ({ context, serviceWorker }) => {
@@ -85,13 +85,13 @@ test.describe('which tabs the switcher lists @tabs', () => {
     // Going back: the least recently used tab, at the bottom of the list.
     await showSwitcher(serviceWorker, 'previous', 'icon');
     await expect(rows(page)).toHaveCount(60);
-    await expect(selected(page)).toHaveAccessibleName('tab01');
+    await expect(selected(page)).toHaveAccessibleName(named('tab01'));
     const list = switcher(page).locator('[role="listbox"]');
     expect(await list.evaluate((l) => l.scrollHeight > l.clientHeight)).toBe(true);
     await expect(selected(page)).toBeInViewport();
     await expect(rows(page).first()).not.toBeInViewport();
     await page.keyboard.press('ArrowDown');
-    await expect(selected(page)).toHaveAccessibleName('tab60');
+    await expect(selected(page)).toHaveAccessibleName(named('tab60'));
     await expect(selected(page)).toBeInViewport();
     await page.keyboard.press('ArrowUp');
     await page.keyboard.press('Enter');
@@ -130,10 +130,10 @@ test.describe('closing tabs from the switcher @tabs', () => {
     const page = current as Page;
     await showSwitcher(serviceWorker, 'next', 'icon');
     await page.keyboard.press('ArrowDown');
-    await expect(selected(page)).toHaveAccessibleName('beta');
+    await expect(selected(page)).toHaveAccessibleName(named('beta'));
     await rows(page).filter({ hasText: 'gamma' }).click({ button: 'middle' });
-    await expect(titles(page)).toHaveText(['delta', 'beta', 'alpha']);
-    await expect(selected(page)).toHaveAccessibleName('beta');
+    await expect.poll(() => rowNames(page)).toEqual([named('delta'), named('beta'), named('alpha')]);
+    await expect(selected(page)).toHaveAccessibleName(named('beta'));
     await expect.poll(() => openTitles(serviceWorker)).toEqual(['alpha', 'beta', 'delta']);
     await page.keyboard.press('Enter');
     await expect.poll(() => activeTitle(serviceWorker)).toBe('beta');
@@ -149,7 +149,7 @@ test.describe('closing tabs from the switcher @tabs', () => {
     const page = pages[24] as Page;
     await showSwitcher(serviceWorker, 'next', 'icon');
     await expect(rows(page)).toHaveCount(25);
-    await expect(selected(page)).toHaveAccessibleName('tab24');
+    await expect(selected(page)).toHaveAccessibleName(named('tab24'));
     // The user scrolls down to the oldest tabs, away from the selected one at the top.
     await switcher(page)
       .locator('[role="listbox"]')
@@ -171,8 +171,8 @@ test.describe('closing tabs from the switcher @tabs', () => {
     await expect(gamma).toHaveAttribute('aria-selected', 'true');
     await gamma.hover();
     await gamma.getByRole('button', { name: 'Close tab' }).click();
-    await expect(titles(page)).toHaveText(['delta', 'beta', 'alpha']);
-    await expect(selected(page)).toHaveAccessibleName('beta');
+    await expect.poll(() => rowNames(page)).toEqual([named('delta'), named('beta'), named('alpha')]);
+    await expect(selected(page)).toHaveAccessibleName(named('beta'));
     await expect.poll(() => openTitles(serviceWorker)).toEqual(['alpha', 'beta', 'delta']);
   });
 });

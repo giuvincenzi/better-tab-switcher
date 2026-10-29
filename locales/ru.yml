@@ -52,8 +52,10 @@ Settings_AutoSelectNote: Выделенная вкладка откроется 
 Settings_AutoSelectTime: Время до автоматического выбора
 Settings_TabDetails: Сведения о вкладках
 Settings_Address: Адрес сайта
+Settings_FullAddress: Полный адрес
+Settings_FullAddressNote: Весь адрес страницы, а не только сайт.
 Settings_LongAddress: Длинные адреса сайтов
-Settings_LongAddressNote: Адреса обрезаются символом «…» или прокручиваются на выделенной вкладке, чтобы их было видно целиком.
+Settings_LongAddressNote: Адреса прокручиваются на выделенной вкладке, чтобы их было видно целиком, или обрезаются символом «…».
 Settings_LongAddressCut: Обрезать
 Settings_LongAddressScroll: Прокручивать
 Settings_PinnedIcon: Значок закрепленной вкладки
@@ -72,6 +74,15 @@ Settings_PreviousTab: Предыдущая вкладка
 Settings_PreviousTabNote: Открывает переключатель и выделяет предыдущую вкладку.
 Settings_ChangeShortcut: Изменить сочетание
 Settings_NoShortcut: Не задано
+Settings_IconShortcut: Значок на панели инструментов
+Settings_IconShortcutNote: Открывает переключатель, как при нажатии на значок на панели инструментов. Он остается открытым, пока вы не выберете вкладку.
+Settings_ShortcutMissing: Для одного из сочетаний не заданы клавиши – возможно, их уже использует другое расширение. Задайте свои клавиши кнопкой «$1».
+Settings_ShortcutsDialogTitle: Выберите быстрые клавиши
+Settings_ShortcutsDialogText: Расширение Better Tab Switcher установлено. Выберите клавиши, которыми оно будет открываться.
 Settings_Reset: Сброс настроек
 Settings_RestoreDefaults: Восстановить настройки по умолчанию
 Settings_Restore: Восстановить
+Settings_RestoreTitle: Восстановить настройки по умолчанию?
+Settings_RestoreText: Все настройки вернутся к тем, что были при установке Better Tab Switcher. Быстрые клавиши останутся без изменений.
+Dialog_Done: Готово
+Dialog_Cancel: Отмена

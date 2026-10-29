@@ -17,7 +17,7 @@ describe('parseSettings', () => {
       ...defaultSettings,
       theme: 'dark',
       view: 'grid',
-      compact: false,
+      compact: true,
       listRows: 'fit',
       gridShow: 'icons',
       scope: 'all',
@@ -28,7 +28,7 @@ describe('parseSettings', () => {
       autoSelectSeconds: 5,
       toolbar: false,
       chromePagesWindow: false,
-      details: { ...defaultSettings.details, address: true, longAddress: 'scroll', lastUsed: true },
+      details: { ...defaultSettings.details, address: false, fullAddress: false, longAddress: 'cut', lastUsed: false },
     };
     expect(parseSettings(saved)).toEqual(saved);
   });
@@ -55,8 +55,8 @@ describe('parseSettings', () => {
   });
 
   it('keeps the details that are valid when others are not', () => {
-    const settings = parseSettings({ details: { address: true, longAddress: 'wrap', audioIcon: 'yes' } });
-    expect(settings.details).toEqual({ ...defaultSettings.details, address: true });
+    const settings = parseSettings({ details: { address: false, longAddress: 'wrap', audioIcon: 'yes' } });
+    expect(settings.details).toEqual({ ...defaultSettings.details, address: false });
   });
 });
 
@@ -64,7 +64,7 @@ describe('parseSettings', () => {
 const notDefaults = {
   theme: 'dark',
   view: 'grid',
-  compact: false,
+  compact: true,
   listRows: 6,
   gridShow: 'icons',
   scope: 'all',
@@ -76,13 +76,14 @@ const notDefaults = {
   toolbar: false,
   chromePagesWindow: false,
   details: {
-    address: true,
-    longAddress: 'scroll',
+    address: false,
+    fullAddress: false,
+    longAddress: 'cut',
     pinnedIcon: false,
     audioIcon: false,
     sleeping: false,
     groupColor: false,
-    lastUsed: true,
+    lastUsed: false,
   },
 } as const;
 
@@ -125,13 +126,24 @@ describe('parseSettings with settings saved by another version', () => {
   });
 
   it('gives the defaults to the settings an older version did not save, keeping the saved ones', () => {
-    const older = { theme: 'dark', view: 'grid', delayMs: 400, details: { address: true } };
+    const older = { theme: 'dark', view: 'grid', delayMs: 400, details: { address: false } };
     expect(parseSettings(older)).toEqual({
       ...defaultSettings,
       theme: 'dark',
       view: 'grid',
       delayMs: 400,
-      details: { ...defaultSettings.details, address: true },
+      details: { ...defaultSettings.details, address: false },
+    });
+  });
+
+  it('gives Full address its default to the tab details saved before it existed, keeping the saved ones', () => {
+    const older = { details: { address: true, longAddress: 'cut', lastUsed: false } };
+    expect(parseSettings(older).details).toEqual({
+      ...defaultSettings.details,
+      address: true,
+      fullAddress: defaultSettings.details.fullAddress,
+      longAddress: 'cut',
+      lastUsed: false,
     });
   });
 
@@ -177,7 +189,7 @@ describe('defaultSettings', () => {
 
   it('gives settings that can be changed without changing the defaults', () => {
     const settings = parseSettings(undefined);
-    settings.details.address = true;
+    settings.details.address = !settings.details.address;
     settings.theme = 'dark';
     expect(parseSettings(undefined)).toEqual(defaultSettings);
   });

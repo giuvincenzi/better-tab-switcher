@@ -65,11 +65,11 @@ export function TabRow(props: TabRowProps): JSX.Element {
       <div class={styles.text}>
         <TabTitle tab={props.tab} title={props.title} details={props.details} />
         <Show when={props.details.address && !props.compact}>
-          <Address url={props.tab.url} scrolls={scrolls()} />
+          <Address url={props.tab.url} full={props.details.fullAddress} scrolls={scrolls()} />
         </Show>
       </div>
       <Show when={props.details.address && props.compact}>
-        <Address url={props.tab.url} scrolls={scrolls()} side />
+        <Address url={props.tab.url} full={props.details.fullAddress} scrolls={scrolls()} side />
       </Show>
       <TabIcons tab={props.tab} details={props.details} />
       <Show when={props.details.lastUsed}>

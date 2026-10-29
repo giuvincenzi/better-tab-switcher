@@ -75,6 +75,16 @@ export function switcher(page: Page): Locator {
 export const rows = (page: Page) => switcher(page).locator('[role="option"]');
 export const selected = (page: Page) => switcher(page).locator('[role="option"][aria-selected="true"]');
 
+/** The accessible names of the tabs shown, in their order: for expect.poll. */
+export const rowNames = (page: Page) =>
+  rows(page).evaluateAll((options) => options.map((option) => option.getAttribute('aria-label')));
+
+/**
+ * A page of the test site (openPages) as the switcher names it with the default tab details: its title and its whole
+ * website address, without https://.
+ */
+export const named = (title: string) => `${title}, bts.test/${title}`;
+
 /**
  * The browser the tests run in (E2E_BROWSER, launched by tests/e2e/fixtures.ts), as lib/browser.ts names it: the tests
  * ask lib/browser.ts what differs in it (its values are checked by tests/unit/browser.test.ts).

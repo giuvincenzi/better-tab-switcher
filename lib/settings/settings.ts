@@ -11,6 +11,8 @@ export type RowCount = (typeof ROW_CHOICES)[number] | 'fit';
 
 export interface TabDetails {
   address: boolean;
+  /** The whole address of the page, or only its site. */
+  fullAddress: boolean;
   longAddress: LongAddress;
   pinnedIcon: boolean;
   audioIcon: boolean;
@@ -42,7 +44,7 @@ export interface Settings {
 export const defaultSettings: Readonly<Settings> = Object.freeze({
   theme: 'device',
   view: 'list',
-  compact: true,
+  compact: false,
   listRows: 10,
   gridShow: 'previews',
   scope: 'window',
@@ -54,13 +56,14 @@ export const defaultSettings: Readonly<Settings> = Object.freeze({
   toolbar: true,
   chromePagesWindow: true,
   details: Object.freeze({
-    address: false,
-    longAddress: 'cut',
+    address: true,
+    fullAddress: true,
+    longAddress: 'scroll',
     pinnedIcon: true,
     audioIcon: true,
     sleeping: true,
     groupColor: true,
-    lastUsed: false,
+    lastUsed: true,
   }),
 });
 
@@ -119,6 +122,7 @@ export function parseSettings(value: unknown, fallback: Settings = defaultSettin
     chromePagesWindow: flag(saved.chromePagesWindow, d.chromePagesWindow),
     details: {
       address: flag(details.address, d.details.address),
+      fullAddress: flag(details.fullAddress, d.details.fullAddress),
       longAddress: oneOf(details.longAddress, ['cut', 'scroll'], d.details.longAddress),
       pinnedIcon: flag(details.pinnedIcon, d.details.pinnedIcon),
       audioIcon: flag(details.audioIcon, d.details.audioIcon),

@@ -4,6 +4,7 @@ import {
   activeTitle,
   closeWithEscape,
   focusedWindows,
+  named,
   openPages,
   openWindow,
   recordFocusedWindows,
@@ -33,11 +34,11 @@ test.describe('how the switcher switches @switching', () => {
     const page = current as Page;
     await page.keyboard.down('Alt');
     await showSwitcher(serviceWorker);
-    await expect(selected(page)).toHaveAccessibleName('beta');
+    await expect(selected(page)).toHaveAccessibleName(named('beta'));
     await page.keyboard.up('Alt');
     // Still open: the arrows move the selection, Enter opens the tab.
     await page.keyboard.press('ArrowDown');
-    await expect(selected(page)).toHaveAccessibleName('alpha');
+    await expect(selected(page)).toHaveAccessibleName(named('alpha'));
     await page.keyboard.press('Enter');
     await expect.poll(() => activeTitle(serviceWorker)).toBe('alpha');
   });
@@ -50,12 +51,12 @@ test.describe('how the switcher switches @switching', () => {
     const page = current as Page;
     await page.keyboard.down('Alt');
     await showSwitcher(serviceWorker);
-    await expect(selected(page)).toHaveAccessibleName('beta');
+    await expect(selected(page)).toHaveAccessibleName(named('beta'));
     // The focus goes back to the page, as it is while the frame loads the first time: the page gets the keys.
     await switcherFrame(page)?.evaluate(() => window.parent.focus());
     await expect.poll(() => page.evaluate(() => document.activeElement?.localName)).not.toBe('better-tab-switcher');
     await page.keyboard.press('ArrowDown');
-    await expect(selected(page)).toHaveAccessibleName('alpha');
+    await expect(selected(page)).toHaveAccessibleName(named('alpha'));
     await page.keyboard.up('Alt');
     await expect.poll(() => activeTitle(serviceWorker)).toBe('alpha');
   });
@@ -66,7 +67,7 @@ test.describe('how the switcher switches @switching', () => {
     const page = current as Page;
     // From the toolbar icon: no key is held, nothing but Auto-select opens a tab.
     await showSwitcher(serviceWorker, 'next', 'icon');
-    await expect(selected(page)).toHaveAccessibleName('beta');
+    await expect(selected(page)).toHaveAccessibleName(named('beta'));
     await expect.poll(() => activeTitle(serviceWorker)).toBe('beta');
     await expect(rows(page)).toHaveCount(0);
   });
@@ -97,7 +98,7 @@ test.describe('how the switcher switches @switching', () => {
     await expect(rows(page)).toHaveCount(0);
     await showSwitcher(serviceWorker);
     await expect(rows(page)).toHaveCount(3);
-    await expect(selected(page)).toHaveAccessibleName('beta');
+    await expect(selected(page)).toHaveAccessibleName(named('beta'));
   });
 
   test('closes in the window it was open in when it opens in another window', async ({ context, serviceWorker }) => {
@@ -256,11 +257,11 @@ test.describe("the switcher's own window @switching", () => {
     await showSwitcher(serviceWorker);
     const switcherWindow = await opened;
     const chosen = switcherWindow.locator('[role="option"][aria-selected="true"]');
-    await expect(chosen).toHaveAccessibleName('gamma');
+    await expect(chosen).toHaveAccessibleName(named('gamma'));
     await showSwitcher(serviceWorker);
-    await expect(chosen).toHaveAccessibleName('beta');
+    await expect(chosen).toHaveAccessibleName(named('beta'));
     await showSwitcher(serviceWorker, 'previous');
-    await expect(chosen).toHaveAccessibleName('gamma');
+    await expect(chosen).toHaveAccessibleName(named('gamma'));
     // Still the one window.
     expect(context.pages().filter((page) => page.url().startsWith('chrome-extension://'))).toHaveLength(1);
     // Only the key press: the switcher opens the tab on it, and its window can be gone before a key release would arrive.

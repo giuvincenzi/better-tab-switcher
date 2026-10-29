@@ -16,7 +16,8 @@ export type IconName =
   | 'icons'
   | 'compact'
   | 'address'
-  | 'lastUsed';
+  | 'lastUsed'
+  | 'warning';
 
 interface IconProps {
   name: IconName;
@@ -97,6 +98,11 @@ export function Icon(props: IconProps): JSX.Element {
         <Match when={props.name === 'lastUsed'}>
           <circle cx="12" cy="12" r="9" />
           <path d="M12 7v5l3 2" />
+        </Match>
+        <Match when={props.name === 'warning'}>
+          <path d="M12 3l9.5 17h-19z" />
+          <path d="M12 10v4" />
+          <path d="M12 17.5v.01" />
         </Match>
         <Match when={props.name === 'chevron'}>
           <path d="M6 9l6 6 6-6" />

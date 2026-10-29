@@ -82,7 +82,7 @@ describe('Switcher', () => {
   it('selects the previous tab and shows the keys with the real shortcuts', () => {
     const { host } = open();
     expect(host.querySelectorAll('[role="option"]')).toHaveLength(4);
-    expect(selectedTitle(host)).toBe('Inbox (3)');
+    expect(selectedTitle(host)).toBe('Inbox (3), example.com/2');
   });
 
   it('stays open on release with Stay open, from the toolbar icon, or when it cannot see the release', () => {
@@ -107,7 +107,7 @@ describe('Switcher', () => {
   it('takes the keys the page passes on: an arrow moves, and letting go of Alt opens the selected tab', () => {
     const { host, handlers, pageKey } = open();
     pageKey({ type: 'keydown', key: 'ArrowDown', altKey: true });
-    expect(selectedTitle(host)).toBe('Q4 planning');
+    expect(selectedTitle(host)).toBe('Q4 planning, example.com/3');
     pageKey({ type: 'keyup', key: 'Alt' });
     expect(handlers.onOpen).toHaveBeenCalledWith(tabs[2]);
   });
@@ -115,9 +115,9 @@ describe('Switcher', () => {
   it('moves when the shortcut is pressed again, and with the arrows', () => {
     const { host, move, press, handlers } = open();
     move('next');
-    expect(selectedTitle(host)).toBe('Q4 planning');
+    expect(selectedTitle(host)).toBe('Q4 planning, example.com/3');
     press('ArrowDown');
-    expect(selectedTitle(host)).toBe('Running plan');
+    expect(selectedTitle(host)).toBe('Running plan, example.com/4');
     move('previous');
     press('Enter');
     expect(handlers.onOpen).toHaveBeenCalledWith(tabs[2]);
@@ -135,7 +135,7 @@ describe('Switcher', () => {
     const field = host.querySelector('[role="toolbar"] input[type="search"]') as HTMLInputElement;
     expect(field).not.toBeNull();
     expect(document.activeElement).not.toBe(field);
-    expect(selectedTitle(host)).toBe('Inbox (3)');
+    expect(selectedTitle(host)).toBe('Inbox (3), example.com/2');
   });
 
   it('opens the selected tab on release with the toolbar, as without it', () => {
@@ -158,7 +158,7 @@ describe('Switcher', () => {
     field.value = 'plan';
     field.dispatchEvent(new InputEvent('input', { bubbles: true }));
     const shown = [...host.querySelectorAll('[role="option"]')].map((row) => row.getAttribute('aria-label'));
-    expect(shown).toEqual(['Q4 planning', 'Running plan']);
+    expect(shown).toEqual(['Q4 planning, example.com/3', 'Running plan, example.com/4']);
     expect([...host.querySelectorAll('mark')].map((m) => m.textContent)).toEqual(['plan', 'plan']);
   });
 
@@ -215,7 +215,7 @@ describe('Switcher size', () => {
     document.body.style.setProperty('--bts-em', '20px');
     try {
       const row = open().host.querySelector('[role="option"]') as HTMLElement;
-      expect(row.getBoundingClientRect().height).toBe(36 * 1.25);
+      expect(row.getBoundingClientRect().height).toBe(48 * 1.25);
       dispose?.();
       const tile = open({ view: 'grid' }).host.querySelector('[role="option"]') as HTMLElement;
       expect(tile.getBoundingClientRect().width).toBe(208 * 1.25);
@@ -286,8 +286,9 @@ describe('Switcher list width', () => {
   it('shows a short address whole beside the title, in the compact list', async () => {
     await page.viewport(1280, 800);
     const { host } = open({ compact: true, details: { ...defaultSettings.details, address: true } });
+    const shortAddresses = tabs.map((t) => `example.com/${t.id}`);
     const addresses = [...host.querySelectorAll('span')].filter(
-      (span) => span.children.length === 0 && span.textContent === 'example.com',
+      (span) => span.children.length === 0 && shortAddresses.includes(span.textContent ?? ''),
     );
     expect(addresses).toHaveLength(tabs.length);
     for (const address of addresses) {
@@ -337,20 +338,20 @@ describe('Switcher in the grid', () => {
     // Two tiles across (lib/switcher/sizes.ts): 208 px each, with the switcher's margins and padding.
     await page.viewport(600, 800);
     const { host, press } = open({ view: 'grid' });
-    expect(selectedTitle(host)).toBe('Inbox (3)');
+    expect(selectedTitle(host)).toBe('Inbox (3), example.com/2');
     press('ArrowDown');
-    expect(selectedTitle(host)).toBe('Running plan');
+    expect(selectedTitle(host)).toBe('Running plan, example.com/4');
     press('ArrowLeft');
-    expect(selectedTitle(host)).toBe('Q4 planning');
+    expect(selectedTitle(host)).toBe('Q4 planning, example.com/3');
     press('ArrowUp');
-    expect(selectedTitle(host)).toBe('Pull request #12');
+    expect(selectedTitle(host)).toBe('Pull request #12, example.com/1');
     press('ArrowRight');
-    expect(selectedTitle(host)).toBe('Inbox (3)');
+    expect(selectedTitle(host)).toBe('Inbox (3), example.com/2');
   });
 
   it("shows the site's icon until the tab's picture arrives", () => {
     const { host, setPreviews } = open({ view: 'grid' });
-    const tile = () => host.querySelector('[aria-label="Q4 planning"]') as HTMLElement;
+    const tile = () => host.querySelector('[aria-label="Q4 planning, example.com/3"]') as HTMLElement;
     expect(tile().querySelector('img[src^="data:"]')).toBeNull();
     expect(tile().querySelectorAll('img[src*="_favicon"]')).toHaveLength(2);
     setPreviews({ 3: 'data:image/webp;base64,UklGRg==' });
@@ -398,9 +399,12 @@ describe('Switcher toolbar', () => {
 
   it('turns Compact on and off', () => {
     const { host, handlers } = open();
+    expect(button(host, 'Compact').getAttribute('aria-pressed')).toBe('false');
+    button(host, 'Compact').click();
+    expect(handlers.onSettingsChange).toHaveBeenCalledWith({ compact: true });
     expect(button(host, 'Compact').getAttribute('aria-pressed')).toBe('true');
     button(host, 'Compact').click();
-    expect(handlers.onSettingsChange).toHaveBeenCalledWith({ compact: false });
+    expect(handlers.onSettingsChange).toHaveBeenLastCalledWith({ compact: false });
     expect(button(host, 'Compact').getAttribute('aria-pressed')).toBe('false');
   });
 
@@ -409,7 +413,15 @@ describe('Switcher toolbar', () => {
       const { host, handlers } = open({ view });
       const address = button(host, 'Website address');
       const lastUsed = button(host, 'Last used');
-      expect([address.getAttribute('aria-pressed'), lastUsed.getAttribute('aria-pressed')]).toEqual(['false', 'false']);
+      // Both on by default: off first, then on again.
+      expect([address.getAttribute('aria-pressed'), lastUsed.getAttribute('aria-pressed')]).toEqual(['true', 'true']);
+      address.click();
+      lastUsed.click();
+      expect(handlers.onSettingsChange).toHaveBeenCalledWith({ details: { address: false } });
+      expect(handlers.onSettingsChange).toHaveBeenCalledWith({ details: { lastUsed: false } });
+      expect(address.getAttribute('aria-pressed')).toBe('false');
+      expect(lastUsed.getAttribute('aria-pressed')).toBe('false');
+      expect(host.querySelector('[role="option"]')?.textContent).not.toMatch(/example\.com|ago/);
       address.click();
       lastUsed.click();
       expect(handlers.onSettingsChange).toHaveBeenCalledWith({ details: { address: true } });
@@ -442,6 +454,6 @@ describe('Switcher toolbar', () => {
     expect(pressed.defaultPrevented).toBe(true);
     expect(document.activeElement).toBe(list);
     press('ArrowDown');
-    expect(selectedTitle(host)).toBe('Q4 planning');
+    expect(selectedTitle(host)).toBe('Q4 planning, example.com/3');
   });
 });

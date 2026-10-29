@@ -52,8 +52,10 @@ Settings_AutoSelectNote: تُفتح علامة التبويب المحدّدة �
 Settings_AutoSelectTime: مدة الاختيار التلقائي
 Settings_TabDetails: تفاصيل علامة التبويب
 Settings_Address: عنوان الموقع الإلكتروني
+Settings_FullAddress: العنوان الكامل
+Settings_FullAddressNote: عنوان الصفحة كاملًا، وليس الموقع فقط.
 Settings_LongAddress: عناوين المواقع الإلكترونية الطويلة
-Settings_LongAddressNote: يتم اقتطاعها باستخدام «…» أو تمريرها في علامة التبويب المحدّدة لعرضها كاملة.
+Settings_LongAddressNote: يتم تمريرها في علامة التبويب المحدّدة لعرضها كاملة، أو اقتطاعها باستخدام «…».
 Settings_LongAddressCut: اقتطاع
 Settings_LongAddressScroll: تمرير
 Settings_PinnedIcon: رمز علامة التبويب المثبّتة
@@ -72,6 +74,15 @@ Settings_PreviousTab: علامة التبويب السابقة
 Settings_PreviousTabNote: يفتح مبدّل علامات التبويب وينقل التحديد إلى علامة التبويب السابقة.
 Settings_ChangeShortcut: تغيير الاختصار
 Settings_NoShortcut: غير محدَّد
+Settings_IconShortcut: الرمز في شريط الأدوات
+Settings_IconShortcutNote: يفتح مبدّل علامات التبويب كما لو نقرت على الرمز في شريط الأدوات، ويبقى مفتوحًا إلى أن تختار علامة تبويب.
+Settings_ShortcutMissing: أحد الاختصارات بلا مفاتيح، ربما لأن إضافة أخرى تستخدمها من قبل. اختر المفاتيح التي تريدها باستخدام «$1».
+Settings_ShortcutsDialogTitle: اختر اختصارات لوحة المفاتيح
+Settings_ShortcutsDialogText: تم تثبيت Better Tab Switcher. اختر المفاتيح التي تفتحه.
 Settings_Reset: إعادة الضبط
 Settings_RestoreDefaults: استعادة الإعدادات إلى القيم التلقائية الأصلية
 Settings_Restore: استعادة
+Settings_RestoreTitle: هل تريد استعادة الإعدادات التلقائية؟
+Settings_RestoreText: ستعود كل الإعدادات إلى ما كانت عليه عند تثبيت Better Tab Switcher، وستبقى اختصارات لوحة المفاتيح كما هي.
+Dialog_Done: تم
+Dialog_Cancel: إلغاء

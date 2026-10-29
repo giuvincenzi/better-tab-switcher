@@ -52,8 +52,10 @@ Settings_AutoSelectNote: L'onglet sélectionné s'ouvre au bout de quelques seco
 Settings_AutoSelectTime: Délai de sélection automatique
 Settings_TabDetails: Détails des onglets
 Settings_Address: Adresse du site web
+Settings_FullAddress: Adresse complète
+Settings_FullAddressNote: L'adresse complète de la page, et pas seulement le site.
 Settings_LongAddress: Adresses trop longues
-Settings_LongAddressNote: Les tronquer avec « … », ou les faire défiler sur l'onglet sélectionné pour les afficher en entier.
+Settings_LongAddressNote: Les faire défiler sur l'onglet sélectionné pour les afficher en entier, ou les tronquer avec « … ».
 Settings_LongAddressCut: Tronquer
 Settings_LongAddressScroll: Faire défiler
 Settings_PinnedIcon: Icône des onglets épinglés
@@ -72,6 +74,15 @@ Settings_PreviousTab: Onglet précédent
 Settings_PreviousTabNote: Ouvre le sélecteur et déplace la sélection sur l'onglet précédent.
 Settings_ChangeShortcut: Modifier le raccourci
 Settings_NoShortcut: Non défini
+Settings_IconShortcut: Icône dans la barre d'outils
+Settings_IconShortcutNote: Ouvre le sélecteur comme un clic sur l'icône dans la barre d'outils. Il reste ouvert jusqu'à ce que vous choisissiez un onglet.
+Settings_ShortcutMissing: Un raccourci n'a aucune touche, peut-être parce qu'une autre extension les utilise déjà. Choisissez vos propres touches avec le bouton $1.
+Settings_ShortcutsDialogTitle: Choisissez vos raccourcis clavier
+Settings_ShortcutsDialogText: Better Tab Switcher est installé. Choisissez les touches qui l'ouvrent.
 Settings_Reset: Réinitialiser
 Settings_RestoreDefaults: Restaurer les paramètres par défaut
 Settings_Restore: Restaurer
+Settings_RestoreTitle: Restaurer les paramètres par défaut ?
+Settings_RestoreText: Tous les paramètres redeviennent tels qu'ils étaient à l'installation de Better Tab Switcher. Vos raccourcis clavier restent inchangés.
+Dialog_Done: OK
+Dialog_Cancel: Annuler

@@ -21,3 +21,14 @@
   outline: calc(0.125 * var(--bts-em)) solid var(--bts-accent-bright);
   outline-offset: calc(0.125 * var(--bts-em));
 }
+
+.primary {
+  border-color: transparent;
+  background: var(--bts-accent);
+  color: var(--bts-on-accent);
+}
+
+.primary:hover {
+  background: var(--bts-accent);
+  filter: brightness(1.1);
+}

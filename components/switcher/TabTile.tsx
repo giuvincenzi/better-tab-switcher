@@ -85,6 +85,7 @@ export function TabTile(props: TabTileProps): JSX.Element {
       <Show when={props.details.address}>
         <Address
           url={props.tab.url}
+          full={props.details.fullAddress}
           scrolls={props.details.longAddress === 'scroll' && props.selected}
           class={styles.address}
         />

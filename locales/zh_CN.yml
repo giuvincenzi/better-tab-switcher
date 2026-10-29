@@ -52,8 +52,10 @@ Settings_AutoSelectNote: 选中的标签页会在几秒后打开，并有一条�
 Settings_AutoSelectTime: 自动选择时间
 Settings_TabDetails: 标签页信息
 Settings_Address: 网址
+Settings_FullAddress: 完整网址
+Settings_FullAddressNote: 显示网页的完整网址，而不只是网站。
 Settings_LongAddress: 较长的网址
-Settings_LongAddressNote: 用“…”截断，或在选中的标签页上滚动显示完整网址。
+Settings_LongAddressNote: 在选中的标签页上滚动显示完整网址，或用“…”截断。
 Settings_LongAddressCut: 截断
 Settings_LongAddressScroll: 滚动显示
 Settings_PinnedIcon: 已固定标签页图标
@@ -72,6 +74,15 @@ Settings_PreviousTab: 上一个标签页
 Settings_PreviousTabNote: 打开切换器，并将选择移到上一个标签页。
 Settings_ChangeShortcut: 更改快捷键
 Settings_NoShortcut: 未设置
+Settings_IconShortcut: 工具栏图标
+Settings_IconShortcutNote: 打开切换器，效果与点击工具栏图标相同。切换器会一直保持打开，直到选择标签页。
+Settings_ShortcutMissing: 有快捷键未设置按键，可能是因为其他扩展程序已在使用这些按键。请点击“$1”自行设置按键。
+Settings_ShortcutsDialogTitle: 设置键盘快捷键
+Settings_ShortcutsDialogText: Better Tab Switcher 已安装。请选择用来打开它的按键。
 Settings_Reset: 重置
 Settings_RestoreDefaults: 恢复默认设置
 Settings_Restore: 恢复
+Settings_RestoreTitle: 要恢复默认设置吗？
+Settings_RestoreText: 所有设置都将恢复为安装 Better Tab Switcher 时的状态。键盘快捷键保持不变。
+Dialog_Done: 完成
+Dialog_Cancel: 取消

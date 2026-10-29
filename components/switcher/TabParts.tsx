@@ -15,7 +15,7 @@ export function tabName(tab: SwitcherTab, details: TabDetails, language: string)
   return new Intl.ListFormat(language, { type: 'unit', style: 'short' }).format(
     [
       tab.title,
-      details.address ? hostOf(tab.url) : '',
+      details.address ? addressOf(tab.url, details.fullAddress) : '',
       details.pinnedIcon && tab.pinned ? i18n.t('Switcher_Pinned') : '',
       details.audioIcon && tab.audible ? i18n.t('Switcher_PlayingAudio') : '',
       details.sleeping && tab.sleeping ? i18n.t('Switcher_Sleeping') : '',
@@ -24,9 +24,16 @@ export function tabName(tab: SwitcherTab, details: TabDetails, language: string)
   );
 }
 
-function hostOf(url: string): string {
+/**
+ * The address the switcher shows: the whole page's address without its http(s)://, or only its host (the site, or
+ * the browser page's name, like settings). An address with no host (a file, about:blank) stays whole.
+ */
+export function addressOf(url: string, full: boolean): string {
   try {
-    return new URL(url).host || url;
+    const address = new URL(url);
+    if (!address.host) return url;
+    if (!full) return address.host;
+    return /^https?:$/.test(address.protocol) ? url.slice(address.protocol.length + 2) : url;
   } catch {
     return url;
   }
@@ -55,14 +62,20 @@ export function TabTitle(props: { tab: SwitcherTab; title: TitleParts; details: 
  * gives it, never its text's (it measures that width to scroll): `class` gives it its place. Its place follows the
  * page's direction; the address itself always reads left to right (.claude/rules/i18n.md), so a long one shows its start.
  */
-export function Address(props: { url: string; scrolls: boolean; side?: boolean; class?: string }): JSX.Element {
+export function Address(props: {
+  url: string;
+  full: boolean;
+  scrolls: boolean;
+  side?: boolean;
+  class?: string;
+}): JSX.Element {
   return (
     <span
       class={`${styles.address} ${props.class ?? ''}`}
       classList={{ [styles.side as string]: props.side, [styles.scrolls as string]: props.scrolls }}
     >
       <span class={styles.addressText} dir="ltr">
-        <span>{hostOf(props.url)}</span>
+        <span>{addressOf(props.url, props.full)}</span>
       </span>
     </span>
   );

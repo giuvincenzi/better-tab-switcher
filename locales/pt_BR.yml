@@ -52,8 +52,10 @@ Settings_AutoSelectNote: A guia selecionada abre depois de alguns segundos. Uma 
 Settings_AutoSelectTime: Tempo da seleção automática
 Settings_TabDetails: Detalhes das guias
 Settings_Address: Endereço do site
+Settings_FullAddress: Endereço completo
+Settings_FullAddressNote: O endereço inteiro da página, não só o do site.
 Settings_LongAddress: Endereços de sites longos
-Settings_LongAddressNote: Eles são encurtados com “…” ou rolam na guia selecionada para aparecerem por inteiro.
+Settings_LongAddressNote: Eles rolam na guia selecionada para aparecerem por inteiro ou são encurtados com “…”.
 Settings_LongAddressCut: Encurtar
 Settings_LongAddressScroll: Rolar
 Settings_PinnedIcon: Ícone de guia fixada
@@ -72,6 +74,15 @@ Settings_PreviousTab: Guia anterior
 Settings_PreviousTabNote: Abre o seletor e move a seleção para a guia anterior.
 Settings_ChangeShortcut: Alterar atalho
 Settings_NoShortcut: Não definido
+Settings_IconShortcut: Ícone na barra de ferramentas
+Settings_IconShortcutNote: Abre o seletor como um clique no ícone da barra de ferramentas. Ele fica aberto até você escolher uma guia.
+Settings_ShortcutMissing: Um atalho está sem teclas, talvez porque outra extensão já use essas teclas. Escolha as suas com o botão $1.
+Settings_ShortcutsDialogTitle: Escolha seus atalhos do teclado
+Settings_ShortcutsDialogText: O Better Tab Switcher foi instalado. Escolha as teclas para abri-lo.
 Settings_Reset: Redefinir
 Settings_RestoreDefaults: Restaurar configurações para os padrões originais
 Settings_Restore: Restaurar
+Settings_RestoreTitle: Restaurar configurações para os padrões originais?
+Settings_RestoreText: Todas as configurações voltam a ser como quando você instalou o Better Tab Switcher. Seus atalhos do teclado continuam como estão.
+Dialog_Done: Concluído
+Dialog_Cancel: Cancelar

@@ -52,8 +52,10 @@ Settings_AutoSelectNote: Der ausgewählte Tab wird nach einigen Sekunden geöffn
 Settings_AutoSelectTime: Zeit bis zur automatischen Auswahl
 Settings_TabDetails: Tab-Details
 Settings_Address: Webadresse
+Settings_FullAddress: Vollständige Adresse
+Settings_FullAddressNote: Die ganze Adresse der Seite, nicht nur die Website.
 Settings_LongAddress: Lange Webadressen
-Settings_LongAddressNote: Sie werden mit „…“ gekürzt oder laufen beim ausgewählten Tab durch, damit sie vollständig zu sehen sind.
+Settings_LongAddressNote: Sie laufen beim ausgewählten Tab durch, damit sie vollständig zu sehen sind, oder werden mit „…“ gekürzt.
 Settings_LongAddressCut: Kürzen
 Settings_LongAddressScroll: Durchlaufen lassen
 Settings_PinnedIcon: Symbol für angepinnte Tabs
@@ -72,6 +74,15 @@ Settings_PreviousTab: Vorheriger Tab
 Settings_PreviousTabNote: Öffnet den Tab-Umschalter und wählt den vorherigen Tab aus.
 Settings_ChangeShortcut: Tastenkombination ändern
 Settings_NoShortcut: Nicht festgelegt
+Settings_IconShortcut: Symbol in der Symbolleiste
+Settings_IconShortcutNote: Öffnet den Tab-Umschalter wie ein Klick auf das Symbol in der Symbolleiste. Er bleibt geöffnet, bis Sie einen Tab auswählen.
+Settings_ShortcutMissing: Für eine Tastenkombination sind keine Tasten festgelegt, vielleicht weil eine andere Erweiterung sie bereits verwendet. Legen Sie über „$1“ eigene Tasten fest.
+Settings_ShortcutsDialogTitle: Tastenkombinationen festlegen
+Settings_ShortcutsDialogText: Better Tab Switcher ist installiert. Legen Sie fest, mit welchen Tasten Sie es öffnen.
 Settings_Reset: Zurücksetzen
 Settings_RestoreDefaults: Standardeinstellungen wiederherstellen
 Settings_Restore: Wiederherstellen
+Settings_RestoreTitle: Standardeinstellungen wiederherstellen?
+Settings_RestoreText: Alle Einstellungen werden auf den Stand bei der Installation von Better Tab Switcher zurückgesetzt. Ihre Tastenkombinationen bleiben unverändert.
+Dialog_Done: Fertig
+Dialog_Cancel: Abbrechen

@@ -52,8 +52,10 @@ Settings_AutoSelectNote: La scheda selezionata si apre dopo qualche secondo. Una
 Settings_AutoSelectTime: Tempo per la selezione automatica
 Settings_TabDetails: Dettagli delle schede
 Settings_Address: Indirizzo del sito web
+Settings_FullAddress: Indirizzo completo
+Settings_FullAddressNote: L'indirizzo intero della pagina, non solo il sito.
 Settings_LongAddress: Indirizzi web lunghi
-Settings_LongAddressNote: Si possono accorciare con “…” oppure far scorrere sulla scheda selezionata per vederli per intero.
+Settings_LongAddressNote: Si possono far scorrere sulla scheda selezionata per vederli per intero, oppure accorciare con “…”.
 Settings_LongAddressCut: Accorciati
 Settings_LongAddressScroll: A scorrimento
 Settings_PinnedIcon: Icona delle schede fissate
@@ -72,6 +74,15 @@ Settings_PreviousTab: Scheda precedente
 Settings_PreviousTabNote: Apre il selettore e sposta la selezione sulla scheda precedente.
 Settings_ChangeShortcut: Cambia scorciatoia
 Settings_NoShortcut: Non impostata
+Settings_IconShortcut: Icona nella barra degli strumenti
+Settings_IconShortcutNote: Apre il selettore come un clic sull'icona nella barra degli strumenti. Resta aperto finché non scegli una scheda.
+Settings_ShortcutMissing: Una scorciatoia non ha tasti, forse perché li usa già un'altra estensione. Scegli i tasti che preferisci con il pulsante $1.
+Settings_ShortcutsDialogTitle: Scegli le scorciatoie da tastiera
+Settings_ShortcutsDialogText: Better Tab Switcher è installato. Scegli i tasti con cui aprirlo.
 Settings_Reset: Reimposta
 Settings_RestoreDefaults: Ripristina le impostazioni predefinite
 Settings_Restore: Ripristina
+Settings_RestoreTitle: Ripristinare le impostazioni predefinite?
+Settings_RestoreText: Tutte le impostazioni tornano come quando hai installato Better Tab Switcher. Le scorciatoie da tastiera restano come sono.
+Dialog_Done: Fine
+Dialog_Cancel: Annulla
