@@ -11,8 +11,12 @@ import { openPages, rows, showSwitcher, useSettings } from './helpers';
 /** The most the code put into a page may weigh (the frame's holder), and the switcher's page with all it loads. */
 const SIZE_LIMITS = { holder: 32 * 1024, frame: 128 * 1024 };
 
-/** The most an opening may take, by number of tabs, in milliseconds: the median of several openings. */
-const TIME_LIMITS: Record<number, number> = { 50: 1000, 200: 1500, 500: 2500 };
+/**
+ * The most an opening may take, by number of tabs, in milliseconds: the median of several openings. About 4 times the
+ * slowest median on GitHub's machines (Linux, Windows and macOS, Chromium and Microsoft Edge): 70 ms with 50 tabs,
+ * 170 ms with 200 and 385 ms with 500, in the list.
+ */
+const TIME_LIMITS: Record<number, number> = { 50: 300, 200: 700, 500: 1500 };
 
 test.describe('performance @performance', () => {
   test("keeps the switcher's code small", () => {

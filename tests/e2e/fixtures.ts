@@ -49,6 +49,7 @@ export const test = base.extend<ExtensionFixtures>({
   },
   serviceWorker: async ({ context }, use) => {
     const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker'));
+    contextOf.set(worker, context);
     await use(worker);
   },
   extensionId: async ({ serviceWorker }, use) => {
@@ -57,3 +58,6 @@ export const test = base.extend<ExtensionFixtures>({
 });
 
 export const expect = test.expect;
+
+/** The browser context of each extension's background, for the helpers that only get the background (helpers.ts). */
+export const contextOf = new WeakMap<Worker, BrowserContext>();

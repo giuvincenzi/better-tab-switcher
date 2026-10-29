@@ -1,6 +1,7 @@
 import type { BrowserContext, Frame, Locator, Page, Worker } from '@playwright/test';
 import type { BrowserName } from '../../lib/browser';
 import type { Settings } from '../../lib/settings/settings';
+import { contextOf, expect } from './fixtures';
 
 /**
  * Pages of a site that exists only in the tests (Playwright serves them, nothing goes to the network), as the only
@@ -27,13 +28,30 @@ export async function openPages(context: BrowserContext, titles: string[]): Prom
   return pages;
 }
 
-/** Asks for the switcher as the shortcut does (`direction`), or as the toolbar icon does (`from: 'icon'`). */
-export function showSwitcher(
+/**
+ * Asks for the switcher as the shortcut does (`direction`), or as the toolbar icon does (`from: 'icon'`). Shown in a
+ * page, the switcher is in its frame: Playwright learns of a new frame a moment after the extension made it, so this
+ * waits until it knows it, for switcher() to find it.
+ */
+export async function showSwitcher(
   worker: Worker,
   direction: 'next' | 'previous' = 'next',
   from: 'shortcut' | 'icon' = 'shortcut',
 ) {
-  return worker.evaluate((request) => globalThis.betterTabSwitcherTest.requestSwitcher(request), { direction, from });
+  await worker.evaluate((request) => globalThis.betterTabSwitcherTest.requestSwitcher(request), { direction, from });
+  const shownIn = await worker.evaluate(async () => {
+    const { openSwitcher } = (await chrome.storage.session.get('openSwitcher')) as {
+      openSwitcher?: { in: string; tabId: number } | null;
+    };
+    return openSwitcher?.in === 'page' ? (await chrome.tabs.get(openSwitcher.tabId)).url : undefined;
+  });
+  const page = shownIn
+    ? contextOf
+        .get(worker)
+        ?.pages()
+        .find((open) => open.url() === shownIn)
+    : undefined;
+  if (page) await expect.poll(() => switcherFrame(page) !== null).toBe(true);
 }
 
 export function activeTitle(worker: Worker) {
