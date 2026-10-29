@@ -85,8 +85,18 @@ const read = (path) => readFileSync(path, 'utf8');
  */
 function write(path, text) {
   mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(path, text);
+  writeFileSync(path, path.endsWith('.html') ? otherSitesInNewTab(text) : text);
 }
+
+/**
+ * Links to other sites (GitHub, the stores, PuppyMacro) open in a new tab, so the site stays open; the site's own links
+ * open in the same tab.
+ * @param {string} html
+ */
+const otherSitesInNewTab = (html) =>
+  html.replace(/<a (?![^>]*\btarget=)([^>]*\bhref="https?:\/\/[^"]*")/g, (tag, attributes) =>
+    attributes.includes(`href="${SITE_URL}`) ? tag : `<a target="_blank" rel="noopener" ${attributes}`,
+  );
 /** Only the characters HTML needs escaped: accented letters and other scripts stay readable in the pages. */
 /** @param {unknown} text */
 const encode = (text) =>
