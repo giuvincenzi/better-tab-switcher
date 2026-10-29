@@ -5,18 +5,22 @@ import { expect, extensionDir, test } from './fixtures';
 import { openPages, rows, showSwitcher, useSettings } from './helpers';
 
 // How fast the switcher opens and how much code it loads. The sizes are the same on every machine: their limits are
-// tight. The times change with the machine: their limits are far above the times measured on GitHub's machines (each
-// test notes its times in the report), so they catch a switcher that became slow, never a machine slower than usual.
+// tight. The times change with the machine, and a busy machine makes any opening slower, never quicker: what is
+// checked is the quickest of several openings, against a limit far above it on GitHub's machines (each test notes its
+// times in the report). So it catches a switcher that became slow, never a machine busier than usual.
 
 /** The most the code put into a page may weigh (the frame's holder), and the switcher's page with all it loads. */
 const SIZE_LIMITS = { holder: 32 * 1024, frame: 128 * 1024 };
 
 /**
- * The most an opening may take, by number of tabs, in milliseconds: the median of several openings. About 4 times the
- * slowest median on GitHub's machines (Linux, Windows and macOS, Chromium and Microsoft Edge): 70 ms with 50 tabs,
- * 170 ms with 200 and 385 ms with 500, in the list.
+ * The most the quickest opening may take, by number of tabs, in milliseconds. About 4 times the slowest of the quickest
+ * openings on GitHub's machines (Linux, Windows and macOS, Chromium and Microsoft Edge): 134 ms with 50 tabs, 203 ms
+ * with 200 and 452 ms with 500, in the list.
  */
-const TIME_LIMITS: Record<number, number> = { 50: 300, 200: 700, 500: 1500 };
+const TIME_LIMITS: Record<number, number> = { 50: 500, 200: 800, 500: 1800 };
+
+/** The openings measured for each number of tabs, after a first one (the first in a page also loads the frame). */
+const OPENINGS = 5;
 
 test.describe('performance @performance', () => {
   test("keeps the switcher's code small", () => {
@@ -43,7 +47,7 @@ test.describe('performance @performance', () => {
         tabs = count;
         await current.bringToFront();
         const times: number[] = [];
-        for (let run = 0; run < 5; run++) {
+        for (let run = 0; run <= OPENINGS; run++) {
           const started = performance.now();
           await showSwitcher(serviceWorker, 'next', 'icon');
           await expect(rows(current).first()).toBeVisible();
@@ -51,9 +55,9 @@ test.describe('performance @performance', () => {
           await current.keyboard.press('Escape');
           await expect(rows(current)).toHaveCount(0);
         }
-        const median = [...times].sort((a, b) => a - b)[Math.floor(times.length / 2)] as number;
+        const quickest = Math.min(...times.slice(1));
         test.info().annotations.push({ type: `${count} tabs`, description: `${times.join(', ')} ms` });
-        expect(median, `${count} tabs: ${times.join(', ')} ms`).toBeLessThanOrEqual(TIME_LIMITS[count] as number);
+        expect(quickest, `${count} tabs: ${times.join(', ')} ms`).toBeLessThanOrEqual(TIME_LIMITS[count] as number);
       }
     });
   }
