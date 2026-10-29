@@ -77,6 +77,8 @@ test.describe('which tabs the switcher lists @tabs', () => {
   });
 
   test('lists 60 tabs, the selection scrolled into sight', async ({ context, serviceWorker }) => {
+    // Opening 60 pages takes most of a test's time on a slow machine (macOS on GitHub).
+    test.slow();
     const names = Array.from({ length: 60 }, (_, i) => `tab${String(i + 1).padStart(2, '0')}`);
     const pages = await openPages(context, names);
     const page = pages[59] as Page;

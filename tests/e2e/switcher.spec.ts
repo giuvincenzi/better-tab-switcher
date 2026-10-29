@@ -177,7 +177,10 @@ test.describe("Chrome's own pages @switcher", () => {
         return page === panel.backgroundColor;
       }),
     ).toBe(true);
-    await switcherWindow.getByRole('option', { name: /^alpha/ }).click();
+    // A click on a tab closes the window: the mouse's click, which waits for nothing in the window after it.
+    const alpha = await switcherWindow.getByRole('option', { name: /^alpha/ }).boundingBox();
+    if (!alpha) throw new Error('No alpha in the switcher.');
+    await switcherWindow.mouse.click(alpha.x + alpha.width / 2, alpha.y + alpha.height / 2);
     await expect.poll(() => activeTitle(serviceWorker)).toBe('alpha');
     await expect.poll(() => switcherWindow.isClosed()).toBe(true);
   });
