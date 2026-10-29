@@ -212,9 +212,9 @@ test.describe("Chrome's own pages @switcher", () => {
     const switcherWindow = await opened;
     await switcherWindow.waitForFunction(() => document.querySelector('[role="listbox"]') !== null);
     await switcherWindow.keyboard.down('Alt');
-    await switcherWindow.keyboard.up('Alt');
+    // The release closes the window at once: it may close before the release is acknowledged.
+    await closeBy(switcherWindow, () => switcherWindow.keyboard.up('Alt'));
     await expect.poll(() => activeTitle(serviceWorker)).toBe('beta');
-    await expect.poll(() => switcherWindow.isClosed()).toBe(true);
   });
 });
 
