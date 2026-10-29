@@ -281,6 +281,28 @@ test.describe('the page behind the switcher @switcher', () => {
   });
 });
 
+test.describe('pages that isolate themselves @switcher', () => {
+  test('shows in a page that takes only frames allowed to it (Cross-Origin-Embedder-Policy: require-corp)', async ({
+    context,
+    serviceWorker,
+  }) => {
+    await openPages(context, ['alpha']);
+    await context.route('https://isolated.test/**', (route) =>
+      route.fulfill({
+        contentType: 'text/html',
+        headers: { 'Cross-Origin-Embedder-Policy': 'require-corp', 'Cross-Origin-Opener-Policy': 'same-origin' },
+        body: '<title>isolated</title><h1>isolated</h1>',
+      }),
+    );
+    const page = await context.newPage();
+    await page.goto('https://isolated.test/');
+    expect(await page.evaluate(() => crossOriginIsolated)).toBe(true);
+    await page.bringToFront();
+    await showSwitcher(serviceWorker);
+    await expect(rows(page)).toHaveCount(2);
+  });
+});
+
 test.describe('what the page sees of the switcher @switcher', () => {
   test("keeps the tabs from the page: it can't reach the switcher, read its text, nor find a tab's title", async ({
     context,

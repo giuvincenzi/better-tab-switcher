@@ -92,6 +92,10 @@ async function holdFrame(ctx: ContentScriptContext): Promise<FrameHolder> {
   dialog.addEventListener('cancel', (event) => event.preventDefault());
   const frame = document.createElement('iframe');
   frame.title = i18n.t('Extension_Name');
+  // Without the page's cookies and storage (the frame uses neither: it talks only to the extension), as a page that
+  // isolates itself (Cross-Origin-Embedder-Policy: require-corp, like WhatsApp Web) accepts it; Chrome 110 and later.
+  // An attribute: TypeScript's DOM types don't have the property yet.
+  frame.setAttribute('credentialless', '');
   frame.src = browser.runtime.getURL('/switcher-frame.html');
   const loaded = new Promise<void>((resolve) => frame.addEventListener('load', () => resolve(), { once: true }));
   dialog.append(frame);
