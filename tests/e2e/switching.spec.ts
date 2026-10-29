@@ -1,4 +1,4 @@
-import type { BrowserContext, Page } from '@playwright/test';
+import type { BrowserContext, Frame, Page } from '@playwright/test';
 import { expect, test } from './fixtures';
 import {
   activeTitle,
@@ -201,6 +201,56 @@ test.describe("the switcher's own window @switching", () => {
     const again = context.waitForEvent('page');
     await showSwitcher(serviceWorker);
     await expect((await again).getByRole('option')).toHaveCount(3);
+  });
+
+  test("is as large as over a page and fits the switcher exactly, with Chrome's zoom", async ({
+    context,
+    serviceWorker,
+  }) => {
+    const [alpha] = (await openPages(context, ['alpha', 'beta'])) as [Page, Page];
+    const chromePage = await openChromePage(context);
+    const first = context.waitForEvent('page');
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    const firstWindow = await first;
+    await expect(firstWindow.getByRole('option')).toHaveCount(3);
+    // Chrome keeps a zoom for each site: zoomed here, the extension's pages open zoomed from now on.
+    await firstWindow.evaluate(() => chrome.tabs.setZoom(1.5));
+    await firstWindow.keyboard.down('Escape');
+    await expect.poll(() => firstWindow.isClosed()).toBe(true);
+
+    await chromePage.bringToFront();
+    const opened = context.waitForEvent('page');
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    const switcherWindow = await opened;
+    await expect(switcherWindow.getByRole('option')).toHaveCount(3);
+    expect(await switcherWindow.evaluate(() => chrome.tabs.getZoom())).toBe(1.5);
+    const panelSize = (where: Page | Frame) =>
+      where.evaluate(() => {
+        // The panel, in the backdrop that covers the page.
+        const panel = document.querySelector('dialog > * > *')?.getBoundingClientRect();
+        return { width: Math.ceil(panel?.width ?? 0), height: Math.ceil(panel?.height ?? 0) };
+      });
+    // Its window is as large as the switcher.
+    await expect
+      .poll(async () => {
+        const panel = await panelSize(switcherWindow);
+        const page = await switcherWindow.evaluate(() => ({ width: innerWidth, height: innerHeight }));
+        return Math.abs(panel.width - page.width) <= 1 && Math.abs(panel.height - page.height) <= 1;
+      })
+      .toBe(true);
+    const inWindow = await panelSize(switcherWindow);
+    await switcherWindow.keyboard.down('Escape');
+    await expect.poll(() => switcherWindow.isClosed()).toBe(true);
+
+    // Over a web page of the same Chrome window, with the same zoom, the switcher is as wide.
+    await alpha.bringToFront();
+    await serviceWorker.evaluate(async () => {
+      const [current] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+      await chrome.tabs.setZoom(current?.id as number, 1.5);
+    });
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    await expect(rows(alpha)).toHaveCount(3);
+    expect((await panelSize(switcherFrame(alpha) as Frame)).width).toBe(inWindow.width);
   });
 
   test('moves its selection when the shortcut is pressed again', async ({ context, serviceWorker }) => {

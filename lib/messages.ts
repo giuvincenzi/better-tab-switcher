@@ -22,8 +22,8 @@ export interface SwitcherSnapshot {
    */
   canSeeRelease?: boolean;
   /**
-   * Shown in a window of its own (on Chrome's pages): the Chrome window it is in the middle of. The switcher takes its
-   * sizes from that window, as it would from its page, and its own window fits it.
+   * Shown in a window of its own (on Chrome's pages): the Chrome window it is in the middle of, in the screen's pixels.
+   * The switcher takes its sizes from that window, as it would from its page, and its own window fits it.
    */
   centeredOn?: Rect;
 }

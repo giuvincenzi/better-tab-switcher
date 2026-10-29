@@ -272,7 +272,7 @@ test.describe('what the page sees of the switcher @switcher', () => {
         holder: holder !== null,
         shadowRoot: holder?.shadowRoot ?? null,
         frames: document.querySelectorAll('iframe').length,
-        text: document.body.innerText,
+        text: document.body.textContent,
       };
     });
     expect(seen).toEqual({ holder: true, shadowRoot: null, frames: 0, text: 'gamma' });
