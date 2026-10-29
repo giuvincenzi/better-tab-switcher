@@ -71,4 +71,26 @@ describe('matchTab', () => {
     });
     expect(matchTab('🎉', 'a🎉b', 'https://x.example')).toEqual({ before: 'a', match: '🎉', after: 'b' });
   });
+
+  it('ignores case one letter at a time: a Greek Σ typed at the end of a word still finds the word going on', () => {
+    expect(matchTab('ΚΑΣ', 'ΚΑΣΤΡΟ', 'https://x.example')?.match).toBe('ΚΑΣ');
+    expect(matchTab('κας', 'Το καστρο', 'https://x.example')).toEqual({ before: 'Το ', match: 'κασ', after: 'τρο' });
+    expect(matchTab('ΟΔΟΣ', 'Μια οδος', 'https://x.example')?.match).toBe('οδος');
+  });
+
+  it('highlights the letters that match when a letter loses its case as two (İ, ß)', () => {
+    expect(matchTab('stan', 'İstanbul', 'https://x.example')).toEqual({ before: 'İ', match: 'stan', after: 'bul' });
+    expect(matchTab('strasse', 'Hauptstraße 5', 'https://x.example')).toEqual({
+      before: 'Haupt',
+      match: 'straße',
+      after: ' 5',
+    });
+    expect(matchTab('STRAß', 'Strasse', 'https://x.example')?.match).toBe('Strass');
+    // Half of a letter's two: the whole letter is highlighted.
+    expect(matchTab('s', 'ß', 'https://x.example')).toEqual({ before: '', match: 'ß', after: '' });
+  });
+
+  it('ignores case in the address one letter at a time too', () => {
+    expect(matchTab('straße', 'Map', 'https://example.com/STRASSE')).not.toBeNull();
+  });
 });
