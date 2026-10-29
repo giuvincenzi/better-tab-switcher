@@ -2,7 +2,7 @@ import { resolve } from 'node:path';
 import { type BrowserContext, test as base, chromium, type Worker } from '@playwright/test';
 
 /** The extension's test build (`wxt build --mode e2e`): the published one plus the hook that opens the switcher. */
-const extensionDir = resolve('.output/chrome-mv3-e2e');
+export const extensionDir = resolve('.output/chrome-mv3-e2e');
 
 interface ExtensionFixtures {
   /** Chrome's own language (a BCP 47 tag): English by default; a test file can choose another with test.use(). */
