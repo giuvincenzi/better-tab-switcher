@@ -20,6 +20,38 @@ async function openSettings(context: BrowserContext, extensionId: string): Promi
 }
 
 test.describe('settings page @settings', () => {
+  test('marks in its sidebar the section chosen there, and the one at the top as the page scrolls', async ({
+    context,
+    extensionId,
+  }) => {
+    const page = await openSettings(context, extensionId);
+    const sidebar = page.getByRole('navigation', { name: 'Settings sections' });
+    const marked = sidebar.locator('a[aria-current="true"]');
+    await expect(marked).toHaveText('Appearance');
+    /** Waits until the page stops moving: a section jumped to, or scrolled to. */
+    const settled = () =>
+      expect
+        .poll(async () => {
+          const before = await page.evaluate(() => window.scrollY);
+          await page.waitForTimeout(100);
+          return (await page.evaluate(() => window.scrollY)) === before;
+        })
+        .toBe(true);
+    // The last sections are too short to reach the top of the window: the one chosen stays marked.
+    for (const name of ['Keyboard shortcuts', 'Reset', 'Switching']) {
+      await sidebar.getByRole('link', { name }).click();
+      await settled();
+      await expect(marked).toHaveText(name);
+    }
+    await page.mouse.move(800, 400);
+    await page.mouse.wheel(0, -10000);
+    await settled();
+    await expect(marked).toHaveText('Appearance');
+    await page.mouse.wheel(0, 10000);
+    await settled();
+    await expect(marked).toHaveText('Reset');
+  });
+
   test("opens from the switcher's toolbar", async ({ context, serviceWorker }) => {
     const [, current] = await openPages(context, ['alpha', 'beta']);
     const page = current as Page;

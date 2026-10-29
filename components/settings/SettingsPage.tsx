@@ -29,26 +29,48 @@ export interface SettingsPageProps {
   onRestore: () => void;
 }
 
+/** How far down the window a section's top can be and still be the section at the top: its upper part. */
+const TOP_PART = 0.4;
+
+/**
+ * The section at the top of the window: the last one whose top is in the window's upper part. Scrolled to its end,
+ * the page's last section: the sections at the end are too short to reach the top.
+ */
+function sectionAtTop(): SectionId {
+  const root = document.documentElement;
+  const last = sectionIds[sectionIds.length - 1] as SectionId;
+  if (window.scrollY > 0 && window.scrollY + window.innerHeight >= root.scrollHeight - 1) return last;
+  let found = sectionIds[0] as SectionId;
+  for (const id of sectionIds) {
+    const top = document.getElementById(id)?.getBoundingClientRect().top;
+    if (top !== undefined && top <= window.innerHeight * TOP_PART) found = id;
+  }
+  return found;
+}
+
 /** The settings page: it looks like Chrome's settings, with a sidebar to its sections. */
 export function SettingsPage(props: SettingsPageProps): JSX.Element {
   const [current, setCurrent] = createSignal<SectionId>('appearance');
+  // A section chosen in the sidebar stays marked while the page goes to it, and after: the last sections can't reach
+  // the top of the window. Until the user scrolls the page.
+  let chosen = false;
 
-  // The sidebar marks the section at the top of the window.
+  // The sidebar marks the section at the top of the window, as the user scrolls.
   onMount(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const top = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
-        if (top) setCurrent(top.target.id as SectionId);
-      },
-      { rootMargin: '0px 0px -60% 0px' },
-    );
-    for (const id of sectionIds) {
-      const element = document.getElementById(id);
-      if (element) observer.observe(element);
-    }
-    onCleanup(() => observer.disconnect());
+    const follow = () => {
+      if (!chosen) setCurrent(sectionAtTop());
+    };
+    const scrolledByTheUser = () => {
+      chosen = false;
+    };
+    window.addEventListener('scroll', follow, { passive: true });
+    // What scrolls the page (the mouse's wheel and buttons, the keys, a finger), before it scrolls it.
+    const inputs = ['wheel', 'mousedown', 'keydown', 'touchstart'] as const;
+    for (const input of inputs) window.addEventListener(input, scrolledByTheUser, { capture: true, passive: true });
+    onCleanup(() => {
+      window.removeEventListener('scroll', follow);
+      for (const input of inputs) window.removeEventListener(input, scrolledByTheUser, { capture: true });
+    });
   });
 
   return (
@@ -67,7 +89,10 @@ export function SettingsPage(props: SettingsPageProps): JSX.Element {
                     href={`#${id}`}
                     class={styles.link}
                     aria-current={current() === id ? 'true' : undefined}
-                    onClick={() => setCurrent(id)}
+                    onClick={() => {
+                      chosen = true;
+                      setCurrent(id);
+                    }}
                   >
                     {sectionTitle(id)}
                   </a>
