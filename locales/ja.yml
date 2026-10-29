@@ -1,0 +1,74 @@
+Language_Tag: ja
+Command_NextTab: 次のタブを選択した状態で切り替え画面を開く
+Command_PreviousTab: 前のタブを選択した状態で切り替え画面を開く
+Switcher_Tabs: 開いているタブ（最近使用した順）
+Switcher_Toolbar: ツールバー
+Switcher_Search: タブを検索
+Switcher_NoMatch: 検索に一致するタブはありません。
+Switcher_Settings: すべての設定
+Switcher_CloseTab: タブを閉じる
+Switcher_Pinned: 固定タブ
+Switcher_PlayingAudio: 音声を再生中
+Switcher_Sleeping: スリープ中
+Switcher_Window: ウィンドウ $1
+Settings_Title: Better Tab Switcher の設定
+Settings_Sections: 設定のセクション
+Settings_Appearance: デザイン
+Settings_Theme: テーマ
+Settings_ThemeDevice: デバイスのテーマ
+Settings_ThemeLight: ライト
+Settings_ThemeDark: ダーク
+Settings_View: 表示形式
+Settings_ViewList: リスト
+Settings_ViewGrid: グリッド
+Settings_Toolbar: ツールバーを表示
+Settings_ToolbarNote: 切り替え画面の上部に表示されるバーで、検索欄と、表示形式や設定のボタンがあります。
+Settings_GridShow: 表示内容
+Settings_GridShowPreviews: プレビュー
+Settings_GridShowIcons: アイコン
+Settings_GridShowNote: 「プレビュー」では各タブの画像を、「アイコン」では各サイトのアイコンだけを表示します。
+Settings_Compact: コンパクト
+Settings_CompactNote: 行の高さを抑えて、より多くのタブを表示します。
+Settings_ListRows: スクロールせずに表示するタブの数
+Settings_RowsFit: 画面に合わせる
+Settings_RowsFitNote: 「画面に合わせる」では、画面の高さに収まるだけのタブを表示します。
+Settings_Switching: 切り替え
+Settings_Scope: 表示するタブの範囲
+Settings_ScopeWindow: このウィンドウ
+Settings_ScopeAll: すべてのウィンドウ
+Settings_ScopeNote: 「すべてのウィンドウ」では、別のウィンドウにあるタブにそのウィンドウの番号が表示されます。
+Settings_ShowPinned: 固定タブを表示
+Settings_Delay: 切り替え画面が表示されるまでの時間
+Settings_DelayNote: これより素早く押すと、切り替え画面を表示せずに直前のタブに切り替わります。
+Settings_StayOpen: タブを選ぶまで開いたままにする
+Settings_StayOpenNote: ショートカットのキーを離してもタブは切り替わりません。Enter キーまたはクリックでタブを選んでください。
+Settings_ChromePagesWindow: $1 のページでは別のウィンドウを使う
+Settings_ChromePagesWindowNote: $1 では、設定などのブラウザ自体のページやウェブストアで拡張機能を使用できません。そうしたページでは、切り替え画面が専用の小さなウィンドウで開きます。
+Settings_AutoSelect: 自動選択
+Settings_AutoSelectNote: 選択中のタブが数秒後に開きます。残り時間は線で表示されます。
+Settings_AutoSelectTime: 自動選択までの時間
+Settings_TabDetails: タブの詳細
+Settings_Address: ウェブサイトのアドレス
+Settings_LongAddress: 長いウェブサイトのアドレス
+Settings_LongAddressNote: 選択中のタブではスクロール表示にすることもできます。
+Settings_LongAddressCut: 省略する
+Settings_LongAddressScroll: スクロールする
+Settings_PinnedIcon: 固定タブのアイコン
+Settings_AudioIcon: 音声再生中のアイコン
+Settings_Sleeping: スリープ中のタブ
+Settings_SleepingNote: スリープ中のタブにはアイコンが付き、グレーで表示されます。
+Settings_GroupColor: タブグループの色
+Settings_LastUsed: 最後に使用した時間
+Settings_LastUsedNote: 「$1」のように表示されます。
+Settings_Shortcuts: キーボード ショートカット
+Settings_ShortcutsNote: $1 では、拡張機能で Ctrl+Tab を使用できません。
+Settings_ShortcutsGuide: Ctrl+Tab を使う方法
+Settings_NextTab: 次のタブ
+Settings_NextTabNote: 切り替え画面を開き、次のタブを選択します。
+Settings_PreviousTab: 前のタブ
+Settings_PreviousTabNote: 切り替え画面を開き、前のタブを選択します。
+Settings_ChangeShortcut: ショートカットを変更
+Settings_NoShortcut: 未設定
+Settings_Reset: リセット
+Settings_RestoreDefaults: 設定を元の既定値に戻す
+Settings_Restore: リセット

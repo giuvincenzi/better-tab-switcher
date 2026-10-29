@@ -1,0 +1,74 @@
+Language_Tag: pt-BR
+Command_NextTab: Abrir o seletor na próxima guia
+Command_PreviousTab: Abrir o seletor na guia anterior
+Switcher_Tabs: Guias abertas, das mais recentes para as mais antigas
+Switcher_Toolbar: Barra de ferramentas
+Switcher_Search: Pesquisar guias
+Switcher_NoMatch: Nenhuma guia corresponde à sua pesquisa.
+Switcher_Settings: Todas as configurações
+Switcher_CloseTab: Fechar guia
+Switcher_Pinned: Fixada
+Switcher_PlayingAudio: Reproduzindo áudio
+Switcher_Sleeping: Inativa
+Switcher_Window: Janela $1
+Settings_Title: Configurações do Better Tab Switcher
+Settings_Sections: Seções das configurações
+Settings_Appearance: Aparência
+Settings_Theme: Tema
+Settings_ThemeDevice: Tema do dispositivo
+Settings_ThemeLight: Claro
+Settings_ThemeDark: Escuro
+Settings_View: Visualização
+Settings_ViewList: Lista
+Settings_ViewGrid: Grade
+Settings_Toolbar: Mostrar barra de ferramentas
+Settings_ToolbarNote: Uma barra no topo do seletor, com o campo de pesquisa e botões para a visualização e as configurações.
+Settings_GridShow: Mostrar
+Settings_GridShowPreviews: Prévias
+Settings_GridShowIcons: Ícones
+Settings_GridShowNote: Prévias mostra uma imagem de cada guia; Ícones mostra só o ícone de cada site.
+Settings_Compact: Compacta
+Settings_CompactNote: Linhas mais baixas, para caberem mais guias.
+Settings_ListRows: Guias exibidas antes de rolar
+Settings_RowsFit: Ajustar à tela
+Settings_RowsFitNote: Ajustar à tela mostra quantas guias couberem na altura da tela.
+Settings_Switching: Alternância
+Settings_Scope: Mostrar guias de
+Settings_ScopeWindow: Esta janela
+Settings_ScopeAll: Todas as janelas
+Settings_ScopeNote: Com todas as janelas, cada guia de outra janela mostra o número da janela dela.
+Settings_ShowPinned: Mostrar guias fixadas
+Settings_Delay: Atraso antes de o seletor aparecer
+Settings_DelayNote: Um toque mais rápido muda para a guia anterior sem mostrar o seletor.
+Settings_StayOpen: Manter aberto até você escolher uma guia
+Settings_StayOpenNote: Soltar as teclas do atalho não muda de guia. Escolha uma guia com Enter ou com um clique.
+Settings_ChromePagesWindow: Usar uma janela nas páginas do $1
+Settings_ChromePagesWindowNote: O $1 não permite extensões nas próprias páginas, como Configurações, nem na loja de extensões dele. Nesses lugares, o seletor abre em uma pequena janela própria.
+Settings_AutoSelect: Seleção automática
+Settings_AutoSelectNote: A guia selecionada abre depois de alguns segundos. Uma linha mostra o tempo restante.
+Settings_AutoSelectTime: Tempo da seleção automática
+Settings_TabDetails: Detalhes das guias
+Settings_Address: Endereço do site
+Settings_LongAddress: Endereços de sites longos
+Settings_LongAddressNote: Ou faça-os rolar na guia selecionada.
+Settings_LongAddressCut: Encurtar
+Settings_LongAddressScroll: Rolar
+Settings_PinnedIcon: Ícone de guia fixada
+Settings_AudioIcon: Ícone de áudio em reprodução
+Settings_Sleeping: Guias inativas
+Settings_SleepingNote: As guias inativas ganham um ícone e aparecem em cinza.
+Settings_GroupColor: Cor do grupo de guias
+Settings_LastUsed: Último uso
+Settings_LastUsedNote: Por exemplo, $1
+Settings_Shortcuts: Atalhos do teclado
+Settings_ShortcutsNote: O $1 não permite que extensões usem Ctrl+Tab.
+Settings_ShortcutsGuide: Como usar Ctrl+Tab
+Settings_NextTab: Próxima guia
+Settings_NextTabNote: Abre o seletor e move a seleção para a próxima guia.
+Settings_PreviousTab: Guia anterior
+Settings_PreviousTabNote: Abre o seletor e move a seleção para a guia anterior.
+Settings_ChangeShortcut: Alterar atalho
+Settings_NoShortcut: Não definido
+Settings_Reset: Redefinir
+Settings_RestoreDefaults: Restaurar configurações para os padrões originais
+Settings_Restore: Restaurar

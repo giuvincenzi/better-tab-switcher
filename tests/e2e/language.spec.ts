@@ -1,13 +1,38 @@
 import { expect, test } from './fixtures';
 
+// Chrome on macOS takes its language only from the system's settings, which a test must never change (on a developer's
+// Mac they are their own browsers'): Linux and Windows run these, and tests/unit/language.test.ts everywhere.
+const MAC_REASON = "Chrome's language can't be chosen on macOS without changing the system";
+
+// Chrome in a language the extension has texts for: the settings page is in it, its lang and direction too.
+for (const { chromeLanguage, title, dir } of [
+  { chromeLanguage: 'it', title: 'Impostazioni di Better Tab Switcher', dir: 'ltr' },
+  { chromeLanguage: 'ar', title: 'إعدادات Better Tab Switcher', dir: 'rtl' },
+]) {
+  test.describe(`Chrome in ${chromeLanguage}, a language the extension has texts for @language`, () => {
+    test.use({ chromeLanguage });
+    test.skip(process.platform === 'darwin', MAC_REASON);
+
+    test(`shows the settings page in ${chromeLanguage}, ${dir === 'rtl' ? 'right to left' : 'left to right'}`, async ({
+      context,
+      extensionId,
+    }) => {
+      const settings = await context.newPage();
+      await settings.goto(`chrome-extension://${extensionId}/options.html`);
+      await expect(settings.getByRole('heading', { level: 1 })).toHaveText(title);
+      expect(
+        await settings.evaluate(() => ({ lang: document.documentElement.lang, dir: document.documentElement.dir })),
+      ).toEqual({ lang: chromeLanguage, dir });
+    });
+  });
+}
+
 // Chrome in a language the extension has no texts for: its texts are in English, and so is everything that follows the
 // language (the pages' lang and direction, numbers and dates), even when Chrome's language is written right to left.
-for (const chromeLanguage of ['it', 'he']) {
+for (const chromeLanguage of ['nl', 'he']) {
   test.describe(`Chrome in ${chromeLanguage}, a language the extension has no texts for @language`, () => {
     test.use({ chromeLanguage });
-    // Chrome on macOS takes its language only from the system's settings, which a test must never change (on a
-    // developer's Mac they are their own browsers'): Linux and Windows run it, and tests/unit/language.test.ts everywhere.
-    test.skip(process.platform === 'darwin', "Chrome's language can't be chosen on macOS without changing the system");
+    test.skip(process.platform === 'darwin', MAC_REASON);
 
     test('shows the settings page in English, left to right, its dates in English', async ({
       context,

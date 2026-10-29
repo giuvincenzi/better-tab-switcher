@@ -1,0 +1,74 @@
+Language_Tag: ro
+Command_NextTab: Deschide comutatorul cu fila următoare selectată
+Command_PreviousTab: Deschide comutatorul cu fila anterioară selectată
+Switcher_Tabs: File deschise, de la cea mai recentă
+Switcher_Toolbar: Bară de instrumente
+Switcher_Search: Caută file
+Switcher_NoMatch: Nicio filă nu corespunde căutării.
+Switcher_Settings: Toate setările
+Switcher_CloseTab: Închide fila
+Switcher_Pinned: Fixată
+Switcher_PlayingAudio: Redă conținut audio
+Switcher_Sleeping: Inactivă
+Switcher_Window: Fereastra $1
+Settings_Title: Setări Better Tab Switcher
+Settings_Sections: Secțiunile setărilor
+Settings_Appearance: Aspect
+Settings_Theme: Temă
+Settings_ThemeDevice: Tema dispozitivului
+Settings_ThemeLight: Luminoasă
+Settings_ThemeDark: Întunecată
+Settings_View: Vizualizare
+Settings_ViewList: Listă
+Settings_ViewGrid: Grilă
+Settings_Toolbar: Afișează bara de instrumente
+Settings_ToolbarNote: O bară în partea de sus a comutatorului, cu câmpul de căutare și butoane pentru vizualizare și setări.
+Settings_GridShow: Afișează
+Settings_GridShowPreviews: Previzualizări
+Settings_GridShowIcons: Pictograme
+Settings_GridShowNote: Cu Previzualizări vezi o imagine a fiecărei file, iar cu Pictograme doar pictograma site-ului.
+Settings_Compact: Compact
+Settings_CompactNote: Rânduri mai joase, ca să încapă mai multe file.
+Settings_ListRows: File afișate înainte de derulare
+Settings_RowsFit: Cât încape pe ecran
+Settings_RowsFitNote: "Cu „Cât încape pe ecran” se afișează atâtea file câte permite înălțimea ecranului."
+Settings_Switching: Comutare
+Settings_Scope: Afișează filele din
+Settings_ScopeWindow: Această fereastră
+Settings_ScopeAll: Toate ferestrele
+Settings_ScopeNote: Cu toate ferestrele, filele din alte ferestre arată numărul ferestrei lor.
+Settings_ShowPinned: Afișează filele fixate
+Settings_Delay: Întârziere până la afișarea comutatorului
+Settings_DelayNote: O apăsare mai scurtă trece la fila anterioară fără să afișeze comutatorul.
+Settings_StayOpen: Rămâne deschis până alegi o filă
+Settings_StayOpenNote: Când eliberezi tastele comenzii rapide, fila nu se schimbă. Alege o filă cu Enter sau cu un clic.
+Settings_ChromePagesWindow: Folosește o fereastră pe paginile $1
+Settings_ChromePagesWindowNote: $1 nu permite extensiilor să acceseze paginile proprii, cum ar fi Setări, și nici magazinul său web. Acolo, comutatorul se deschide într-o fereastră mică separată.
+Settings_AutoSelect: Selectare automată
+Settings_AutoSelectNote: Fila selectată se deschide după câteva secunde. O linie arată timpul rămas.
+Settings_AutoSelectTime: Timp până la selectarea automată
+Settings_TabDetails: Detaliile filelor
+Settings_Address: Adresa site-ului
+Settings_LongAddress: Adresele lungi ale site-urilor
+Settings_LongAddressNote: Sau le poți derula pe fila selectată.
+Settings_LongAddressCut: Scurtate
+Settings_LongAddressScroll: Derulate
+Settings_PinnedIcon: Pictograma filei fixate
+Settings_AudioIcon: Pictograma pentru redarea audio
+Settings_Sleeping: File inactive
+Settings_SleepingNote: Filele inactive au o pictogramă și apar cu gri.
+Settings_GroupColor: Culoarea grupului de file
+Settings_LastUsed: Ultima utilizare
+Settings_LastUsedNote: De exemplu, $1
+Settings_Shortcuts: Comenzi rapide de la tastatură
+Settings_ShortcutsNote: $1 nu permite extensiilor să folosească Ctrl+Tab.
+Settings_ShortcutsGuide: Cum să folosești Ctrl+Tab
+Settings_NextTab: Fila următoare
+Settings_NextTabNote: Deschide comutatorul și mută selecția pe fila următoare.
+Settings_PreviousTab: Fila anterioară
+Settings_PreviousTabNote: Deschide comutatorul și mută selecția pe fila anterioară.
+Settings_ChangeShortcut: Schimbă comanda rapidă
+Settings_NoShortcut: Nesetată
+Settings_Reset: Resetare
+Settings_RestoreDefaults: Restabilește setările la valorile inițiale
+Settings_Restore: Restabilește

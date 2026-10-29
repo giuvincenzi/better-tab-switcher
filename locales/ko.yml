@@ -1,0 +1,74 @@
+Language_Tag: ko
+Command_NextTab: 다음 탭을 선택한 채로 탭 전환기 열기
+Command_PreviousTab: 이전 탭을 선택한 채로 탭 전환기 열기
+Switcher_Tabs: 열린 탭, 최근에 사용한 순서
+Switcher_Toolbar: 툴바
+Switcher_Search: 탭 검색
+Switcher_NoMatch: 검색어와 일치하는 탭이 없습니다.
+Switcher_Settings: 모든 설정
+Switcher_CloseTab: 탭 닫기
+Switcher_Pinned: 고정됨
+Switcher_PlayingAudio: 오디오 재생 중
+Switcher_Sleeping: 비활성 상태
+Switcher_Window: 창 $1
+Settings_Title: Better Tab Switcher 설정
+Settings_Sections: 설정 섹션
+Settings_Appearance: 디자인
+Settings_Theme: 테마
+Settings_ThemeDevice: 기기 테마
+Settings_ThemeLight: 밝게
+Settings_ThemeDark: 어둡게
+Settings_View: 보기
+Settings_ViewList: 목록
+Settings_ViewGrid: 그리드
+Settings_Toolbar: 툴바 표시
+Settings_ToolbarNote: 탭 전환기 상단에 표시되는 막대로, 검색창과 보기 및 설정 버튼이 있습니다.
+Settings_GridShow: 표시할 내용
+Settings_GridShowPreviews: 미리보기
+Settings_GridShowIcons: 아이콘
+Settings_GridShowNote: 미리보기는 각 탭의 화면을 보여 주고, 아이콘은 각 사이트의 아이콘만 보여 줍니다.
+Settings_Compact: 좁게 보기
+Settings_CompactNote: 행 높이를 줄여 더 많은 탭을 표시합니다.
+Settings_ListRows: 스크롤 없이 표시할 탭 수
+Settings_RowsFit: 화면에 맞추기
+Settings_RowsFitNote: 화면에 맞추기를 선택하면 화면 높이에 들어가는 만큼 표시합니다.
+Settings_Switching: 탭 전환
+Settings_Scope: 표시할 탭
+Settings_ScopeWindow: 현재 창
+Settings_ScopeAll: 모든 창
+Settings_ScopeNote: 모든 창을 선택하면 다른 창에 있는 탭에 해당 창의 번호가 표시됩니다.
+Settings_ShowPinned: 고정 탭 표시
+Settings_Delay: 탭 전환기가 나타나기 전 지연 시간
+Settings_DelayNote: 단축키를 더 빨리 눌렀다 떼면 탭 전환기를 표시하지 않고 이전 탭으로 전환합니다.
+Settings_StayOpen: 탭을 선택할 때까지 열어 두기
+Settings_StayOpenNote: 단축키에서 손을 떼도 탭이 전환되지 않습니다. Enter 키를 누르거나 클릭해서 탭을 선택하세요.
+Settings_ChromePagesWindow: $1 자체 페이지에서는 별도 창 사용
+Settings_ChromePagesWindowNote: $1에서는 설정 같은 자체 페이지와 웹 스토어에서 확장 프로그램을 사용할 수 없습니다. 이런 페이지에서는 탭 전환기가 별도의 작은 창으로 열립니다.
+Settings_AutoSelect: 자동 선택
+Settings_AutoSelectNote: 선택한 탭이 몇 초 후에 열립니다. 남은 시간은 막대로 표시됩니다.
+Settings_AutoSelectTime: 자동 선택 시간
+Settings_TabDetails: 탭 세부정보
+Settings_Address: 웹사이트 주소
+Settings_LongAddress: 긴 웹사이트 주소
+Settings_LongAddressNote: 또는 선택한 탭에서 스크롤해서 보여 줍니다.
+Settings_LongAddressCut: 줄여서 표시
+Settings_LongAddressScroll: 스크롤
+Settings_PinnedIcon: 고정 탭 아이콘
+Settings_AudioIcon: 오디오 재생 아이콘
+Settings_Sleeping: 비활성 탭
+Settings_SleepingNote: 비활성 탭에는 아이콘이 붙고 회색으로 표시됩니다.
+Settings_GroupColor: 탭 그룹 색상
+Settings_LastUsed: 마지막 사용 시간
+Settings_LastUsedNote: 예를 들어 $1처럼 표시됩니다.
+Settings_Shortcuts: 키보드 단축키
+Settings_ShortcutsNote: $1에서는 확장 프로그램이 Ctrl+Tab을 사용할 수 없습니다.
+Settings_ShortcutsGuide: Ctrl+Tab을 사용하는 방법
+Settings_NextTab: 다음 탭
+Settings_NextTabNote: 탭 전환기를 열고 다음 탭을 선택합니다.
+Settings_PreviousTab: 이전 탭
+Settings_PreviousTabNote: 탭 전환기를 열고 이전 탭을 선택합니다.
+Settings_ChangeShortcut: 단축키 변경
+Settings_NoShortcut: 설정 안됨
+Settings_Reset: 설정 초기화
+Settings_RestoreDefaults: 설정을 기본값으로 복원
+Settings_Restore: 복원

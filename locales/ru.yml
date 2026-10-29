@@ -1,0 +1,74 @@
+Language_Tag: ru
+Command_NextTab: Открыть переключатель на следующей вкладке
+Command_PreviousTab: Открыть переключатель на предыдущей вкладке
+Switcher_Tabs: Открытые вкладки, сначала недавние
+Switcher_Toolbar: Панель инструментов
+Switcher_Search: Поиск по вкладкам
+Switcher_NoMatch: По вашему запросу вкладок не найдено.
+Switcher_Settings: Все настройки
+Switcher_CloseTab: Закрыть вкладку
+Switcher_Pinned: Закреплена
+Switcher_PlayingAudio: Воспроизводится звук
+Switcher_Sleeping: В спящем режиме
+Switcher_Window: Окно $1
+Settings_Title: Настройки Better Tab Switcher
+Settings_Sections: Разделы настроек
+Settings_Appearance: Внешний вид
+Settings_Theme: Тема
+Settings_ThemeDevice: Как на устройстве
+Settings_ThemeLight: Светлая
+Settings_ThemeDark: Тёмная
+Settings_View: Вид
+Settings_ViewList: Список
+Settings_ViewGrid: Сетка
+Settings_Toolbar: Показывать панель инструментов
+Settings_ToolbarNote: Панель в верхней части переключателя с полем поиска и кнопками для выбора вида и перехода в настройки.
+Settings_GridShow: Показывать
+Settings_GridShowPreviews: Миниатюры
+Settings_GridShowIcons: Значки
+Settings_GridShowNote: Миниатюры показывают снимок каждой вкладки, а значки – только значок сайта.
+Settings_Compact: Компактный вид
+Settings_CompactNote: Строки становятся ниже, и на экране помещается больше вкладок.
+Settings_ListRows: Сколько вкладок видно без прокрутки
+Settings_RowsFit: По высоте экрана
+Settings_RowsFitNote: При выборе «По высоте экрана» показывается столько вкладок, сколько помещается на экране.
+Settings_Switching: Переключение
+Settings_Scope: Какие вкладки показывать
+Settings_ScopeWindow: Из этого окна
+Settings_ScopeAll: Из всех окон
+Settings_ScopeNote: Если выбраны все окна, у вкладок из других окон показывается номер их окна.
+Settings_ShowPinned: Показывать закрепленные вкладки
+Settings_Delay: Задержка перед появлением переключателя
+Settings_DelayNote: Если нажать быстрее, откроется предыдущая вкладка, а переключатель не появится.
+Settings_StayOpen: Не закрывать, пока не выбрана вкладка
+Settings_StayOpenNote: Если отпустить клавиши, вкладка не сменится. Выберите нужную клавишей Enter или щелчком мыши.
+Settings_ChromePagesWindow: Отдельное окно на страницах $1
+Settings_ChromePagesWindowNote: $1 не пускает расширения на свои служебные страницы (например, «Настройки») и в свой магазин расширений. На них переключатель открывается в небольшом отдельном окне.
+Settings_AutoSelect: Автоматический выбор
+Settings_AutoSelectNote: Выделенная вкладка откроется через несколько секунд. Полоска показывает, сколько времени осталось.
+Settings_AutoSelectTime: Время до автоматического выбора
+Settings_TabDetails: Сведения о вкладках
+Settings_Address: Адрес сайта
+Settings_LongAddress: Длинные адреса сайтов
+Settings_LongAddressNote: Или прокручивать их на выделенной вкладке.
+Settings_LongAddressCut: Обрезать
+Settings_LongAddressScroll: Прокручивать
+Settings_PinnedIcon: Значок закрепленной вкладки
+Settings_AudioIcon: Значок воспроизведения звука
+Settings_Sleeping: Спящие вкладки
+Settings_SleepingNote: Спящие вкладки отмечаются значком и показываются серым цветом.
+Settings_GroupColor: Цвет группы вкладок
+Settings_LastUsed: Последний просмотр
+Settings_LastUsedNote: Например, $1.
+Settings_Shortcuts: Быстрые клавиши
+Settings_ShortcutsNote: $1 не разрешает расширениям использовать Ctrl+Tab.
+Settings_ShortcutsGuide: Как использовать Ctrl+Tab
+Settings_NextTab: Следующая вкладка
+Settings_NextTabNote: Открывает переключатель и выделяет следующую вкладку.
+Settings_PreviousTab: Предыдущая вкладка
+Settings_PreviousTabNote: Открывает переключатель и выделяет предыдущую вкладку.
+Settings_ChangeShortcut: Изменить сочетание
+Settings_NoShortcut: Не задано
+Settings_Reset: Сброс настроек
+Settings_RestoreDefaults: Восстановить настройки по умолчанию
+Settings_Restore: Восстановить

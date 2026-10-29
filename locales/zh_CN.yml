@@ -1,0 +1,74 @@
+Language_Tag: zh-Hans
+Command_NextTab: 打开切换器并选中下一个标签页
+Command_PreviousTab: 打开切换器并选中上一个标签页
+Switcher_Tabs: 已打开的标签页，最近使用的排在前面
+Switcher_Toolbar: 工具栏
+Switcher_Search: 搜索标签页
+Switcher_NoMatch: 没有与搜索内容匹配的标签页。
+Switcher_Settings: 所有设置
+Switcher_CloseTab: 关闭标签页
+Switcher_Pinned: 已固定
+Switcher_PlayingAudio: 正在播放音频
+Switcher_Sleeping: 已休眠
+Switcher_Window: 窗口 $1
+Settings_Title: Better Tab Switcher 设置
+Settings_Sections: 设置分类
+Settings_Appearance: 外观
+Settings_Theme: 主题
+Settings_ThemeDevice: 跟随设备
+Settings_ThemeLight: 浅色
+Settings_ThemeDark: 深色
+Settings_View: 视图
+Settings_ViewList: 列表
+Settings_ViewGrid: 网格
+Settings_Toolbar: 显示工具栏
+Settings_ToolbarNote: 位于切换器顶部，包含搜索框以及用于切换视图和打开设置的按钮。
+Settings_GridShow: 显示
+Settings_GridShowPreviews: 预览
+Settings_GridShowIcons: 图标
+Settings_GridShowNote: “预览”会显示每个标签页的画面，“图标”只显示每个网站的图标。
+Settings_Compact: 紧凑
+Settings_CompactNote: 降低行高，以便显示更多标签页。
+Settings_ListRows: 无需滚动即可显示的标签页数量
+Settings_RowsFit: 适应屏幕
+Settings_RowsFitNote: “适应屏幕”会根据屏幕高度显示尽可能多的标签页。
+Settings_Switching: 切换
+Settings_Scope: 显示哪些窗口的标签页
+Settings_ScopeWindow: 当前窗口
+Settings_ScopeAll: 所有窗口
+Settings_ScopeNote: 选择“所有窗口”后，来自其他窗口的标签页会显示其所在窗口的编号。
+Settings_ShowPinned: 显示已固定的标签页
+Settings_Delay: 切换器显示前的延迟时间
+Settings_DelayNote: 快速按一下即可直接切换到上一个标签页，不会显示切换器。
+Settings_StayOpen: 保持打开，直到选择标签页
+Settings_StayOpenNote: 松开快捷键不会切换标签页。请按 Enter 键或点击来选择标签页。
+Settings_ChromePagesWindow: 在 $1 自带的页面上使用单独窗口
+Settings_ChromePagesWindowNote: $1 不允许扩展程序在其自带的页面（例如“设置”）或其扩展程序商店中运行。在这些页面上，切换器会在一个单独的小窗口中打开。
+Settings_AutoSelect: 自动选择
+Settings_AutoSelectNote: 选中的标签页会在几秒后打开，并有一条线显示剩余时间。
+Settings_AutoSelectTime: 自动选择时间
+Settings_TabDetails: 标签页信息
+Settings_Address: 网址
+Settings_LongAddress: 较长的网址
+Settings_LongAddressNote: 也可以在选中的标签页上滚动显示完整网址。
+Settings_LongAddressCut: 截断
+Settings_LongAddressScroll: 滚动显示
+Settings_PinnedIcon: 已固定标签页图标
+Settings_AudioIcon: 正在播放音频图标
+Settings_Sleeping: 已休眠的标签页
+Settings_SleepingNote: 已休眠的标签页会显示一个图标，并以灰色显示。
+Settings_GroupColor: 标签页组颜色
+Settings_LastUsed: 上次使用时间
+Settings_LastUsedNote: 例如：$1。
+Settings_Shortcuts: 键盘快捷键
+Settings_ShortcutsNote: $1 不允许扩展程序使用 Ctrl+Tab。
+Settings_ShortcutsGuide: 如何使用 Ctrl+Tab
+Settings_NextTab: 下一个标签页
+Settings_NextTabNote: 打开切换器，并将选择移到下一个标签页。
+Settings_PreviousTab: 上一个标签页
+Settings_PreviousTabNote: 打开切换器，并将选择移到上一个标签页。
+Settings_ChangeShortcut: 更改快捷键
+Settings_NoShortcut: 未设置
+Settings_Reset: 重置
+Settings_RestoreDefaults: 恢复默认设置
+Settings_Restore: 恢复
