@@ -10,15 +10,24 @@ paths:
 
 # How people find Better Tab Switcher
 
-## Title and description
+## Title, description and slogan
 
-- Better Tab Switcher has one **title** and one **description**, written once in `site/home/en.json` and translated in
-  `site/home/<code>.json`.
+- **The website is the one place where everything about Better Tab Switcher is said**; the README and the stores' pages
+  are short and point to it.
+- Better Tab Switcher has one **title**, one **description** and one **slogan**, each written once: the title in
+  `site/home/en.json` (translated in `site/home/<code>.json`), the description in `locales/en.yml`
+  (`Extension_Description`, translated in `locales/<locale>.yml`: it is also the extension's description in the stores),
+  the slogan in `site/home/en.json` only.
 - Who reads them:
   - the home page of every language (`scripts/site.mjs`): the page title ("Better Tab Switcher: " + title), the
     description for search engines, the link previews and the `SoftwareApplication` structured data;
   - `README.md`: title + ". " + description between its "Title and description" comments, and the slogan in its italic
     line under the name, checked by the test workflow (`site_test`, `scripts/check-readme.mjs`);
+  - the stores' pages (Chrome Web Store, Edge Add-ons): under the name, the description from the extension's manifest,
+    updated by every release; the page's own description, written by `make store-listing` in `.output/store-listing/`
+    like the README (the slogan, the links to the website and to the guide, then title + ". " + description) and pasted
+    by hand into each store's dashboard, one per language, whenever the title, the description or the slogan change:
+    a release uploads only the extension;
   - the repository's About on GitHub: title + ". " + description, set by hand
     (`gh repo edit --description "…"`) whenever they change: the workflows' token has no Administration permission, and a
     personal token with it would be a secret only for this.
@@ -51,4 +60,4 @@ paths:
 
 - The first release: in Search Console, submit `sitemap.xml` and request indexing of the home; in Bing Webmaster Tools,
   import the site from Search Console.
-- When the title or description change: the repository's About (above).
+- When the title, the description or the slogan change: the repository's About and the stores' descriptions (above).

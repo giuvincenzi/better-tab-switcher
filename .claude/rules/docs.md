@@ -69,6 +69,9 @@ or UI text:
 - update the feature cards in `site/index.html` when the feature list changes; a new or changed text of the home goes
   in `site/home/en.json` and every translation in the same change;
 - when what Better Tab Switcher does changes, check that the title and description still say it (`discoverability.md`);
+  when the title, the description or the slogan change, the plan says so: the repository's About and the stores'
+  descriptions (`make store-listing`) are updated by hand after the release (`discoverability.md`); a new feature or a
+  fix that changes none of them touches only the site and the guide;
 - add a line under `## Unreleased` in `CHANGELOG.md`, in the right subsection (see
   `build-and-release.md`);
 - screenshots: every release retakes all of them (below); a **new** screenshot is added to the screenshots script
@@ -76,7 +79,8 @@ or UI text:
 
 The plan given to the user before implementing (`working-rules.md`) lists every item of this
 checklist, each marked as needed or not needed with the reason: the guide file, the feature
-cards in `site/index.html`, the `CHANGELOG.md` line and a new screenshot by file name. The plan also lists the rule
+cards in `site/index.html`, the `CHANGELOG.md` line, a new screenshot by file name, and the title, description and
+slogan (with the README, the repository's About and the stores' descriptions when they change). The plan also lists the rule
 changes (`working-rules.md`).
 
 ## Accuracy

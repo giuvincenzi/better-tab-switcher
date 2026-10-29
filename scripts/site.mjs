@@ -12,15 +12,13 @@ import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, write
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { chromium } from '@playwright/test';
-import { parseMessagesFile } from '@wxt-dev/i18n/build';
+import { HOME_LANGUAGES, readExtensionTexts, SITE_URL } from './languages.mjs';
 
 const root = resolve(dirname(new URL(import.meta.url).pathname), '..');
 process.chdir(root);
 const preview = process.argv.includes('--preview');
 const output = preview ? 'site-preview' : '_site';
 
-/** Where GitHub Pages publishes the site: canonical links, link previews and sitemap.xml need absolute URLs. */
-const SITE_URL = 'https://bettertabswitcher.gviam.app/';
 const REPOSITORY = 'https://github.com/giuvincenzi/better-tab-switcher';
 
 /**
@@ -32,10 +30,7 @@ const STORE_PAGES = { chrome: null, edge: null };
 
 /** @typedef {'chrome' | 'edge'} Store */
 
-/**
- * A home language as written below.
- * @typedef {{ code: string, locale: string, folder: string, flag?: string, letter?: string, rtl?: boolean }} HomeLanguageDefinition
- */
+/** @typedef {import('./languages.mjs').HomeLanguageDefinition} HomeLanguageDefinition */
 /**
  * The texts of site/home/<code>.json: the keys read by name are in every file, the slogan only in en.json.
  * @typedef {Record<string, string> & { fine_print: string, language_name: string, language_menu: string }} HomeTexts
@@ -52,26 +47,6 @@ const STORE_PAGES = { chrome: null, edge: null };
  * A scene of site/visuals/visuals.json: its page, and the keys of its name and sentence in the home's texts.
  * @typedef {{ scene: string, name: string, text: string }} Scene
  */
-
-/**
- * The home page's languages: the extension's languages, each with its file of texts in locales/, its folder on the site,
- * its flag in assets/flags (Arabic, spoken in many countries, shows a letter instead) and its writing direction.
- */
-/** @type {HomeLanguageDefinition[]} */
-const HOME_LANGUAGES = [
-  { code: 'en', locale: 'en', folder: '', flag: 'gb' },
-  { code: 'it', locale: 'it', folder: 'it', flag: 'it' },
-  { code: 'fr', locale: 'fr', folder: 'fr', flag: 'fr' },
-  { code: 'es', locale: 'es', folder: 'es', flag: 'es' },
-  { code: 'de', locale: 'de', folder: 'de', flag: 'de' },
-  { code: 'pt-BR', locale: 'pt_BR', folder: 'pt-br', flag: 'br' },
-  { code: 'ro', locale: 'ro', folder: 'ro', flag: 'ro' },
-  { code: 'ru', locale: 'ru', folder: 'ru', flag: 'ru' },
-  { code: 'ar', locale: 'ar', folder: 'ar', letter: '\u0639', rtl: true },
-  { code: 'ja', locale: 'ja', folder: 'ja', flag: 'jp' },
-  { code: 'ko', locale: 'ko', folder: 'ko', flag: 'kr' },
-  { code: 'zh-Hans', locale: 'zh_CN', folder: 'zh-hans', flag: 'cn' },
-];
 
 /** HOME_LANGUAGES with their texts and addresses, filled when the build reads them. */
 /** @type {HomeLanguage[]} */
@@ -161,25 +136,6 @@ function readHomeTexts(siteDir, code) {
   }
   if (!texts.fine_print?.includes('{version}')) throw new Error(`site/home/${code}.json: fine_print lost {version}.`);
   return texts;
-}
-
-/**
- * The texts the home shares with the extension, from its locales/<file>.yml (one place for both): its description and
- * the stores' names. A text a language leaves out (a global one) is the English one.
- * @param {string} locale
- */
-async function readExtensionTexts(locale) {
-  const texts = new Map();
-  for (const file of ['en', locale]) {
-    for (const message of await parseMessagesFile(`locales/${file}.yml`)) {
-      if ('message' in message) texts.set(message.key.join('_'), String(message.message));
-    }
-  }
-  return {
-    description: texts.get('Extension_Description'),
-    chromeStore: texts.get('Browser_ChromeStore'),
-    edgeStore: texts.get('Browser_EdgeStore'),
-  };
 }
 
 /**

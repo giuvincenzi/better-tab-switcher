@@ -78,7 +78,7 @@ jobs:
             build='^(entrypoints/|components/|lib/|styles/|locales/|public/|wxt\.config\.ts$|third-party\.json$|scripts/(check-)?third-party\.mjs$|tsconfig\.json$|package(-lock)?\.json$|\.tool-versions$|\.gitattributes$|\.github/workflows/test\.yml$)'
             # The site: its sources and scripts, the README it checks, and what it reads from the extension (the
             # description and store names in locales/, the logo in public/icon/).
-            site_files='^(site/|scripts/(site|site-serve|check-readme|third-party)\.mjs$|README\.md$|third-party\.json$|locales/|public/icon/|package(-lock)?\.json$|\.tool-versions$|\.github/workflows/test\.yml$)'
+            site_files='^(site/|scripts/(site|site-serve|check-readme|third-party|languages|store-listing)\.mjs$|README\.md$|third-party\.json$|locales/|public/icon/|package(-lock)?\.json$|\.tool-versions$|\.github/workflows/test\.yml$)'
             lint=false
             unit=false
             e2e=false
@@ -349,6 +349,9 @@ jobs:
 
       - name: build_site
         run: node scripts/site.mjs --preview
+
+      - name: write_store_listing
+        run: node scripts/store-listing.mjs
 
   # The extension, built once for every end-to-end group: the published build, whose manifest the tests check, and the
   # test build (the published one plus the hook the tests open the switcher with). The same files on every system.

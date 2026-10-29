@@ -18,11 +18,12 @@
 #   make visual     turn a board of the Design canvas into a picture of the website:
 #                   make visual board=<board.dc.html> name=<scene> writes site/visuals/<scene>.html (docs.md)
 #   make third-party  check that third-party.json lists exactly the packages built into the extension (docs.md)
+#   make store-listing  write the stores' descriptions, one per language, in .output/store-listing/ (discoverability.md)
 #
 # Releases are not made here: the create_release_pr workflow opens the release pull request, merging it publishes the
 # release (publish_release). See build-and-release.md.
 
-.PHONY: setup dev lint test e2e build icons docs visual third-party
+.PHONY: setup dev lint test e2e build icons docs visual third-party store-listing
 
 setup:
 	npm ci
@@ -54,3 +55,6 @@ visual:
 
 third-party:
 	npm run third-party
+
+store-listing:
+	node scripts/store-listing.mjs
