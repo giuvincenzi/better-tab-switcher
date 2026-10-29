@@ -1,4 +1,4 @@
-import { createEffect, For, type JSX, Match, Show, Switch } from 'solid-js';
+import { createEffect, createMemo, For, type JSX, Match, Show, Switch } from 'solid-js';
 import { i18n } from '#i18n';
 import type { TitleParts } from '../../lib/search/search';
 import type { TabDetails } from '../../lib/settings/settings';
@@ -51,9 +51,12 @@ interface TabListProps {
 export function TabList(props: TabListProps): JSX.Element {
   let list: HTMLDivElement | undefined;
   const selectedTab = () => props.tabs[props.selected]?.tab;
+  // Only when the selection goes to another tab: a tab closed from the list changes the list, not the selection, and
+  // the list stays where the user scrolled it.
+  const selectedId = createMemo(() => selectedTab()?.id);
   createEffect(() => {
-    const tab = selectedTab();
-    if (tab) list?.querySelector(`#${tabOptionId(tab.id)}`)?.scrollIntoView({ block: 'nearest' });
+    const id = selectedId();
+    if (id !== undefined) list?.querySelector(`#${tabOptionId(id)}`)?.scrollIntoView({ block: 'nearest' });
   });
   createEffect(() => {
     if (props.focused) list?.focus({ preventScroll: true });

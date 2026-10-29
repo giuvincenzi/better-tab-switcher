@@ -139,6 +139,30 @@ test.describe('closing tabs from the switcher @tabs', () => {
     await expect.poll(() => activeTitle(serviceWorker)).toBe('beta');
   });
 
+  test('closes a tab far from the selection with a middle click, the list staying where it was scrolled', async ({
+    context,
+    serviceWorker,
+  }) => {
+    test.slow();
+    const names = Array.from({ length: 25 }, (_, i) => `tab${String(i + 1).padStart(2, '0')}`);
+    const pages = await openPages(context, names);
+    const page = pages[24] as Page;
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    await expect(rows(page)).toHaveCount(25);
+    await expect(selected(page)).toHaveAccessibleName('tab24');
+    // The user scrolls down to the oldest tabs, away from the selected one at the top.
+    await switcher(page)
+      .locator('[role="listbox"]')
+      .evaluate((list) => {
+        list.scrollTop = list.scrollHeight;
+      });
+    await expect(selected(page)).not.toBeInViewport();
+    await rows(page).filter({ hasText: 'tab02' }).click({ button: 'middle' });
+    await expect(rows(page)).toHaveCount(24);
+    await expect(rows(page).filter({ hasText: 'tab01' })).toBeInViewport();
+    await expect(selected(page)).not.toBeInViewport();
+  });
+
   test('closes the selected tab, the selection going to the next one', async ({ context, serviceWorker }) => {
     const [, , , current] = await openPages(context, ['alpha', 'beta', 'gamma', 'delta']);
     const page = current as Page;
