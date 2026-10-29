@@ -138,6 +138,12 @@ export function listenToSwitcher(): void {
     const open = await openSwitcher.getValue();
     if (open?.in === 'window' && open.windowId === windowId) await openSwitcher.setValue(null);
   });
+  // The user went to another window or to another program (WINDOW_ID_NONE): the switcher in a page closes, as its own
+  // window does when it loses the focus (switcherLeft), so it never waits where the user isn't.
+  browser.windows.onFocusChanged.addListener(async (windowId) => {
+    const open = await openSwitcher.getValue();
+    if (open?.in === 'page' && open.windowId !== windowId) await closeSwitcher(open);
+  });
   // Another tab came to the front of the switcher's window (a click on it, Ctrl+Tab): the switcher closes, so it never
   // stays open where nobody sees it.
   browser.tabs.onActivated.addListener(async ({ tabId, windowId }) => {
