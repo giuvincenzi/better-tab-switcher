@@ -106,6 +106,8 @@ function gitSucceeds(...args) {
 /** @param {string} target */
 const redirect = (target) =>
   `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Better Tab Switcher guide</title>` +
+  // The script keeps the link's section (#ctrl-tab), which the refresh, there for browsers without scripts, drops.
+  `<script>location.replace(${JSON.stringify(target)} + location.hash);</script>` +
   `<meta http-equiv="refresh" content="0; url=${target}"><link rel="canonical" href="${target}"></head>` +
   `<body><a href="${target}">Better Tab Switcher guide</a></body></html>`;
 
