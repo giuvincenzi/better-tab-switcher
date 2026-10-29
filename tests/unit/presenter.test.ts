@@ -47,7 +47,7 @@ const shortcut = (direction: 'next' | 'previous' = 'next') =>
   requestSwitcher({ direction, from: 'shortcut' }, previews);
 const icon = () => requestSwitcher({ direction: 'next', from: 'icon' }, previews);
 
-beforeEach(() => {
+beforeEach(async () => {
   fakeBrowser.reset();
   messages.sendMessage.mockClear();
   messages.handlers.clear();
@@ -60,6 +60,8 @@ beforeEach(() => {
   });
   messages.state.receive = deliverTo(world);
   fakeChrome(world);
+  // The background put the holder in these pages before (lib/presenter/presenter.ts, pagesWithHolder).
+  await browser.storage.session.set({ pagesWithHolder: [...world.injected] });
   listenToSwitcher();
 });
 
@@ -181,6 +183,35 @@ describe('the switcher in a web page', () => {
     await shortcut();
     expect(sent('showSwitcher').map((m) => m.tabId)).toEqual([11, 11]);
     expect(browser.scripting.executeScript).toHaveBeenCalledTimes(1);
+  });
+
+  it('puts the holder in at once in a page it never put it in, without asking the page first', async () => {
+    // A busy page can take over a second even to tell that nobody listens: it would be taken for one that hangs.
+    world.tabs.push(tab(13, 1, { lastAccessed: 400 }));
+    world.currentTabId = 13;
+    await shortcut();
+    expect(browser.scripting.executeScript).toHaveBeenCalledTimes(1);
+    expect(messages.sendMessage.mock.calls.filter(([, , tabId]) => tabId === 13).map(([type]) => type)).toEqual([
+      'showFrame',
+      'showSwitcher',
+    ]);
+    expect(messages.sendMessage.mock.invocationCallOrder[0] ?? 0).toBeGreaterThan(
+      vi.mocked(browser.scripting.executeScript).mock.invocationCallOrder[0] ?? 0,
+    );
+  });
+
+  it('puts the holder in again at once in a tab that loaded another page since', async () => {
+    await shortcut();
+    await ask('switcherClosed');
+    world.injected.delete(11);
+    await fakeBrowser.tabs.onUpdated.trigger(11, { status: 'loading' }, world.tabs[0] as never);
+    messages.sendMessage.mockClear();
+    await shortcut();
+    expect(browser.scripting.executeScript).toHaveBeenCalledTimes(1);
+    expect(messages.sendMessage.mock.calls.filter(([, , tabId]) => tabId === 11).map(([type]) => type)).toEqual([
+      'showFrame',
+      'showSwitcher',
+    ]);
   });
 
   it('closes the open switcher and opens none when there is no current tab', async () => {

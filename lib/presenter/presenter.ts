@@ -33,6 +33,14 @@ type OpenSwitcher =
 const openSwitcher = storage.defineItem<OpenSwitcher | null>('session:openSwitcher', { fallback: null });
 /** The tabs for the switcher's window, until the window asks for them (getSnapshot). */
 const windowSnapshot = storage.defineItem<SwitcherSnapshot | null>('session:windowSnapshot', { fallback: null });
+/**
+ * The tabs whose page has the frame's holder: put in by the background, and the tab hasn't loaded another page since.
+ * There the switcher is shown with a message, and a page that doesn't answer it within PAGE_ANSWER_MS hangs. In any
+ * other tab the holder is put in first, without asking the page: on a busy machine a page can take over a second even to
+ * tell that nobody listens, and would be taken for one that hangs. In storage.session, cleared like the holders
+ * themselves when the browser closes or the extension updates.
+ */
+const pagesWithHolder = storage.defineItem<number[]>('session:pagesWithHolder', { fallback: [] });
 
 /** The holder of the switcher's frame, injected into a page only when the switcher opens there. */
 const SWITCHER_SCRIPT = '/content-scripts/switcher.js';
@@ -119,8 +127,12 @@ export function listenToSwitcher(): void {
     await browser.runtime.openOptionsPage();
   });
   browser.tabs.onRemoved.addListener(async (tabId) => {
+    await forgetHolder(tabId);
     const open = await openSwitcher.getValue();
     if (open?.in === 'page' && open.tabId === tabId) await openSwitcher.setValue(null);
+  });
+  browser.tabs.onUpdated.addListener(async (tabId, change) => {
+    if (change.status === 'loading') await forgetHolder(tabId);
   });
   browser.windows.onRemoved.addListener(async (windowId) => {
     const open = await openSwitcher.getValue();
@@ -251,19 +263,29 @@ async function sendSnapshot(tabId: number, snapshot: SwitcherSnapshot): Promise<
 
 /** Shows the switcher's frame over the page, putting its holder in the page the first time. */
 async function showFrame(tabId: number): Promise<FrameShown> {
-  const show = (limitMs?: number) => answered(sendMessage('showFrame', undefined, tabId), limitMs, 'showFrame');
-  try {
-    return await show();
-  } catch (error) {
-    // The page hangs: nothing more is tried there. Otherwise the holder isn't in the page yet.
-    if (error instanceof NoAnswer) throw error;
+  const show = (limitMs: number) => answered(sendMessage('showFrame', undefined, tabId), limitMs, 'showFrame');
+  if ((await pagesWithHolder.getValue()).includes(tabId)) {
+    try {
+      return await show(PAGE_ANSWER_MS);
+    } catch (error) {
+      // The page hangs: nothing more is tried there. Otherwise its holder is gone, and is put in again.
+      if (error instanceof NoAnswer) throw error;
+    }
   }
   await answered(
     browser.scripting.executeScript({ target: { tabId }, files: [SWITCHER_SCRIPT] }),
     FIRST_TIME_MS,
     'the script of the frame',
   );
-  return show(FIRST_TIME_MS);
+  const shown = await show(FIRST_TIME_MS);
+  await pagesWithHolder.setValue([...new Set([...(await pagesWithHolder.getValue()), tabId])]);
+  return shown;
+}
+
+/** The tab loads another page, or closes: its holder is gone with its page. */
+async function forgetHolder(tabId: number): Promise<void> {
+  const pages = await pagesWithHolder.getValue();
+  if (pages.includes(tabId)) await pagesWithHolder.setValue(pages.filter((id) => id !== tabId));
 }
 
 /**

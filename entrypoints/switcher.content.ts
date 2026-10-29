@@ -10,6 +10,11 @@ import { onMessage, sendMessage } from '../lib/messages';
 export default defineContentScript({
   registration: 'runtime',
   main(ctx) {
+    // Put in again while it runs (the background lost track of it): the holder already there answers. One left by an
+    // older version of the extension is no longer valid, and this one takes over.
+    const running = (globalThis as Record<symbol, ContentScriptContext | undefined>)[HOLDER];
+    if (running?.isValid) return;
+    (globalThis as Record<symbol, ContentScriptContext | undefined>)[HOLDER] = ctx;
     let holder: Promise<FrameHolder> | undefined;
 
     onMessage('showFrame', async () => {
@@ -29,6 +34,9 @@ export default defineContentScript({
     onMessage('hideFrame', async () => (await holder)?.hide());
   },
 });
+
+/** Where the holder running in this page keeps its context: in the extension's own world, out of the page's sight. */
+const HOLDER = Symbol.for('better-tab-switcher.holder');
 
 /** The holder's own look: a dialog over the whole window, the frame filling it, and nothing of theirs to see. */
 const HOLDER_CSS = `

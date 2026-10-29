@@ -139,16 +139,19 @@ export function focusedWindows(worker: Worker): Promise<number[]> {
 }
 
 /**
- * Presses Esc in the switcher's own window and waits until the window is closed. Only the key press: the switcher
- * closes on it, and its window can be gone before Chromium confirms the key, even the press (seen on a slow macOS
- * machine). That error is expected only once the window is closed: any other one fails the test, and so does a window
- * that stays open.
+ * Does what closes the switcher's own window (a key, a click) and waits until the window is closed. The window can be
+ * gone before Chromium confirms the key or the click it closed on (seen on slow macOS machines), and Playwright then
+ * fails the action: that error is expected only once the window is closed. Any other error fails the test, and so does
+ * a window that stays open.
  */
-export async function closeWithEscape(window: Page): Promise<void> {
+export async function closeBy(window: Page, act: () => Promise<void>): Promise<void> {
   const closed = window.waitForEvent('close');
-  await window.keyboard.down('Escape').catch((error: unknown) => {
+  await act().catch((error: unknown) => {
     if (!window.isClosed()) throw error;
   });
   await closed;
   expect(window.isClosed()).toBe(true);
 }
+
+/** Presses Esc in the switcher's own window (only the press: the switcher closes on it) and waits until it is closed. */
+export const closeWithEscape = (window: Page) => closeBy(window, () => window.keyboard.down('Escape'));

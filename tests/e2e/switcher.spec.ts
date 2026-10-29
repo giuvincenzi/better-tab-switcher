@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures';
-import { activeTitle, openPages, rows, selected, showSwitcher, switcher, useSettings } from './helpers';
+import { activeTitle, closeBy, openPages, rows, selected, showSwitcher, switcher, useSettings } from './helpers';
 
 test.describe('switcher in a page @switcher', () => {
   test('lists the tabs most recently used first, the previous one selected', async ({ context, serviceWorker }) => {
@@ -180,9 +180,10 @@ test.describe("Chrome's own pages @switcher", () => {
     // A click on a tab closes the window: the mouse's click, which waits for nothing in the window after it.
     const alpha = await switcherWindow.getByRole('option', { name: /^alpha/ }).boundingBox();
     if (!alpha) throw new Error('No alpha in the switcher.');
-    await switcherWindow.mouse.click(alpha.x + alpha.width / 2, alpha.y + alpha.height / 2);
+    await closeBy(switcherWindow, () =>
+      switcherWindow.mouse.click(alpha.x + alpha.width / 2, alpha.y + alpha.height / 2),
+    );
     await expect.poll(() => activeTitle(serviceWorker)).toBe('alpha');
-    await expect.poll(() => switcherWindow.isClosed()).toBe(true);
   });
 
   test('switches to the previous tab with a quick tap there, as in a page: the window closes at once', async ({
