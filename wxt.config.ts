@@ -7,6 +7,7 @@ export default defineConfig({
   manifest: ({ mode }) => ({
     default_locale: 'en',
     name: '__MSG_Extension_Name__',
+    description: '__MSG_Extension_Description__',
     // light-dark() in styles/theme.css needs Chrome 123.
     minimum_chrome_version: '123',
     permissions: ['tabs', 'activeTab', 'scripting', 'storage', 'favicon', 'tabGroups'],

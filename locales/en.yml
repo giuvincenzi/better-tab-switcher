@@ -1,6 +1,10 @@
 # GLOBAL: the extension's name, the same in every language. Shown by Chrome and in the extension.
 Extension_Name: Better Tab Switcher
 
+# What the extension is, in the stores (the manifest's description: at most 132 characters, which Chrome and Edge show
+# whole) and on the website's home page. Written with the website's title, in site/home/en.json (discoverability.md).
+Extension_Description: See your tabs in one place with one shortcut, then quickly switch, search or close them. In the view you like, and always private.
+
 # Never shown: the language of this file, as a BCP 47 tag (en, it, pt-BR, zh-Hans…). Every language file says its own,
 # so the extension knows which one Chrome uses (lib/i18n/language.ts): numbers, dates and the text direction follow it.
 Language_Tag: en
