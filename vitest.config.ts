@@ -25,6 +25,7 @@ export default defineConfig({
           include: ['tests/unit/**/*.test.ts'],
           exclude: ['tests/unit/**/*.browser.test.ts'],
           environment: 'node',
+          setupFiles: ['tests/unit/logic-setup.ts'],
         },
       },
       {

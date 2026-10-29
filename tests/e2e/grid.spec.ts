@@ -81,6 +81,34 @@ test.describe('grid @grid', () => {
     expect(kept.local).toHaveLength(0);
   });
 
+  test("keeps the new picture when the session's memory is full, the oldest going first", async ({
+    context,
+    serviceWorker,
+  }) => {
+    await useSettings(serviceWorker, { view: 'grid' });
+    const [alpha] = (await openPages(context, ['alpha', 'beta'])) as [Page, Page];
+    // Old pictures of tabs closed long ago fill the memory to its last byte: big ones, then small ones.
+    const filled = await serviceWorker.evaluate(async () => {
+      let next = 0;
+      for (const size of [512 * 1024, 1024, 16]) {
+        for (;;) {
+          const key = `preview-${100000 + next}`;
+          try {
+            await chrome.storage.session.set({ [key]: { picture: 'x'.repeat(size), savedAt: next } });
+            next++;
+          } catch {
+            break;
+          }
+        }
+      }
+      return next;
+    });
+    await useEach(serviceWorker, [alpha]);
+    const kept = await savedPictures(serviceWorker);
+    expect(kept).not.toContain('preview-100000');
+    expect(kept).toContain(`preview-${100000 + filled - 1}`);
+  });
+
   test('forgets the pictures when the grid shows icons', async ({ context, serviceWorker }) => {
     await useSettings(serviceWorker, { view: 'grid' });
     const pages = await openPages(context, ['alpha', 'beta', 'gamma']);
