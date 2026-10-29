@@ -18,7 +18,8 @@
 #   make visual     turn a board of the Design canvas into a picture of the website:
 #                   make visual board=<board.dc.html> name=<scene> writes site/visuals/<scene>.html (docs.md)
 #   make third-party  check that third-party.json lists exactly the packages built into the extension (docs.md)
-#   make store-listing  write the stores' descriptions, one per language, in .output/store-listing/ (discoverability.md)
+#   make store-listing  write what the stores' dashboards ask for (descriptions, pictures, Privacy answers) in
+#                     .output/store-listing/ (discoverability.md)
 #
 # Releases are not made here: the create_release_pr workflow opens the release pull request, merging it publishes the
 # release (publish_release). See build-and-release.md.

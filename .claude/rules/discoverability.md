@@ -25,9 +25,12 @@ paths:
     line under the name, checked by the test workflow (`site_test`, `scripts/check-readme.mjs`);
   - the stores' pages (Chrome Web Store, Edge Add-ons): under the name, the description from the extension's manifest,
     updated by every release; the page's own description, written by `make store-listing` in `.output/store-listing/`
-    like the README (the slogan, the links to the website and to the guide, then title + ". " + description) and pasted
-    by hand into each store's dashboard, one per language, whenever the title, the description or the slogan change:
-    a release uploads only the extension;
+    like the README (the slogan, the links to the website and to the guide, then title + ". " + description) followed
+    by the home's features and privacy (Edge asks for at least 250 characters describing every feature), and pasted by
+    hand into each store's dashboard, one per language, whenever they change: a release uploads only the extension.
+    `make store-listing` also writes the rest of both dashboards, never by hand: the icon (128) and logo (300), the
+    screenshots (the site's views at 1280×800) and the Privacy page's answers, one reason per permission of the
+    manifest (it stops when a permission has none);
   - the repository's About on GitHub: title + ". " + description, set by hand
     (`gh repo edit --description "…"`) whenever they change: the workflows' token has no Administration permission, and a
     personal token with it would be a secret only for this.
@@ -60,4 +63,5 @@ paths:
 
 - The first release: in Search Console, submit `sitemap.xml` and request indexing of the home; in Bing Webmaster Tools,
   import the site from Search Console.
-- When the title, the description or the slogan change: the repository's About and the stores' descriptions (above).
+- When the title, the description, the slogan, the home's features or privacy, the views or the permissions change:
+  the repository's About and what `make store-listing` writes, in both stores' dashboards (above).
