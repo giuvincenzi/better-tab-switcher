@@ -3,7 +3,8 @@
 // - <code>.txt: the page's description in each language, laid out like the README (the slogan, the links to the website
 //   and to the guide, title + ". " + description), then the home's features and privacy: Edge asks for at least 250
 //   characters describing every feature. Every text is read from where it is written, so the stores never say anything
-//   the site doesn't.
+//   the site doesn't; the features and the privacy are the ones of the home's template (site/index.html), in its order,
+//   so a box added to the home is in the stores too.
 // - icon-128.png, logo-300.png: the extension's icon (Chrome's store icon, Edge's logo, 300×300 recommended).
 // - screenshot-<n>-<scene>.png: the site's views (site/visuals/), at the 1280×800 both stores take.
 // - privacy.txt: the answers of both stores' Privacy page, one per permission of the manifest.
@@ -33,6 +34,36 @@ const PERMISSIONS = {
 
 /** @param {string} code */
 const homeTexts = (code) => JSON.parse(readFileSync(`site/home/${code}.json`, 'utf8'));
+
+/**
+ * The keys of a section of the home's template (site/index.html), in its order: its heading, then each box's title and
+ * text (`<h3>{{x_title}}</h3><p>{{x_text}}</p>`), or its one text (`<div class="privacy-text">{{privacy_text}}</div>`).
+ * @param {string} id
+ */
+function homeSection(id) {
+  const template = readFileSync('site/index.html', 'utf8');
+  const section = new RegExp(`<section id="${id}"[\\s\\S]*?</section>`).exec(template)?.[0];
+  const heading = section && /<h2>\{\{(\w+)\}\}<\/h2>/.exec(section)?.[1];
+  if (!section || !heading) throw new Error(`site/index.html has no section "${id}" with a heading.`);
+  const boxes = [...section.matchAll(/<h3>\{\{(\w+)\}\}<\/h3><p>\{\{(\w+)\}\}<\/p>/g)].map(([, title, text]) => ({
+    title: /** @type {string} */ (title),
+    text: /** @type {string} */ (text),
+  }));
+  const text = /<div class="privacy-text">\{\{(\w+)\}\}<\/div>/.exec(section)?.[1];
+  return { heading, boxes, text };
+}
+
+/**
+ * A text of a language's home, or an error naming the file and the key: never "undefined" in a store's page.
+ * @param {Record<string, string>} home
+ * @param {string} code
+ * @param {string} key
+ */
+function textOf(home, code, key) {
+  const value = home[key];
+  if (typeof value !== 'string' || !value) throw new Error(`site/home/${code}.json has no ${key}.`);
+  return value;
+}
 /** The text of the home's HTML values (the privacy list), for a plain text field. @param {string} html */
 const plain = (html) =>
   html
@@ -45,19 +76,24 @@ const plain = (html) =>
 mkdirSync(out, { recursive: true });
 
 // The descriptions.
-const { slogan } = homeTexts('en');
+const features = homeSection('features');
+const privacy = homeSection('privacy');
+if (!features.boxes.length) throw new Error('site/index.html has no feature box in its "features" section.');
+if (!privacy.text) throw new Error('site/index.html has no privacy text in its "privacy" section.');
+const slogan = textOf(homeTexts('en'), 'en', 'slogan');
 for (const language of HOME_LANGUAGES) {
   const home = homeTexts(language.code);
+  /** @param {string} key */
+  const text = (key) => textOf(home, language.code, key);
   const { description } = await readExtensionTexts(language.locale);
-  const features = ['recent', 'search', 'views', 'pages', 'language', 'open']
-    .map((key) => `• ${home[`${key}_title`]}: ${home[`${key}_text`]}`)
-    .join('\n');
+  if (!description) throw new Error(`locales/${language.locale}.yml has no Extension_Description.`);
+  const boxes = features.boxes.map((box) => `• ${text(box.title)}: ${text(box.text)}`).join('\n');
   const page = [
     slogan,
-    `🌐 ${home.website_label}: ${SITE_URL}${language.folder ? `${language.folder}/` : ''}\n📖 ${home.nav_guide}: ${SITE_URL}guide/latest/`,
-    `${home.title}. ${description}`,
-    `${home.features_title}\n${features}`,
-    `${home.privacy_title}\n${plain(home.privacy_text)}`,
+    `🌐 ${text('website_label')}: ${SITE_URL}${language.folder ? `${language.folder}/` : ''}\n📖 ${text('nav_guide')}: ${SITE_URL}guide/latest/`,
+    `${text('title')}. ${description}`,
+    `${text(features.heading)}\n${boxes}`,
+    `${text(privacy.heading)}\n${plain(text(/** @type {string} */ (privacy.text)))}`,
   ].join('\n\n');
   if ([...page].length < EDGE_MINIMUM)
     throw new Error(`${language.code}: the description is under ${EDGE_MINIMUM} characters.`);
@@ -79,7 +115,7 @@ writeFileSync(
   `Privacy page of the Chrome Web Store and of Edge Add-ons
 
 Single purpose
-${homeTexts('en').title}: a keyboard shortcut (Alt+Y by default) or the toolbar icon shows your open tabs, the most recently used first, in a list or a grid, to switch to one, search them or close them.
+${textOf(homeTexts('en'), 'en', 'title')}. ${(await readExtensionTexts('en')).description}
 
 Permission justification
 ${asked.map((/** @type {keyof typeof PERMISSIONS} */ name) => `${name}: ${PERMISSIONS[name]}`).join('\n')}
