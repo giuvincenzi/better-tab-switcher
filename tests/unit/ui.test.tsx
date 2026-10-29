@@ -155,7 +155,14 @@ describe('Select', () => {
 });
 
 describe('NumberField', () => {
-  function field(value = 50, more: { unit?: string; disabled?: boolean } = {}) {
+  function field(
+    value = 50,
+    more: {
+      unit?: { unit: 'millisecond' | 'second'; language: string };
+      describedBy?: string;
+      disabled?: boolean;
+    } = {},
+  ) {
     const onChange = vi.fn();
     const host = show(() => (
       <NumberField value={value} min={0} max={1000} labelledBy="name" onChange={onChange} {...more} />
@@ -202,8 +209,29 @@ describe('NumberField', () => {
     expect(onChange).toHaveBeenCalledWith(300);
   });
 
+  /** The text of the elements that describe `input`, as screen readers read it after the number. */
+  const description = (input: HTMLInputElement) =>
+    (input.getAttribute('aria-describedby') ?? '')
+      .split(' ')
+      .map((id) => document.getElementById(id)?.textContent)
+      .join(' ');
+
+  it('is described by its whole unit for screen readers, as many as the number says, before its note', () => {
+    const note = document.createElement('p');
+    note.id = 'note';
+    note.textContent = 'Shown after this time.';
+    document.body.append(note);
+    expect(description(field(300, { unit: { unit: 'millisecond', language: 'en' }, describedBy: 'note' }).input)).toBe(
+      'milliseconds Shown after this time.',
+    );
+    expect(description(field(1, { unit: { unit: 'second', language: 'en' } }).input)).toBe('second');
+    expect(description(field(5, { unit: { unit: 'second', language: 'it' } }).input)).toBe('secondi');
+    expect(field(5).input.hasAttribute('aria-describedby')).toBe(false);
+    note.remove();
+  });
+
   it('shows its unit after the number, hidden from screen readers, and is named by its text', () => {
-    const { host, input } = field(50, { unit: 'ms' });
+    const { host, input } = field(50, { unit: { unit: 'millisecond', language: 'en' } });
     expect(input.getAttribute('aria-labelledby')).toBe('name');
     const unit = [...host.querySelectorAll('span')].find(
       (span) => span.childElementCount === 0 && span.textContent === 'ms',
@@ -215,7 +243,7 @@ describe('NumberField', () => {
   it('keeps the number left to right in a right-to-left page', () => {
     document.body.dir = 'rtl';
     try {
-      const { input } = field(50, { unit: 'ms' });
+      const { input } = field(50, { unit: { unit: 'millisecond', language: 'en' } });
       expect(getComputedStyle(input).direction).toBe('ltr');
     } finally {
       document.body.removeAttribute('dir');

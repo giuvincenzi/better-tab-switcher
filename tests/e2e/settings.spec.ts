@@ -20,6 +20,14 @@ async function openSettings(context: BrowserContext, extensionId: string): Promi
 }
 
 test.describe('settings page @settings', () => {
+  test('gives screen readers the whole unit of its number fields', async ({ context, extensionId }) => {
+    const page = await openSettings(context, extensionId);
+    await expect(
+      page.getByRole('spinbutton', { name: 'Delay before the switcher appears' }),
+    ).toHaveAccessibleDescription('milliseconds A quicker tap switches to the previous tab without showing it.');
+    await expect(page.getByRole('spinbutton', { name: 'Auto-select time' })).toHaveAccessibleDescription('seconds');
+  });
+
   test('marks in its sidebar the section chosen there, and the one at the top as the page scrolls', async ({
     context,
     extensionId,

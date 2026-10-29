@@ -143,7 +143,7 @@ export function SwitchingSection(props: SectionProps): JSX.Element {
           <NumberField
             value={props.settings.delayMs}
             {...limits.delayMs}
-            unit={unitName(props.language, 'millisecond')}
+            unit={{ unit: 'millisecond', language: props.language }}
             labelledBy={ids.label}
             describedBy={ids.note}
             onChange={(delayMs) => props.save({ delayMs })}
@@ -175,7 +175,7 @@ export function SwitchingSection(props: SectionProps): JSX.Element {
           <NumberField
             value={props.settings.autoSelectSeconds}
             {...limits.autoSelectSeconds}
-            unit={unitName(props.language, 'second')}
+            unit={{ unit: 'second', language: props.language }}
             labelledBy={ids.label}
             disabled={!props.settings.autoSelect}
             onChange={(autoSelectSeconds) => props.save({ autoSelectSeconds })}
@@ -321,10 +321,4 @@ function RowsRow(props: { label: string; value: RowCount; language: string; onCh
 /** The name of the browser the extension runs in, for the sentences that name it (lib/browser.ts). */
 function browserTitle(): string {
   return i18n.t(BROWSER_NAME_TEXT[browserName()]);
-}
-
-/** A unit as the language writes it after a number, short ("ms", "s"). */
-function unitName(language: string, unit: 'millisecond' | 'second'): string {
-  const parts = new Intl.NumberFormat(language, { style: 'unit', unit, unitDisplay: 'narrow' }).formatToParts(1);
-  return parts.find((part) => part.type === 'unit')?.value ?? '';
 }

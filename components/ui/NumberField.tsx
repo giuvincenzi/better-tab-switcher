@@ -1,12 +1,12 @@
-import { type JSX, Show } from 'solid-js';
+import { createUniqueId, type JSX, Show } from 'solid-js';
 import styles from './NumberField.module.css';
 
 interface NumberFieldProps {
   value: number;
   min: number;
   max: number;
-  /** The unit after the number, written in the language in use ("ms", "s"). */
-  unit?: string;
+  /** The unit after the number, written in `language`: short after it ("ms"), whole for screen readers. */
+  unit?: { unit: 'millisecond' | 'second'; language: string };
   /** The id of the text that names it. */
   labelledBy: string;
   describedBy?: string;
@@ -19,6 +19,7 @@ interface NumberFieldProps {
  * goes back to the nearest limit; anything else, back to the value it had.
  */
 export function NumberField(props: NumberFieldProps): JSX.Element {
+  const unitId = createUniqueId();
   function commit(input: HTMLInputElement) {
     const typed = Math.round(Number(input.value));
     if (input.value.trim() === '' || !Number.isFinite(typed)) {
@@ -41,15 +42,33 @@ export function NumberField(props: NumberFieldProps): JSX.Element {
         step={1}
         value={props.value}
         aria-labelledby={props.labelledBy}
-        aria-describedby={props.describedBy}
+        aria-describedby={[props.unit && unitId, props.describedBy].filter(Boolean).join(' ') || undefined}
         disabled={props.disabled}
         onChange={(event) => commit(event.currentTarget)}
       />
       <Show when={props.unit}>
-        <span class={styles.unit} aria-hidden="true">
-          {props.unit}
-        </span>
+        {(unit) => (
+          <>
+            <span class={styles.unit} aria-hidden="true">
+              {unitText(unit(), props.value, 'narrow')}
+            </span>
+            {/* The unit read after the number by screen readers: the whole word, as many as the number says. */}
+            <span id={unitId} hidden>
+              {unitText(unit(), props.value, 'long')}
+            </span>
+          </>
+        )}
       </Show>
     </span>
   );
+}
+
+/** A unit's name in its language, for `value` of it: "ms" (narrow), "milliseconds" (long). */
+function unitText(
+  { unit, language }: { unit: 'millisecond' | 'second'; language: string },
+  value: number,
+  unitDisplay: 'narrow' | 'long',
+): string {
+  const parts = new Intl.NumberFormat(language, { style: 'unit', unit, unitDisplay }).formatToParts(value);
+  return parts.find((part) => part.type === 'unit')?.value ?? '';
 }
