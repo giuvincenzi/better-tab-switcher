@@ -1,7 +1,14 @@
 /*
  * The frame covers the whole page and shows only the switcher's panel, nothing of its own around it. Its root has no
- * theme (the theme is on the switcher's dialog), so the frame stays transparent over the page in any theme.
+ * theme (the theme is on the switcher's dialog), so the frame stays transparent over the page in any theme. Its color
+ * scheme is written here, light, as on the frame's element (entrypoints/switcher.content.ts): Chrome paints a frame
+ * whose color scheme differs from its element's on an opaque background, and a page that says it supports dark (a
+ * color-scheme meta) would make "normal" dark on the element's side only.
  */
+html {
+  color-scheme: light;
+}
+
 html,
 body {
   margin: 0;

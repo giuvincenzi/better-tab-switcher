@@ -63,9 +63,10 @@ const HOLDER_CSS = `
     height: 100%;
     border: 0;
     background: transparent;
-    /* The same as the frame's root (no theme there): Chrome draws a frame whose color scheme differs from its
-       element's on an opaque background. */
-    color-scheme: normal;
+    /* The same as the frame's root, written on both sides (entrypoints/switcher-frame/frame.css): Chrome paints a
+       frame whose color scheme differs from its element's on an opaque background, and "normal" would follow the
+       page's own color-scheme meta, not the frame's. */
+    color-scheme: light;
   }
 `;
 

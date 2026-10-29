@@ -256,6 +256,31 @@ test.describe('switcher over the page @switcher', () => {
   });
 });
 
+test.describe('the page behind the switcher @switcher', () => {
+  test('stays visible on a page that says it supports dark, with the system in dark mode: nothing paints over it', async ({
+    context,
+    serviceWorker,
+  }) => {
+    await openPages(context, ['alpha']);
+    await context.route('https://schemes.test/**', (route) =>
+      route.fulfill({
+        contentType: 'text/html',
+        body: '<title>schemes</title><meta name="color-scheme" content="light dark"><body style="margin:0;background:rgb(0,0,255)"></body>',
+      }),
+    );
+    const page = await context.newPage();
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.goto('https://schemes.test/');
+    await page.bringToFront();
+    const corner = { x: 4, y: 4, width: 8, height: 8 };
+    const before = await page.screenshot({ clip: corner });
+    await showSwitcher(serviceWorker);
+    await expect(rows(page)).toHaveCount(2);
+    // The page's corner, far from the switcher's panel, looks the same as without the switcher.
+    expect((await page.screenshot({ clip: corner })).equals(before)).toBe(true);
+  });
+});
+
 test.describe('what the page sees of the switcher @switcher', () => {
   test("keeps the tabs from the page: it can't reach the switcher, read its text, nor find a tab's title", async ({
     context,
