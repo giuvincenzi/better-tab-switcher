@@ -73,7 +73,7 @@ describe('translations', () => {
   it("give the home page a file for each language, and the slogan only in English's", () => {
     const files = readdirSync('site/home').map((name) => name.replace(/\.json$/, ''));
     expect(files.sort()).toEqual(['en', ...Object.values(LANGUAGES)].sort());
-    expect(Object.keys(homeTexts('en')).sort()).toEqual(['slogan', 'title']);
+    expect(Object.keys(homeTexts('en'))).toEqual(expect.arrayContaining(['slogan', 'title']));
     expect(pageTitle(homeTexts('en').title).length).toBeLessThanOrEqual(PAGE_TITLE_LIMIT);
   });
 

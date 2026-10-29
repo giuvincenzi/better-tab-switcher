@@ -12,11 +12,16 @@
 #                   make e2e browser=msedge runs them in Microsoft Edge (installed on the PC)
 #   make build      create the zip for the stores in .output/, no upload
 #   make icons      draw the extension's icons (public/icon/) from assets/icon.svg, after changing it
+#   make docs       build the website preview in site-preview/ (the guide of the current code as version "next");
+#                   make docs serve=1 builds it and serves it at http://localhost:8080/, so links work as on the site
+#                   (make docs serve=1 port=<n> serves it on another port)
+#   make visual     turn a board of the Design canvas into a picture of the website:
+#                   make visual board=<board.dc.html> name=<scene> writes site/visuals/<scene>.html (docs.md)
 #
 # Releases are not made here: the create_release_pr workflow opens the release pull request, merging it publishes the
 # release (publish_release). See build-and-release.md.
 
-.PHONY: setup dev lint test e2e build icons
+.PHONY: setup dev lint test e2e build icons docs visual
 
 setup:
 	npm ci
@@ -39,3 +44,9 @@ build:
 
 icons:
 	npm run icons
+
+docs:
+	$(if $(port),PORT=$(port)) node scripts/$(if $(serve),site-serve.mjs,site.mjs --preview)
+
+visual:
+	node scripts/board-to-visual.mjs "$(board)" "$(name)"

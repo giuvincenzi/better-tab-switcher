@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="{{LANG}}" dir="{{DIR}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Better Tab Switcher: {{attr:title}}</title>
+<meta name="description" content="{{attr:description}}">
+<link rel="canonical" href="{{PAGE_URL}}">
+{{ALTERNATES}}
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Better Tab Switcher">
+<meta property="og:title" content="Better Tab Switcher: {{attr:title}}">
+<meta property="og:description" content="{{attr:description}}">
+<meta property="og:url" content="{{PAGE_URL}}">
+<meta property="og:image" content="{{SITE_URL}}assets/visuals/list.png">
+<meta property="og:image:alt" content="{{attr:visual_list_name}}">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Better Tab Switcher",
+  "description": {{json:description}},
+  "inLanguage": "{{LANG}}",
+  "url": "{{PAGE_URL}}",
+  "image": "{{SITE_URL}}assets/visuals/list.png",
+  "applicationCategory": "BrowserApplication",
+  "operatingSystem": "Windows, macOS, Linux, ChromeOS",
+  "softwareVersion": "{{VERSION}}",
+  "license": "{{REPOSITORY}}/blob/main/LICENSE",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+}
+</script>
+<link rel="icon" href="{{ROOT}}favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ROOT}}assets/style.css">
+</head>
+<body>
+
+{{HEADER}}
+
+{{BANNER}}
+
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <p class="eyebrow">{{title}}</p>
+      <h1 lang="en" dir="ltr">{{slogan}}</h1>
+      <p class="lead">{{description}}</p>
+      <div class="actions" id="install">
+        <a class="button button-primary store" data-store="chrome" href="{{CHROME_STORE_PAGE}}">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></svg>
+          {{chrome_store}}
+        </a>
+        <a class="button button-secondary store" data-store="edge" href="{{EDGE_STORE_PAGE}}">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></svg>
+          {{edge_store}}
+        </a>
+        <a class="button button-secondary" href="{{REPOSITORY}}" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="#e3b341" stroke="#e3b341" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.2l1.1-6.2L3 9.6l6.2-.9z"/></svg>
+          {{star_button}}
+        </a>
+      </div>
+      <span class="fine-print">{{fine_print}} · {{PROJECT_LINKS}}</span>
+    </div>
+  </section>
+
+  <section class="views" aria-label="{{attr:views_label}}">
+    <div class="wrap">
+      <div class="view-tabs" role="tablist" aria-label="{{attr:views_label}}">
+{{VISUAL_TABS}}
+      </div>
+      <p class="view-pager" hidden>{{VISUAL_FIRST_NAME}}</p>
+      <div class="view-stage">
+        <div class="view-track">
+{{VISUAL_SLIDES}}
+        </div>
+        <button type="button" class="view-arrow view-previous" aria-label="{{attr:previous_view}}" hidden><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+        <button type="button" class="view-arrow view-next" aria-label="{{attr:next_view}}" hidden><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+      </div>
+      <div class="view-dots" aria-hidden="true">
+{{VISUAL_DOTS}}
+      </div>
+      <p class="view-caption" aria-live="polite">{{VISUAL_FIRST_CAPTION}}</p>
+    </div>
+  </section>
+
+  <section id="features" class="section">
+    <div class="wrap">
+      <h2>{{features_title}}</h2>
+      <div class="cards">
+        <div class="card">
+          <span class="card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 7v5l3 2"/><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg></span>
+          <div><h3>{{recent_title}}</h3><p>{{recent_text}}</p></div>
+        </div>
+        <div class="card">
+          <span class="card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></span>
+          <div><h3>{{search_title}}</h3><p>{{search_text}}</p></div>
+        </div>
+        <div class="card">
+          <span class="card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg></span>
+          <div><h3>{{views_title}}</h3><p>{{views_text}}</p></div>
+        </div>
+        <div class="card">
+          <span class="card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 9h18"/></svg></span>
+          <div><h3>{{pages_title}}</h3><p>{{pages_text}}</p></div>
+        </div>
+        <div class="card">
+          <span class="card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18z"/></svg></span>
+          <div><h3>{{language_title}}</h3><p>{{language_text}}</p></div>
+        </div>
+        <div class="card">
+          <span class="card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 9l-4 3 4 3"/><path d="M16 9l4 3-4 3"/><path d="M14 5l-4 14"/></svg></span>
+          <div><h3>{{open_title}}</h3><p>{{open_text}}</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="privacy" class="section section-joined">
+    <div class="wrap">
+      <div class="privacy">
+        <span class="privacy-icon"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg></span>
+        <div>
+          <p class="privacy-label">{{nav_privacy}}</p>
+          <h2>{{privacy_title}}</h2>
+          <p>{{privacy_text}}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="callout">
+        <div>
+          <h2>{{ctrl_tab_title}}</h2>
+          <p>{{ctrl_tab_text}}</p>
+        </div>
+        <a class="button button-secondary" href="{{ROOT}}guide/latest/using-the-switcher.html#ctrl-tab" hreflang="en">{{guide_button}}</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+{{FOOTER}}
+
+<script src="{{ROOT}}assets/site.js"></script>
+</body>
+</html>

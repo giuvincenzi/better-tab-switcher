@@ -1,0 +1,7 @@
+[
+  { "scene": "list", "name": "visual_list_name", "text": "visual_list_text" },
+  { "scene": "grid-previews", "name": "visual_previews_name", "text": "visual_previews_text" },
+  { "scene": "grid-icons", "name": "visual_icons_name", "text": "visual_icons_text" },
+  { "scene": "tab-details", "name": "visual_details_name", "text": "visual_details_text" },
+  { "scene": "only-tabs", "name": "visual_only_tabs_name", "text": "visual_only_tabs_text" }
+]

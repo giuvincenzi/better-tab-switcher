@@ -74,6 +74,6 @@ changes (`working-rules.md`).
   development build built for the screenshots: the sample data, no development marks, so every screenshot looks like a
   release. Never show personal data, user names or other windows. A new screenshot is added there, taken the same way.
 - A screenshot in the guide is a `<figure class="shot">` (the image with `alt`, a `<figcaption>`): centered, as wide as
-  the text. Every screenshot of the site (those figures and the home's screenshot) opens at full size with a click,
-  Enter or Space (`site.js`); every guide version uses the latest `site.js`, so the older guides get it too.
+  the text. Every guide screenshot opens at full size with a click, Enter or Space (`site.js`); every guide version uses
+  the latest `site.js`, so the older guides get it too. The home's pictures do not zoom (the user's decision).
 - The install links are the extension's pages on the Chrome Web Store and Edge Add-ons: keep them stable.
