@@ -454,6 +454,10 @@ jobs:
                                  dropping it on https://trace.playwright.dev (it stays in the browser, nothing is
                                  uploaded).
               error-context.md   a failed test only: the error and what the page held at that moment, in text.
+              background-console.txt
+                                 a failed test only, when the extension's background wrote in its console: what it
+                                 wrote, in order (for example why the switcher couldn't show in a page and opened in
+                                 its own window).
 
           Investigating a failed test
           ---------------------------

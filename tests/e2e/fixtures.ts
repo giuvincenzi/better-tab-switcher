@@ -1,3 +1,4 @@
+import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { type BrowserContext, test as base, chromium, type Worker } from '@playwright/test';
 
@@ -47,10 +48,19 @@ export const test = base.extend<ExtensionFixtures>({
     await use(context);
     await context.close();
   },
-  serviceWorker: async ({ context }, use) => {
+  serviceWorker: async ({ context }, use, testInfo) => {
     const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker'));
     contextOf.set(worker, context);
+    // What the background wrote in its console (why the switcher fell back to its window…): with a failed test.
+    const console: string[] = [];
+    worker.on('console', (message) => console.push(`${message.type()}: ${message.text()}`));
     await use(worker);
+    if (testInfo.status !== testInfo.expectedStatus && console.length > 0) {
+      // A file in the test's folder, next to its screenshots and trace, and in the report.
+      const path = testInfo.outputPath('background-console.txt');
+      writeFileSync(path, console.join('\n'));
+      await testInfo.attach('background-console', { path, contentType: 'text/plain' });
+    }
   },
   extensionId: async ({ serviceWorker }, use) => {
     await use(new URL(serviceWorker.url()).host);
