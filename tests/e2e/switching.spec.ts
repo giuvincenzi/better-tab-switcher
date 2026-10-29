@@ -2,6 +2,7 @@ import type { BrowserContext, Frame, Page } from '@playwright/test';
 import { expect, test } from './fixtures';
 import {
   activeTitle,
+  closeWithEscape,
   focusedWindows,
   openPages,
   openWindow,
@@ -152,8 +153,7 @@ test.describe('a page that hangs @switching', () => {
     await hanging.evaluate(() => new Promise((done) => requestAnimationFrame(() => setTimeout(done))));
     await expect(rows(hanging)).toHaveCount(0);
     // The user closes it and goes to another tab, where the shortcut opens the switcher at once.
-    await switcherWindow.keyboard.down('Escape');
-    await expect.poll(() => switcherWindow.isClosed()).toBe(true);
+    await closeWithEscape(switcherWindow);
     await beta.bringToFront();
     await showSwitcher(serviceWorker);
     await expect(rows(beta)).toHaveCount(3);
@@ -192,9 +192,7 @@ test.describe("the switcher's own window @switching", () => {
     // once it closed (headless Chromium gives the focus back by itself: this does not prove the extension does).
     const lastFocusedType = () => serviceWorker.evaluate(async () => (await chrome.windows.getLastFocused()).type);
     await expect.poll(lastFocusedType).toBe('popup');
-    // Only the key press: the switcher closes on it, and its window can be gone before a key release would arrive.
-    await switcherWindow.keyboard.down('Escape');
-    await expect.poll(() => switcherWindow.isClosed()).toBe(true);
+    await closeWithEscape(switcherWindow);
     await expect.poll(lastFocusedType).toBe('normal');
     // The Chrome page is still the current tab, and the shortcut opens a new switcher on it.
     expect(await activeTitle(serviceWorker)).toBe(await chromePage.title());
@@ -215,8 +213,7 @@ test.describe("the switcher's own window @switching", () => {
     await expect(firstWindow.getByRole('option')).toHaveCount(3);
     // Chrome keeps a zoom for each site: zoomed here, the extension's pages open zoomed from now on.
     await firstWindow.evaluate(() => chrome.tabs.setZoom(1.5));
-    await firstWindow.keyboard.down('Escape');
-    await expect.poll(() => firstWindow.isClosed()).toBe(true);
+    await closeWithEscape(firstWindow);
 
     await chromePage.bringToFront();
     const opened = context.waitForEvent('page');
@@ -239,8 +236,7 @@ test.describe("the switcher's own window @switching", () => {
       })
       .toBe(true);
     const inWindow = await panelSize(switcherWindow);
-    await switcherWindow.keyboard.down('Escape');
-    await expect.poll(() => switcherWindow.isClosed()).toBe(true);
+    await closeWithEscape(switcherWindow);
 
     // Over a web page of the same Chrome window, with the same zoom, the switcher is as wide.
     await alpha.bringToFront();

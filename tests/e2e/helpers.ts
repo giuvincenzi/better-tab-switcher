@@ -137,3 +137,18 @@ export function recordFocusedWindows(worker: Worker) {
 export function focusedWindows(worker: Worker): Promise<number[]> {
   return worker.evaluate(() => (globalThis as unknown as { focusedByTheExtension: number[] }).focusedByTheExtension);
 }
+
+/**
+ * Presses Esc in the switcher's own window and waits until the window is closed. Only the key press: the switcher
+ * closes on it, and its window can be gone before Chromium confirms the key, even the press (seen on a slow macOS
+ * machine). That error is expected only once the window is closed: any other one fails the test, and so does a window
+ * that stays open.
+ */
+export async function closeWithEscape(window: Page): Promise<void> {
+  const closed = window.waitForEvent('close');
+  await window.keyboard.down('Escape').catch((error: unknown) => {
+    if (!window.isClosed()) throw error;
+  });
+  await closed;
+  expect(window.isClosed()).toBe(true);
+}

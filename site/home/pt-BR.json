@@ -40,7 +40,7 @@
   "open_title": "Gratuito e de código aberto",
   "open_text": "Sem conta, sem anúncios. O código está no GitHub, sob a licença MIT.",
   "privacy_title": "Privado desde a concepção",
-  "privacy_text": "O Better Tab Switcher não envia nada para lugar nenhum. Sem conta, sem rastreamento, sem conexão de rede. Suas guias ficam no seu navegador, e os sites que você visita não conseguem ver quais guias você tem abertas.",
+  "privacy_text": "<p>O Better Tab Switcher funciona só dentro do seu navegador e nunca se conecta à internet: sem conta, sem rastreamento, nada é enviado para lugar nenhum.</p><ul><li>Suas configurações ficam salvas no seu navegador, neste computador.</li><li>Quando a grade mostra as <strong>Prévias</strong>, as imagens das suas guias ficam só na memória, nunca no disco. Elas são apagadas quando você fecha a guia, escolhe <strong>Ícones</strong> ou fecha o navegador.</li><li>Os sites que você visita não conseguem ver quais guias você tem abertas.</li></ul>",
   "ctrl_tab_title": "Quer usar com Ctrl+Tab?",
   "ctrl_tab_text": "O navegador reserva Ctrl+Tab para si, então o seletor abre com Alt+Y. O guia mostra como mudar o atalho e como usar Ctrl+Tab.",
   "guide_button": "Ler o guia",

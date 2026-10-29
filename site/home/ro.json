@@ -40,7 +40,7 @@
   "open_title": "Gratuit și open source",
   "open_text": "Fără cont, fără reclame. Codul este pe GitHub, sub licența MIT.",
   "privacy_title": "Privat încă de la concepere",
-  "privacy_text": "Better Tab Switcher nu trimite nimic nicăieri. Fără cont, fără urmărire, fără conexiuni la rețea. Filele tale rămân în browser, iar site-urile pe care le vizitezi nu pot vedea ce file ai deschise.",
+  "privacy_text": "<p>Better Tab Switcher funcționează doar în browser și nu se conectează niciodată la internet: fără cont, fără urmărire, nu trimite nimic nicăieri.</p><ul><li>Setările tale sunt salvate în browser, pe acest computer.</li><li>Când grila afișează <strong>Previzualizări</strong>, imaginile filelor tale sunt păstrate doar în memorie, niciodată pe disc. Sunt șterse când închizi fila, când alegi <strong>Pictograme</strong> sau când închizi browserul.</li><li>Site-urile pe care le vizitezi nu pot vedea ce file ai deschise.</li></ul>",
   "ctrl_tab_title": "Îl vrei pe Ctrl+Tab?",
   "ctrl_tab_text": "Browserul păstrează Ctrl+Tab pentru el, așa că comutatorul se deschide cu Alt+Y. Ghidul arată cum să schimbi comanda rapidă și cum să folosești Ctrl+Tab.",
   "guide_button": "Citește ghidul",
