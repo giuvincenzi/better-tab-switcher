@@ -38,9 +38,9 @@ const START_MS = 30_000;
 /**
  * Starts the browser with the extension in `extensionDir`, in a new profile, and attaches Playwright to it;
  * `installedBefore`, other extensions installed before it (the first ones get the keys they ask for). `language`
- * is Chrome's own language (--lang and, on Linux, the environment's), `dark` the system's dark mode, `reducedMotion`
- * the system's "reduce motion" on or off (the system's own setting when not given); `windowSize` the first window's
- * size. Returns its one browser context, close(), its process (pid) and sendToBrowser (browserPipe).
+ * is Chrome's own language (--lang, on Linux the environment's too, on macOS -AppleLanguages), `dark` the system's
+ * dark mode, `reducedMotion` the system's "reduce motion" on or off (the system's own setting when not given);
+ * `windowSize` the first window's size. Returns its one browser context, close(), its process (pid) and sendToBrowser (browserPipe).
  * @param {{ browser?: string, extensionDir: string, installedBefore?: string[], headless?: boolean, language?: string,
  *   dark?: boolean,
  *   reducedMotion?: boolean, windowSize?: string }} options
@@ -81,6 +81,9 @@ export async function launchRealBrowser({
     ...(process.platform === 'win32' ? ['--disable-features=CalculateNativeWinOcclusion'] : []),
     ...(headless ? ['--headless'] : []),
     ...(language ? [`--lang=${language}`] : []),
+    // On macOS Chrome takes its language from the system's preferred languages, not from --lang: an app's own
+    // arguments can set them for that process only (Cocoa's argument domain), never the system's settings.
+    ...(language && process.platform === 'darwin' ? ['-AppleLanguages', `(${language})`] : []),
     ...(dark ? ['--force-dark-mode'] : []),
     // Unless told, the system's own setting (the macOS machines of GitHub ask for less motion).
     ...(reducedMotion === undefined
@@ -91,8 +94,7 @@ export async function launchRealBrowser({
     `--load-extension=${[...installedBefore, extensionDir].join(',')}`,
     'about:blank',
   ];
-  // Chrome takes its language from --lang; on Linux it needs the environment's language too. On macOS it takes it only
-  // from the system's settings: there Chrome stays in the system's language.
+  // Chrome takes its language from --lang; on Linux it needs the environment's language too (on macOS, -AppleLanguages).
   const env = language
     ? { ...process.env, LANGUAGE: language, LANG: `${language.replace('-', '_')}.UTF-8` }
     : process.env;
