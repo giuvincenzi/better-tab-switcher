@@ -1,7 +1,7 @@
 // The browser as a user runs it, for the end-to-end tests (tests/e2e/fixtures.ts) and make dev (scripts/dev.mjs): we
 // start it, then Playwright attaches to it with noDefaults, so it emulates nothing (no fake focus, no color scheme nor
 // reduced motion of its own): what the tests and the developer see is what users see.
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -99,6 +99,8 @@ export async function launchRealBrowser({
   const process_ = spawn(browserExecutable(browser), args, {
     env,
     stdio: ['ignore', 'ignore', 'pipe', 'pipe', 'pipe'],
+    // On macOS and Linux a process group of its own, so its pages' processes can be stopped with it (stopTree).
+    detached: process.platform !== 'win32',
   });
   const sendToBrowser = browserPipe(process_);
   let output = '';
@@ -140,7 +142,7 @@ export async function launchRealBrowser({
     await session?.send('Browser.close').catch(() => {});
     const closedInTime = await Promise.race([exited.then(() => true), delay(10_000).then(() => false)]);
     if (!closedInTime) {
-      process_.kill();
+      stopTree(/** @type {number} */ (process_.pid));
       await exited;
     }
     await connected.close().catch(() => {});
@@ -183,4 +185,21 @@ function browserPipe(browserProcess) {
       waiting.set(id, { resolve, reject });
       toBrowser.write(`${JSON.stringify({ id, method, params })}\0`);
     });
+}
+
+/**
+ * Stops a browser that didn't close by itself, with every process it started (its pages': hundreds with hundreds of
+ * tabs). Stopping only the first one leaves the others running on Windows, and they slowed the next tests down to a
+ * stop (30 s to start a browser).
+ * @param {number} pid
+ */
+function stopTree(pid) {
+  if (process.platform === 'win32') spawnSync('taskkill', ['/pid', String(pid), '/T', '/F']);
+  else {
+    try {
+      process.kill(-pid, 'SIGKILL');
+    } catch {
+      // Already gone.
+    }
+  }
 }
