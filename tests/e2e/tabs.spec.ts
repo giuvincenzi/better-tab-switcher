@@ -76,6 +76,42 @@ test.describe('which tabs the switcher lists @tabs', () => {
     await expect(rows(page).filter({ hasText: 'gamma' })).toHaveAccessibleName(named('gamma'));
   });
 
+  test('names a tab still loading its first page by the address it is loading, and asks for no icon of nothing', async ({
+    context,
+    serviceWorker,
+  }) => {
+    const [, current] = await openPages(context, ['alpha', 'beta']);
+    const page = current as Page;
+    // The site answers only at the end: until then the tab has no page of its own, only the address it is loading.
+    let answer: () => void = () => {};
+    const answered = new Promise<void>((resolve) => {
+      answer = resolve;
+    });
+    await context.route('https://slow.test/**', async (route) => {
+      await answered;
+      await route.fulfill({ contentType: 'text/html', body: '<title>slow</title>' }).catch(() => {});
+    });
+    const slow = await serviceWorker.evaluate(
+      async () => (await chrome.tabs.create({ url: 'https://slow.test/page', active: false })).id as number,
+    );
+    // As Chrome gives such a tab: an empty url, the address in pendingUrl.
+    await expect
+      .poll(() =>
+        serviceWorker.evaluate(
+          async (id) => (({ url, pendingUrl }) => ({ url, pendingUrl }))(await chrome.tabs.get(id)),
+          slow,
+        ),
+      )
+      .toEqual({ url: '', pendingUrl: 'https://slow.test/page' });
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    await expect(rows(page)).toHaveCount(3);
+    // Its title, as Chrome gives it while loading, is the address too.
+    await expect(rows(page).filter({ hasText: 'slow.test' })).toHaveAccessibleName(
+      'https://slow.test/page, slow.test/page',
+    );
+    answer();
+  });
+
   test('lists 60 tabs, the selection scrolled into sight', async ({ context, serviceWorker }) => {
     // Opening 60 pages takes most of a test's time on a slow machine (macOS on GitHub).
     test.slow();

@@ -1,10 +1,12 @@
-import type { Page } from '@playwright/test';
+import type { BrowserContext, Page } from '@playwright/test';
 import { expect, test } from './fixtures';
 import {
   activeTitle,
   closeBy,
+  colorsAt,
   named,
   openPages,
+  panelPoint,
   rowNames,
   rows,
   selected,
@@ -91,40 +93,127 @@ test.describe('switcher in a page @switcher', () => {
   });
 });
 
-test.describe('switcher theme @switcher', () => {
-  for (const theme of ['light', 'dark'] as const) {
-    test(`shows in the ${theme} theme when it is chosen in the settings`, async ({ context, serviceWorker }) => {
-      await useSettings(serviceWorker, { theme });
-      const [, current] = await openPages(context, ['alpha', 'beta']);
-      const page = current as Page;
-      await showSwitcher(serviceWorker);
-      const list = switcher(page).getByRole('listbox', { name: 'Open tabs, most recent first' });
-      await expect(list).toHaveCSS('color-scheme', theme);
-    });
-  }
-});
+/** The switcher panel's background in each theme (styles/theme.css, --bts-panel). */
+const PANEL = { light: 'rgb(255, 255, 255)', dark: 'rgb(43, 44, 47)' };
+/** The settings page's background in each theme (styles/theme.css, --bts-settings-page). */
+const SETTINGS_PAGE = { light: 'rgb(248, 249, 250)', dark: 'rgb(32, 33, 36)' };
+/** The test page's own background, which must stay in sight around the switcher. */
+const PAGE = 'rgb(0, 0, 255)';
 
-test.describe('switcher motion @switcher', () => {
-  for (const reducedMotion of ['no-preference', 'reduce'] as const) {
-    test(`scrolls the selected tab's address ${reducedMotion === 'reduce' ? 'never when the system asks for less motion' : 'when it is set to scroll'}`, async ({
+/**
+ * A page of its own color, saying it supports dark or not (a color-scheme meta, as Google, GitHub and Microsoft's
+ * pages do), shown as the current tab after alpha.
+ */
+async function coloredPage(context: BrowserContext, saysDark: boolean): Promise<Page> {
+  await openPages(context, ['alpha']);
+  await context.route('https://colors.test/**', (route) =>
+    route.fulfill({
+      contentType: 'text/html',
+      body: `<title>colors</title>${saysDark ? '<meta name="color-scheme" content="light dark">' : ''}<body style="margin:0;background:${PAGE}"></body>`,
+    }),
+  );
+  const page = await context.newPage();
+  await page.goto('https://colors.test/');
+  await page.bringToFront();
+  return page;
+}
+
+for (const systemDark of [false, true]) {
+  test.describe(`the system in ${systemDark ? 'dark' : 'light'} mode @switcher`, () => {
+    test.use({ systemDark });
+
+    test("is what Chrome's pages see: the tests' system theme works", async ({ context }) => {
+      const [page] = await openPages(context, ['alpha']);
+      expect(await page?.evaluate(() => matchMedia('(prefers-color-scheme: dark)').matches)).toBe(systemDark);
+    });
+
+    for (const saysDark of [false, true]) {
+      test(`gives the switcher the device's theme, the page around it in sight, on a page that ${saysDark ? 'says it supports dark' : 'says nothing of its colors'}`, async ({
+        context,
+        serviceWorker,
+      }) => {
+        const page = await coloredPage(context, saysDark);
+        await showSwitcher(serviceWorker);
+        await expect(rows(page)).toHaveCount(2);
+        expect(await colorsAt(page, serviceWorker, [await panelPoint(page), { x: 4, y: 4 }])).toEqual([
+          systemDark ? PANEL.dark : PANEL.light,
+          PAGE,
+        ]);
+      });
+    }
+
+    test("gives the switcher's own window the device's theme, never white around the panel", async ({
+      context,
+      serviceWorker,
+    }) => {
+      await openPages(context, ['alpha', 'beta']);
+      const chromePage = await context.newPage();
+      await chromePage.goto('chrome://version');
+      await chromePage.bringToFront();
+      const opened = context.waitForEvent('page');
+      await showSwitcher(serviceWorker, 'next', 'icon');
+      const switcherWindow = await opened;
+      await expect(switcherWindow.getByRole('option')).toHaveCount(3);
+      // The window's corner and the panel's padding: the whole window is the panel.
+      const size = await switcherWindow.evaluate(() => ({ width: innerWidth, height: innerHeight }));
+      expect(
+        await colorsAt(switcherWindow, serviceWorker, [
+          { x: 2, y: 2 },
+          { x: 4, y: size.height / 2 },
+          { x: size.width - 3, y: size.height - 3 },
+        ]),
+      ).toEqual(Array(3).fill(systemDark ? PANEL.dark : PANEL.light));
+    });
+
+    test("gives the settings page the device's theme", async ({ context, extensionId, serviceWorker }) => {
+      const settings = await context.newPage();
+      await settings.goto(`chrome-extension://${extensionId}/options.html`);
+      await expect(settings.getByRole('heading', { name: 'Better Tab Switcher settings' })).toBeVisible();
+      expect(await colorsAt(settings, serviceWorker, [{ x: 2, y: 2 }])).toEqual([
+        systemDark ? SETTINGS_PAGE.dark : SETTINGS_PAGE.light,
+      ]);
+    });
+
+    // The theme chosen in the settings, over the system's other one.
+    const chosen = systemDark ? 'light' : 'dark';
+    test(`shows the switcher in the ${chosen} theme when it is chosen in the settings, the page around it in sight`, async ({
+      context,
+      serviceWorker,
+    }) => {
+      await useSettings(serviceWorker, { theme: chosen });
+      const page = await coloredPage(context, true);
+      await showSwitcher(serviceWorker);
+      await expect(rows(page)).toHaveCount(2);
+      expect(await colorsAt(page, serviceWorker, [await panelPoint(page), { x: 4, y: 4 }])).toEqual([
+        PANEL[chosen],
+        PAGE,
+      ]);
+    });
+  });
+}
+
+for (const reducedMotion of [false, true]) {
+  test.describe(`switcher motion, the system ${reducedMotion ? 'asking' : 'not asking'} for less motion @switcher`, () => {
+    test.use({ systemReducedMotion: reducedMotion });
+
+    test(`scrolls the selected tab's address ${reducedMotion ? 'never' : 'when it is set to scroll'}`, async ({
       context,
       serviceWorker,
     }) => {
       await useSettings(serviceWorker, { details: { address: true, longAddress: 'scroll' } as never });
       const [, current] = await openPages(context, ['alpha', 'beta']);
       const page = current as Page;
-      await page.emulateMedia({ reducedMotion });
       await showSwitcher(serviceWorker);
       await expect(selected(page)).toContainText('alpha');
       const scrolling = () =>
         selected(page).evaluate(
           (row) => row.getAnimations({ subtree: true }).filter((a) => a.playState === 'running').length,
         );
-      if (reducedMotion === 'reduce') expect(await scrolling()).toBe(0);
+      if (reducedMotion) expect(await scrolling()).toBe(0);
       else await expect.poll(scrolling).toBeGreaterThan(0);
     });
-  }
-});
+  });
+}
 
 test.describe("Chrome's own pages @switcher", () => {
   test("does nothing on a page Chrome keeps extensions out of, with Open the switcher in a window on Chrome's pages off", async ({
@@ -180,14 +269,6 @@ test.describe("Chrome's own pages @switcher", () => {
         }),
       )
       .toBe(true);
-    // Never a white window: the page has the panel's color, in the theme in use.
-    expect(
-      await switcherWindow.evaluate(() => {
-        const page = getComputedStyle(document.documentElement).backgroundColor;
-        const panel = getComputedStyle(document.querySelector('[style*="--panel-width"]') as HTMLElement);
-        return page === panel.backgroundColor;
-      }),
-    ).toBe(true);
     // A click on a tab closes the window: the mouse's click, which waits for nothing in the window after it.
     const alpha = await switcherWindow.getByRole('option', { name: /^alpha/ }).boundingBox();
     if (!alpha) throw new Error('No alpha in the switcher.');
@@ -264,31 +345,6 @@ test.describe('switcher over the page @switcher', () => {
     await expect(rows(page)).toHaveCount(2);
     const onTop = await page.evaluate(() => document.elementFromPoint(innerWidth / 2, innerHeight / 2)?.localName);
     expect(onTop).toBe('better-tab-switcher');
-  });
-});
-
-test.describe('the page behind the switcher @switcher', () => {
-  test('stays visible on a page that says it supports dark, with the system in dark mode: nothing paints over it', async ({
-    context,
-    serviceWorker,
-  }) => {
-    await openPages(context, ['alpha']);
-    await context.route('https://schemes.test/**', (route) =>
-      route.fulfill({
-        contentType: 'text/html',
-        body: '<title>schemes</title><meta name="color-scheme" content="light dark"><body style="margin:0;background:rgb(0,0,255)"></body>',
-      }),
-    );
-    const page = await context.newPage();
-    await page.emulateMedia({ colorScheme: 'dark' });
-    await page.goto('https://schemes.test/');
-    await page.bringToFront();
-    const corner = { x: 4, y: 4, width: 8, height: 8 };
-    const before = await page.screenshot({ clip: corner });
-    await showSwitcher(serviceWorker);
-    await expect(rows(page)).toHaveCount(2);
-    // The page's corner, far from the switcher's panel, looks the same as without the switcher.
-    expect((await page.screenshot({ clip: corner })).equals(before)).toBe(true);
   });
 });
 

@@ -65,8 +65,8 @@ const HOLDER_CSS = `
     background: transparent;
     /* The same as the frame's root, written on both sides (entrypoints/switcher-frame/frame.css): Chrome paints a
        frame whose color scheme differs from its element's on an opaque background, and "normal" would follow the
-       page's own color-scheme meta, not the frame's. */
-    color-scheme: light;
+       page's own color-scheme meta, not the frame's. Both kinds, so the frame gets the device's theme. */
+    color-scheme: light dark;
   }
 `;
 

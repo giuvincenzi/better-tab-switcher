@@ -1,6 +1,7 @@
 import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { type BrowserContext, test as base, chromium, type Worker } from '@playwright/test';
+import { type BrowserContext, test as base, type Page, type Worker } from '@playwright/test';
+import { launchRealBrowser } from '../../scripts/real-browser.mjs';
 
 /** The extension's test build (`wxt build --mode e2e`): the published one plus the hook that opens the switcher. */
 export const extensionDir = resolve('.output/chrome-mv3-e2e');
@@ -8,6 +9,15 @@ export const extensionDir = resolve('.output/chrome-mv3-e2e');
 interface ExtensionFixtures {
   /** Chrome's own language (a BCP 47 tag): English by default; a test file can choose another with test.use(). */
   chromeLanguage: string;
+  /** The system in dark mode (Chrome's --force-dark-mode, as when the system is set so): light by default. */
+  systemDark: boolean;
+  /** The system asking for less motion (Chrome's --force-prefers-reduced-motion): off by default. */
+  systemReducedMotion: boolean;
+  /**
+   * Console messages a test expects (errors or warnings the extension writes on purpose, as when it says why the
+   * switcher fell back to its own window): each one with its reason, where the test sets it.
+   */
+  expectedConsole: RegExp[];
   context: BrowserContext;
   serviceWorker: Worker;
   extensionId: string;
@@ -23,38 +33,93 @@ if (!(BROWSERS as readonly string[]).includes(browser)) {
   throw new Error(`E2E_BROWSER must be one of ${BROWSERS.join(', ')}: '${browser}'.`);
 }
 
+/** The worker of this extension: the browser has its own extensions' workers too. */
+async function isOurs(worker: Worker): Promise<boolean> {
+  if (!worker.url().startsWith('chrome-extension://')) return false;
+  return worker.evaluate(() => 'next-tab' in (chrome.runtime.getManifest().commands ?? {})).catch(() => false);
+}
+
 /**
- * Every test gets a fresh browser profile with the extension loaded, in English (chromeLanguage). The windows are real,
- * 1280 by 720 pixels, never an emulated viewport: the switcher's own window measures its frame (outer and inner sizes).
+ * Every test gets the real browser (scripts/real-browser.mjs: nothing emulated, the focus and the system's theme are
+ * the real ones) with a fresh profile and the extension loaded, in English (chromeLanguage). The windows are real,
+ * 1280 by 720 pixels: the switcher's own window measures its frame (outer and inner sizes).
+ *
+ * Every test also fails on any error or warning in the console of a page, a frame (the switcher's), an extension page
+ * or the extension's background, and on any error nothing caught, unless the test expects it (expectedConsole).
  */
-export const test = base.extend<ExtensionFixtures>({
+export const test = base.extend<ExtensionFixtures & { ours: Worker }>({
   chromeLanguage: ['en-US', { option: true }],
-  context: async ({ chromeLanguage }, use) => {
-    const context = await chromium.launchPersistentContext('', {
-      channel: browser,
+  systemDark: [false, { option: true }],
+  systemReducedMotion: [false, { option: true }],
+  expectedConsole: [[], { option: true }],
+  context: async ({ chromeLanguage, systemDark, systemReducedMotion, expectedConsole }, use, testInfo) => {
+    const real = await launchRealBrowser({
+      browser,
+      extensionDir,
       headless: !process.env.HEADED,
-      locale: chromeLanguage,
-      viewport: null,
-      // Chrome takes its language from --lang; on Linux it needs the environment's language too. On macOS it takes it
-      // only from the system's settings, which no test changes: there Chrome stays in the system's language.
-      env: { ...process.env, LANGUAGE: chromeLanguage, LANG: `${chromeLanguage.replace('-', '_')}.UTF-8` },
-      args: [
-        `--disable-extensions-except=${extensionDir}`,
-        `--load-extension=${extensionDir}`,
-        `--lang=${chromeLanguage}`,
-        '--window-size=1280,720',
-      ],
+      language: chromeLanguage,
+      dark: systemDark,
+      reducedMotion: systemReducedMotion,
+      windowSize: '1280,720',
     });
+    const { context } = real;
+    const messages: string[] = [];
+    const watch = (page: Page) => {
+      page.on('console', (message) => {
+        if (message.type() === 'error' || message.type() === 'warning')
+          messages.push(`${message.type()} in ${message.location().url || page.url()}: ${message.text()}`);
+      });
+      page.on('pageerror', (error) => messages.push(`uncaught error in ${page.url()}: ${error.message}`));
+    };
+    context.pages().forEach(watch);
+    context.on('page', watch);
+    // The extension's background, each time it starts: its console, and the errors nothing caught (read at the end).
+    const watchWorker = async (worker: Worker) => {
+      if (!(await isOurs(worker))) return;
+      worker.on('console', (message) => {
+        if (message.type() === 'error' || message.type() === 'warning')
+          messages.push(`${message.type()} in the background: ${message.text()}`);
+      });
+      await worker
+        .evaluate(() => {
+          const errors: string[] = [];
+          Object.assign(globalThis, { uncaughtErrors: errors });
+          addEventListener('error', (event) => errors.push(event.message));
+          addEventListener('unhandledrejection', (event) => errors.push(String(event.reason)));
+        })
+        .catch(() => {});
+    };
+    await Promise.all(context.serviceWorkers().map(watchWorker));
+    context.on('serviceworker', (worker) => void watchWorker(worker));
+
     await use(context);
-    await context.close();
+
+    for (const worker of context.serviceWorkers()) {
+      const uncaught = await worker
+        .evaluate(() => (globalThis as { uncaughtErrors?: string[] }).uncaughtErrors ?? [])
+        .catch(() => []);
+      for (const error of uncaught) messages.push(`uncaught error in the background: ${error}`);
+    }
+    await real.close();
+    const unexpected = messages.filter((message) => !expectedConsole.some((expected) => expected.test(message)));
+    if (unexpected.length > 0 && testInfo.status === testInfo.expectedStatus) {
+      throw new Error(`The console has errors or warnings no test expects:\n${unexpected.join('\n')}`);
+    }
   },
-  serviceWorker: async ({ context }, use, testInfo) => {
-    const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker'));
-    contextOf.set(worker, context);
+  ours: async ({ context }, use) => {
+    let worker: Worker | undefined;
+    while (!worker) {
+      for (const candidate of context.serviceWorkers()) if (await isOurs(candidate)) worker = candidate;
+      if (!worker) await context.waitForEvent('serviceworker');
+    }
+    await use(worker);
+  },
+  serviceWorker: async ({ context, ours }, use, testInfo) => {
+    contextOf.set(ours, context);
     // What the background wrote in its console (why the switcher fell back to its window…): with a failed test.
     const console: string[] = [];
-    worker.on('console', (message) => console.push(`${message.type()}: ${message.text()}`));
-    await use(worker);
+    ours.on('console', (message) => console.push(`${message.type()}: ${message.text()}`));
+    await use(ours);
     if (testInfo.status !== testInfo.expectedStatus && console.length > 0) {
       // A file in the test's folder, next to its screenshots and trace, and in the report.
       const path = testInfo.outputPath('background-console.txt');

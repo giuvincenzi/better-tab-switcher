@@ -35,8 +35,6 @@ export function mountSwitcher(
   const dialog = document.createElement('dialog');
   dialog.className = styles.dialog as string;
   dialog.classList.toggle(styles.ownWindow as string, snapshot.centeredOn !== undefined);
-  // The dialog takes the focus itself, not the first control in it (the search field stays as it is).
-  dialog.autofocus = true;
   applyTheme(dialog, snapshot.settings.theme);
   applyLanguage(dialog);
   // Esc is the switcher's own key (it closes it as a click outside does), never the dialog's.

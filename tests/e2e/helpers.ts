@@ -169,3 +169,32 @@ export async function closeBy(window: Page, act: () => Promise<void>): Promise<v
 
 /** Presses Esc in the switcher's own window (only the press: the switcher closes on it) and waits until it is closed. */
 export const closeWithEscape = (window: Page) => closeBy(window, () => window.keyboard.down('Escape'));
+
+/**
+ * The colors on screen at these points of a page (in its CSS pixels), as the user sees them: a real screenshot of the
+ * page, its frames included (the switcher's), read by the browser itself (the extension's background decodes it).
+ */
+export async function colorsAt(page: Page, worker: Worker, points: { x: number; y: number }[]): Promise<string[]> {
+  const shot = (await page.screenshot()).toString('base64');
+  const scale = await page.evaluate(() => devicePixelRatio);
+  return worker.evaluate(
+    async ({ shot, points, scale }) => {
+      const bitmap = await createImageBitmap(await (await fetch(`data:image/png;base64,${shot}`)).blob());
+      const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+      const context = canvas.getContext('2d') as OffscreenCanvasRenderingContext2D;
+      context.drawImage(bitmap, 0, 0);
+      return points.map(({ x, y }) => {
+        const [r, g, b] = context.getImageData(Math.round(x * scale), Math.round(y * scale), 1, 1).data;
+        return `rgb(${r}, ${g}, ${b})`;
+      });
+    },
+    { shot, points, scale },
+  );
+}
+
+/** A point of the switcher's panel that shows only its background: inside its padding, halfway down its left side. */
+export async function panelPoint(page: Page): Promise<{ x: number; y: number }> {
+  const box = await switcher(page).locator('[style*="--panel-width"]').boundingBox();
+  if (!box) throw new Error('No switcher panel in the page.');
+  return { x: box.x + 4, y: box.y + box.height / 2 };
+}

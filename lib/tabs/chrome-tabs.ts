@@ -37,13 +37,21 @@ export async function readTabs(
   return { tabs: read, windowIds: windows.flatMap((w) => (w.id === undefined ? [] : [w.id])), currentWindowId };
 }
 
+/**
+ * A tab's address: the page it shows, or the one it is loading. Chrome gives a tab that hasn't shown its page yet an
+ * empty url, not none, with the address it is loading in pendingUrl.
+ */
+function addressOf(tab: Browser.tabs.Tab): string {
+  return tab.url || tab.pendingUrl || '';
+}
+
 /** A page of this extension: the switcher's own window. */
 function isOwnPage(tab: Browser.tabs.Tab): boolean {
-  return (tab.url ?? '').startsWith(browser.runtime.getURL('/'));
+  return addressOf(tab).startsWith(browser.runtime.getURL('/'));
 }
 
 function toTabInfo(tab: Browser.tabs.Tab, colors: Map<number, GroupColor>): TabInfo {
-  const url = tab.url ?? tab.pendingUrl ?? '';
+  const url = addressOf(tab);
   const info: TabInfo = {
     id: tab.id as number,
     windowId: tab.windowId,

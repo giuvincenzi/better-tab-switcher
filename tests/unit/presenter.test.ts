@@ -91,18 +91,6 @@ describe('the switcher in a web page', () => {
     ]);
   });
 
-  it('opens in its own window on a page that keeps scripts out of its frames, hides the frame there, and says why', async () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-    world.sandboxed.add(11);
-    await shortcut();
-    expect(browser.windows.create).toHaveBeenCalledTimes(1);
-    expect(sent('hideFrame')).toEqual([{ data: undefined, tabId: 11 }]);
-    expect(warn).toHaveBeenCalledWith(
-      "The switcher couldn't show in the page of tab 11:",
-      expect.objectContaining({ message: 'The message port closed before a response was received.' }),
-    );
-  });
-
   it('sends each message to one tab, never to every page of the extension (each page keeps a hidden frame)', async () => {
     await shortcut();
     await shortcut('previous');

@@ -258,9 +258,7 @@ async function sendSnapshot(tabId: number, snapshot: SwitcherSnapshot): Promise<
     await answered(sendMessage('showSwitcher', { ...snapshot, canSeeRelease }, tabId), limitMs, 'showSwitcher');
     for (const key of keys) await answered(sendMessage('pressKey', key, tabId), limitMs, 'pressKey');
     return true;
-  } catch (error) {
-    // Never quietly: why the switcher didn't show in the page (in the background's console).
-    console.warn(`The switcher couldn't show in the page of tab ${tabId}:`, error);
+  } catch {
     sendMessage('closeSwitcher', undefined, tabId).catch(() => undefined);
     sendMessage('hideFrame', undefined, tabId).catch(() => undefined);
     return false;

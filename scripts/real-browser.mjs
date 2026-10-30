@@ -1,0 +1,105 @@
+// The browser as a user runs it, for the end-to-end tests (tests/e2e/fixtures.ts) and make dev (scripts/dev.mjs): we
+// start it, then Playwright attaches to it with noDefaults, so it emulates nothing (no fake focus, no color scheme nor
+// reduced motion of its own): what the tests and the developer see is what users see.
+import { spawn } from 'node:child_process';
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { setTimeout as delay } from 'node:timers/promises';
+import { chromium } from '@playwright/test';
+
+/**
+ * Where Microsoft Edge is installed (`npx playwright install msedge` puts it there), on each system.
+ * @type {Partial<Record<NodeJS.Platform, string[]>>}
+ */
+const EDGE = {
+  linux: ['/opt/microsoft/msedge/msedge'],
+  darwin: ['/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge'],
+  win32: [
+    'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+    'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
+  ],
+};
+
+/**
+ * The program of the browser: Playwright's Chromium ("chromium") or Microsoft Edge ("msedge").
+ * @param {string} name
+ */
+export function browserExecutable(name) {
+  if (name === 'chromium') return chromium.executablePath();
+  const found = (EDGE[process.platform] ?? []).find((path) => existsSync(path));
+  if (found) return found;
+  throw new Error(`Microsoft Edge is not installed here: install it with npx playwright install msedge.`);
+}
+
+/** How long the browser may take to start and open its DevTools port. */
+const START_MS = 30_000;
+
+/**
+ * Starts the browser with the extension in `extensionDir`, in a new profile, and attaches Playwright to it. `language`
+ * is Chrome's own language (--lang and, on Linux, the environment's), `dark` the system's dark mode, `reducedMotion`
+ * the system's "reduce motion"; `windowSize` the first window's size. Returns its one browser context and close().
+ * @param {{ browser?: string, extensionDir: string, headless?: boolean, language?: string, dark?: boolean,
+ *   reducedMotion?: boolean, windowSize?: string }} options
+ * @returns {Promise<{ context: import('@playwright/test').BrowserContext, close: () => Promise<void>,
+ *   closed: Promise<unknown> }>}
+ */
+export async function launchRealBrowser({
+  browser = 'chromium',
+  extensionDir,
+  headless = true,
+  language,
+  dark = false,
+  reducedMotion = false,
+  windowSize,
+}) {
+  const profile = mkdtempSync(join(tmpdir(), 'better-tab-switcher-'));
+  const args = [
+    // Port 0: the browser chooses a free one and writes it in DevToolsActivePort, in the profile.
+    '--remote-debugging-port=0',
+    `--user-data-dir=${profile}`,
+    '--no-first-run',
+    '--no-default-browser-check',
+    ...(headless ? ['--headless'] : []),
+    ...(language ? [`--lang=${language}`] : []),
+    ...(dark ? ['--force-dark-mode'] : []),
+    ...(reducedMotion ? ['--force-prefers-reduced-motion'] : []),
+    ...(windowSize ? [`--window-size=${windowSize}`] : []),
+    `--disable-extensions-except=${extensionDir}`,
+    `--load-extension=${extensionDir}`,
+    'about:blank',
+  ];
+  // Chrome takes its language from --lang; on Linux it needs the environment's language too. On macOS it takes it only
+  // from the system's settings: there Chrome stays in the system's language.
+  const env = language
+    ? { ...process.env, LANGUAGE: language, LANG: `${language.replace('-', '_')}.UTF-8` }
+    : process.env;
+  const process_ = spawn(browserExecutable(browser), args, { env, stdio: ['ignore', 'ignore', 'pipe'] });
+  let output = '';
+  process_.stderr.on('data', (data) => {
+    output += data.toString();
+  });
+  const exited = new Promise((resolve) => process_.once('exit', resolve));
+
+  const portFile = join(profile, 'DevToolsActivePort');
+  const started = Date.now();
+  while (!existsSync(portFile) || readFileSync(portFile, 'utf8').split('\n').length < 2) {
+    if (process_.exitCode !== null || Date.now() - started > START_MS) {
+      process_.kill();
+      throw new Error(`The browser didn't start:\n${output}`);
+    }
+    await delay(50);
+  }
+  const [port, path] = readFileSync(portFile, 'utf8').split('\n');
+  const connected = await chromium.connectOverCDP(`ws://127.0.0.1:${port}${path}`, { noDefaults: true });
+  const context = connected.contexts()[0];
+  if (!context) throw new Error('The browser has no context to attach to.');
+
+  async function close() {
+    await connected.close().catch(() => {});
+    process_.kill();
+    await exited;
+    rmSync(profile, { recursive: true, force: true, maxRetries: 5 });
+  }
+  return { context, close, closed: exited };
+}

@@ -85,7 +85,7 @@ jobs:
             site=false
             if grep -qE "$lintable" <<< "$files"; then lint=true; fi
             if grep -qE "$build|^tests/unit/|^vitest\.config\.ts$|^site/home/" <<< "$files"; then unit=true; fi
-            if grep -qE "$build|^tests/e2e/|^playwright\.config\.ts$" <<< "$files"; then e2e=true; fi
+            if grep -qE "$build|^tests/e2e/|^playwright\.config\.ts$|^scripts/real-browser\.mjs$" <<< "$files"; then e2e=true; fi
             if grep -qE "$site_files" <<< "$files"; then site=true; fi
             # The merge of a release pull request (the version in package.json changed): publish_release runs
             # everything on this commit.

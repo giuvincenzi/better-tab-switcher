@@ -3,6 +3,7 @@ import { shortcutsPageUrl } from '../../lib/browser';
 import { expect, test } from './fixtures';
 import {
   activeTitle,
+  colorsAt,
   defaultShortcuts,
   openPages,
   rows,
@@ -88,12 +89,13 @@ test.describe('settings page @settings', () => {
     await expect(switcher(page).locator('[role="listbox"]')).toHaveCSS('display', 'grid');
   });
 
-  test('follows the theme chosen in it', async ({ context, extensionId }) => {
+  test('follows the theme chosen in it at once', async ({ context, extensionId, serviceWorker }) => {
     const settings = await openSettings(context, extensionId);
+    const corner = () => colorsAt(settings, serviceWorker, [{ x: 2, y: 2 }]);
     await settings.getByRole('combobox', { name: 'Theme' }).selectOption({ label: 'Dark' });
-    await expect(settings.locator('html')).toHaveCSS('color-scheme', 'dark');
+    await expect.poll(corner).toEqual(['rgb(32, 33, 36)']);
     await settings.getByRole('combobox', { name: 'Theme' }).selectOption({ label: 'Light' });
-    await expect(settings.locator('html')).toHaveCSS('color-scheme', 'light');
+    await expect.poll(corner).toEqual(['rgb(248, 249, 250)']);
   });
 
   test("opens the browser's shortcuts page to change a shortcut", async ({ context, extensionId, serviceWorker }) => {
@@ -187,8 +189,15 @@ test.describe("the switcher's toolbar @settings", () => {
 
 test.describe('settings changed in two pages at once @settings', () => {
   test('keeps both changes, every time', async ({ context, extensionId, serviceWorker }) => {
+    // Two windows, as a user would have them: each page the one shown in its window, each clicked there.
     const first = await openSettings(context, extensionId);
-    const second = await openSettings(context, extensionId);
+    const opened = context.waitForEvent('page', (page) => page.url().endsWith('/options.html'));
+    await serviceWorker.evaluate(
+      (url) => chrome.windows.create({ url }),
+      `chrome-extension://${extensionId}/options.html`,
+    );
+    const second = await opened;
+    await second.waitForLoadState();
     const saved = () =>
       serviceWorker.evaluate(async () => {
         const { settings } = (await chrome.storage.local.get('settings')) as {

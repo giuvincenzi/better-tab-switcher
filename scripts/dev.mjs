@@ -1,12 +1,13 @@
 // Development build: WXT builds the extension and rebuilds it on every change; this script opens it in Playwright's
-// Chromium with a fresh browser profile. Closing the browser or pressing Ctrl+C stops both.
+// Chromium with a fresh browser profile, as a user runs it (scripts/real-browser.mjs: nothing emulated, the focus and
+// the system's theme are the real ones). Closing the browser or pressing Ctrl+C stops both.
 // --tabs=N (1 to 100, `make dev tabs=N`) also opens N tabs of real sites, one after the other, to try the switcher.
 import { spawn } from 'node:child_process';
-import { existsSync, mkdtempSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { existsSync, rmSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { chromium } from '@playwright/test';
+import { launchRealBrowser } from './real-browser.mjs';
 
 /** Varied public sites: their icons, pages and dialogs are what the switcher meets. Repeated to reach N tabs. */
 const SITES = [
@@ -62,24 +63,21 @@ while (!existsSync(manifest)) {
   await delay(100);
 }
 
-const profile = mkdtempSync(join(tmpdir(), 'better-tab-switcher-dev-'));
-const browser = await chromium.launchPersistentContext(profile, {
-  headless: false,
-  viewport: null,
-  args: [`--disable-extensions-except=${extensionDir}`, `--load-extension=${extensionDir}`],
-});
+const { context: browser, close, closed } = await launchRealBrowser({ extensionDir, headless: false });
 
+let stopping = false;
 async function stop() {
-  await browser.close().catch(() => {});
+  if (stopping) return;
+  stopping = true;
+  await close();
   wxt.kill('SIGINT');
   await wxtExited;
-  rmSync(profile, { recursive: true, force: true });
   process.exit(0);
 }
 
 process.once('SIGINT', stop);
 process.once('SIGTERM', stop);
-browser.once('close', stop);
+void closed.then(stop);
 
 const page = browser.pages()[0] ?? (await browser.newPage());
 await page.goto('chrome://extensions');
