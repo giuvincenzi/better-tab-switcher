@@ -39,11 +39,11 @@ const START_MS = 30_000;
  * Starts the browser with the extension in `extensionDir`, in a new profile, and attaches Playwright to it. `language`
  * is Chrome's own language (--lang and, on Linux, the environment's), `dark` the system's dark mode, `reducedMotion`
  * the system's "reduce motion" on or off (the system's own setting when not given); `windowSize` the first window's
- * size. Returns its one browser context and close().
+ * size. Returns its one browser context, close(), and its process (pid).
  * @param {{ browser?: string, extensionDir: string, headless?: boolean, language?: string, dark?: boolean,
  *   reducedMotion?: boolean, windowSize?: string }} options
  * @returns {Promise<{ context: import('@playwright/test').BrowserContext, close: () => Promise<void>,
- *   closed: Promise<unknown> }>}
+ *   closed: Promise<unknown>, pid: number }>}
  */
 export async function launchRealBrowser({
   browser = 'chromium',
@@ -121,5 +121,5 @@ export async function launchRealBrowser({
     await exited;
     rmSync(profile, { recursive: true, force: true, maxRetries: 5 });
   }
-  return { context, close, closed: exited };
+  return { context, close, closed: exited, pid: /** @type {number} */ (process_.pid) };
 }
