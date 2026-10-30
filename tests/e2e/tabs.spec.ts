@@ -105,6 +105,7 @@ test.describe('which tabs the switcher lists @tabs', () => {
       .toBe('https://slow.test/page');
     await showSwitcher(serviceWorker, 'next', 'icon');
     await expect(rows(page)).toHaveCount(3);
+    await test.info().attach('rows', { body: JSON.stringify(await rowNames(page)), contentType: 'application/json' });
     // Its title is the browser's while it loads (the address in Chrome, the site in Microsoft Edge); its address is the
     // one it is loading.
     await expect(rows(page).filter({ hasText: 'slow.test' })).toHaveAccessibleName(/, slow\.test\/page$/);
@@ -237,6 +238,11 @@ test.describe("a site's popup window @tabs", () => {
     await beta.evaluate(() => window.open('https://bts.test/login', 'login', 'popup,width=600,height=500'));
     const popup = await opened;
     await expect(popup).toHaveTitle('login');
+    // The user is in the popup: it has the system's focus.
+    await popup.bringToFront();
+    await expect
+      .poll(() => serviceWorker.evaluate(async () => (await chrome.windows.getLastFocused()).type === 'popup'))
+      .toBe(true);
     await showSwitcher(serviceWorker, 'next', 'icon');
     await expect(rows(popup)).toHaveText([/^login/, /^beta/, /^alpha/]);
     await rows(popup).filter({ hasText: 'alpha' }).click();

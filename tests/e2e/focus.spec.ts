@@ -15,7 +15,10 @@ test.describe('the focus leaving the switcher in a page @focus', () => {
     const closeOther = await focusAnotherProgram();
     try {
       await expect(rows(page)).toHaveCount(0);
-      expect(await page.evaluate(() => document.hasFocus())).toBe(false);
+      // The browser's window lost the system's focus, as Chrome knows it.
+      expect(
+        await serviceWorker.evaluate(async () => (await chrome.windows.getAll()).some((window) => window.focused)),
+      ).toBe(false);
     } finally {
       await closeOther();
     }
