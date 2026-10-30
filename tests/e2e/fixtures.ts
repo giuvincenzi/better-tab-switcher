@@ -2,6 +2,7 @@ import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { type BrowserContext, test as base, type Page, type Worker } from '@playwright/test';
 import { launchRealBrowser } from '../../scripts/real-browser.mjs';
+import { dismissEdgeDeveloperModeBubble } from './edge-bubble';
 
 /** The extension's test build (`wxt build --mode e2e`): the published one plus the hook that opens the switcher. */
 export const extensionDir = resolve('.output/chrome-mv3-e2e');
@@ -81,6 +82,9 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }>({
       windowSize: '1280,720',
     });
     const { context } = real;
+    // Microsoft Edge's bubble about developer mode would take the system's keys and focus (tests/e2e/edge-bubble.ts).
+    if ((headed || process.env.HEADED) && browser === 'msedge' && process.platform === 'win32')
+      dismissEdgeDeveloperModeBubble();
     browserPid.set(context, real.pid);
     browserPipe.set(context, real.sendToBrowser);
     /** Each message, with where it comes from: a page or script's address, or the background. */
