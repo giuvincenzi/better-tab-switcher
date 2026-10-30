@@ -48,16 +48,21 @@ function windowsClick(x: number, y: number) {
 }
 
 /**
- * Clicks in the middle of a process's window, where Windows has it (the window may not be where it was asked to be),
- * which brings it to the front.
+ * Clicks in the middle of the window with this title, where Windows has it (it may not be where it was asked to be,
+ * and Microsoft Edge gives its windows to another of its processes), which brings it to the front.
  */
-function windowsClickWindowOf(pid: number) {
+function windowsClickWindowTitled(title: string) {
   user32(`
     Add-Type -Namespace System -Name Window -MemberDefinition @'
       [DllImport("user32.dll")] public static extern bool GetWindowRect(System.IntPtr window, out RECT rect);
       public struct RECT { public int Left; public int Top; public int Right; public int Bottom; }
 '@
-    $window = (Get-Process -Id ${pid}).MainWindowHandle
+    $window = $null
+    for ($try = 0; $try -lt 50 -and -not $window; $try++) {
+      $window = (Get-Process | Where-Object { $_.MainWindowTitle -like '${title}*' } | Select-Object -First 1).MainWindowHandle
+      if (-not $window) { Start-Sleep -Milliseconds 100 }
+    }
+    if (-not $window) { throw 'No window titled ${title}.' }
     $rect = New-Object System.Window+RECT
     [System.Window]::GetWindowRect($window, [ref]$rect) | Out-Null
     $x = [int](($rect.Left + $rect.Right) / 2); $y = [int](($rect.Top + $rect.Bottom) / 2)
@@ -143,8 +148,20 @@ export function release(modifier: Modifier) {
   key('up', modifier);
 }
 
-/** Presses a letter and lets it go, the modifiers held staying held. */
+/**
+ * Presses a letter and lets it go, the modifiers held staying held. On macOS with System Events, which the browser's
+ * shortcuts answer to (CoreGraphics' letter doesn't reach them), the modifiers held named with it; the modifiers
+ * themselves go down and up with CoreGraphics, which the page hears.
+ */
 export function press(letter: Letter) {
+  if (process.platform === 'darwin') {
+    const using = [...held].map((modifier) => `${KEYS[modifier].flag} down`).join(', ');
+    execFileSync('osascript', [
+      '-e',
+      `tell application "System Events" to keystroke "${letter.toLowerCase()}"${using ? ` using {${using}}` : ''}`,
+    ]);
+    return;
+  }
   key('down', letter);
   key('up', letter);
 }
@@ -185,7 +202,7 @@ export async function focusAnotherProgram(): Promise<() => Promise<void>> {
     }
     await delay(1000);
     if (process.platform === 'linux') x11('focus', window as string);
-    else if (process.platform === 'win32') windowsClickWindowOf(pid);
+    else if (process.platform === 'win32') windowsClickWindowTitled('Another program');
     else macFront(pid);
     return close;
   } catch (error) {

@@ -11,6 +11,7 @@ import {
   selected,
   showSwitcher,
   switcher,
+  switcherFrame,
   useSettings,
 } from './helpers';
 
@@ -249,7 +250,27 @@ test.describe("a site's popup window @tabs", () => {
       .toBe(true);
     await showSwitcher(serviceWorker, 'next', 'icon');
     await expect(rows(popup)).toHaveText([/^login/, /^beta/, /^alpha/]);
+    // What reaches the row, for the report of a failed run (on GitHub's Linux the click was once not taken).
+    await switcherFrame(popup)?.evaluate(() => {
+      const seen: string[] = [];
+      Object.assign(globalThis, { pointerSeen: seen });
+      for (const type of ['pointerdown', 'pointerup', 'click'])
+        addEventListener(
+          type,
+          (event) =>
+            seen.push(
+              `${type} ${(event.target as Element).closest('[role="option"]')?.getAttribute('aria-label') ?? (event.target as Element).localName}`,
+            ),
+          true,
+        );
+    });
     await rows(popup).filter({ hasText: 'alpha' }).click();
+    await test.info().attach('pointer-seen', {
+      body: JSON.stringify(
+        await switcherFrame(popup)?.evaluate(() => (globalThis as unknown as { pointerSeen: string[] }).pointerSeen),
+      ),
+      contentType: 'application/json',
+    });
     const home = await serviceWorker.evaluate(async () => (await chrome.tabs.query({ title: 'alpha' }))[0]?.windowId);
     await expect
       .poll(() =>
