@@ -6,6 +6,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import type { BrowserContext } from '@playwright/test';
 import { browserExecutable } from '../../scripts/real-browser.mjs';
 import { browserPid, browserPipe } from './fixtures';
+import { windowsInput } from './windows-input';
 
 // The system's own input, beyond the browser: Playwright talks to the browser only, so what the user does with the
 // keyboard and outside the browser (the browser's own shortcuts, another program coming to the front) is done here with
@@ -25,53 +26,6 @@ function x11Windows(pid?: number): string[] {
 /** The X11 desktop's own input (tests/e2e/x11.py). */
 const x11 = (...args: string[]) => execFileSync('python3', ['tests/e2e/x11.py', ...args]);
 
-/** Runs PowerShell commands with user32's input functions at hand ([System.Input]), on Windows. */
-function user32(commands: string) {
-  const script = `
-    Add-Type -Namespace System -Name Input -MemberDefinition @'
-      [DllImport("user32.dll")] public static extern bool SetCursorPos(int x, int y);
-      [DllImport("user32.dll")] public static extern void mouse_event(uint flags, uint dx, uint dy, uint data, System.UIntPtr extra);
-      [DllImport("user32.dll")] public static extern void keybd_event(byte key, byte scan, uint flags, System.UIntPtr extra);
-'@
-    ${commands}
-  `;
-  execFileSync('powershell', ['-NoProfile', '-NonInteractive', '-Command', script]);
-}
-
-/** A click of the system's mouse at a point of the screen, in its pixels, on Windows: it brings that window forward. */
-function windowsClick(x: number, y: number) {
-  user32(`
-    [System.Input]::SetCursorPos(${Math.round(x)}, ${Math.round(y)}) | Out-Null
-    [System.Input]::mouse_event(0x0002, 0, 0, 0, [System.UIntPtr]::Zero)
-    [System.Input]::mouse_event(0x0004, 0, 0, 0, [System.UIntPtr]::Zero)
-  `);
-}
-
-/**
- * Clicks in the middle of the window with this title, where Windows has it (it may not be where it was asked to be,
- * and Microsoft Edge gives its windows to another of its processes), which brings it to the front.
- */
-function windowsClickWindowTitled(title: string) {
-  user32(`
-    Add-Type -Namespace System -Name Window -MemberDefinition @'
-      [DllImport("user32.dll")] public static extern bool GetWindowRect(System.IntPtr window, out RECT rect);
-      public struct RECT { public int Left; public int Top; public int Right; public int Bottom; }
-'@
-    $window = $null
-    for ($try = 0; $try -lt 50 -and -not $window; $try++) {
-      $window = (Get-Process | Where-Object { $_.MainWindowTitle -like '${title}*' } | Select-Object -First 1).MainWindowHandle
-      if (-not $window) { Start-Sleep -Milliseconds 100 }
-    }
-    if (-not $window) { throw 'No window titled ${title}.' }
-    $rect = New-Object System.Window+RECT
-    [System.Window]::GetWindowRect($window, [ref]$rect) | Out-Null
-    $x = [int](($rect.Left + $rect.Right) / 2); $y = [int](($rect.Top + $rect.Bottom) / 2)
-    [System.Input]::SetCursorPos($x, $y) | Out-Null
-    [System.Input]::mouse_event(0x0002, 0, 0, 0, [System.UIntPtr]::Zero)
-    [System.Input]::mouse_event(0x0004, 0, 0, 0, [System.UIntPtr]::Zero)
-  `);
-}
-
 /** Brings a program to the front, on macOS (System Events, which GitHub's machines allow to tests). */
 function macFront(pid: number) {
   execFileSync('osascript', [
@@ -90,7 +44,8 @@ export async function focusBrowser(
 ) {
   const pid = browserPid.get(context) as number;
   if (process.platform === 'linux') x11('focus', x11Windows(pid)[0] as string);
-  else if (process.platform === 'win32') windowsClick(at.left + at.width / 2, at.top + at.height / 2);
+  else if (process.platform === 'win32')
+    windowsInput('click', String(Math.round(at.left + at.width / 2)), String(Math.round(at.top + at.height / 2)));
   else {
     macFront(pid);
     execFileSync(macTool(), ['click', String(at.left + at.width / 2), String(at.top + at.height / 2)]);
@@ -131,8 +86,7 @@ function macKey(direction: 'down' | 'up', key: Key) {
 function key(direction: 'down' | 'up', name: Key) {
   const codes = KEYS[name];
   if (process.platform === 'linux') x11(direction, codes.x11);
-  else if (process.platform === 'win32')
-    user32(`[System.Input]::keybd_event(${codes.windows}, 0, ${direction === 'down' ? 0 : 2}, [System.UIntPtr]::Zero)`);
+  else if (process.platform === 'win32') windowsInput('key', direction, String(codes.windows));
   else macKey(direction, name);
 }
 
@@ -202,7 +156,7 @@ export async function focusAnotherProgram(): Promise<() => Promise<void>> {
     }
     await delay(1000);
     if (process.platform === 'linux') x11('focus', window as string);
-    else if (process.platform === 'win32') windowsClickWindowTitled('Another program');
+    else if (process.platform === 'win32') windowsInput('click-window', 'Another program');
     else macFront(pid);
     return close;
   } catch (error) {
@@ -241,17 +195,7 @@ export async function clickToolbarButton(context: BrowserContext, extensionId: s
 export function screenPicture(): Buffer | undefined {
   const file = join(mkdtempSync(join(tmpdir(), 'screen-')), 'screen.png');
   if (process.platform === 'darwin') execFileSync('screencapture', ['-x', file]);
-  else if (process.platform === 'win32')
-    execFileSync('powershell', [
-      '-NoProfile',
-      '-NonInteractive',
-      '-Command',
-      `Add-Type -AssemblyName System.Windows.Forms, System.Drawing
-      $screen = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
-      $picture = New-Object System.Drawing.Bitmap $screen.Width, $screen.Height
-      [System.Drawing.Graphics]::FromImage($picture).CopyFromScreen($screen.Location, [System.Drawing.Point]::Empty, $screen.Size)
-      $picture.Save('${file}')`,
-    ]);
+  else if (process.platform === 'win32') windowsInput('screen', file);
   else return undefined;
   return readFileSync(file);
 }
