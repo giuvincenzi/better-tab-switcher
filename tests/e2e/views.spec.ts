@@ -1,6 +1,6 @@
 import type { BrowserContext, Page, Worker } from '@playwright/test';
 import { expect, test } from './fixtures';
-import { activeTitle, named, openPages, rows, showSwitcher, switcher, useSettings } from './helpers';
+import { activeTitle, mouseOn, named, openPages, rows, showSwitcher, switcher, useSettings } from './helpers';
 
 /** The rows whole in sight in the list: those its scrolling shows entirely. */
 const rowsInSight = (page: Page) =>
@@ -69,13 +69,8 @@ test.describe('the mouse in the switcher @views', () => {
     const page = current as Page;
     await showSwitcher(serviceWorker, 'next', 'icon');
     await expect(rows(page)).toHaveCount(2);
-    // The mouse reaches the switcher first, as the user's does: right after it shows, the browser may not route the
-    // mouse to its frame yet. A tab's close button shows under the mouse.
     const alpha = rows(page).filter({ hasText: 'alpha' });
-    await expect(async () => {
-      await alpha.hover();
-      await expect(alpha.getByRole('button', { name: 'Close tab' })).toBeVisible({ timeout: 500 });
-    }).toPass();
+    await mouseOn(alpha);
     await page.mouse.click(5, 5);
     await expect(rows(page)).toHaveCount(0);
     expect(await activeTitle(serviceWorker)).toBe('beta');

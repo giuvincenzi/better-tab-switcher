@@ -177,3 +177,15 @@ export async function panelPoint(page: Page): Promise<{ x: number; y: number }> 
   if (!box) throw new Error('No switcher panel in the page.');
   return { x: box.x + 4, y: box.y + box.height / 2 };
 }
+
+/**
+ * Moves the mouse onto a tab of the switcher and waits until it is there: its close button shows under the mouse.
+ * Right after the switcher shows, the browser may not route the mouse to its frame yet; the user's mouse is on a tab
+ * before clicking it too.
+ */
+export async function mouseOn(row: Locator) {
+  await expect(async () => {
+    await row.hover();
+    await expect(row.getByRole('button', { name: 'Close tab' })).toBeVisible({ timeout: 500 });
+  }).toPass();
+}

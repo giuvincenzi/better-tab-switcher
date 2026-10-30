@@ -3,6 +3,7 @@ import { contextOf, expect, test } from './fixtures';
 import {
   activeTitle,
   colorsAt,
+  mouseOn,
   named,
   openPages,
   openWindow,
@@ -294,13 +295,8 @@ test.describe("a site's popup window @tabs", () => {
           true,
         );
     });
-    // The mouse reaches the tab first, as the user's does before clicking: its close button shows under it. Right after
-    // a new window opens the browser may not route the mouse to the switcher's frame yet.
     const alpha = rows(popup).filter({ hasText: 'alpha' });
-    await expect(async () => {
-      await alpha.hover();
-      await expect(alpha.getByRole('button', { name: 'Close tab' })).toBeVisible({ timeout: 500 });
-    }).toPass();
+    await mouseOn(alpha);
     await alpha.click();
     await test.info().attach('pointer-seen', {
       body: JSON.stringify(

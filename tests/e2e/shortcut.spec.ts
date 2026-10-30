@@ -1,6 +1,6 @@
 import type { Page, TestInfo, Worker } from '@playwright/test';
 import { expect, test } from './fixtures';
-import { activeTitle, named, openPages, rows, selected, switcherFrame } from './helpers';
+import { activeTitle, mouseOn, named, openPages, rows, selected, switcherFrame } from './helpers';
 import { clickToolbarButton, focusAddressBar, focusBrowser, hold, press, release, screenPicture } from './system';
 
 // The extension's own shortcuts, pressed on the system's keyboard: Chrome runs them (commands.onCommand), which
@@ -136,8 +136,9 @@ test.describe('the shortcuts on the keyboard @shortcut', () => {
     } finally {
       release(MODIFIER);
     }
-    // Still open: had it opened the selected tab on letting go, beta would be in front and alpha out of reach.
-    await rows(page).filter({ hasText: 'alpha' }).click();
+    const alpha = rows(page).filter({ hasText: 'alpha' });
+    await mouseOn(alpha);
+    await alpha.click();
     await expect.poll(() => activeTitle(serviceWorker)).toBe('alpha');
   });
 });
