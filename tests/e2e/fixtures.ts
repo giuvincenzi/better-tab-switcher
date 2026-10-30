@@ -64,7 +64,22 @@ async function isOurs(worker: Worker): Promise<boolean> {
  * frame in a page, its script in a page), and on any error nothing caught there, unless the test expects it
  * (expectedConsole). The pages' own messages are theirs (Microsoft Edge's new tab page has some): not the extension's.
  */
-export const test = base.extend<ExtensionFixtures & { ours: Worker }>({
+/**
+ * The browsers still closing: a test is over as soon as it is done with its browser, and the next one starts meanwhile
+ * with its own (browsersClosed waits for them).
+ */
+const closing = new Set<Promise<void>>();
+
+export const test = base.extend<ExtensionFixtures & { ours: Worker }, { browsersClosed: undefined }>({
+  // Before the tests' worker ends: no browser or profile is left behind, and one that couldn't close fails it.
+  browsersClosed: [
+    // biome-ignore lint/correctness/noEmptyPattern: Playwright reads a fixture's dependencies from this object.
+    async ({}, use) => {
+      await use(undefined);
+      await Promise.all(closing);
+    },
+    { scope: 'worker', auto: true },
+  ],
   chromeLanguage: ['en-US', { option: true }],
   systemDark: [false, { option: true }],
   systemReducedMotion: [false, { option: true }],
@@ -163,7 +178,17 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }>({
       for (const error of uncaught)
         messages.push({ from: 'background', text: `uncaught error in the background: ${error}` });
     }
-    await real.close();
+    // Closed while the next test runs: each test has its own browser and profile anyway. Not for a test on the desktop:
+    // its windows going away would move the system's focus while the next test uses it.
+    const closed = real.close();
+    if (headed || process.env.HEADED) await closed;
+    else {
+      closing.add(closed);
+      closed.then(
+        () => closing.delete(closed),
+        () => {},
+      );
+    }
     const unexpected = messages
       .filter(({ from }) => from === 'background' || (extension !== '' && from.startsWith(extension)))
       .map(({ text }) => text)
