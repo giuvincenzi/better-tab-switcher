@@ -18,6 +18,9 @@ export default defineContentScript({
     let holder: Promise<FrameHolder> | undefined;
 
     onMessage('showFrame', async () => {
+      // A sandboxed page (its origin opaque) keeps scripts out of its frames: the switcher's couldn't run there, and
+      // Chrome would say so in the console. No frame: the switcher opens in its own window.
+      if (origin === 'null') return null;
       // The page has the focus (the frame in it too): the keys let go reach the switcher.
       const canSeeRelease = document.hasFocus();
       let shown = await holder;

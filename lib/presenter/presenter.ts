@@ -281,15 +281,26 @@ async function sendSnapshot(tabId: number, snapshot: SwitcherSnapshot): Promise<
   }
 }
 
+/** A sandboxed page: it keeps scripts out of its frames, the switcher's too (showFrame). */
+class Sandboxed extends Error {
+  constructor() {
+    super('The page is sandboxed: its frames run no script.');
+  }
+}
+
 /** Shows the switcher's frame over the page, putting its holder in the page the first time. */
 async function showFrame(tabId: number): Promise<FrameShown> {
-  const show = (limitMs: number) => answered(sendMessage('showFrame', undefined, tabId), limitMs, 'showFrame');
+  const show = async (limitMs: number) => {
+    const shown = await answered(sendMessage('showFrame', undefined, tabId), limitMs, 'showFrame');
+    if (!shown) throw new Sandboxed();
+    return shown;
+  };
   if ((await pagesWithHolder.getValue()).includes(tabId)) {
     try {
       return await show(PAGE_ANSWER_MS);
     } catch (error) {
-      // The page hangs: nothing more is tried there. Otherwise its holder is gone, and is put in again.
-      if (error instanceof NoAnswer) throw error;
+      // The page hangs, or is sandboxed: nothing more is tried there. Otherwise its holder is gone, and is put in again.
+      if (error instanceof NoAnswer || error instanceof Sandboxed) throw error;
     }
   }
   await answered(

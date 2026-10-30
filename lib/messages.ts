@@ -74,8 +74,9 @@ interface Messages {
   /**
    * Background → holder: show the switcher's frame over the page and give it the focus, making it the first time; it
    * answers once the frame is loaded.
+   * None on a sandboxed page (its origin opaque, "null"): it keeps scripts out of its frames, the switcher's too.
    */
-  showFrame(): FrameShown;
+  showFrame(): FrameShown | null;
   /** Background → holder: hide the switcher's frame; it stays in the page, ready for the next time. */
   hideFrame(): void;
   /** Holder → background: a key the page got while the switcher's frame was shown without the focus. */
