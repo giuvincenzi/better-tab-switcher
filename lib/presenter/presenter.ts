@@ -153,11 +153,15 @@ export function listenToSwitcher(request: (switcher: SwitcherRequest) => Promise
     const open = await openSwitcher.getValue();
     if (open?.in === 'window' && open.windowId === windowId) await openSwitcher.setValue(null);
   });
-  // The user went to another window or to another program (WINDOW_ID_NONE): the switcher in a page closes, as its own
-  // window does when it loses the focus (switcherLeft), so it never waits where the user isn't.
-  browser.windows.onFocusChanged.addListener(async (windowId) => {
+  // The switcher's frame, or its page, lost the focus. The page still has it (in it or in the frame) when a site took it
+  // as it loads: the switcher stays. Otherwise the user went to another window or to another program: the switcher in
+  // a page closes, as its own window does (switcherLeft), so it never waits where the user isn't. The page tells, not
+  // windows.onFocusChanged, which Chrome doesn't send on every system (an X11 desktop without a window manager).
+  onMessage('focusLeft', async ({ sender }) => {
     const open = await openSwitcher.getValue();
-    if (open?.in === 'page' && open.windowId !== windowId) await closeSwitcher(open);
+    if (open?.in !== 'page' || open.tabId !== sender.tab?.id) return;
+    const hasFocus = await answered(sendMessage('pageHasFocus', undefined, open.tabId)).catch(() => true);
+    if (!hasFocus) await closeSwitcher(open);
   });
   // Another tab came to the front of the switcher's window (a click on it, Ctrl+Tab): the switcher closes, so it never
   // stays open where nobody sees it.

@@ -100,6 +100,13 @@ interface Messages {
   switcherClosed(): void;
   /** Switcher's window → background: another window took the focus: it closes, the focus stays where the user went. */
   switcherLeft(): void;
+  /**
+   * Switcher in a page, or its frame's holder → background: the switcher's frame, or the page, lost the focus while the
+   * switcher is shown (the page's blur, its frame's blur). The background asks the page whether it still has it.
+   */
+  focusLeft(): void;
+  /** Background → holder: whether the page has the focus, in it or in the switcher's frame (document.hasFocus()). */
+  pageHasFocus(): boolean;
   /** Switcher → background: open the settings page. */
   openSettings(): void;
   /** Settings page or switcher → background: save this change (lib/settings/service.ts); gives the settings saved. */

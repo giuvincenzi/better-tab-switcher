@@ -457,7 +457,11 @@ jobs:
           PLAYWRIGHT_JSON_OUTPUT_NAME: e2e_results/group_${{ matrix.group }}.json
           PLAYWRIGHT_HTML_OUTPUT_DIR: e2e_results/report
           PLAYWRIGHT_HTML_OPEN: never
-        run: npx playwright test --shard="$GROUP/$E2E_GROUPS" --reporter=list,json,html --output=e2e_results/tests
+        # On Linux the tests that use the desktop (tests/e2e/system.ts) need one: a virtual screen (xvfb-run). Windows
+        # and macOS machines have theirs.
+        run: >-
+          ${{ runner.os == 'Linux' && 'xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24"' || '' }}
+          npx playwright test --shard="$GROUP/$E2E_GROUPS" --reporter=list,json,html --output=e2e_results/tests
 
       # README.txt: what each file of the artifact is and how it helps investigate a failed test. The one description
       # of the artifact: testing.md points here.

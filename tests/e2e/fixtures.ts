@@ -21,6 +21,11 @@ interface ExtensionFixtures {
    * switcher fell back to its own window): each one with its reason, where the test sets it.
    */
   expectedConsole: RegExp[];
+  /**
+   * The browser's window on screen, for the tests that use the desktop (tests/e2e/system.ts): the system's focus is
+   * real only there. On Linux it needs a desktop (xvfb-run on GitHub). Without: none, unless HEADED is set.
+   */
+  headed: boolean;
   context: BrowserContext;
   serviceWorker: Worker;
   extensionId: string;
@@ -56,11 +61,12 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }>({
   systemDark: [false, { option: true }],
   systemReducedMotion: [false, { option: true }],
   expectedConsole: [[], { option: true }],
-  context: async ({ chromeLanguage, systemDark, systemReducedMotion, expectedConsole }, use, testInfo) => {
+  headed: [false, { option: true }],
+  context: async ({ chromeLanguage, systemDark, systemReducedMotion, expectedConsole, headed }, use, testInfo) => {
     const real = await launchRealBrowser({
       browser,
       extensionDir,
-      headless: !process.env.HEADED,
+      headless: !(headed || process.env.HEADED),
       language: chromeLanguage,
       dark: systemDark,
       reducedMotion: systemReducedMotion,

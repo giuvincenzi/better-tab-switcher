@@ -35,6 +35,12 @@ export default defineContentScript({
       return { canSeeRelease, keys: await shown.show(), madeNow };
     });
     onMessage('hideFrame', async () => (await holder)?.hide());
+    onMessage('pageHasFocus', () => document.hasFocus());
+    // The page lost the focus while the switcher is shown in it (the switcher's frame didn't have it): the background
+    // asks it whether the user went to another window or program (focusLeft).
+    addEventListener('blur', async () => {
+      if ((await holder)?.shown()) void sendMessage('focusLeft');
+    });
   },
 });
 
@@ -82,6 +88,8 @@ interface FrameHolder {
   hide: () => void;
   /** Still in the page. */
   inPage: () => boolean;
+  /** Shown over the page. */
+  shown: () => boolean;
   remove: () => void;
 }
 
@@ -124,6 +132,7 @@ async function holdFrame(ctx: ContentScriptContext): Promise<FrameHolder> {
       return keys.release();
     },
     hide: () => dialog.close(),
+    shown: () => dialog.open,
     inPage: () => ui.shadowHost.isConnected,
     remove: () => ui.remove(),
   };

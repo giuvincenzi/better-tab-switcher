@@ -1,7 +1,7 @@
 import '../../styles/theme.css';
 import './frame.css';
 import { mountSwitcher, type SwitcherHandle } from '../../components/switcher/mountSwitcher';
-import { onMessage } from '../../lib/messages';
+import { onMessage, sendMessage } from '../../lib/messages';
 
 // The switcher in a page: an extension page in a frame the page can't look into (the frame's holder,
 // entrypoints/switcher.content.ts). Its tabs come only from the background, so the page never has them. The frame stays
@@ -26,3 +26,8 @@ onMessage('closeSwitcher', close);
 onMessage('pressKey', ({ data: key }) => handle?.pressKey(key));
 onMessage('previewReady', ({ data: preview }) => handle?.showPreview(preview));
 onMessage('pictureTaken', () => handle?.pictureTaken());
+// The frame lost the focus: to the page (a site can take it while it loads), or to another window or program. The
+// background asks the page which (focusLeft).
+addEventListener('blur', () => {
+  if (handle) void sendMessage('focusLeft');
+});

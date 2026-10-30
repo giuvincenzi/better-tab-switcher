@@ -202,18 +202,6 @@ describe('the switcher in a web page', () => {
     ]);
   });
 
-  it('closes when the user goes to another program or another window, not when its own window gets the focus', async () => {
-    await shortcut();
-    await fakeBrowser.windows.onFocusChanged.trigger(1);
-    expect(sent('closeSwitcher')).toEqual([]);
-    await fakeBrowser.windows.onFocusChanged.trigger(browser.windows.WINDOW_ID_NONE);
-    expect(sent('closeSwitcher')).toEqual([{ data: undefined, tabId: 11 }]);
-    await shortcut();
-    await fakeBrowser.windows.onFocusChanged.trigger(2);
-    expect(sent('showSwitcher')).toHaveLength(2);
-    expect(sent('closeSwitcher')).toHaveLength(2);
-  });
-
   it('closes the open switcher and opens none when there is no current tab', async () => {
     await shortcut();
     world.currentTabId = undefined;
