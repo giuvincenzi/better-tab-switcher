@@ -149,14 +149,16 @@ export function listenToSwitcher(request: (switcher: SwitcherRequest) => Promise
     await forgetHolder(tabId);
     const open = await openSwitcher.getValue();
     if (open?.in === 'page' && open.tabId === tabId) await openSwitcher.setValue(null);
+    else await listAgain();
   });
-  browser.tabs.onUpdated.addListener(async (tabId, change, tab) => {
+  // Tabs opened, or moved to another window, elsewhere (closed: above).
+  browser.tabs.onCreated.addListener(() => listAgain());
+  browser.tabs.onAttached.addListener(() => listAgain());
+  browser.tabs.onUpdated.addListener(async (tabId, change) => {
     if (change.status === 'loading') await forgetHolder(tabId);
     // The open switcher shows the tab as it is now: a tab just made gets its address and title a moment later.
     if (change.title === undefined && change.url === undefined && change.status === undefined) return;
-    const open = await openSwitcher.getValue();
-    if (open)
-      await answered(sendMessage('tabsChanged', [{ tabId, ...tabText(tab) }], open.tabId)).catch(() => undefined);
+    await listAgain();
   });
   browser.windows.onRemoved.addListener(async (windowId) => {
     const open = await openSwitcher.getValue();
@@ -178,6 +180,31 @@ export function listenToSwitcher(request: (switcher: SwitcherRequest) => Promise
     const open = await openSwitcher.getValue();
     if (open?.in === 'page' && open.windowId === windowId && open.tabId !== tabId) await closeSwitcher(open);
   });
+}
+
+/** The last listAgain: each reads the tabs once the one before has sent them, so the last read is the last sent. */
+let listing: Promise<void> = Promise.resolve();
+
+/**
+ * Tabs changed while the switcher is open (a title, an address; closed, opened or moved to another window): it gets
+ * the tabs it would list if it opened now (tabsListed), its own window's tab never among them. One at a time, in order.
+ */
+function listAgain(): Promise<void> {
+  listing = listing.then(sendTabsListed, sendTabsListed);
+  return listing;
+}
+
+async function sendTabsListed(): Promise<void> {
+  const open = await openSwitcher.getValue();
+  if (!open) return;
+  const current =
+    open.in === 'page'
+      ? await browser.tabs.get(open.tabId).catch(() => undefined)
+      : (await browser.tabs.query({ active: true, windowId: open.fromWindowId }))[0];
+  if (!current) return;
+  const { tabs } = await takeSnapshot(current, { direction: 'next', from: 'shortcut' });
+  const listed = open.in === 'window' ? tabs.filter((tab) => tab.id !== open.tabId) : tabs;
+  await answered(sendMessage('tabsListed', listed, open.tabId)).catch(() => undefined);
 }
 
 /**
@@ -296,10 +323,9 @@ async function showInPage(current: Browser.tabs.Tab, snapshot: SwitcherSnapshot,
     await openSwitcher.setValue(null);
     return false;
   }
-  // Not waited for: the switcher is there already.
-  void blankTabsNow(snapshot).then((texts) => {
-    if (texts.length > 0) answered(sendMessage('tabsChanged', texts, tabId)).catch(() => undefined);
-  });
+  // The tabs as they are now, once the switcher is there to hear of them: a tab made a moment ago may have had no
+  // address nor title yet as they were read (macOS). Not waited for: the switcher is there already.
+  void listAgain();
   if (picture) {
     await picture;
     await answered(sendMessage('pictureTaken', undefined, tabId)).catch(() => undefined);

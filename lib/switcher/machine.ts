@@ -37,8 +37,10 @@ export type SwitcherEvent =
   | { type: 'autoSelect' }
   /** What was typed changed which tabs are shown. */
   | { type: 'results'; count: number; filtered: boolean }
-  /** A tab was closed from the switcher. */
+  /** A tab was closed, from the switcher or elsewhere (or moved out of the tabs shown). */
   | { type: 'removed'; index: number }
+  /** Tabs were opened elsewhere: `count` tabs shown now, the selected tab at `selected` among them. */
+  | { type: 'listed'; count: number; selected: number }
   /** A click on the search field: the user starts searching. */
   | { type: 'openSearch' }
   /** The user works in the switcher (its toolbar's buttons): it stays open until a tab is chosen. */
@@ -92,6 +94,8 @@ export function step(state: SwitcherState, event: SwitcherEvent): Step {
       return { state: { ...state, count: event.count, filtered: event.filtered, selected: FIELD } };
     case 'removed':
       return removed(state, event.index);
+    case 'listed':
+      return { state: { ...state, count: event.count, selected: state.selected === FIELD ? FIELD : event.selected } };
     case 'openSearch':
       return { state: { ...state, searching: true, stayOpen: true, selected: FIELD } };
     case 'hold':

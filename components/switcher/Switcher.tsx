@@ -12,7 +12,7 @@ import {
 import { i18n } from '#i18n';
 import { languageInUse } from '../../lib/i18n/language';
 import { type Key, keyEvent } from '../../lib/keys/keys';
-import type { Direction, Resume, SwitcherSnapshot, TabText } from '../../lib/messages';
+import type { Direction, Resume, SwitcherSnapshot } from '../../lib/messages';
 import { matchTab } from '../../lib/search/search';
 import type { Settings } from '../../lib/settings/settings';
 import type { SettingsChange } from '../../lib/settings/store';
@@ -45,8 +45,8 @@ export interface SwitcherProps {
   previews: Accessor<Record<number, string>>;
   /** The page's picture is taken (snapshot.waitForPicture): the switcher can show. */
   pictureTaken: Accessor<boolean>;
-  /** The last tabs whose titles or addresses changed while the switcher is open. */
-  changedTabs: Accessor<TabText[]>;
+  /** The tabs to show now, when tabs changed while the switcher is open (tabsListed). */
+  listedTabs: Accessor<SwitcherTab[] | undefined>;
   onOpen: (tab: SwitcherTab) => void;
   onClose: () => void;
   /** A tab closed from the switcher, and the switcher as it is now (Resume). */
@@ -87,23 +87,6 @@ export function Switcher(props: SwitcherProps): JSX.Element {
   const pageWidth = () => centeredOn?.width ?? window.innerWidth;
   const [settings, setSettings] = createSignal<Settings>(props.snapshot.settings);
   const [tabs, setTabs] = createSignal(props.snapshot.tabs);
-  // A tab's title or address changing while the switcher is open: its row shows it, in its place.
-  createEffect(
-    on(
-      props.changedTabs,
-      (changed) => {
-        if (changed.length === 0) return;
-        const now = new Map(changed.map((text) => [text.tabId, text]));
-        setTabs((all) =>
-          all.map((tab) => {
-            const text = now.get(tab.id);
-            return text ? { ...tab, title: text.title, url: text.url } : tab;
-          }),
-        );
-      },
-      { defer: true },
-    ),
-  );
   const resume = props.snapshot.resume;
   const [query, setQuery] = createSignal(resume?.query ?? '');
   const shown = createMemo<ShownTab[]>(() =>
@@ -177,6 +160,28 @@ export function Switcher(props: SwitcherProps): JSX.Element {
       fromIcon: fromIcon || state().stayOpen,
     });
   }
+
+  // Tabs changed while the switcher is open (titles, addresses; closed, opened or moved to another window elsewhere):
+  // the ones gone leave as a tab closed from the switcher does (the selection moving as it does then), the others show
+  // as they are now in their place, and the selection stays on its tab.
+  createEffect(
+    on(
+      props.listedTabs,
+      (listed) => {
+        if (!listed) return;
+        const now = new Set(listed.map((tab) => tab.id));
+        const gone = shown().flatMap(({ tab }, index) => (now.has(tab.id) ? [] : [index]));
+        // From the last one up: the indexes before each stay right.
+        for (const index of gone.reverse()) dispatch({ type: 'removed', index });
+        if (gone.length > 0 && state().count === 0 && !state().searching) return;
+        const selectedId = shown().filter(({ tab }) => now.has(tab.id))[state().selected]?.tab.id;
+        setTabs(listed);
+        const selected = indexOf(shown(), selectedId) ?? Math.min(Math.max(state().selected, 0), shown().length - 1);
+        dispatch({ type: 'listed', count: shown().length, selected });
+      },
+      { defer: true },
+    ),
+  );
 
   /** Takes the panel's size and the grid's columns, as they are now: they stay so until the next takeFrame. */
   function takeFrame() {

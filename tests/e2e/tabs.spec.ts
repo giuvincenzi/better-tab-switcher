@@ -144,6 +144,34 @@ test.describe('which tabs the switcher lists @tabs', () => {
       .toEqual([named('gamma'), named('beta'), 'alpha (2 new messages), bts.test/alpha']);
   });
 
+  test('leaves out the tabs closed or moved to another window while it is open, and lists the ones opened', async ({
+    context,
+    serviceWorker,
+  }) => {
+    const [, , , current] = await openPages(context, ['alpha', 'beta', 'gamma', 'delta']);
+    const page = current as Page;
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    await expect(selected(page)).toHaveAccessibleName(named('gamma'));
+    // Not from the switcher: a site closing itself, the user in another window, another extension.
+    const [alpha, beta] = await Promise.all([tabIdOf(serviceWorker, 'alpha'), tabIdOf(serviceWorker, 'beta')]);
+    await serviceWorker.evaluate(
+      async ({ alpha, beta }) => {
+        await chrome.tabs.remove(alpha);
+        await chrome.windows.create({ tabId: beta, focused: false });
+        await chrome.tabs.create({ url: 'https://bts.test/epsilon', active: false });
+      },
+      { alpha, beta },
+    );
+    // By their addresses: the new tab is still loading (its title the browser's until then).
+    await expect
+      .poll(async () => (await rowNames(page)).map((name) => name?.split(', ').pop()).sort())
+      .toEqual(['bts.test/delta', 'bts.test/epsilon', 'bts.test/gamma']);
+    // The selection stays on its tab, which opens.
+    await expect(selected(page)).toHaveAccessibleName(named('gamma'));
+    await page.keyboard.press('Enter');
+    await expect.poll(() => activeTitle(serviceWorker)).toBe('gamma');
+  });
+
   test('lists 60 tabs, the selection scrolled into sight', async ({ context, serviceWorker }) => {
     // Opening 60 pages takes most of a test's time on a slow machine (macOS on GitHub).
     test.slow();

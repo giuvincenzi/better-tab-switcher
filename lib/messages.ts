@@ -123,8 +123,11 @@ interface Messages {
   getPreviews(tabIds: number[]): Record<number, string>;
   /** Background → switcher: a tab's new preview, while the switcher is open. */
   previewReady(preview: Preview): void;
-  /** Background → switcher: tabs' titles or addresses changed, while the switcher is open (all at once: one redraw). */
-  tabsChanged(texts: TabText[]): void;
+  /**
+   * Background → switcher: tabs changed while the switcher is open (a title, an address; closed, opened or moved to
+   * another window elsewhere): the tabs to show now, as it would list them if it opened now.
+   */
+  tabsListed(tabs: SwitcherTab[]): void;
   /** Background → switcher: the page's picture is taken, the switcher can show. */
   pictureTaken(): void;
 }

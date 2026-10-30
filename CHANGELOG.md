@@ -19,7 +19,8 @@
 - Sites never see your tabs: over a page, the switcher is drawn in the extension's own page, which the site can't
   read nor search for a tab's title.
 - Works in Chrome and in Microsoft Edge: the settings name the browser they run in and open its shortcuts page.
-- While the switcher is open, its tabs show their titles and addresses as they change.
+- While the switcher is open, its tabs show their titles and addresses as they change, and the tabs closed, opened or
+  moved to another window elsewhere leave or join the list, the selection staying on its tab.
 - Close a tab from the switcher with its close button or with the mouse's middle button. Closing the tab you are on
   keeps the switcher open, in the tab the browser shows instead.
 - Tab details: pinned, playing audio and inactive tab icons, tab group color, last used, and the website address,

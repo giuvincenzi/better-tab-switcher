@@ -59,7 +59,7 @@ function open(settings: Partial<Settings> = {}, more: Partial<SwitcherSnapshot &
         canSeeRelease={more.canSeeRelease ?? true}
         previews={previews}
         pictureTaken={pictureTaken}
-        changedTabs={() => []}
+        listedTabs={() => undefined}
         {...handlers}
       />
     ),

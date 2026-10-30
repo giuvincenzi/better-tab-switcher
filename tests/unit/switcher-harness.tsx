@@ -68,7 +68,7 @@ export function openSwitcher(settings: Partial<Settings> = {}, more: Partial<Swi
         canSeeRelease={more.canSeeRelease ?? true}
         previews={previews}
         pictureTaken={() => false}
-        changedTabs={() => []}
+        listedTabs={() => undefined}
         {...handlers}
       />
     ),

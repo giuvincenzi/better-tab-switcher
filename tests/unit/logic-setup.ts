@@ -16,3 +16,13 @@ session.getBytesInUse = (async (keys?: string | string[] | null) => {
 }) as typeof session.getBytesInUse;
 
 session.QUOTA_BYTES = 10 * 1024 * 1024;
+
+// What it doesn't have of tabs: onAttached, a tab moved into a window (Chrome sends it, with onDetached, as a tab
+// moves to another window).
+const attached = new Set<(...args: unknown[]) => unknown>();
+(fakeBrowser.tabs as { onAttached: unknown }).onAttached = {
+  addListener: (listener: (...args: unknown[]) => unknown) => attached.add(listener),
+  removeListener: (listener: (...args: unknown[]) => unknown) => attached.delete(listener),
+  hasListener: (listener: (...args: unknown[]) => unknown) => attached.has(listener),
+  hasListeners: () => attached.size > 0,
+};

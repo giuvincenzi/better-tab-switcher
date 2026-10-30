@@ -2,7 +2,8 @@ import { createSignal } from 'solid-js';
 import { render } from 'solid-js/web';
 import { applyLanguage } from '../../lib/i18n/language';
 import type { Key } from '../../lib/keys/keys';
-import { type Direction, type Preview, type SwitcherSnapshot, sendMessage, type TabText } from '../../lib/messages';
+import { type Direction, type Preview, type SwitcherSnapshot, sendMessage } from '../../lib/messages';
+import type { SwitcherTab } from '../../lib/tabs/tabs';
 import { applyTheme } from '../ui/applyTheme';
 import { registerEmUnit } from '../ui/emUnit';
 import styles from './mountSwitcher.module.css';
@@ -15,8 +16,8 @@ export interface SwitcherHandle {
   pressKey: (key: Key) => void;
   /** A tab's new preview. */
   showPreview: (preview: Preview) => void;
-  /** Tabs' titles or addresses changed (tabsChanged). */
-  changeTabs: (texts: TabText[]) => void;
+  /** Tabs changed (tabsListed): the tabs to show now. */
+  listTabs: (tabs: SwitcherTab[]) => void;
   /** The page's picture is taken: the switcher can show. */
   pictureTaken: () => void;
   dispose: () => void;
@@ -49,7 +50,7 @@ export function mountSwitcher(
   const [pageKeys, setPageKeys] = createSignal<{ key: Key; count: number }>();
   const [previews, setPreviews] = createSignal<Record<number, string>>({});
   const [pictureTaken, setPictureTaken] = createSignal(false);
-  const [changedTabs, setChangedTabs] = createSignal<TabText[]>([]);
+  const [listedTabs, setListedTabs] = createSignal<SwitcherTab[]>();
 
   const disposeRender = render(
     () => (
@@ -60,7 +61,7 @@ export function mountSwitcher(
         canSeeRelease={canSeeRelease}
         previews={previews}
         pictureTaken={pictureTaken}
-        changedTabs={changedTabs}
+        listedTabs={listedTabs}
         onOpen={(tab) => {
           onDone();
           void sendMessage('openTab', tab.id);
@@ -90,7 +91,7 @@ export function mountSwitcher(
     pressKey: (key) => setPageKeys((last) => ({ key, count: (last?.count ?? 0) + 1 })),
     showPreview: ({ tabId, picture }) => setPreviews((all) => ({ ...all, [tabId]: picture })),
     pictureTaken: () => setPictureTaken(true),
-    changeTabs: (texts) => setChangedTabs(texts),
+    listTabs: (tabs) => setListedTabs(tabs),
     dispose() {
       disposeRender();
       dialog.close();

@@ -188,6 +188,12 @@ describe('closing', () => {
     expect(run({ ...list, stayOpen: true }, { type: 'cancel' }).effect).toEqual({ type: 'close' });
   });
 
+  it('keeps the same tab selected when tabs are opened elsewhere, and the search field when it is selected', () => {
+    expect(run(list, { type: 'listed', count: 7, selected: 3 }).state).toMatchObject({ count: 7, selected: 3 });
+    const fromField = searching(list, { type: 'listed', count: 7, selected: 3 }).state;
+    expect(fromField).toMatchObject({ count: 7, selected: FIELD });
+  });
+
   it('keeps the same tab selected when a tab below it is closed', () => {
     const state = run(list, { type: 'next' }, { type: 'removed', index: 4 }).state;
     expect(state).toMatchObject({ count: 4, selected: 2 });
@@ -217,6 +223,7 @@ describe('state', () => {
       { type: 'autoSelect' },
       { type: 'results', count: 2, filtered: true },
       { type: 'removed', index: 0 },
+      { type: 'listed', count: 3, selected: 2 },
       { type: 'openSearch' },
       { type: 'hold' },
     ];
