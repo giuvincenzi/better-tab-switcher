@@ -241,7 +241,11 @@ test.describe("a site's popup window @tabs", () => {
     // The user is in the popup: it has the system's focus.
     await popup.bringToFront();
     await expect
-      .poll(() => serviceWorker.evaluate(async () => (await chrome.windows.getLastFocused()).type === 'popup'))
+      .poll(() =>
+        serviceWorker.evaluate(async () =>
+          (await chrome.windows.getAll()).some((window) => window.type === 'popup' && window.focused),
+        ),
+      )
       .toBe(true);
     await showSwitcher(serviceWorker, 'next', 'icon');
     await expect(rows(popup)).toHaveText([/^login/, /^beta/, /^alpha/]);
