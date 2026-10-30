@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Keys taken",
+  "description": "An extension of the end-to-end tests only: it takes Better Tab Switcher's default keys before it is installed.",
+  "version": "1.0",
+  "commands": {
+    "take-next": {
+      "suggested_key": { "default": "Alt+S", "mac": "MacCtrl+S" },
+      "description": "Takes the next tab keys"
+    },
+    "take-previous": {
+      "suggested_key": { "default": "Alt+Shift+S", "mac": "MacCtrl+Shift+S" },
+      "description": "Takes the previous tab keys"
+    }
+  }
+}

@@ -26,6 +26,8 @@ interface ExtensionFixtures {
    * real only there. On Linux it needs a desktop (xvfb-run on GitHub). Without: none, unless HEADED is set.
    */
   headed: boolean;
+  /** Other extensions installed before this one (tests/e2e/keys-taken: one that takes its keys). */
+  installedBefore: string[];
   context: BrowserContext;
   serviceWorker: Worker;
   extensionId: string;
@@ -62,10 +64,16 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }>({
   systemReducedMotion: [false, { option: true }],
   expectedConsole: [[], { option: true }],
   headed: [false, { option: true }],
-  context: async ({ chromeLanguage, systemDark, systemReducedMotion, expectedConsole, headed }, use, testInfo) => {
+  installedBefore: [[], { option: true }],
+  context: async (
+    { chromeLanguage, systemDark, systemReducedMotion, expectedConsole, headed, installedBefore },
+    use,
+    testInfo,
+  ) => {
     const real = await launchRealBrowser({
       browser,
       extensionDir,
+      installedBefore: installedBefore.map((dir) => resolve(dir)),
       headless: !(headed || process.env.HEADED),
       language: chromeLanguage,
       dark: systemDark,

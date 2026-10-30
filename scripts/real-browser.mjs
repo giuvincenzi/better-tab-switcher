@@ -36,11 +36,13 @@ export function browserExecutable(name) {
 const START_MS = 30_000;
 
 /**
- * Starts the browser with the extension in `extensionDir`, in a new profile, and attaches Playwright to it. `language`
+ * Starts the browser with the extension in `extensionDir`, in a new profile, and attaches Playwright to it;
+ * `installedBefore`, other extensions installed before it (the first ones get the keys they ask for). `language`
  * is Chrome's own language (--lang and, on Linux, the environment's), `dark` the system's dark mode, `reducedMotion`
  * the system's "reduce motion" on or off (the system's own setting when not given); `windowSize` the first window's
  * size. Returns its one browser context, close(), its process (pid) and sendToBrowser (browserPipe).
- * @param {{ browser?: string, extensionDir: string, headless?: boolean, language?: string, dark?: boolean,
+ * @param {{ browser?: string, extensionDir: string, installedBefore?: string[], headless?: boolean, language?: string,
+ *   dark?: boolean,
  *   reducedMotion?: boolean, windowSize?: string }} options
  * @returns {Promise<{ context: import('@playwright/test').BrowserContext, close: () => Promise<void>,
  *   closed: Promise<unknown>, pid: number, sendToBrowser: (method: string, params?: object) => Promise<any> }>}
@@ -48,6 +50,7 @@ const START_MS = 30_000;
 export async function launchRealBrowser({
   browser = 'chromium',
   extensionDir,
+  installedBefore = [],
   headless = true,
   language,
   dark = false,
@@ -84,8 +87,8 @@ export async function launchRealBrowser({
       ? []
       : [reducedMotion ? '--force-prefers-reduced-motion' : '--force-prefers-no-reduced-motion']),
     ...(windowSize ? [`--window-size=${windowSize}`] : []),
-    `--disable-extensions-except=${extensionDir}`,
-    `--load-extension=${extensionDir}`,
+    `--disable-extensions-except=${[...installedBefore, extensionDir].join(',')}`,
+    `--load-extension=${[...installedBefore, extensionDir].join(',')}`,
     'about:blank',
   ];
   // Chrome takes its language from --lang; on Linux it needs the environment's language too. On macOS it takes it only

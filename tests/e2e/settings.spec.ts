@@ -216,3 +216,26 @@ test.describe('settings changed in two pages at once @settings', () => {
     }
   });
 });
+
+test.describe('installed while another extension uses its keys @settings', () => {
+  test.use({ installedBefore: ['tests/e2e/keys-taken'] });
+
+  test('opens its settings by itself on the shortcuts dialog, which says the keys are missing', async ({
+    context,
+    extensionId,
+  }) => {
+    let settings: Page | undefined;
+    await expect
+      .poll(() => {
+        settings = context
+          .pages()
+          .find((page) => page.url() === `chrome-extension://${extensionId}/options.html?shortcuts`);
+        return settings !== undefined;
+      })
+      .toBe(true);
+    const dialog = (settings as Page).getByRole('dialog', { name: 'Choose your keyboard shortcuts' });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('status')).toContainText('A shortcut has no keys');
+    await expect(dialog.locator('kbd')).toHaveText(['Not set', 'Not set', 'Not set']);
+  });
+});
