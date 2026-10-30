@@ -69,6 +69,13 @@ test.describe('the mouse in the switcher @views', () => {
     const page = current as Page;
     await showSwitcher(serviceWorker, 'next', 'icon');
     await expect(rows(page)).toHaveCount(2);
+    // The mouse reaches the switcher first, as the user's does: right after it shows, the browser may not route the
+    // mouse to its frame yet. A tab's close button shows under the mouse.
+    const alpha = rows(page).filter({ hasText: 'alpha' });
+    await expect(async () => {
+      await alpha.hover();
+      await expect(alpha.getByRole('button', { name: 'Close tab' })).toBeVisible({ timeout: 500 });
+    }).toPass();
     await page.mouse.click(5, 5);
     await expect(rows(page)).toHaveCount(0);
     expect(await activeTitle(serviceWorker)).toBe('beta');

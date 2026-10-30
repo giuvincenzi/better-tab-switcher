@@ -154,13 +154,14 @@ for (const systemDark of [false, true]) {
       await showSwitcher(serviceWorker, 'next', 'icon');
       const switcherWindow = await opened;
       await expect(switcherWindow.getByRole('option')).toHaveCount(3);
-      // The window's corner and the panel's padding: the whole window is the panel.
+      // The window's edges, away from its corners (macOS rounds them, the window isn't there), and the panel's
+      // padding: the whole window is the panel.
       const size = await switcherWindow.evaluate(() => ({ width: innerWidth, height: innerHeight }));
       expect(
         await colorsAt(switcherWindow, serviceWorker, [
-          { x: 2, y: 2 },
+          { x: size.width / 2, y: 2 },
           { x: 4, y: size.height / 2 },
-          { x: size.width - 3, y: size.height - 3 },
+          { x: size.width - 3, y: size.height / 2 },
         ]),
       ).toEqual(Array(3).fill(systemDark ? PANEL.dark : PANEL.light));
     });

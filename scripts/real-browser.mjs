@@ -132,14 +132,6 @@ export async function launchRealBrowser({
   const connected = await chromium.connectOverCDP(`ws://127.0.0.1:${port}${path}`, { noDefaults: true });
   const context = connected.contexts()[0];
   if (!context) throw new Error('The browser has no context to attach to.');
-  // The browser is ready once its first tab has its page: a page opened while it still starts can be taken over by it
-  // (on Windows its navigation was aborted, "frame was detached"). Its page only, not all it loads: Microsoft Edge's
-  // first tab can be its new tab page, from the network.
-  while (context.pages().length === 0) {
-    if (Date.now() - started > START_MS) throw new Error('The browser opened no tab.');
-    await delay(50);
-  }
-  for (const page of context.pages()) await page.waitForLoadState('domcontentloaded');
 
   // Closed as the browser closes itself (Browser.close): on Windows its other processes keep the profile's files open
   // a moment after the first one is stopped, and the profile couldn't be removed.
