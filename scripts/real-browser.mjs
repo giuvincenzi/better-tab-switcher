@@ -2,8 +2,7 @@
 // start it, then Playwright attaches to it with noDefaults, so it emulates nothing (no fake focus, no color scheme nor
 // reduced motion of its own): what the tests and the developer see is what users see.
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
-import { rm } from 'node:fs/promises';
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -147,8 +146,7 @@ export async function launchRealBrowser({
       await exited;
     }
     await connected.close().catch(() => {});
-    // Not blocking: the tests go on while it is removed.
-    await rm(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+    rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
   }
   return { context, close, closed: exited, pid: /** @type {number} */ (process_.pid), sendToBrowser };
 }
