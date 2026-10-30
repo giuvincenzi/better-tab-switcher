@@ -299,7 +299,10 @@ async function sendSnapshot(tabId: number, snapshot: SwitcherSnapshot): Promise<
     await answered(sendMessage('showSwitcher', { ...snapshot, canSeeRelease }, tabId), limitMs, 'showSwitcher');
     for (const key of keys) await answered(sendMessage('pressKey', key, tabId), limitMs, 'pressKey');
     return true;
-  } catch {
+  } catch (error) {
+    // Never quietly: why the switcher didn't show in the page, for whoever looks at the background's console. An
+    // information, not a warning: nothing went wrong for the user, and the extension's Errors page stays clean.
+    console.info(`The switcher couldn't show in the page of tab ${tabId}, so it opens in its own window:`, error);
     sendMessage('closeSwitcher', undefined, tabId).catch(() => undefined);
     sendMessage('hideFrame', undefined, tabId).catch(() => undefined);
     return false;
