@@ -1,5 +1,5 @@
 import { execFileSync, spawn } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -76,8 +76,8 @@ function macFront(pid: number) {
 }
 
 /**
- * Brings the tested browser's window to the front, as a click on it does: the system's keys go to it. On Windows the
- * click is in the middle of the window `at` (its screen position and size, in the screen's pixels).
+ * Brings the tested browser's window to the front, as a click on it does: the system's keys go to it. On Windows and
+ * macOS the click is in the middle of the window `at` (its screen position and size, in the screen's pixels).
  */
 export async function focusBrowser(
   context: BrowserContext,
@@ -86,7 +86,10 @@ export async function focusBrowser(
   const pid = browserPid.get(context) as number;
   if (process.platform === 'linux') x11('focus', x11Windows(pid)[0] as string);
   else if (process.platform === 'win32') windowsClick(at.left + at.width / 2, at.top + at.height / 2);
-  else macFront(pid);
+  else {
+    macFront(pid);
+    execFileSync(macTool(), ['click', String(at.left + at.width / 2), String(at.top + at.height / 2)]);
+  }
   await delay(300);
 }
 
@@ -108,12 +111,15 @@ const held = new Set<Modifier>();
 
 /** tests/e2e/mac-keys.swift, built once (Swift comes with Xcode on GitHub's macOS machines). */
 let macKeys: string | undefined;
-function macKey(direction: 'down' | 'up', key: Key) {
+function macTool(): string {
   if (!macKeys) {
     macKeys = join(mkdtempSync(join(tmpdir(), 'mac-keys-')), 'mac-keys');
     execFileSync('swiftc', ['-O', 'tests/e2e/mac-keys.swift', '-o', macKeys]);
   }
-  execFileSync(macKeys, [direction, String(KEYS[key].mac), ...[...held].map((modifier) => KEYS[modifier].flag)]);
+  return macKeys;
+}
+function macKey(direction: 'down' | 'up', key: Key) {
+  execFileSync(macTool(), [direction, String(KEYS[key].mac), ...[...held].map((modifier) => KEYS[modifier].flag)]);
 }
 
 /** A key going down or up on the system's keyboard, to the window that has the system's focus. */
@@ -209,4 +215,26 @@ export async function clickToolbarButton(context: BrowserContext, extensionId: s
   const tab = targetInfos.find((target) => target.url === pageUrl);
   if (!tab) throw new Error(`No tab shows ${pageUrl}.`);
   await send('Extensions.triggerAction', { id: extensionId, targetId: tab.targetId });
+}
+
+/**
+ * A picture of the whole screen, as the user would see it (the browser's own bars and menus too, which a page's
+ * screenshot leaves out), for a failed test's report: PNG, or nothing where the system gives none (Linux).
+ */
+export function screenPicture(): Buffer | undefined {
+  const file = join(mkdtempSync(join(tmpdir(), 'screen-')), 'screen.png');
+  if (process.platform === 'darwin') execFileSync('screencapture', ['-x', file]);
+  else if (process.platform === 'win32')
+    execFileSync('powershell', [
+      '-NoProfile',
+      '-NonInteractive',
+      '-Command',
+      `Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+      $screen = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+      $picture = New-Object System.Drawing.Bitmap $screen.Width, $screen.Height
+      [System.Drawing.Graphics]::FromImage($picture).CopyFromScreen($screen.Location, [System.Drawing.Point]::Empty, $screen.Size)
+      $picture.Save('${file}')`,
+    ]);
+  else return undefined;
+  return readFileSync(file);
 }

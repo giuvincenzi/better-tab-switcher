@@ -1,7 +1,7 @@
 import type { Page, TestInfo, Worker } from '@playwright/test';
 import { expect, test } from './fixtures';
 import { activeTitle, named, openPages, rows, selected, switcherFrame } from './helpers';
-import { clickToolbarButton, focusAddressBar, focusBrowser, hold, press, release } from './system';
+import { clickToolbarButton, focusAddressBar, focusBrowser, hold, press, release, screenPicture } from './system';
 
 // The extension's own shortcuts, pressed on the system's keyboard: Chrome runs them (commands.onCommand), which
 // Playwright's keys, sent to the page, never do. The browser's window on screen, with the system's focus.
@@ -39,6 +39,8 @@ async function recordKeys(page: Page, worker: Worker): Promise<(info: TestInfo) 
         .catch(() => []),
     };
     await info.attach('keys-seen', { body: JSON.stringify(keys, null, 2), contentType: 'application/json' });
+    const screen = screenPicture();
+    if (screen) await info.attach('screen', { body: screen, contentType: 'image/png' });
   };
 }
 
