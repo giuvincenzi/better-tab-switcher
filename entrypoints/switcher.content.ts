@@ -35,10 +35,11 @@ export default defineContentScript({
       return { canSeeRelease, keys: await shown.show(), madeNow };
     });
     onMessage('hideFrame', async () => (await holder)?.hide());
-    // The page lost the focus while the switcher is shown in it (the switcher's frame didn't have it): the background
-    // asks the browser whether the user went to another window or program (focusLeft).
+    // The page lost the focus while the switcher is shown in it: the background asks the browser whether the user went
+    // to another window or program (focusLeft). Not when the focus only went into the switcher's frame, as each time it
+    // shows: the page still has it then (document.hasFocus() counts its frames).
     addEventListener('blur', async () => {
-      if ((await holder)?.shown()) void sendMessage('focusLeft');
+      if ((await holder)?.shown() && !document.hasFocus()) void sendMessage('focusLeft');
     });
   },
 });
