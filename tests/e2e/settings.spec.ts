@@ -1,5 +1,6 @@
-import type { BrowserContext, Page } from '@playwright/test';
+import type { BrowserContext, Page, Worker } from '@playwright/test';
 import { shortcutsPageUrl } from '../../lib/browser';
+import { defaultSettings, type Settings } from '../../lib/settings/settings';
 import { expect, test } from './fixtures';
 import {
   activeTitle,
@@ -20,6 +21,14 @@ async function openSettings(context: BrowserContext, extensionId: string, query 
   await page.goto(`chrome-extension://${extensionId}/options.html${query}`);
   return page;
 }
+
+/** The browser's name and its extension store's, as the settings page writes them in English (lib/browser.ts). */
+const BROWSER = testBrowser === 'edge' ? 'Microsoft Edge' : 'Chrome';
+const STORE = testBrowser === 'edge' ? 'Microsoft Edge Add-ons' : 'Chrome Web Store';
+
+/** The settings as saved, as the extension's storage has them. */
+const savedSettings = (worker: Worker) =>
+  worker.evaluate(async () => (await chrome.storage.local.get('settings')).settings as Settings | undefined);
 
 test.describe('settings page @settings', () => {
   test('gives screen readers the whole unit of its number fields', async ({ context, extensionId }) => {
@@ -107,6 +116,8 @@ test.describe('settings page @settings', () => {
       shortcutText(defaults.previous),
       'Not set',
     ]);
+    // The browser the extension runs in, by its name.
+    await expect(settings.getByText(`${BROWSER} doesn't let extensions use Ctrl+Tab.`)).toBeVisible();
     const opened = context.waitForEvent('page', (tab) => tab.url() === shortcutsPageUrl(testBrowser));
     await settings.getByRole('button', { name: 'Change shortcut' }).first().click();
     await opened;
@@ -117,9 +128,14 @@ test.describe('settings page @settings', () => {
     const compact = settings.getByRole('switch', { name: 'Compact' });
     await compact.click();
     await expect(compact).toBeChecked();
+    const confirmation = settings.getByRole('alertdialog', { name: 'Restore default settings?' });
+    // Cancelled: nothing changes.
+    await settings.getByRole('button', { name: 'Restore' }).click();
+    await confirmation.getByRole('button', { name: 'Cancel' }).click();
+    await expect(confirmation).toBeHidden();
+    await expect(compact).toBeChecked();
     await settings.getByRole('button', { name: 'Restore' }).click();
     // Nothing yet: the user confirms it first.
-    const confirmation = settings.getByRole('alertdialog', { name: 'Restore default settings?' });
     await expect(confirmation).toBeVisible();
     await expect(compact).toBeChecked();
     await confirmation.getByRole('button', { name: 'Restore' }).click();
@@ -160,6 +176,109 @@ test.describe('settings page @settings', () => {
   });
 });
 
+test.describe('each control of the settings page @settings', () => {
+  // The switcher answering each setting is checked with the setting saved (the tests of the tabs, the views, the
+  // switching); the theme, the view and Show toolbar also from this page (above). Here: each control saves its own
+  // setting, and only it.
+  test('saves its own setting, and only it', async ({ context, extensionId, serviceWorker }) => {
+    const page = await openSettings(context, extensionId);
+    let expected: Settings = structuredClone(defaultSettings) as Settings;
+    const saves = async (change: (settings: Settings) => void) => {
+      change(expected);
+      await expect.poll(() => savedSettings(serviceWorker)).toEqual(expected);
+      expected = structuredClone(expected);
+    };
+    const toggle = (name: string) => page.getByRole('switch', { name, exact: true }).click();
+    const choose = (name: string, label: string) => page.getByRole('combobox', { name }).selectOption({ label });
+    const type = async (name: string, value: number) => {
+      const field = page.getByRole('spinbutton', { name });
+      await field.fill(String(value));
+      await field.blur();
+    };
+
+    // Appearance: the list's own settings, then the grid's.
+    await toggle('Compact');
+    await saves((s) => {
+      s.compact = true;
+    });
+    await choose('Tabs shown before scrolling', '6');
+    await saves((s) => {
+      s.listRows = 6;
+    });
+    await choose('Tabs shown before scrolling', 'Fit the screen');
+    await saves((s) => {
+      s.listRows = 'fit';
+    });
+    await page.getByText('Grid', { exact: true }).click();
+    await saves((s) => {
+      s.view = 'grid';
+    });
+    await page.getByText('Icons', { exact: true }).click();
+    await saves((s) => {
+      s.gridShow = 'icons';
+    });
+
+    // Switching.
+    await choose('Show tabs from', 'All windows');
+    await saves((s) => {
+      s.scope = 'all';
+    });
+    await toggle('Show pinned tabs');
+    await saves((s) => {
+      s.showPinned = false;
+    });
+    await type('Delay before the switcher appears', 200);
+    await saves((s) => {
+      s.delayMs = 200;
+    });
+    await toggle('Stay open until you choose a tab');
+    await saves((s) => {
+      s.stayOpen = true;
+    });
+    // Named after the browser the extension runs in, its note after its extension store too.
+    const pagesWindow = page.getByRole('switch', { name: `Open the switcher in a window on ${BROWSER}'s pages` });
+    await expect(pagesWindow).toHaveAccessibleDescription(
+      `${BROWSER} doesn't let extensions into its own pages, like Settings, or into its extension store, ${STORE}. ` +
+        'There the switcher opens in a small window of its own.',
+    );
+    await pagesWindow.click();
+    await saves((s) => {
+      s.chromePagesWindow = false;
+    });
+    await toggle('Auto-select');
+    await saves((s) => {
+      s.autoSelect = true;
+    });
+    await type('Auto-select time', 5);
+    await saves((s) => {
+      s.autoSelectSeconds = 5;
+    });
+
+    // Tab details: the address last, as it turns off the two settings after it.
+    for (const [name, key] of [
+      ['Pinned tab icon', 'pinnedIcon'],
+      ['Playing audio icon', 'audioIcon'],
+      ['Inactive tabs', 'sleeping'],
+      ['Tab group color', 'groupColor'],
+      ['Last used', 'lastUsed'],
+      ['Full address', 'fullAddress'],
+    ] as const) {
+      await toggle(name);
+      await saves((s) => {
+        s.details[key] = false;
+      });
+    }
+    await choose('Long website addresses', 'Cut short');
+    await saves((s) => {
+      s.details.longAddress = 'cut';
+    });
+    await toggle('Website address');
+    await saves((s) => {
+      s.details.address = false;
+    });
+  });
+});
+
 test.describe("the switcher's toolbar @settings", () => {
   test('shows the website addresses from the toolbar, and keeps them for the next opening', async ({
     context,
@@ -188,7 +307,11 @@ test.describe("the switcher's toolbar @settings", () => {
 });
 
 test.describe('settings changed in two pages at once @settings', () => {
-  test('keeps both changes, every time', async ({ context, extensionId, serviceWorker }) => {
+  test('keeps both changes every time, each page showing the other one, and a damaged one as its default', async ({
+    context,
+    extensionId,
+    serviceWorker,
+  }) => {
     // Two windows, as a user would have them: each page the one shown in its window, each clicked there.
     const first = await openSettings(context, extensionId);
     const opened = context.waitForEvent('page', (page) => page.url().endsWith('/options.html'));
@@ -213,6 +336,24 @@ test.describe('settings changed in two pages at once @settings', () => {
         second.getByRole('switch', { name: 'Compact' }).click(),
       ]);
       await expect.poll(saved).toEqual([on, !on]);
+      // Each page shows the change made in the other one, as it is saved, without being reloaded.
+      await expect(first.getByRole('switch', { name: 'Compact' })).toBeChecked({ checked: !on });
+      await expect(second.getByRole('switch', { name: 'Show toolbar' })).toBeChecked({ checked: on });
+    }
+    // Damaged values saved while both pages are open (another version's, a broken write): those settings show their
+    // defaults, the others what was saved.
+    await first.getByRole('switch', { name: 'Show toolbar' }).click();
+    await expect.poll(saved).toEqual([false, false]);
+    await serviceWorker.evaluate(async () => {
+      const { settings } = await chrome.storage.local.get('settings');
+      await chrome.storage.local.set({ settings: { ...(settings as object), compact: 'yes', delayMs: 'soon' } });
+    });
+    for (const page of [first, second]) {
+      await expect(page.getByRole('spinbutton', { name: 'Delay before the switcher appears' })).toHaveValue(
+        String(defaultSettings.delayMs),
+      );
+      await expect(page.getByRole('switch', { name: 'Compact' })).toBeChecked({ checked: defaultSettings.compact });
+      await expect(page.getByRole('switch', { name: 'Show toolbar' })).not.toBeChecked();
     }
   });
 });
