@@ -92,17 +92,16 @@ test.describe('which tabs the switcher lists @tabs', () => {
     const slow = await serviceWorker.evaluate(
       async () => (await chrome.tabs.create({ url: 'https://slow.test/page', active: false })).id as number,
     );
-    // Still loading, with no page of its own yet. Chrome gives such a tab an empty url and the address in pendingUrl;
-    // Microsoft Edge gives the address as its url already.
+    // No page of its own yet. Chrome gives such a tab an empty url and the address in pendingUrl (on macOS, a tab in the
+    // background it hasn't started loading: the address as its url); Microsoft Edge, the address as its url.
     await expect
       .poll(() =>
         serviceWorker.evaluate(
-          async (id) =>
-            (({ status, url, pendingUrl }) => ({ status, address: url || pendingUrl }))(await chrome.tabs.get(id)),
+          async (id) => (({ url, pendingUrl }) => url || pendingUrl)(await chrome.tabs.get(id)),
           slow,
         ),
       )
-      .toEqual({ status: 'loading', address: 'https://slow.test/page' });
+      .toBe('https://slow.test/page');
     await showSwitcher(serviceWorker, 'next', 'icon');
     await expect(rows(page)).toHaveCount(3);
     // Its title is the browser's while it loads (the address in Chrome, the site in Microsoft Edge); its address is the
