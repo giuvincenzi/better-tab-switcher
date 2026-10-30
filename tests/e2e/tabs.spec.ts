@@ -127,6 +127,22 @@ test.describe('which tabs the switcher lists @tabs', () => {
     answer();
   });
 
+  test('shows a tab whose page changes its title while the switcher is open with its new title, in its place', async ({
+    context,
+    serviceWorker,
+  }) => {
+    const [alpha, , current] = await openPages(context, ['alpha', 'beta', 'gamma']);
+    const page = current as Page;
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    await expect.poll(() => rowNames(page)).toEqual([named('gamma'), named('beta'), named('alpha')]);
+    await alpha?.evaluate(() => {
+      document.title = 'alpha (2 new messages)';
+    });
+    await expect
+      .poll(() => rowNames(page))
+      .toEqual([named('gamma'), named('beta'), 'alpha (2 new messages), bts.test/alpha']);
+  });
+
   test('lists 60 tabs, the selection scrolled into sight', async ({ context, serviceWorker }) => {
     // Opening 60 pages takes most of a test's time on a slow machine (macOS on GitHub).
     test.slow();

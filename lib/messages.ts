@@ -53,6 +53,13 @@ export interface FrameShown {
   madeNow: boolean;
 }
 
+/** What a tab shows now: its title and its address, as the switcher shows them (lib/tabs/chrome-tabs.ts). */
+export interface TabText {
+  tabId: number;
+  title: string;
+  url: string;
+}
+
 /** A tab's new preview. */
 export interface Preview {
   tabId: number;
@@ -116,6 +123,8 @@ interface Messages {
   getPreviews(tabIds: number[]): Record<number, string>;
   /** Background → switcher: a tab's new preview, while the switcher is open. */
   previewReady(preview: Preview): void;
+  /** Background → switcher: a tab's title or address changed, while the switcher is open. */
+  tabChanged(text: TabText): void;
   /** Background → switcher: the page's picture is taken, the switcher can show. */
   pictureTaken(): void;
 }

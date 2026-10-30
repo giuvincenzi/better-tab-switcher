@@ -28,6 +28,7 @@ if (snapshot && centeredOn) {
   );
   onMessage('moveSwitcher', ({ data: direction }) => handle.move(direction));
   onMessage('previewReady', ({ data: preview }) => handle.showPreview(preview));
+  onMessage('tabChanged', ({ data: text }) => handle.changeTab(text));
   // Another window took the focus: the switcher closes, as a click outside it closes it in a page, and the focus stays
   // where the user went.
   window.addEventListener('blur', () => void sendMessage('switcherLeft'));

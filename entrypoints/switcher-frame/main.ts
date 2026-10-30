@@ -25,6 +25,7 @@ onMessage('moveSwitcher', ({ data: direction }) => {
 onMessage('closeSwitcher', close);
 onMessage('pressKey', ({ data: key }) => handle?.pressKey(key));
 onMessage('previewReady', ({ data: preview }) => handle?.showPreview(preview));
+onMessage('tabChanged', ({ data: text }) => handle?.changeTab(text));
 onMessage('pictureTaken', () => handle?.pictureTaken());
 // The frame lost the focus: to the page (a site can take it while it loads), to the browser's address bar, or to
 // another window or program. The background asks the browser which (focusLeft).

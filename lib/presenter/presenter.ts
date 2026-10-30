@@ -12,7 +12,7 @@ import { type Previews, wantsPreviews } from '../previews/service';
 import { loadPreviews } from '../previews/store';
 import { loadSettings } from '../settings/store';
 import { firstWindowSize } from '../switcher/sizes';
-import { readTabs } from '../tabs/chrome-tabs';
+import { readTabs, tabText } from '../tabs/chrome-tabs';
 import { switcherTabs } from '../tabs/tabs';
 import { canShowInPage, centerOn, type Rect } from './placement';
 
@@ -146,8 +146,12 @@ export function listenToSwitcher(request: (switcher: SwitcherRequest) => Promise
     const open = await openSwitcher.getValue();
     if (open?.in === 'page' && open.tabId === tabId) await openSwitcher.setValue(null);
   });
-  browser.tabs.onUpdated.addListener(async (tabId, change) => {
+  browser.tabs.onUpdated.addListener(async (tabId, change, tab) => {
     if (change.status === 'loading') await forgetHolder(tabId);
+    // The open switcher shows the tab as it is now: a tab just made gets its address and title a moment later.
+    if (change.title === undefined && change.url === undefined && change.status === undefined) return;
+    const open = await openSwitcher.getValue();
+    if (open) await answered(sendMessage('tabChanged', { tabId, ...tabText(tab) }, open.tabId)).catch(() => undefined);
   });
   browser.windows.onRemoved.addListener(async (windowId) => {
     const open = await openSwitcher.getValue();

@@ -2,7 +2,7 @@ import { createSignal } from 'solid-js';
 import { render } from 'solid-js/web';
 import { applyLanguage } from '../../lib/i18n/language';
 import type { Key } from '../../lib/keys/keys';
-import { type Direction, type Preview, type SwitcherSnapshot, sendMessage } from '../../lib/messages';
+import { type Direction, type Preview, type SwitcherSnapshot, sendMessage, type TabText } from '../../lib/messages';
 import { applyTheme } from '../ui/applyTheme';
 import { registerEmUnit } from '../ui/emUnit';
 import styles from './mountSwitcher.module.css';
@@ -15,6 +15,8 @@ export interface SwitcherHandle {
   pressKey: (key: Key) => void;
   /** A tab's new preview. */
   showPreview: (preview: Preview) => void;
+  /** A tab's title or address changed (tabChanged). */
+  changeTab: (text: TabText) => void;
   /** The page's picture is taken: the switcher can show. */
   pictureTaken: () => void;
   dispose: () => void;
@@ -47,6 +49,7 @@ export function mountSwitcher(
   const [pageKeys, setPageKeys] = createSignal<{ key: Key; count: number }>();
   const [previews, setPreviews] = createSignal<Record<number, string>>({});
   const [pictureTaken, setPictureTaken] = createSignal(false);
+  const [changedTab, setChangedTab] = createSignal<TabText>();
 
   const disposeRender = render(
     () => (
@@ -57,6 +60,7 @@ export function mountSwitcher(
         canSeeRelease={canSeeRelease}
         previews={previews}
         pictureTaken={pictureTaken}
+        changedTab={changedTab}
         onOpen={(tab) => {
           onDone();
           void sendMessage('openTab', tab.id);
@@ -86,6 +90,7 @@ export function mountSwitcher(
     pressKey: (key) => setPageKeys((last) => ({ key, count: (last?.count ?? 0) + 1 })),
     showPreview: ({ tabId, picture }) => setPreviews((all) => ({ ...all, [tabId]: picture })),
     pictureTaken: () => setPictureTaken(true),
+    changeTab: (text) => setChangedTab(text),
     dispose() {
       disposeRender();
       dialog.close();

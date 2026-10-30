@@ -12,7 +12,7 @@ import {
 import { i18n } from '#i18n';
 import { languageInUse } from '../../lib/i18n/language';
 import { type Key, keyEvent } from '../../lib/keys/keys';
-import type { Direction, Resume, SwitcherSnapshot } from '../../lib/messages';
+import type { Direction, Resume, SwitcherSnapshot, TabText } from '../../lib/messages';
 import { matchTab } from '../../lib/search/search';
 import type { Settings } from '../../lib/settings/settings';
 import type { SettingsChange } from '../../lib/settings/store';
@@ -45,6 +45,8 @@ export interface SwitcherProps {
   previews: Accessor<Record<number, string>>;
   /** The page's picture is taken (snapshot.waitForPicture): the switcher can show. */
   pictureTaken: Accessor<boolean>;
+  /** The last tab whose title or address changed while the switcher is open. */
+  changedTab: Accessor<TabText | undefined>;
   onOpen: (tab: SwitcherTab) => void;
   onClose: () => void;
   /** A tab closed from the switcher, and the switcher as it is now (Resume). */
@@ -85,6 +87,19 @@ export function Switcher(props: SwitcherProps): JSX.Element {
   const pageWidth = () => centeredOn?.width ?? window.innerWidth;
   const [settings, setSettings] = createSignal<Settings>(props.snapshot.settings);
   const [tabs, setTabs] = createSignal(props.snapshot.tabs);
+  // A tab's title or address changing while the switcher is open: its row shows it, in its place.
+  createEffect(
+    on(
+      props.changedTab,
+      (changed) => {
+        if (!changed) return;
+        setTabs((all) =>
+          all.map((tab) => (tab.id === changed.tabId ? { ...tab, title: changed.title, url: changed.url } : tab)),
+        );
+      },
+      { defer: true },
+    ),
+  );
   const resume = props.snapshot.resume;
   const [query, setQuery] = createSignal(resume?.query ?? '');
   const shown = createMemo<ShownTab[]>(() =>

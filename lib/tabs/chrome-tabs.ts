@@ -60,13 +60,17 @@ export function listedTabs(
   return tabs.filter((tab) => tab.id !== undefined && windowIds.has(tab.windowId)).map((tab) => tabInfo(tab, colors));
 }
 
-function tabInfo(tab: Browser.tabs.Tab, colors: ReadonlyMap<number, GroupColor>): TabInfo {
+/** What a tab shows: its address, and its title, or its address while it has none. */
+export function tabText(tab: Browser.tabs.Tab): { title: string; url: string } {
   const url = addressOf(tab);
+  return { title: tab.title || url, url };
+}
+
+function tabInfo(tab: Browser.tabs.Tab, colors: ReadonlyMap<number, GroupColor>): TabInfo {
   const info: TabInfo = {
     id: tab.id as number,
     windowId: tab.windowId,
-    title: tab.title || url,
-    url,
+    ...tabText(tab),
     pinned: tab.pinned,
     audible: tab.audible ?? false,
     sleeping: tab.discarded || (tab.frozen ?? false),
