@@ -69,19 +69,19 @@ test.describe('the shortcuts on the keyboard @shortcut', () => {
     await focusBrowser(context, await windowOf(serviceWorker));
     await focusPage(page);
     const report = await recordKeys(page);
-    hold(MODIFIER);
     try {
-      press('S');
-      await frameIn(page);
-      await recordFrameKeys(page);
-      await expect(rows(page)).toHaveCount(3);
-      await expect(selected(page)).toHaveAccessibleName(named('beta'));
-      press('S');
-      await expect(selected(page)).toHaveAccessibleName(named('alpha'));
-    } finally {
-      release(MODIFIER);
-    }
-    try {
+      hold(MODIFIER);
+      try {
+        press('S');
+        await frameIn(page);
+        await recordFrameKeys(page);
+        await expect(rows(page)).toHaveCount(3);
+        await expect(selected(page)).toHaveAccessibleName(named('beta'));
+        press('S');
+        await expect(selected(page)).toHaveAccessibleName(named('alpha'));
+      } finally {
+        release(MODIFIER);
+      }
       await expect.poll(() => activeTitle(serviceWorker)).toBe('alpha');
     } finally {
       await report(test.info());

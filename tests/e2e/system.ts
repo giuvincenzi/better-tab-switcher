@@ -47,6 +47,26 @@ function windowsClick(x: number, y: number) {
   `);
 }
 
+/**
+ * Clicks in the middle of a process's window, where Windows has it (the window may not be where it was asked to be),
+ * which brings it to the front.
+ */
+function windowsClickWindowOf(pid: number) {
+  user32(`
+    Add-Type -Namespace System -Name Window -MemberDefinition @'
+      [DllImport("user32.dll")] public static extern bool GetWindowRect(System.IntPtr window, out RECT rect);
+      public struct RECT { public int Left; public int Top; public int Right; public int Bottom; }
+'@
+    $window = (Get-Process -Id ${pid}).MainWindowHandle
+    $rect = New-Object System.Window+RECT
+    [System.Window]::GetWindowRect($window, [ref]$rect) | Out-Null
+    $x = [int](($rect.Left + $rect.Right) / 2); $y = [int](($rect.Top + $rect.Bottom) / 2)
+    [System.Input]::SetCursorPos($x, $y) | Out-Null
+    [System.Input]::mouse_event(0x0002, 0, 0, 0, [System.UIntPtr]::Zero)
+    [System.Input]::mouse_event(0x0004, 0, 0, 0, [System.UIntPtr]::Zero)
+  `);
+}
+
 /** Brings a program to the front, on macOS (System Events, which GitHub's machines allow to tests). */
 function macFront(pid: number) {
   execFileSync('osascript', [
@@ -70,51 +90,57 @@ export async function focusBrowser(
   await delay(300);
 }
 
-/** The keys the tests press, as each system names them. */
+/** The keys the tests press, as each system names them (macOS: virtual key codes, and the modifier's flag). */
 const KEYS = {
-  Alt: { x11: 'Alt_L', windows: 0x12, mac: 'option' },
-  Control: { x11: 'Control_L', windows: 0x11, mac: 'control' },
-  Shift: { x11: 'Shift_L', windows: 0x10, mac: 'shift' },
-  Command: { x11: 'Super_L', windows: 0x5b, mac: 'command' },
-  S: { x11: 's', windows: 0x53, mac: 's' },
-  L: { x11: 'l', windows: 0x4c, mac: 'l' },
+  Alt: { x11: 'Alt_L', windows: 0x12, mac: 58, flag: 'option' },
+  Control: { x11: 'Control_L', windows: 0x11, mac: 59, flag: 'control' },
+  Shift: { x11: 'Shift_L', windows: 0x10, mac: 56, flag: 'shift' },
+  Command: { x11: 'Super_L', windows: 0x5b, mac: 55, flag: 'command' },
+  S: { x11: 's', windows: 0x53, mac: 1, flag: '' },
+  L: { x11: 'l', windows: 0x4c, mac: 37, flag: '' },
 } as const;
 type Key = keyof typeof KEYS;
 type Letter = 'S' | 'L';
 type Modifier = Exclude<Key, Letter>;
 
-/** Presses a modifier and holds it, as the keyboard does, to the window that has the system's focus. */
-export function hold(modifier: Modifier) {
-  const key = KEYS[modifier];
-  if (process.platform === 'linux') x11('down', key.x11);
+/** The modifiers held now, on macOS: each key event says them (its flags). */
+const held = new Set<Modifier>();
+
+/** tests/e2e/mac-keys.swift, built once (Swift comes with Xcode on GitHub's macOS machines). */
+let macKeys: string | undefined;
+function macKey(direction: 'down' | 'up', key: Key) {
+  if (!macKeys) {
+    macKeys = join(mkdtempSync(join(tmpdir(), 'mac-keys-')), 'mac-keys');
+    execFileSync('swiftc', ['-O', 'tests/e2e/mac-keys.swift', '-o', macKeys]);
+  }
+  execFileSync(macKeys, [direction, String(KEYS[key].mac), ...[...held].map((modifier) => KEYS[modifier].flag)]);
+}
+
+/** A key going down or up on the system's keyboard, to the window that has the system's focus. */
+function key(direction: 'down' | 'up', name: Key) {
+  const codes = KEYS[name];
+  if (process.platform === 'linux') x11(direction, codes.x11);
   else if (process.platform === 'win32')
-    user32(`[System.Input]::keybd_event(${key.windows}, 0, 0, [System.UIntPtr]::Zero)`);
-  else execFileSync('osascript', ['-e', `tell application "System Events" to key down ${key.mac}`]);
+    user32(`[System.Input]::keybd_event(${codes.windows}, 0, ${direction === 'down' ? 0 : 2}, [System.UIntPtr]::Zero)`);
+  else macKey(direction, name);
+}
+
+/** Presses a modifier and holds it. */
+export function hold(modifier: Modifier) {
+  held.add(modifier);
+  key('down', modifier);
 }
 
 /** Lets a held modifier go. */
 export function release(modifier: Modifier) {
-  const key = KEYS[modifier];
-  if (process.platform === 'linux') x11('up', key.x11);
-  else if (process.platform === 'win32')
-    user32(`[System.Input]::keybd_event(${key.windows}, 0, 2, [System.UIntPtr]::Zero)`);
-  else execFileSync('osascript', ['-e', `tell application "System Events" to key up ${key.mac}`]);
+  held.delete(modifier);
+  key('up', modifier);
 }
 
 /** Presses a letter and lets it go, the modifiers held staying held. */
 export function press(letter: Letter) {
-  const key = KEYS[letter];
-  if (process.platform === 'linux') {
-    x11('down', key.x11);
-    x11('up', key.x11);
-  } else if (process.platform === 'win32') {
-    user32(`
-      [System.Input]::keybd_event(${key.windows}, 0, 0, [System.UIntPtr]::Zero)
-      [System.Input]::keybd_event(${key.windows}, 0, 2, [System.UIntPtr]::Zero)
-    `);
-  } else {
-    execFileSync('osascript', ['-e', `tell application "System Events" to keystroke "${key.mac}"`]);
-  }
+  key('down', letter);
+  key('up', letter);
 }
 
 /**
@@ -153,7 +179,7 @@ export async function focusAnotherProgram(): Promise<() => Promise<void>> {
     }
     await delay(1000);
     if (process.platform === 'linux') x11('focus', window as string);
-    else if (process.platform === 'win32') windowsClick(OTHER.left + OTHER.width / 2, OTHER.top + OTHER.height / 2);
+    else if (process.platform === 'win32') windowsClickWindowOf(pid);
     else macFront(pid);
     return close;
   } catch (error) {
