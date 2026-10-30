@@ -123,7 +123,25 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }>({
     await Promise.all(context.serviceWorkers().map(watchWorker));
     context.on('serviceworker', (worker) => void watchWorker(worker));
 
+    // What the browser itself did with its tabs and frames (made, changed, closed), for a failed test's report.
+    const targets: string[] = [];
+    const browserSession = await context.browser()?.newBrowserCDPSession();
+    if (browserSession) {
+      const started = Date.now();
+      const note = (what: string, info: { type: string; url: string; targetId: string }) =>
+        targets.push(`${Date.now() - started} ms ${what} ${info.type} ${info.targetId.slice(0, 8)} ${info.url}`);
+      browserSession.on('Target.targetCreated', ({ targetInfo }) => note('made', targetInfo));
+      browserSession.on('Target.targetInfoChanged', ({ targetInfo }) => note('changed', targetInfo));
+      browserSession.on('Target.targetDestroyed', ({ targetId }) =>
+        targets.push(`${Date.now() - started} ms closed ${targetId.slice(0, 8)}`),
+      );
+      await browserSession.send('Target.setDiscoverTargets', { discover: true });
+    }
+
     await use(context);
+
+    if (testInfo.status !== testInfo.expectedStatus && targets.length > 0)
+      await testInfo.attach('browser-targets', { body: targets.join('\n'), contentType: 'text/plain' });
 
     for (const worker of context.serviceWorkers()) {
       const uncaught = await worker
