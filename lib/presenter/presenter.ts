@@ -30,7 +30,7 @@ export interface SwitcherRequest {
  * is kept in storage.session because Chrome can stop the background between two key presses.
  */
 type OpenSwitcher =
-  | { in: 'page'; tabId: number; windowId: number }
+  | { in: 'page'; tabId: number; windowId: number; windowFocused: boolean }
   | { in: 'window'; windowId: number; tabId: number; fromWindowId: number };
 
 const openSwitcher = storage.defineItem<OpenSwitcher | null>('session:openSwitcher', { fallback: null });
@@ -177,6 +177,8 @@ export function listenToSwitcher(request: (switcher: SwitcherRequest) => Promise
  * moved to its address bar, or to the page (a site can take it as it loads): the switcher stays.
  */
 async function closeWhenWindowLeft(open: OpenSwitcher): Promise<void> {
+  // Only a window that had the focus can lose it (a browser with no window on screen gives none the focus).
+  if (open.in !== 'page' || !open.windowFocused) return;
   const window = await browser.windows.get(open.windowId).catch(() => undefined);
   if (window && !window.focused) await closeSwitcher(open);
 }
@@ -263,7 +265,12 @@ async function showInPage(current: Browser.tabs.Tab, snapshot: SwitcherSnapshot,
       ? previews.takeForSwitcher({ id: tabId, windowId: current.windowId })
       : undefined;
   // Known before the switcher shows: a preview that arrives meanwhile goes to it.
-  await openSwitcher.setValue({ in: 'page', tabId, windowId: current.windowId });
+  // Whether its window has the focus as it opens: the switcher closes when the window loses it (closeWhenWindowLeft).
+  const windowFocused = await browser.windows.get(current.windowId).then(
+    (window) => window.focused,
+    () => false,
+  );
+  await openSwitcher.setValue({ in: 'page', tabId, windowId: current.windowId, windowFocused });
   if (!(await sendSnapshot(tabId, { ...snapshot, waitForPicture: picture !== undefined }))) {
     await openSwitcher.setValue(null);
     return false;

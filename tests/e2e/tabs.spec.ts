@@ -111,7 +111,7 @@ test.describe('which tabs the switcher lists @tabs', () => {
         rows: await rowNames(page),
         // As the extension reads it (tabs.query), and as tabs.get gives it.
         query: await serviceWorker.evaluate(async (id) => {
-          const pick = (tab?: chrome.tabs.Tab) =>
+          const pick = (tab?: { url?: string; pendingUrl?: string; status?: string; title?: string }) =>
             tab && { url: tab.url, pendingUrl: tab.pendingUrl, status: tab.status, title: tab.title };
           return {
             query: pick((await chrome.tabs.query({})).find((tab) => tab.id === id)),
