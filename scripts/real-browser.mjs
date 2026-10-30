@@ -38,7 +38,8 @@ const START_MS = 30_000;
 /**
  * Starts the browser with the extension in `extensionDir`, in a new profile, and attaches Playwright to it. `language`
  * is Chrome's own language (--lang and, on Linux, the environment's), `dark` the system's dark mode, `reducedMotion`
- * the system's "reduce motion"; `windowSize` the first window's size. Returns its one browser context and close().
+ * the system's "reduce motion" on or off (the system's own setting when not given); `windowSize` the first window's
+ * size. Returns its one browser context and close().
  * @param {{ browser?: string, extensionDir: string, headless?: boolean, language?: string, dark?: boolean,
  *   reducedMotion?: boolean, windowSize?: string }} options
  * @returns {Promise<{ context: import('@playwright/test').BrowserContext, close: () => Promise<void>,
@@ -50,7 +51,7 @@ export async function launchRealBrowser({
   headless = true,
   language,
   dark = false,
-  reducedMotion = false,
+  reducedMotion,
   windowSize,
 }) {
   const profile = mkdtempSync(join(tmpdir(), 'better-tab-switcher-'));
@@ -60,10 +61,17 @@ export async function launchRealBrowser({
     `--user-data-dir=${profile}`,
     '--no-first-run',
     '--no-default-browser-check',
+    // Ubuntu (24.04 and later) lets no program it doesn't know use the sandbox Chrome isolates its pages with, and
+    // Playwright's Chromium is not known to it: as Playwright does, on Linux the pages are not isolated from each other
+    // (a matter of security, not of what the extension or the pages do).
+    ...(process.platform === 'linux' ? ['--no-sandbox'] : []),
     ...(headless ? ['--headless'] : []),
     ...(language ? [`--lang=${language}`] : []),
     ...(dark ? ['--force-dark-mode'] : []),
-    ...(reducedMotion ? ['--force-prefers-reduced-motion'] : []),
+    // Unless told, the system's own setting (the macOS machines of GitHub ask for less motion).
+    ...(reducedMotion === undefined
+      ? []
+      : [reducedMotion ? '--force-prefers-reduced-motion' : '--force-prefers-no-reduced-motion']),
     ...(windowSize ? [`--window-size=${windowSize}`] : []),
     `--disable-extensions-except=${extensionDir}`,
     `--load-extension=${extensionDir}`,
@@ -83,14 +91,26 @@ export async function launchRealBrowser({
 
   const portFile = join(profile, 'DevToolsActivePort');
   const started = Date.now();
-  while (!existsSync(portFile) || readFileSync(portFile, 'utf8').split('\n').length < 2) {
-    if (process_.exitCode !== null || Date.now() - started > START_MS) {
+  /** The port's two lines, once the browser has written them (on Windows the file is locked while it writes it). */
+  const portLines = () => {
+    try {
+      const lines = readFileSync(portFile, 'utf8').split('\n');
+      return lines.length >= 2 && lines[1] ? lines : undefined;
+    } catch {
+      return undefined;
+    }
+  };
+  let lines = portLines();
+  while (!lines) {
+    const ended = process_.exitCode !== null || process_.signalCode !== null;
+    if (ended || Date.now() - started > START_MS) {
       process_.kill();
-      throw new Error(`The browser didn't start:\n${output}`);
+      throw new Error(`The browser ${ended ? 'stopped' : "didn't start"}:\n${output}`);
     }
     await delay(50);
+    lines = portLines();
   }
-  const [port, path] = readFileSync(portFile, 'utf8').split('\n');
+  const [port, path] = lines;
   const connected = await chromium.connectOverCDP(`ws://127.0.0.1:${port}${path}`, { noDefaults: true });
   const context = connected.contexts()[0];
   if (!context) throw new Error('The browser has no context to attach to.');

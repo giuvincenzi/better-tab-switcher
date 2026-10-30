@@ -196,6 +196,11 @@ for (const reducedMotion of [false, true]) {
   test.describe(`switcher motion, the system ${reducedMotion ? 'asking' : 'not asking'} for less motion @switcher`, () => {
     test.use({ systemReducedMotion: reducedMotion });
 
+    test("is what Chrome's pages see: the tests' system setting works", async ({ context }) => {
+      const [page] = await openPages(context, ['alpha']);
+      expect(await page?.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches)).toBe(reducedMotion);
+    });
+
     test(`scrolls the selected tab's address ${reducedMotion ? 'never' : 'when it is set to scroll'}`, async ({
       context,
       serviceWorker,

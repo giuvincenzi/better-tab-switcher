@@ -11,7 +11,10 @@ interface ExtensionFixtures {
   chromeLanguage: string;
   /** The system in dark mode (Chrome's --force-dark-mode, as when the system is set so): light by default. */
   systemDark: boolean;
-  /** The system asking for less motion (Chrome's --force-prefers-reduced-motion): off by default. */
+  /**
+   * The system asking for less motion (Chrome's --force-prefers-reduced-motion), or not: off by default, always told to
+   * Chrome, as each machine has its own (GitHub's macOS machines ask for less motion).
+   */
   systemReducedMotion: boolean;
   /**
    * Console messages a test expects (errors or warnings the extension writes on purpose, as when it says why the
@@ -107,10 +110,11 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }>({
     }
   },
   ours: async ({ context }, use) => {
+    // Looked for again until found: a worker still starting may not answer the first time.
     let worker: Worker | undefined;
     while (!worker) {
       for (const candidate of context.serviceWorkers()) if (await isOurs(candidate)) worker = candidate;
-      if (!worker) await context.waitForEvent('serviceworker');
+      if (!worker) await new Promise((resolve) => setTimeout(resolve, 100));
     }
     await use(worker);
   },
