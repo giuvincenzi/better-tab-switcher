@@ -11,10 +11,16 @@ test.use({ headed: true });
 const MODIFIER = process.platform === 'darwin' ? 'Control' : 'Alt';
 
 /**
- * Records the keys the page and the switcher's frame get, for the report of a failed test: which of the system's keys
- * reached them (on macOS, System Events' keys).
+ * Records the keys the page and the switcher's frame get, and the commands the extension gets, for the test's report:
+ * which of the system's keys reached them.
  */
-async function recordKeys(page: Page): Promise<(info: TestInfo) => Promise<void>> {
+async function recordKeys(page: Page, worker: Worker): Promise<(info: TestInfo) => Promise<void>> {
+  // And the commands Chrome gives the extension: whether a key pressed reached it as its shortcut.
+  await worker.evaluate(() => {
+    const commands: string[] = [];
+    Object.assign(globalThis, { commandsSeen: commands });
+    chrome.commands.onCommand.addListener((command) => commands.push(`${command} ${Date.now()}`));
+  });
   const listen = () => {
     const seen: string[] = [];
     Object.assign(globalThis, { keysSeen: seen });
@@ -28,6 +34,9 @@ async function recordKeys(page: Page): Promise<(info: TestInfo) => Promise<void>
     const keys = {
       page: await page.evaluate(read).catch(() => []),
       frame: (await frame?.evaluate(read).catch(() => [])) ?? [],
+      commands: await worker
+        .evaluate(() => (globalThis as unknown as { commandsSeen?: string[] }).commandsSeen ?? [])
+        .catch(() => []),
     };
     await info.attach('keys-seen', { body: JSON.stringify(keys, null, 2), contentType: 'application/json' });
   };
@@ -68,7 +77,7 @@ test.describe('the shortcuts on the keyboard @shortcut', () => {
     const page = current as Page;
     await focusBrowser(context, await windowOf(serviceWorker));
     await focusPage(page);
-    const report = await recordKeys(page);
+    const report = await recordKeys(page, serviceWorker);
     try {
       hold(MODIFIER);
       try {
