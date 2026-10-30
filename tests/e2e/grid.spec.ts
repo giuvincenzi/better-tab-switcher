@@ -10,6 +10,22 @@ const savedPictures = (worker: Worker) =>
   );
 
 /**
+ * How light the middle of a tab's saved picture is, from 0 (black) to 255 (white): where the switcher's panel is over
+ * the page, had the picture been taken with the switcher in it.
+ */
+const middleOfPicture = (worker: Worker, tabId: number) =>
+  worker.evaluate(async (id) => {
+    const key = `preview-${id}`;
+    const saved = (await chrome.storage.session.get(key))[key] as { picture: string };
+    const bitmap = await createImageBitmap(await (await fetch(saved.picture)).blob());
+    const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+    const context = canvas.getContext('2d') as OffscreenCanvasRenderingContext2D;
+    context.drawImage(bitmap, 0, 0);
+    const [r, g, b] = context.getImageData(Math.floor(bitmap.width / 2), Math.floor(bitmap.height / 2), 1, 1).data;
+    return Math.min(r as number, g as number, b as number);
+  }, tabId);
+
+/**
  * Uses each page in turn, as a person would: the switcher opens on it (its picture is taken then) and closes. Chrome
  * takes at most two pictures a second: a switcher opened sooner gets none, so it opens again until the picture is kept.
  */
@@ -66,8 +82,13 @@ test.describe('grid @grid', () => {
     expect(fits).toEqual({ columns: 3, across: 0, down: 0 });
   });
 
-  test('shows a picture of each tab used, taken in memory', async ({ context, serviceWorker }) => {
-    await useSettings(serviceWorker, { view: 'grid' });
+  test('shows a picture of each tab used, taken in memory, never with the switcher in it', async ({
+    context,
+    serviceWorker,
+  }) => {
+    // The dark theme: a dark panel over the test site's white pages. No delay: the switcher would show at once, before
+    // the picture is taken, did it not wait for it.
+    await useSettings(serviceWorker, { view: 'grid', theme: 'dark', delayMs: 0 });
     const pages = await openPages(context, ['alpha', 'beta', 'gamma']);
     await useEach(serviceWorker, pages);
     const page = pages[2] as Page;
@@ -79,6 +100,9 @@ test.describe('grid @grid', () => {
     }));
     expect(kept.session).toHaveLength(3);
     expect(kept.local).toHaveLength(0);
+    // Each picture is of the page alone: white where the switcher's panel would be.
+    for (const key of kept.session)
+      expect(await middleOfPicture(serviceWorker, Number(key.slice('preview-'.length)))).toBeGreaterThan(200);
   });
 
   test("keeps the new picture when the session's memory is full, the oldest going first", async ({

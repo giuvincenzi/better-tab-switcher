@@ -1,5 +1,5 @@
 import type { BrowserContext, Frame, Page } from '@playwright/test';
-import { expect, test } from './fixtures';
+import { browserPipe, expect, test } from './fixtures';
 import {
   activeTitle,
   closeWithEscape,
@@ -87,16 +87,27 @@ test.describe('how the switcher switches @switching', () => {
     await expect(rows(page)).toHaveCount(0);
   });
 
-  test('opens again with the shortcut after its page reloaded', async ({ context, serviceWorker }) => {
+  test('opens again with the shortcut after its page reloaded, put in the page once each time', async ({
+    context,
+    serviceWorker,
+  }) => {
     const [, , current] = await openPages(context, ['alpha', 'beta', 'gamma']);
     const page = current as Page;
-    await showSwitcher(serviceWorker, 'next', 'icon');
-    await expect(rows(page)).toHaveCount(3);
+    // The switcher's holder in the page (entrypoints/switcher.content.ts), by its element.
+    const holders = () => page.evaluate(() => document.querySelectorAll('better-tab-switcher').length);
+    for (let opening = 0; opening < 3; opening++) {
+      await showSwitcher(serviceWorker, 'next', 'icon');
+      await expect(rows(page)).toHaveCount(3);
+      await page.keyboard.press('Escape');
+      await expect(rows(page)).toHaveCount(0);
+    }
+    expect(await holders()).toBe(1);
     await page.reload();
-    await expect(rows(page)).toHaveCount(0);
+    expect(await holders()).toBe(0);
     await showSwitcher(serviceWorker);
     await expect(rows(page)).toHaveCount(3);
     await expect(selected(page)).toHaveAccessibleName(named('beta'));
+    expect(await holders()).toBe(1);
   });
 
   test('closes in the window it was open in when it opens in another window', async ({ context, serviceWorker }) => {
@@ -107,6 +118,40 @@ test.describe('how the switcher switches @switching', () => {
     await showSwitcher(serviceWorker);
     await expect(rows(second)).toHaveCount(1);
     await expect(rows(first)).toHaveCount(0);
+  });
+});
+
+test.describe('the background stopped by the browser @switching', () => {
+  test('keeps the open switcher working when the browser stops the background, as it does after a while unused', async ({
+    context,
+    serviceWorker,
+    extensionId,
+  }) => {
+    const [alpha, , current] = (await openPages(context, ['alpha', 'beta', 'gamma'])) as [Page, Page, Page];
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    await expect(selected(current)).toHaveAccessibleName(named('beta'));
+    // Stopped as Chrome stops a background left unused for 30 seconds: Target.closeTarget, the way Chrome's guide for
+    // extensions shows (developer.chrome.com, "Test service worker termination").
+    const send = browserPipe.get(context) as (method: string, params?: object) => Promise<unknown>;
+    const backgrounds = async () =>
+      (
+        (await send('Target.getTargets')) as { targetInfos: { targetId: string; type: string; url: string }[] }
+      ).targetInfos.filter(
+        (target) => target.type === 'service_worker' && target.url.startsWith(`chrome-extension://${extensionId}/`),
+      );
+    const [stopped] = await backgrounds();
+    await send('Target.closeTarget', { targetId: stopped?.targetId });
+    await expect
+      .poll(async () => (await backgrounds()).some((target) => target.targetId === stopped?.targetId))
+      .toBe(false);
+    // The switcher goes on: the keys move it, and Enter opens the tab, the browser starting the background again.
+    await current.keyboard.press('ArrowDown');
+    await expect(selected(current)).toHaveAccessibleName(named('alpha'));
+    expect(await alpha.evaluate(() => document.visibilityState)).toBe('hidden');
+    await current.keyboard.press('Enter');
+    await expect(rows(current)).toHaveCount(0);
+    // The tab chosen is the one in sight (the background that opened it is a new one: the stopped one is gone).
+    await expect.poll(() => alpha.evaluate(() => document.visibilityState)).toBe('visible');
   });
 });
 
@@ -129,9 +174,18 @@ test.describe('a page that hangs @switching', () => {
     const hanging = await context.newPage();
     await hanging.goto('https://hang.test/');
     await hanging.bringToFront();
-    // The switcher has been in this page before: its script is there, and would show what it gets, even late.
+    // Busy for a second as the switcher first opens there (a page still running its scripts): only slow, it gets the
+    // switcher in it, not in a window of its own. The switcher's script is in the page after that, and would show
+    // what it gets, even late.
+    await hanging.evaluate(() =>
+      setTimeout(() => {
+        const end = Date.now() + 1000;
+        while (Date.now() < end) {}
+      }),
+    );
     await showSwitcher(serviceWorker, 'next', 'icon');
     await expect(rows(hanging)).toHaveCount(3);
+    expect(context.pages().some((open) => open.url().endsWith('/switcher-window.html'))).toBe(false);
     await hanging.keyboard.press('Escape');
     await expect(rows(hanging)).toHaveCount(0);
     await hanging.evaluate(() => (window as unknown as { hang: () => void }).hang());
@@ -160,7 +214,7 @@ test.describe('a page that hangs @switching', () => {
 });
 
 test.describe("the switcher's own window @switching", () => {
-  test('closes its window with Esc, and the shortcut then opens a new one on the same page', async ({
+  test('closes its window with Esc or its close button, and the shortcut then opens a new one on the same page', async ({
     context,
     serviceWorker,
   }) => {
@@ -180,7 +234,17 @@ test.describe("the switcher's own window @switching", () => {
     expect(await activeTitle(serviceWorker)).toBe(await chromePage.title());
     const again = context.waitForEvent('page');
     await showSwitcher(serviceWorker);
-    await expect((await again).getByRole('option')).toHaveCount(3);
+    const second = await again;
+    await expect(second.getByRole('option')).toHaveCount(3);
+    // Closed by the browser instead, as its close button does: the shortcut opens a new one all the same.
+    await serviceWorker.evaluate(async () => {
+      const windows = await chrome.windows.getAll({ windowTypes: ['popup'] });
+      await Promise.all(windows.map((window) => chrome.windows.remove(window.id as number)));
+    });
+    await expect.poll(() => second.isClosed()).toBe(true);
+    const third = context.waitForEvent('page');
+    await showSwitcher(serviceWorker);
+    await expect((await third).getByRole('option')).toHaveCount(3);
   });
 
   test("is as large as over a page and fits the switcher exactly, with Chrome's zoom", async ({

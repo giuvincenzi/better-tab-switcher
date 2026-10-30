@@ -36,9 +36,12 @@ test.describe('switcher in a page @switcher', () => {
     await expect(rows(page)).toHaveCount(0);
   });
 
-  test('goes further when the shortcut is pressed again', async ({ context, serviceWorker }) => {
-    const [, , current] = await openPages(context, ['alpha', 'beta', 'gamma']);
-    const page = current as Page;
+  test('goes further when the shortcut is pressed again, also twice before it shows', async ({
+    context,
+    serviceWorker,
+  }) => {
+    const [, beta, current] = (await openPages(context, ['alpha', 'beta', 'gamma'])) as [Page, Page, Page];
+    const page = current;
     await page.keyboard.down('Alt');
     await showSwitcher(serviceWorker);
     await expect(selected(page)).toContainText('beta');
@@ -48,6 +51,13 @@ test.describe('switcher in a page @switcher', () => {
     await expect(selected(page)).toContainText('beta');
     await page.keyboard.up('Alt');
     await expect.poll(() => activeTitle(serviceWorker)).toBe('beta');
+    // Twice, the second press before the first switcher is there: one switcher, two tabs back (beta, gamma, alpha).
+    await beta.keyboard.down('Alt');
+    await Promise.all([showSwitcher(serviceWorker), showSwitcher(serviceWorker)]);
+    await expect(selected(beta)).toContainText('alpha');
+    await expect(switcher(beta).locator('[role="listbox"]')).toHaveCount(1);
+    await beta.keyboard.up('Alt');
+    await expect.poll(() => activeTitle(serviceWorker)).toBe('alpha');
   });
 
   test('moves with the arrows and opens with Enter', async ({ context, serviceWorker }) => {
