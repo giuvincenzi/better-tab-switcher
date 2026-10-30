@@ -10,12 +10,11 @@ import type { GroupColor, TabInfo } from './tabs';
 export async function readTabs(
   current?: Browser.tabs.Tab,
 ): Promise<{ tabs: TabInfo[]; windowIds: number[]; currentWindowId: number | undefined }> {
-  const [queried, windows, groups] = await Promise.all([
+  const [tabs, windows, groups] = await Promise.all([
     browser.tabs.query({}),
     browser.windows.getAll({ windowTypes: ['normal'] }),
     browser.tabGroups.query({}),
   ]);
-  const tabs = await Promise.all(queried.map(knownTab));
   const colors = new Map(groups.map((group) => [group.id, group.color as GroupColor]));
   const normal = new Set(windows.map((w) => w.id));
   const read = listedTabs(tabs, normal, colors);
@@ -34,23 +33,6 @@ export async function readTabs(
     }
   }
   return { tabs: read, windowIds: windows.flatMap((w) => (w.id === undefined ? [] : [w.id])), currentWindowId };
-}
-
-/** How many times, and how long apart, a tab Chrome gives with nothing to show is read again (knownTab). */
-const READ_AGAIN = { times: 5, everyMs: 20 };
-
-/**
- * The tab, read again when Chrome gives it with no address, none it is loading and no title: a tab in the background
- * that starts loading has a moment so on macOS (the switcher would show it as an empty row); a moment later Chrome has
- * them. Only those tabs, a few times: the switcher's opening waits for them only.
- */
-async function knownTab(tab: Browser.tabs.Tab): Promise<Browser.tabs.Tab> {
-  let known = tab;
-  for (let time = 0; time < READ_AGAIN.times && known.id !== undefined && !addressOf(known) && !known.title; time++) {
-    await new Promise((resolve) => setTimeout(resolve, READ_AGAIN.everyMs));
-    known = await browser.tabs.get(known.id).catch(() => known);
-  }
-  return known;
 }
 
 /**
