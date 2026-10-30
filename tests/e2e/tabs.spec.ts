@@ -2,6 +2,7 @@ import type { BrowserContext, Page, Worker } from '@playwright/test';
 import { contextOf, expect, test } from './fixtures';
 import {
   activeTitle,
+  colorsAt,
   named,
   openPages,
   openWindow,
@@ -130,6 +131,95 @@ test.describe('which tabs the switcher lists @tabs', () => {
     await page.keyboard.press('ArrowUp');
     await page.keyboard.press('Enter');
     await expect.poll(() => activeTitle(serviceWorker)).toBe('tab01');
+  });
+});
+
+test.describe('the details of each tab @tabs', () => {
+  test("shows the tab group's color before the title, and none with Tab group color off", async ({
+    context,
+    serviceWorker,
+  }) => {
+    const [, , current] = await openPages(context, ['alpha', 'beta', 'gamma']);
+    const page = current as Page;
+    const beta = await tabIdOf(serviceWorker, 'beta');
+    await serviceWorker.evaluate(async (id) => {
+      const group = await chrome.tabs.group({ tabIds: id });
+      await chrome.tabGroups.update(group, { color: 'red' });
+    }, beta);
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    const dot = rows(page).filter({ hasText: 'beta' }).locator('[style*="--bts-group-"]');
+    const box = await dot.boundingBox();
+    if (!box) throw new Error('No group color on beta.');
+    // Chrome's red for tab groups, in the light theme (styles/theme.css).
+    expect(await colorsAt(page, serviceWorker, [{ x: box.x + box.width / 2, y: box.y + box.height / 2 }])).toEqual([
+      'rgb(217, 48, 37)',
+    ]);
+    await expect(rows(page).filter({ hasText: 'alpha' }).locator('[style*="--bts-group-"]')).toHaveCount(0);
+    await page.keyboard.press('Escape');
+    await useSettings(serviceWorker, { details: { groupColor: false } as never });
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    await expect(rows(page)).toHaveCount(3);
+    await expect(rows(page).locator('[style*="--bts-group-"]')).toHaveCount(0);
+  });
+
+  test('shows only the site with Full address off', async ({ context, serviceWorker }) => {
+    await useSettings(serviceWorker, { details: { fullAddress: false } as never });
+    const [, current] = await openPages(context, ['alpha', 'beta']);
+    const page = current as Page;
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    await expect.poll(() => rowNames(page)).toEqual(['beta, bts.test', 'alpha, bts.test']);
+  });
+
+  test('cuts a long address short with “…” with Cut short, never moving it', async ({ context, serviceWorker }) => {
+    await useSettings(serviceWorker, { details: { longAddress: 'cut' } as never });
+    const long = `alpha-${'x'.repeat(150)}`;
+    const [, current] = await openPages(context, [long, 'beta']);
+    const page = current as Page;
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    await expect(selected(page)).toContainText('alpha-');
+    await rows(page).filter({ hasText: 'alpha-' }).hover();
+    const address = await selected(page).evaluate((row) => {
+      const place = row.querySelector('[dir="ltr"]') as HTMLElement;
+      return {
+        longer: place.scrollWidth > place.clientWidth,
+        cut: getComputedStyle(place).textOverflow,
+        moving: (place.firstElementChild as HTMLElement).getAnimations().length,
+      };
+    });
+    expect(address).toEqual({ longer: true, cut: 'ellipsis', moving: 0 });
+  });
+
+  test('shows how long ago each tab was used, and nothing of it with Last used off', async ({
+    context,
+    serviceWorker,
+  }) => {
+    const [, current] = await openPages(context, ['alpha', 'beta']);
+    const page = current as Page;
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    await expect(rows(page).filter({ hasText: 'alpha' })).toContainText('now');
+    await page.keyboard.press('Escape');
+    await useSettings(serviceWorker, { details: { lastUsed: false } as never });
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    await expect(rows(page)).toHaveCount(2);
+    await expect(rows(page).filter({ hasText: 'alpha' })).not.toContainText('now');
+  });
+
+  test('greys the tabs the browser unloaded, and none with Inactive tabs off', async ({ context, serviceWorker }) => {
+    const [, , current] = await openPages(context, ['alpha', 'beta', 'gamma']);
+    const page = current as Page;
+    await serviceWorker.evaluate(async (id) => chrome.tabs.discard(id), await tabIdOf(serviceWorker, 'alpha'));
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    const opacity = (title: string) =>
+      rows(page)
+        .filter({ hasText: title })
+        .evaluate((row) => getComputedStyle(row).opacity);
+    expect(await opacity('alpha')).toBe('0.55');
+    expect(await opacity('beta')).toBe('1');
+    await page.keyboard.press('Escape');
+    await useSettings(serviceWorker, { details: { sleeping: false } as never });
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    await expect(rows(page)).toHaveCount(3);
+    expect(await opacity('alpha')).toBe('1');
   });
 });
 
