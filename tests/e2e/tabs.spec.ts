@@ -106,7 +106,21 @@ test.describe('which tabs the switcher lists @tabs', () => {
       .toBe('https://slow.test/page');
     await showSwitcher(serviceWorker, 'next', 'icon');
     await expect(rows(page)).toHaveCount(3);
-    await test.info().attach('rows', { body: JSON.stringify(await rowNames(page)), contentType: 'application/json' });
+    await test.info().attach('rows', {
+      body: JSON.stringify({
+        rows: await rowNames(page),
+        // As the extension reads it (tabs.query), and as tabs.get gives it.
+        query: await serviceWorker.evaluate(async (id) => {
+          const pick = (tab?: chrome.tabs.Tab) =>
+            tab && { url: tab.url, pendingUrl: tab.pendingUrl, status: tab.status, title: tab.title };
+          return {
+            query: pick((await chrome.tabs.query({})).find((tab) => tab.id === id)),
+            get: pick(await chrome.tabs.get(id)),
+          };
+        }, slow),
+      }),
+      contentType: 'application/json',
+    });
     // Its title is the browser's while it loads (the address in Chrome, the site in Microsoft Edge); its address is the
     // one it is loading.
     await expect(rows(page).filter({ hasText: 'slow.test' })).toHaveAccessibleName(/, slow\.test\/page$/);
