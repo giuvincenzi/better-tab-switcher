@@ -47,7 +47,12 @@ if (!(BROWSERS as readonly string[]).includes(browser)) {
 /** The worker of this extension: the browser has its own extensions' workers too. */
 async function isOurs(worker: Worker): Promise<boolean> {
   if (!worker.url().startsWith('chrome-extension://')) return false;
-  return worker.evaluate(() => 'next-tab' in (chrome.runtime.getManifest().commands ?? {})).catch(() => false);
+  // At most 2 s: a worker of the browser's own extensions may never answer (starting, or stopped), and the question
+  // would hold up everything (Windows: 30 s, the test's whole time). Asked again on the next look.
+  return Promise.race([
+    worker.evaluate(() => 'next-tab' in (chrome.runtime.getManifest().commands ?? {})).catch(() => false),
+    new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 2000)),
+  ]);
 }
 
 /**
