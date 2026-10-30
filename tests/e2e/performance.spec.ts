@@ -63,7 +63,11 @@ test.describe('performance @performance', () => {
   }
 });
 
-/** More tabs of the test site, from `from` to `to`, in the background and unloaded: they take no memory. */
+/**
+ * More tabs of the test site, from `from` to `to`, in the background and unloaded: they take no memory. Chrome unloads
+ * no tab still loading: once none is, those left loaded are unloaded, so the switcher is measured with the tabs open,
+ * not while the machine loads hundreds of pages (the page it opens in would answer late).
+ */
 function openTabs(worker: Worker, from: number, to: number) {
   return worker.evaluate(
     async ({ from, to }) => {
@@ -71,6 +75,10 @@ function openTabs(worker: Worker, from: number, to: number) {
         const tab = await chrome.tabs.create({ url: `https://bts.test/tab-${i}`, active: false });
         await chrome.tabs.discard(tab.id as number).catch(() => undefined);
       }
+      while ((await chrome.tabs.query({ status: 'loading' })).length > 0)
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      for (const tab of await chrome.tabs.query({ active: false, discarded: false }))
+        await chrome.tabs.discard(tab.id as number).catch(() => undefined);
     },
     { from, to },
   );

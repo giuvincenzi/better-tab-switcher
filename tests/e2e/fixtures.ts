@@ -104,8 +104,10 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }>({
     context.pages().forEach(watch);
     context.on('page', watch);
     // The extension's background, each time it starts: its console, and the errors nothing caught (read at the end).
+    const watched = new Set<Worker>();
     const watchWorker = async (worker: Worker) => {
-      if (!(await isOurs(worker))) return;
+      if (watched.has(worker) || !(await isOurs(worker)) || watched.has(worker)) return;
+      watched.add(worker);
       extension = `${new URL(worker.url()).origin}/`;
       worker.on('console', (message) => {
         if (message.type() === 'error' || message.type() === 'warning')
@@ -122,6 +124,12 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }>({
     };
     await Promise.all(context.serviceWorkers().map(watchWorker));
     context.on('serviceworker', (worker) => void watchWorker(worker));
+    // Ready as a user's browser is: with the extension loaded (its background started). A page navigating while the
+    // browser still loads it can have its navigation aborted (Windows: 'net::ERR_ABORTED; maybe frame was detached').
+    while (!extension) {
+      for (const worker of context.serviceWorkers()) await watchWorker(worker);
+      if (!extension) await new Promise((resolve) => setTimeout(resolve, 100));
+    }
 
     // What the browser itself did with its tabs and frames (made, changed, closed), for a failed test's report.
     const targets: string[] = [];
