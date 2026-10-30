@@ -15,8 +15,8 @@ export interface SwitcherHandle {
   pressKey: (key: Key) => void;
   /** A tab's new preview. */
   showPreview: (preview: Preview) => void;
-  /** A tab's title or address changed (tabChanged). */
-  changeTab: (text: TabText) => void;
+  /** Tabs' titles or addresses changed (tabsChanged). */
+  changeTabs: (texts: TabText[]) => void;
   /** The page's picture is taken: the switcher can show. */
   pictureTaken: () => void;
   dispose: () => void;
@@ -49,7 +49,7 @@ export function mountSwitcher(
   const [pageKeys, setPageKeys] = createSignal<{ key: Key; count: number }>();
   const [previews, setPreviews] = createSignal<Record<number, string>>({});
   const [pictureTaken, setPictureTaken] = createSignal(false);
-  const [changedTab, setChangedTab] = createSignal<TabText>();
+  const [changedTabs, setChangedTabs] = createSignal<TabText[]>([]);
 
   const disposeRender = render(
     () => (
@@ -60,7 +60,7 @@ export function mountSwitcher(
         canSeeRelease={canSeeRelease}
         previews={previews}
         pictureTaken={pictureTaken}
-        changedTab={changedTab}
+        changedTabs={changedTabs}
         onOpen={(tab) => {
           onDone();
           void sendMessage('openTab', tab.id);
@@ -90,7 +90,7 @@ export function mountSwitcher(
     pressKey: (key) => setPageKeys((last) => ({ key, count: (last?.count ?? 0) + 1 })),
     showPreview: ({ tabId, picture }) => setPreviews((all) => ({ ...all, [tabId]: picture })),
     pictureTaken: () => setPictureTaken(true),
-    changeTab: (text) => setChangedTab(text),
+    changeTabs: (texts) => setChangedTabs(texts),
     dispose() {
       disposeRender();
       dialog.close();

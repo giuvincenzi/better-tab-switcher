@@ -7,6 +7,7 @@ import {
   type Resume,
   type SwitcherSnapshot,
   sendMessage,
+  type TabText,
 } from '../messages';
 import { type Previews, wantsPreviews } from '../previews/service';
 import { loadPreviews } from '../previews/store';
@@ -98,7 +99,10 @@ export function listenToSwitcher(request: (switcher: SwitcherRequest) => Promise
   onMessage('getSnapshot', async () => {
     const snapshot = await windowSnapshot.getValue();
     await windowSnapshot.setValue(null);
-    return snapshot;
+    if (!snapshot) return null;
+    // The tabs that had nothing to show as the switcher opened, as they are now (blankTabsNow).
+    const now = new Map((await blankTabsNow(snapshot)).map((text) => [text.tabId, text]));
+    return { ...snapshot, tabs: snapshot.tabs.map((tab) => ({ ...tab, ...now.get(tab.id) })) };
   });
   onMessage('openTab', async ({ data: tabId }) => {
     const open = await forget();
@@ -151,7 +155,8 @@ export function listenToSwitcher(request: (switcher: SwitcherRequest) => Promise
     // The open switcher shows the tab as it is now: a tab just made gets its address and title a moment later.
     if (change.title === undefined && change.url === undefined && change.status === undefined) return;
     const open = await openSwitcher.getValue();
-    if (open) await answered(sendMessage('tabChanged', { tabId, ...tabText(tab) }, open.tabId)).catch(() => undefined);
+    if (open)
+      await answered(sendMessage('tabsChanged', [{ tabId, ...tabText(tab) }], open.tabId)).catch(() => undefined);
   });
   browser.windows.onRemoved.addListener(async (windowId) => {
     const open = await openSwitcher.getValue();
@@ -173,6 +178,18 @@ export function listenToSwitcher(request: (switcher: SwitcherRequest) => Promise
     const open = await openSwitcher.getValue();
     if (open?.in === 'page' && open.windowId === windowId && open.tabId !== tabId) await closeSwitcher(open);
   });
+}
+
+/**
+ * The tabs of a switcher that had nothing to show as it opened (no address, no title: a tab just made, on macOS), as
+ * Chrome gives them now. Chrome can fill them in between reading the tabs and the switcher being there to hear of it
+ * (tabs.onUpdated): read again once it is, they never stay empty rows. Only those tabs: the switcher's opening never
+ * waits for them.
+ */
+async function blankTabsNow(snapshot: SwitcherSnapshot): Promise<TabText[]> {
+  const blank = snapshot.tabs.filter((tab) => !tab.title && !tab.url);
+  const now = await Promise.all(blank.map((tab) => browser.tabs.get(tab.id).catch(() => undefined)));
+  return now.flatMap((tab) => (tab?.id === undefined ? [] : [{ tabId: tab.id, ...tabText(tab) }]));
 }
 
 /**
@@ -279,6 +296,10 @@ async function showInPage(current: Browser.tabs.Tab, snapshot: SwitcherSnapshot,
     await openSwitcher.setValue(null);
     return false;
   }
+  // Not waited for: the switcher is there already.
+  void blankTabsNow(snapshot).then((texts) => {
+    if (texts.length > 0) answered(sendMessage('tabsChanged', texts, tabId)).catch(() => undefined);
+  });
   if (picture) {
     await picture;
     await answered(sendMessage('pictureTaken', undefined, tabId)).catch(() => undefined);

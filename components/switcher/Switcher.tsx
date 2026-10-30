@@ -45,8 +45,8 @@ export interface SwitcherProps {
   previews: Accessor<Record<number, string>>;
   /** The page's picture is taken (snapshot.waitForPicture): the switcher can show. */
   pictureTaken: Accessor<boolean>;
-  /** The last tab whose title or address changed while the switcher is open. */
-  changedTab: Accessor<TabText | undefined>;
+  /** The last tabs whose titles or addresses changed while the switcher is open. */
+  changedTabs: Accessor<TabText[]>;
   onOpen: (tab: SwitcherTab) => void;
   onClose: () => void;
   /** A tab closed from the switcher, and the switcher as it is now (Resume). */
@@ -90,11 +90,15 @@ export function Switcher(props: SwitcherProps): JSX.Element {
   // A tab's title or address changing while the switcher is open: its row shows it, in its place.
   createEffect(
     on(
-      props.changedTab,
+      props.changedTabs,
       (changed) => {
-        if (!changed) return;
+        if (changed.length === 0) return;
+        const now = new Map(changed.map((text) => [text.tabId, text]));
         setTabs((all) =>
-          all.map((tab) => (tab.id === changed.tabId ? { ...tab, title: changed.title, url: changed.url } : tab)),
+          all.map((tab) => {
+            const text = now.get(tab.id);
+            return text ? { ...tab, title: text.title, url: text.url } : tab;
+          }),
         );
       },
       { defer: true },
