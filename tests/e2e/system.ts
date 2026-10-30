@@ -74,10 +74,13 @@ const KEYS = {
   Alt: { x11: 'Alt_L', windows: 0x12, mac: 'option' },
   Control: { x11: 'Control_L', windows: 0x11, mac: 'control' },
   Shift: { x11: 'Shift_L', windows: 0x10, mac: 'shift' },
+  Command: { x11: 'Super_L', windows: 0x5b, mac: 'command' },
   S: { x11: 's', windows: 0x53, mac: 's' },
+  L: { x11: 'l', windows: 0x4c, mac: 'l' },
 } as const;
 type Key = keyof typeof KEYS;
-type Modifier = Exclude<Key, 'S'>;
+type Letter = 'S' | 'L';
+type Modifier = Exclude<Key, Letter>;
 
 /** Presses a modifier and holds it, as the keyboard does, to the window that has the system's focus. */
 export function hold(modifier: Modifier) {
@@ -98,7 +101,7 @@ export function release(modifier: Modifier) {
 }
 
 /** Presses a letter and lets it go, the modifiers held staying held. */
-export function press(letter: Exclude<Key, Modifier>) {
+export function press(letter: Letter) {
   const key = KEYS[letter];
   if (process.platform === 'linux') {
     x11('down', key.x11);
@@ -155,4 +158,12 @@ export async function focusAnotherProgram(): Promise<() => Promise<void>> {
     await close();
     throw error;
   }
+}
+
+/** Puts the keyboard focus in the browser's address bar, as Ctrl+L (Command+L on the Mac) does. */
+export function focusAddressBar() {
+  const modifier = process.platform === 'darwin' ? 'Command' : 'Control';
+  hold(modifier);
+  press('L');
+  release(modifier);
 }

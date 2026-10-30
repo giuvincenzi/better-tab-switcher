@@ -7,7 +7,8 @@
 #                   make dev tabs=N also opens N tabs of real sites (1 to 100), to try the switcher
 #   make lint       check the code's format, lint rules and types
 #   make test       run the unit tests (logic and components)
-#   make e2e        build the extension and run the end-to-end tests in Playwright's Chromium;
+#   make e2e        build the extension and run the end-to-end tests in Playwright's Chromium (on Linux on a virtual
+#                   screen, xvfb-run);
 #                   make e2e category=<name> runs one category, make e2e headed=1 shows the browser,
 #                   make e2e browser=msedge runs them in Microsoft Edge (installed on the PC)
 #   make build      create the zip for the stores in .output/, no upload
@@ -39,8 +40,13 @@ lint:
 test:
 	npm test
 
+# On Linux the tests that use the desktop (tests/e2e/system.ts) need an X11 one of their own, as on GitHub: a virtual
+# screen (xvfb-run, from the xvfb package). Not with headed=1, which shows the browser on the PC's own screen.
+XVFB := $(if $(filter Linux,$(shell uname -s)),$(if $(headed),,xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24"))
+
 e2e:
-	$(if $(headed),HEADED=1) $(if $(browser),E2E_BROWSER=$(browser)) npm run e2e $(if $(category),-- --grep @$(category))
+	$(if $(XVFB),@command -v xvfb-run > /dev/null || { echo "The end-to-end tests need xvfb-run on Linux: sudo apt install xvfb"; exit 1; })
+	$(if $(headed),HEADED=1) $(if $(browser),E2E_BROWSER=$(browser)) $(XVFB) npm run e2e $(if $(category),-- --grep @$(category))
 
 build:
 	npm run zip

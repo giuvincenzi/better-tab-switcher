@@ -1,7 +1,7 @@
 import type { Page, Worker } from '@playwright/test';
 import { expect, test } from './fixtures';
 import { activeTitle, named, openPages, rows, selected, switcherFrame } from './helpers';
-import { focusBrowser, hold, press, release } from './system';
+import { focusAddressBar, focusBrowser, hold, press, release } from './system';
 
 // The extension's own shortcuts, pressed on the system's keyboard: Chrome runs them (commands.onCommand), which
 // Playwright's keys, sent to the page, never do. The browser's window on screen, with the system's focus.
@@ -58,6 +58,28 @@ test.describe('the shortcuts on the keyboard @shortcut', () => {
       release('Shift');
       release(MODIFIER);
     }
+    await expect.poll(() => activeTitle(serviceWorker)).toBe('alpha');
+  });
+
+  test('stays open when the shortcut is let go in the address bar, which the page never hears, until a tab is chosen', async ({
+    context,
+    serviceWorker,
+  }) => {
+    const [, , current] = await openPages(context, ['alpha', 'beta', 'gamma']);
+    const page = current as Page;
+    await focusBrowser(context, await windowOf(serviceWorker));
+    focusAddressBar();
+    await expect.poll(() => page.evaluate(() => document.hasFocus())).toBe(false);
+    hold(MODIFIER);
+    try {
+      press('S');
+      await frameIn(page);
+      await expect(selected(page)).toHaveAccessibleName(named('beta'));
+    } finally {
+      release(MODIFIER);
+    }
+    // Still open: had it opened the selected tab on letting go, beta would be in front and alpha out of reach.
+    await rows(page).filter({ hasText: 'alpha' }).click();
     await expect.poll(() => activeTitle(serviceWorker)).toBe('alpha');
   });
 });

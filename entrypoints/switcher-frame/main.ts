@@ -26,8 +26,8 @@ onMessage('closeSwitcher', close);
 onMessage('pressKey', ({ data: key }) => handle?.pressKey(key));
 onMessage('previewReady', ({ data: preview }) => handle?.showPreview(preview));
 onMessage('pictureTaken', () => handle?.pictureTaken());
-// The frame lost the focus: to the page (a site can take it while it loads), or to another window or program. The
-// background asks the page which (focusLeft).
+// The frame lost the focus: to the page (a site can take it while it loads), to the browser's address bar, or to
+// another window or program. The background asks the browser which (focusLeft).
 addEventListener('blur', () => {
   if (handle) void sendMessage('focusLeft');
 });

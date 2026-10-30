@@ -107,10 +107,9 @@ test.describe('which tabs the switcher lists @tabs', () => {
       .toEqual({ status: 'loading', address: 'https://slow.test/page' });
     await showSwitcher(serviceWorker, 'next', 'icon');
     await expect(rows(page)).toHaveCount(3);
-    // Its title, as Chrome gives it while loading, is the address too.
-    await expect(rows(page).filter({ hasText: 'slow.test' })).toHaveAccessibleName(
-      'https://slow.test/page, slow.test/page',
-    );
+    // Its title is the browser's while it loads (the address in Chrome, the site in Microsoft Edge); its address is the
+    // one it is loading.
+    await expect(rows(page).filter({ hasText: 'slow.test' })).toHaveAccessibleName(/, slow\.test\/page$/);
     answer();
   });
 

@@ -65,6 +65,13 @@ export async function launchRealBrowser({
     // Playwright's Chromium is not known to it: as Playwright does, on Linux the pages are not isolated from each other
     // (a matter of security, not of what the extension or the pages do).
     ...(process.platform === 'linux' ? ['--no-sandbox'] : []),
+    // On Linux, X11 even on a Wayland desktop (WSL's): the tests give its windows the focus and the keys with X11's
+    // own input (tests/e2e/x11.py).
+    ...(process.platform === 'linux' ? ['--ozone-platform=x11'] : []),
+    // On Windows, Chrome pauses the pages of a window it thinks other windows cover. A machine with no screen of its own
+    // (GitHub's) makes it think so of a window in plain sight, whose pages then never load: as Playwright does, Chrome
+    // doesn't look for covered windows there.
+    ...(process.platform === 'win32' ? ['--disable-features=CalculateNativeWinOcclusion'] : []),
     ...(headless ? ['--headless'] : []),
     ...(language ? [`--lang=${language}`] : []),
     ...(dark ? ['--force-dark-mode'] : []),
@@ -115,11 +122,18 @@ export async function launchRealBrowser({
   const context = connected.contexts()[0];
   if (!context) throw new Error('The browser has no context to attach to.');
 
+  // Closed as the browser closes itself (Browser.close): on Windows its other processes keep the profile's files open
+  // a moment after the first one is stopped, and the profile couldn't be removed.
   async function close() {
+    const session = await connected.newBrowserCDPSession().catch(() => undefined);
+    await session?.send('Browser.close').catch(() => {});
+    const closedInTime = await Promise.race([exited.then(() => true), delay(10_000).then(() => false)]);
+    if (!closedInTime) {
+      process_.kill();
+      await exited;
+    }
     await connected.close().catch(() => {});
-    process_.kill();
-    await exited;
-    rmSync(profile, { recursive: true, force: true, maxRetries: 5 });
+    rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
   }
   return { context, close, closed: exited, pid: /** @type {number} */ (process_.pid) };
 }

@@ -102,11 +102,10 @@ interface Messages {
   switcherLeft(): void;
   /**
    * Switcher in a page, or its frame's holder → background: the switcher's frame, or the page, lost the focus while the
-   * switcher is shown (the page's blur, its frame's blur). The background asks the page whether it still has it.
+   * switcher is shown (its frame's blur, the page's blur). The background asks the browser whether its window still has
+   * the focus.
    */
   focusLeft(): void;
-  /** Background → holder: whether the page has the focus, in it or in the switcher's frame (document.hasFocus()). */
-  pageHasFocus(): boolean;
   /** Switcher → background: open the settings page. */
   openSettings(): void;
   /** Settings page or switcher → background: save this change (lib/settings/service.ts); gives the settings saved. */
