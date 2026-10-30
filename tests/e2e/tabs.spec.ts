@@ -184,9 +184,9 @@ test.describe('the details of each tab @tabs', () => {
     const box = await dot.boundingBox();
     if (!box) throw new Error('No group color on beta.');
     // Chrome's red for tab groups, in the light theme (styles/theme.css).
-    expect(await colorsAt(page, serviceWorker, [{ x: box.x + box.width / 2, y: box.y + box.height / 2 }])).toEqual([
-      'rgb(217, 48, 37)',
-    ]);
+    await expect
+      .poll(() => colorsAt(page, serviceWorker, [{ x: box.x + box.width / 2, y: box.y + box.height / 2 }]))
+      .toEqual(['rgb(217, 48, 37)']);
     await expect(rows(page).filter({ hasText: 'alpha' }).locator('[style*="--bts-group-"]')).toHaveCount(0);
     await page.keyboard.press('Escape');
     await useSettings(serviceWorker, { details: { groupColor: false } as never });

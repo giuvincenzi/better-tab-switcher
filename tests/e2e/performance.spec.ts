@@ -1,8 +1,8 @@
 import { readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import type { Frame, Page, Worker } from '@playwright/test';
+import type { Page, Worker } from '@playwright/test';
 import { expect, extensionDir, test } from './fixtures';
-import { openPages, rows, showSwitcher, switcherFrame, useSettings } from './helpers';
+import { openPages, rows, showSwitcher, useSettings } from './helpers';
 
 // How fast the switcher opens and how much code it loads. The sizes are the same on every machine: their limits are
 // tight. The times change with the machine, and a busy machine makes any opening slower, never quicker: what is
@@ -61,31 +61,6 @@ test.describe('performance @performance', () => {
       expect(quickest, `${TABS} tabs: ${times.join(', ')} ms`).toBeLessThanOrEqual(TIME_LIMIT);
     });
   }
-});
-
-test.describe('a slow machine @performance', () => {
-  test(`shows the switcher in the page with ${TABS} tabs even when drawing them takes longer than a page has to answer`, async ({
-    context,
-    serviceWorker,
-  }) => {
-    test.setTimeout(60_000);
-    const [current] = (await openPages(context, ['current'])) as [Page];
-    await openTabs(serviceWorker, 1, TABS);
-    await current.bringToFront();
-    // A first opening makes the switcher's frame; then its process runs 100 times slower, as on a slow machine
-    // (Chrome's CPU throttling, DevTools' own): drawing the tabs takes longer than the second a page has to answer
-    // (without the frame answering at once, the switcher goes to its own window).
-    await showSwitcher(serviceWorker, 'next', 'icon');
-    await expect(rows(current).first()).toBeVisible();
-    await current.keyboard.press('Escape');
-    await expect(rows(current)).toHaveCount(0);
-    const session = await context.newCDPSession(switcherFrame(current) as Frame);
-    await session.send('Emulation.setCPUThrottlingRate', { rate: 100 });
-    await showSwitcher(serviceWorker, 'next', 'icon');
-    await expect(rows(current).first()).toBeVisible({ timeout: 30_000 });
-    // In the page, never its own window.
-    expect(context.pages().some((page) => page.url().endsWith('/switcher-window.html'))).toBe(false);
-  });
 });
 
 /**

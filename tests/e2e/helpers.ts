@@ -152,6 +152,8 @@ export const closeWithEscape = (window: Page) => closeBy(window, () => window.ke
 /**
  * The colors on screen at these points of a page (in its CSS pixels), as the user sees them: a real screenshot of the
  * page, its frames included (the switcher's), read by the browser itself (the extension's background decodes it).
+ * Read with expect.poll: a frame paints a moment after its elements are there (the switcher's rows in the DOM, its
+ * panel not yet on screen).
  */
 export async function colorsAt(page: Page, worker: Worker, points: { x: number; y: number }[]): Promise<string[]> {
   const shot = (await page.screenshot()).toString('base64');

@@ -135,10 +135,9 @@ for (const systemDark of [false, true]) {
         const page = await coloredPage(context, saysDark);
         await showSwitcher(serviceWorker);
         await expect(rows(page)).toHaveCount(2);
-        expect(await colorsAt(page, serviceWorker, [await panelPoint(page), { x: 4, y: 4 }])).toEqual([
-          systemDark ? PANEL.dark : PANEL.light,
-          PAGE,
-        ]);
+        await expect
+          .poll(async () => colorsAt(page, serviceWorker, [await panelPoint(page), { x: 4, y: 4 }]))
+          .toEqual([systemDark ? PANEL.dark : PANEL.light, PAGE]);
       });
     }
 
@@ -157,22 +156,24 @@ for (const systemDark of [false, true]) {
       // The window's edges, away from its corners (macOS rounds them, the window isn't there), and the panel's
       // padding: the whole window is the panel.
       const size = await switcherWindow.evaluate(() => ({ width: innerWidth, height: innerHeight }));
-      expect(
-        await colorsAt(switcherWindow, serviceWorker, [
-          { x: size.width / 2, y: 2 },
-          { x: 4, y: size.height / 2 },
-          { x: size.width - 3, y: size.height / 2 },
-        ]),
-      ).toEqual(Array(3).fill(systemDark ? PANEL.dark : PANEL.light));
+      await expect
+        .poll(() =>
+          colorsAt(switcherWindow, serviceWorker, [
+            { x: size.width / 2, y: 2 },
+            { x: 4, y: size.height / 2 },
+            { x: size.width - 3, y: size.height / 2 },
+          ]),
+        )
+        .toEqual(Array(3).fill(systemDark ? PANEL.dark : PANEL.light));
     });
 
     test("gives the settings page the device's theme", async ({ context, extensionId, serviceWorker }) => {
       const settings = await context.newPage();
       await settings.goto(`chrome-extension://${extensionId}/options.html`);
       await expect(settings.getByRole('heading', { name: 'Better Tab Switcher settings' })).toBeVisible();
-      expect(await colorsAt(settings, serviceWorker, [{ x: 2, y: 2 }])).toEqual([
-        systemDark ? SETTINGS_PAGE.dark : SETTINGS_PAGE.light,
-      ]);
+      await expect
+        .poll(() => colorsAt(settings, serviceWorker, [{ x: 2, y: 2 }]))
+        .toEqual([systemDark ? SETTINGS_PAGE.dark : SETTINGS_PAGE.light]);
     });
 
     // The theme chosen in the settings, over the system's other one.
@@ -185,10 +186,9 @@ for (const systemDark of [false, true]) {
       const page = await coloredPage(context, true);
       await showSwitcher(serviceWorker);
       await expect(rows(page)).toHaveCount(2);
-      expect(await colorsAt(page, serviceWorker, [await panelPoint(page), { x: 4, y: 4 }])).toEqual([
-        PANEL[chosen],
-        PAGE,
-      ]);
+      await expect
+        .poll(async () => colorsAt(page, serviceWorker, [await panelPoint(page), { x: 4, y: 4 }]))
+        .toEqual([PANEL[chosen], PAGE]);
     });
   });
 }
