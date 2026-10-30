@@ -15,7 +15,8 @@ export function listenToSettingsChanges(): void {
 /** The last write asked for: the next one waits for it. */
 let lastWrite: Promise<unknown> = Promise.resolve();
 
-function inTurn<T>(write: () => Promise<T>): Promise<T> {
+/** Runs `write` once every write asked for before it is done, failed or not; resolves or fails as it does. */
+export function inTurn<T>(write: () => Promise<T>): Promise<T> {
   const done = lastWrite.then(write);
   lastWrite = done.catch(() => undefined);
   return done;

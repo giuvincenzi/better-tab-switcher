@@ -1,8 +1,17 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
 import { storage } from '#imports';
-import { deleteAllPreviews, deletePreview, loadPreviews, savePreview } from '../../lib/previews/store';
-import { sessionSpace } from './logic-setup';
+import {
+  deleteAllPreviews,
+  loadPreviews,
+  missingBytes,
+  previewsToDelete,
+  type SavedPreview,
+  savePreview,
+} from '../../lib/previews/store';
+
+// The previews kept in memory, deleted when their tab closes, and the oldest going first when the memory is full, on
+// the real browser: tests/e2e/grid.spec.ts.
 
 describe('previews store', () => {
   beforeEach(() => {
@@ -16,19 +25,6 @@ describe('previews store', () => {
     expect(await loadPreviews([])).toEqual({});
   });
 
-  it('keeps them in memory only (storage.session)', async () => {
-    await savePreview(1, 'data:image/webp;base64,AAA');
-    expect(Object.keys(await storage.snapshot('local'))).toEqual([]);
-    expect(Object.keys(await storage.snapshot('session'))).toHaveLength(1);
-  });
-
-  it("deletes a closed tab's preview", async () => {
-    await savePreview(1, 'data:image/webp;base64,AAA');
-    await savePreview(2, 'data:image/webp;base64,BBB');
-    await deletePreview(1);
-    expect(await loadPreviews([1, 2])).toEqual({ 2: 'data:image/webp;base64,BBB' });
-  });
-
   it('deletes them all, and nothing else of the session', async () => {
     await storage.setItem('session:openSwitcher', { in: 'page', tabId: 1, fromWindowId: 1 });
     await savePreview(1, 'data:image/webp;base64,AAA');
@@ -37,57 +33,40 @@ describe('previews store', () => {
     expect(await loadPreviews([1, 2])).toEqual({});
     expect(await storage.getItem('session:openSwitcher')).not.toBeNull();
   });
+});
 
-  describe('when the memory for the session is full', () => {
-    /** A picture as large as the others, different for each tab. */
-    const picture = (tabId: number) => `data:image/webp;base64,${String(tabId).repeat(200)}`;
-    let now = 1000;
+describe('when the memory for the session is full', () => {
+  /** A preview as large as the others, saved at `savedAt`. */
+  const preview = (savedAt: number): SavedPreview => ({ picture: 'data:image/webp;base64,AAAA', savedAt });
+  /** The bytes a preview item takes in Chrome's storage: its key and its value written as JSON. */
+  const bytes = (key: string, value: SavedPreview) => new TextEncoder().encode(key + JSON.stringify(value)).length;
+  /** The session's memory with the previews of tabs 1, 2 and 3, saved in this order. */
+  const session = { 'preview-2': preview(20), 'preview-1': preview(10), 'preview-3': preview(30) };
+  const one = bytes('preview-1', preview(10));
 
-    beforeEach(() => {
-      vi.spyOn(Date, 'now').mockImplementation(() => now++);
-    });
+  it('is not full while the new preview fits', () => {
+    expect(missingBytes('preview-4', preview(40), { inUse: 3 * one, replaced: 0, quota: 4 * one })).toBeLessThanOrEqual(
+      0,
+    );
+  });
 
-    afterEach(() => {
-      sessionSpace();
-      vi.restoreAllMocks();
-    });
+  it("counts a tab's own preview as free when it is taken again", () => {
+    expect(
+      missingBytes('preview-1', preview(40), { inUse: 3 * one, replaced: one, quota: 3 * one }),
+    ).toBeLessThanOrEqual(0);
+    expect(missingBytes('preview-4', preview(40), { inUse: 3 * one, replaced: 0, quota: 3 * one })).toBe(one);
+  });
 
-    /** Room for exactly `count` previews like these. */
-    async function roomFor(count: number) {
-      await savePreview(9, picture(9));
-      const one = await fakeBrowser.storage.session.getBytesInUse(null);
-      await deletePreview(9);
-      sessionSpace(count * one);
-    }
+  it('deletes the oldest previews first', () => {
+    expect(previewsToDelete(session, 'preview-4', one)).toEqual(['preview-1']);
+  });
 
-    it('deletes the oldest previews first, and keeps the new one', async () => {
-      await roomFor(3);
-      for (const tabId of [1, 2, 3]) await savePreview(tabId, picture(tabId));
-      await savePreview(4, picture(4));
-      expect(Object.keys(await loadPreviews([1, 2, 3, 4]))).toEqual(['2', '3', '4']);
-      await savePreview(1, picture(1));
-      expect(Object.keys(await loadPreviews([1, 2, 3, 4]))).toEqual(['1', '3', '4']);
-    });
+  it('deletes as many old previews as the new one needs', () => {
+    expect(previewsToDelete(session, 'preview-4', one + 1)).toEqual(['preview-1', 'preview-2']);
+  });
 
-    it("counts a tab's own preview as free when it is taken again: nothing else is deleted", async () => {
-      await roomFor(3);
-      for (const tabId of [1, 2, 3]) await savePreview(tabId, picture(tabId));
-      await savePreview(1, picture(1));
-      expect(Object.keys(await loadPreviews([1, 2, 3]))).toEqual(['1', '2', '3']);
-    });
-
-    it('deletes as many old previews as the new one needs', async () => {
-      await roomFor(3);
-      for (const tabId of [1, 2, 3]) await savePreview(tabId, picture(tabId));
-      await savePreview(4, `${picture(4)}${'4'.repeat(250)}`);
-      expect(Object.keys(await loadPreviews([1, 2, 3, 4]))).toEqual(['3', '4']);
-    });
-
-    it('never deletes what is not a preview', async () => {
-      await storage.setItem('session:openSwitcher', { in: 'page', tabId: 1, windowId: 1 });
-      await roomFor(3);
-      for (const tabId of [1, 2, 3, 4]) await savePreview(tabId, picture(tabId));
-      expect(await storage.getItem('session:openSwitcher')).not.toBeNull();
-    });
+  it("never deletes the tab's own preview, nor what is not a preview", () => {
+    const others = { ...session, openSwitcher: { in: 'page', tabId: 1, windowId: 1 }, 'preview-9': 'damaged' };
+    expect(previewsToDelete(others, 'preview-1', 10 * one)).toEqual(['preview-2', 'preview-3']);
   });
 });

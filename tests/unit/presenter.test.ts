@@ -69,16 +69,10 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('the switcher in a web page', () => {
-  it('shows its frame over the page, then sends it the tabs, telling it the page has the focus', async () => {
-    await shortcut();
-    expect(world.received.map((m) => [m.type, m.tabId])).toEqual([
-      ['showFrame', 11],
-      ['showSwitcher', 11],
-    ]);
-    expect(firstSnapshot().canSeeRelease).toBe(true);
-  });
+// What the user sees of these on the real browser (the switcher in the page or in its own window, the tabs it lists,
+// the shortcut moving it, the reloaded page, the page that hangs): tests/e2e/switcher.spec.ts and switching.spec.ts.
 
+describe('the switcher in a web page', () => {
   it('gives the switcher, once it is there, the keys the page got while its frame was loading, in order', async () => {
     const altUp = { type: 'keyup', key: 'Alt', altKey: false, ctrlKey: false, metaKey: false, isComposing: false };
     const down = { ...altUp, type: 'keydown', key: 'ArrowDown', altKey: true };
@@ -109,43 +103,14 @@ describe('the switcher in a web page', () => {
     expect(calls.filter(([, , tabId]) => tabId === undefined)).toEqual([]);
   });
 
-  it('opens in the current page with the tabs of its window, the current one first, going the way asked', async () => {
-    await shortcut('previous');
-    const [shown] = sent('showSwitcher');
-    expect(shown?.tabId).toBe(11);
-    const snapshot = shown?.data as SwitcherSnapshot;
-    expect(snapshot.tabs.map((t) => t.id)).toEqual([11, 12]);
-    expect(snapshot.direction).toBe('previous');
-    expect(snapshot.fromIcon).toBe(false);
-    expect(browser.windows.create).not.toHaveBeenCalled();
-  });
-
   it('opens from the toolbar icon to stay open until a tab is chosen', async () => {
     await icon();
     expect(firstSnapshot().fromIcon).toBe(true);
   });
 
-  it("injects the switcher's script into a page that doesn't have it yet, then shows it there", async () => {
-    world.injected.delete(11);
-    await shortcut();
-    expect(browser.scripting.executeScript).toHaveBeenCalledWith(
-      expect.objectContaining({ target: { tabId: 11 }, files: ['/content-scripts/switcher.js'] }),
-    );
-    expect(sent('showSwitcher').at(-1)?.tabId).toBe(11);
-    expect(world.injected.has(11)).toBe(true);
-  });
-
   it('does not inject the script again into a page that already has it', async () => {
     await shortcut();
     expect(browser.scripting.executeScript).not.toHaveBeenCalled();
-  });
-
-  it('moves the selection when the shortcut is pressed again in the same page', async () => {
-    await shortcut();
-    await shortcut('previous');
-    expect(sent('moveSwitcher')).toEqual([{ data: 'previous', tabId: 11 }]);
-    expect(sent('showSwitcher')).toHaveLength(1);
-    expect(sent('closeSwitcher')).toEqual([]);
   });
 
   it('closes the open switcher and opens a new one when the toolbar icon is clicked', async () => {
@@ -154,23 +119,6 @@ describe('the switcher in a web page', () => {
     expect(sent('moveSwitcher')).toEqual([]);
     expect(sent('closeSwitcher')).toEqual([{ data: undefined, tabId: 11 }]);
     expect(sent('showSwitcher').map((m) => m.tabId)).toEqual([11, 11]);
-  });
-
-  it('closes the switcher left open in another tab and opens it in the current one', async () => {
-    await shortcut();
-    world.currentTabId = 21;
-    await shortcut();
-    expect(sent('closeSwitcher')).toEqual([{ data: undefined, tabId: 11 }]);
-    expect(sent('moveSwitcher')).toEqual([]);
-    expect(sent('showSwitcher').at(-1)?.tabId).toBe(21);
-  });
-
-  it('opens a new switcher in a page reloaded since: the old one is gone', async () => {
-    await shortcut();
-    world.injected.delete(11);
-    await shortcut();
-    expect(sent('showSwitcher').map((m) => m.tabId)).toEqual([11, 11]);
-    expect(browser.scripting.executeScript).toHaveBeenCalledTimes(1);
   });
 
   it('puts the holder in at once in a page it never put it in, without asking the page first', async () => {
@@ -231,15 +179,6 @@ describe('a page that hangs (a script that never ends)', () => {
     await settled;
   }
 
-  it('gets the switcher in a window of its own, and never holds up the requests after it', async () => {
-    world.hung.add(11);
-    await waited(shortcut());
-    expect(browser.windows.create).toHaveBeenCalledTimes(1);
-    world.currentTabId = 12;
-    await waited(shortcut());
-    expect(sent('showSwitcher').map((m) => m.tabId)).toEqual([12]);
-  });
-
   it('with a switcher open in it, lets the shortcut open a new one instead of waiting for it', async () => {
     await shortcut();
     world.hung.add(11);
@@ -290,49 +229,15 @@ describe('a page that hangs (a script that never ends)', () => {
     expect(browser.scripting.executeScript).not.toHaveBeenCalled();
     expect(browser.windows.create).toHaveBeenCalledTimes(1);
   });
-
-  it('tells the page it gave up on to close what it shows, so nothing shows there once it answers again', async () => {
-    world.hung.add(11);
-    await waited(shortcut());
-    const toThePage = messages.sendMessage.mock.calls.filter(([, , tabId]) => tabId === 11).map(([type]) => type);
-    expect(toThePage).toEqual(['showFrame', 'closeSwitcher', 'hideFrame']);
-  });
 });
 
+// Where the switcher can show in a page: tests/unit/placement.test.ts.
 describe('the switcher in a window of its own', () => {
-  it.each([
-    ['a browser page', 'chrome://settings/'],
-    ['the new tab page', 'chrome://newtab/'],
-    ['a local file', 'file:///home/me/report.pdf'],
-    ['the Chrome Web Store', 'https://chromewebstore.google.com/detail/x'],
-  ])('opens in its own window on %s, without trying the page', async (_, url) => {
-    world.tabs = [tab(11, 1, { url }), tab(12, 1)];
-    await shortcut();
-    expect(browser.windows.create).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'popup', focused: true, url: browser.runtime.getURL('/switcher-window.html') }),
-    );
-    expect(browser.scripting.executeScript).not.toHaveBeenCalled();
-    expect(sent('showSwitcher')).toEqual([]);
-  });
-
   it('opens in its own window on a web page that keeps the script out', async () => {
     world.injected.delete(11);
     world.refusing.add(11);
     await shortcut();
     expect(browser.windows.create).toHaveBeenCalledTimes(1);
-  });
-
-  it('opens in the middle of the window the user is in', async () => {
-    world.tabs = [tab(11, 1, { url: 'chrome://settings/' })];
-    await shortcut();
-    const created = vi.mocked(browser.windows.create).mock.calls[0]?.[0];
-    const { left = 0, top = 0, width = 0, height = 0 } = created ?? {};
-    expect(width).toBeGreaterThan(0);
-    expect(height).toBeGreaterThan(0);
-    expect(width).toBeLessThanOrEqual(userWindow.width);
-    expect(height).toBeLessThanOrEqual(userWindow.height);
-    expect(Math.abs(left + width / 2 - (userWindow.left + userWindow.width / 2))).toBeLessThanOrEqual(1);
-    expect(Math.abs(top + height / 2 - (userWindow.top + userWindow.height / 2))).toBeLessThanOrEqual(1);
   });
 
   it('gives its window the tabs once, with the place of the window it is in the middle of', async () => {
@@ -345,14 +250,6 @@ describe('the switcher in a window of its own', () => {
     expect(await ask('getSnapshot')).toBeNull();
   });
 
-  it('opens nowhere on a browser page when "use a window" is turned off', async () => {
-    await saveSettings({ chromePagesWindow: false });
-    world.tabs = [tab(11, 1, { url: 'chrome://settings/' })];
-    await shortcut();
-    expect(browser.windows.create).not.toHaveBeenCalled();
-    expect(messages.sendMessage).not.toHaveBeenCalled();
-  });
-
   it('leaves no switcher behind on a page that keeps the script out when "use a window" is turned off', async () => {
     await saveSettings({ chromePagesWindow: false });
     world.injected.delete(11);
@@ -363,15 +260,6 @@ describe('the switcher in a window of its own', () => {
     await shortcut();
     expect(messages.sendMessage.mock.calls.filter(([, , tabId]) => tabId === 11)).toEqual([]);
     expect(sent('showSwitcher').map((m) => m.tabId)).toEqual([12]);
-  });
-
-  it('moves the selection when the shortcut is pressed again in its window', async () => {
-    world.tabs = [tab(11, 1, { url: 'chrome://settings/' }), tab(12, 1)];
-    await shortcut();
-    await shortcut('previous');
-    expect(sent('moveSwitcher')).toEqual([{ data: 'previous', tabId: FIRST_POPUP_TAB_ID }]);
-    expect(browser.windows.create).toHaveBeenCalledTimes(1);
-    expect(browser.windows.remove).not.toHaveBeenCalled();
   });
 
   it('closes its window and opens a new switcher when the shortcut is pressed in another window', async () => {
@@ -451,11 +339,6 @@ describe('new previews', () => {
     expect(sent('previewReady')).toEqual([
       { data: { tabId: 12, picture: 'data:image/webp;base64,BBB' }, tabId: FIRST_POPUP_TAB_ID },
     ]);
-  });
-
-  it('go nowhere when no switcher is open', async () => {
-    await showPreview(12, 'data:image/webp;base64,BBB');
-    expect(messages.sendMessage).not.toHaveBeenCalled();
   });
 
   it('reach a switcher that is still being shown', async () => {

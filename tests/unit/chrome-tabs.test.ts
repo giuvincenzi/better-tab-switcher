@@ -1,42 +1,22 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { browser, fakeBrowser } from '#imports';
-import { readTabs } from '../../lib/tabs/chrome-tabs';
+import { fakeBrowser } from '#imports';
+import { listedTabs, readTabs } from '../../lib/tabs/chrome-tabs';
+import type { GroupColor } from '../../lib/tabs/tabs';
 import { fakeChrome, newWorld, normalWindow, tab, type World } from './background-world';
 
-let world: World;
-
-beforeEach(() => {
-  fakeBrowser.reset();
-  world = newWorld({ windows: [normalWindow(1), normalWindow(2)] });
-  fakeChrome(world);
-});
-
-afterEach(() => {
-  vi.restoreAllMocks();
-});
-
-async function readOne(more: Parameters<typeof tab>[2]) {
-  world.tabs = [tab(11, 1, more)];
-  const { tabs } = await readTabs();
-  return tabs[0];
-}
+// Which tabs the switcher lists, read from the real browser: tests/e2e/tabs.spec.ts and switcher.spec.ts.
 
 describe('readTabs', () => {
-  it("reads the tabs and windows of the normal windows only, never the switcher's own window", async () => {
-    world.windows.push({ ...normalWindow(900), type: 'popup' });
-    world.tabs = [tab(11, 1), tab(21, 2), tab(9000, 900, { url: 'chrome-extension://id/switcher-window.html' })];
-    const { tabs, windowIds } = await readTabs();
-    expect(tabs.map((t) => t.id)).toEqual([11, 21]);
-    expect(windowIds).toEqual([1, 2]);
+  let world: World;
+
+  beforeEach(() => {
+    fakeBrowser.reset();
+    world = newWorld({ windows: [normalWindow(1), normalWindow(2)] });
+    fakeChrome(world);
   });
 
-  it("counts the current tab of a site's popup window as a tab of the window it was opened from", async () => {
-    world.windows.push({ ...normalWindow(50), type: 'popup' });
-    const signIn = tab(51, 50, { openerTabId: 21 });
-    world.tabs = [tab(11, 1), tab(21, 2), signIn];
-    const { tabs, currentWindowId } = await readTabs(signIn);
-    expect(currentWindowId).toBe(2);
-    expect(tabs.find((t) => t.id === 51)?.windowId).toBe(2);
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('counts the current tab of a window opened by no tab (an installed web app) in the normal window used last', async () => {
@@ -48,55 +28,54 @@ describe('readTabs', () => {
     expect(currentWindowId).toBe(2);
     expect(tabs.find((t) => t.id === 51)?.windowId).toBe(2);
   });
+});
 
-  it("never counts the switcher's own window, even when it is the current one", async () => {
-    world.windows.push({ ...normalWindow(900), type: 'popup' });
-    const own = tab(9000, 900, { url: browser.runtime.getURL('/switcher-window.html') });
-    world.tabs = [tab(11, 1), own];
-    const { tabs } = await readTabs(own);
-    expect(tabs.map((t) => t.id)).toEqual([11]);
+describe('listedTabs', () => {
+  const noGroups = new Map<number, GroupColor>();
+  const windows = new Set([1]);
+  /** What the switcher shows of one tab of window 1, as Chrome gives it. */
+  const listed = (more: Parameters<typeof tab>[2]) => listedTabs([tab(11, 1, more)], windows, noGroups)[0];
+
+  it('lists the tabs of the windows asked, leaving out a tab without an id', () => {
+    const tabs = [tab(11, 1), tab(12, 1, { id: undefined }), tab(21, 2)];
+    expect(listedTabs(tabs, windows, noGroups).map((t) => t.id)).toEqual([11]);
   });
 
-  it('reads the current tab of a normal window as it is, in its own window', async () => {
-    world.tabs = [tab(11, 1), tab(21, 2)];
-    const { currentWindowId } = await readTabs(world.tabs[1]);
-    expect(currentWindowId).toBe(2);
+  it('gives the address as the title of a tab without one', () => {
+    expect(listed({ title: '' })?.title).toBe('https://example.com/11');
   });
 
-  it('leaves out a tab without an id', async () => {
-    world.tabs = [tab(11, 1), tab(12, 1, { id: undefined })];
-    expect((await readTabs()).tabs.map((t) => t.id)).toEqual([11]);
-  });
-
-  it('gives the address as the title of a tab without one', async () => {
-    expect((await readOne({ title: '' }))?.title).toBe('https://example.com/11');
-  });
-
-  it('gives the address a tab is loading when it has none yet', async () => {
-    const loading = await readOne({ url: undefined, title: '', pendingUrl: 'https://example.com/next' });
+  it('gives the address a tab is loading when it has not shown its page yet (Chrome gives an empty url)', () => {
+    const loading = listed({ url: '', title: '', pendingUrl: 'https://example.com/next' });
     expect(loading?.url).toBe('https://example.com/next');
     expect(loading?.title).toBe('https://example.com/next');
   });
 
-  it('marks as sleeping a tab Chrome discarded or froze', async () => {
-    expect((await readOne({ discarded: true }))?.sleeping).toBe(true);
-    expect((await readOne({ frozen: true }))?.sleeping).toBe(true);
-    expect((await readOne({}))?.sleeping).toBe(false);
+  it('marks as sleeping a tab Chrome discarded or froze', () => {
+    expect(listed({ discarded: true })?.sleeping).toBe(true);
+    expect(listed({ frozen: true })?.sleeping).toBe(true);
+    expect(listed({})?.sleeping).toBe(false);
   });
 
-  it("gives a tab in a group its group's color, and none to a tab in no group", async () => {
-    vi.mocked(browser.tabGroups.query).mockResolvedValue([
-      { id: 5, color: 'cyan', collapsed: false, windowId: 1, title: 'Work' },
-    ] as never);
-    world.tabs = [tab(11, 1, { groupId: 5 }), tab(12, 1)];
-    const { tabs } = await readTabs();
-    expect(tabs[0]?.groupColor).toBe('cyan');
-    expect(tabs[1]).not.toHaveProperty('groupColor');
+  it("gives a tab in a group its group's color, and none to a tab in no group", () => {
+    const colors = new Map<number, GroupColor>([[5, 'cyan']]);
+    const [grouped, alone] = listedTabs([tab(11, 1, { groupId: 5 }), tab(12, 1)], windows, colors);
+    expect(grouped?.groupColor).toBe('cyan');
+    expect(alone).not.toHaveProperty('groupColor');
   });
 
-  it('keeps what the switcher shows of a tab', async () => {
-    const read = await readOne({ pinned: true, audible: true, incognito: true, lastAccessed: 1234, title: 'Mail' });
-    expect(read).toMatchObject({ id: 11, windowId: 1, title: 'Mail', pinned: true, audible: true, incognito: true });
-    expect(read?.lastAccessed).toBe(1234);
+  it('keeps what the switcher shows of a tab', () => {
+    const read = listed({ pinned: true, audible: true, incognito: true, lastAccessed: 1234, title: 'Mail' });
+    expect(read).toEqual({
+      id: 11,
+      windowId: 1,
+      title: 'Mail',
+      url: 'https://example.com/11',
+      pinned: true,
+      audible: true,
+      sleeping: false,
+      incognito: true,
+      lastAccessed: 1234,
+    });
   });
 });

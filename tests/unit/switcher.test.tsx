@@ -37,8 +37,8 @@ function open(settings: Partial<Settings> = {}, more: Partial<SwitcherSnapshot &
     waitForPicture: false,
     ...more,
   };
-  const [moves, setMoves] = createSignal<{ direction: Direction; count: number }>({ direction: 'next', count: 0 });
-  const [pageKeys, setPageKeys] = createSignal<{ key: Key; count: number }>();
+  const [moves] = createSignal<{ direction: Direction; count: number }>({ direction: 'next', count: 0 });
+  const [pageKeys] = createSignal<{ key: Key; count: number }>();
   const [previews, setPreviews] = createSignal<Record<number, string>>({});
   const [pictureTaken, setPictureTaken] = createSignal(false);
   const handlers = {
@@ -66,25 +66,15 @@ function open(settings: Partial<Settings> = {}, more: Partial<SwitcherSnapshot &
   );
   const press = (key: string, type: 'keydown' | 'keyup' = 'keydown') =>
     window.dispatchEvent(new KeyboardEvent(type, { key, bubbles: true }));
-  const move = (direction: Direction) => setMoves((m) => ({ direction, count: m.count + 1 }));
-  /** A key the page got and passed on to the switcher (its frame didn't have the focus). */
-  const pageKey = (key: Partial<Key> & Pick<Key, 'type' | 'key'>) =>
-    setPageKeys((last) => ({
-      key: { altKey: false, ctrlKey: false, metaKey: false, isComposing: false, ...key },
-      count: (last?.count ?? 0) + 1,
-    }));
-  return { host, handlers, press, move, pageKey, setPreviews, takePicture: () => setPictureTaken(true) };
+  return { host, handlers, press, setPreviews, takePicture: () => setPictureTaken(true) };
 }
 
 const selectedTitle = (host: HTMLElement) => host.querySelector('[aria-selected="true"]')?.getAttribute('aria-label');
 
-describe('Switcher', () => {
-  it('selects the previous tab and shows the keys with the real shortcuts', () => {
-    const { host } = open();
-    expect(host.querySelectorAll('[role="option"]')).toHaveLength(4);
-    expect(selectedTitle(host)).toBe('Inbox (3), example.com/2');
-  });
+// What the user does with the switcher on the real browser (the keys, the search, the toolbar, closing tabs, the delay):
+// tests/e2e/switcher.spec.ts, switching.spec.ts, search.spec.ts, settings.spec.ts and grid.spec.ts.
 
+describe('Switcher', () => {
   it('stays open on release with Stay open, from the toolbar icon, or when it cannot see the release', () => {
     for (const [settings, more] of [
       [{ stayOpen: true }, {}],
@@ -98,106 +88,12 @@ describe('Switcher', () => {
     }
   });
 
-  it('opens the selected tab when Alt is released', () => {
-    const { handlers, press } = open();
-    press('Alt', 'keyup');
-    expect(handlers.onOpen).toHaveBeenCalledWith(tabs[1]);
-  });
-
-  it('takes the keys the page passes on: an arrow moves, and letting go of Alt opens the selected tab', () => {
-    const { host, handlers, pageKey } = open();
-    pageKey({ type: 'keydown', key: 'ArrowDown', altKey: true });
-    expect(selectedTitle(host)).toBe('Q4 planning, example.com/3');
-    pageKey({ type: 'keyup', key: 'Alt' });
-    expect(handlers.onOpen).toHaveBeenCalledWith(tabs[2]);
-  });
-
-  it('moves when the shortcut is pressed again, and with the arrows', () => {
-    const { host, move, press, handlers } = open();
-    move('next');
-    expect(selectedTitle(host)).toBe('Q4 planning, example.com/3');
-    press('ArrowDown');
-    expect(selectedTitle(host)).toBe('Running plan, example.com/4');
-    move('previous');
-    press('Enter');
-    expect(handlers.onOpen).toHaveBeenCalledWith(tabs[2]);
-  });
-
-  it('closes on Esc', () => {
-    const { handlers, press } = open();
-    press('Escape');
-    expect(handlers.onClose).toHaveBeenCalledOnce();
-    expect(handlers.onOpen).not.toHaveBeenCalled();
-  });
-
   it('shows the toolbar with its search field (the default), without the focus', () => {
     const { host } = open();
     const field = host.querySelector('[role="toolbar"] input[type="search"]') as HTMLInputElement;
     expect(field).not.toBeNull();
     expect(document.activeElement).not.toBe(field);
     expect(selectedTitle(host)).toBe('Inbox (3), example.com/2');
-  });
-
-  it('opens the selected tab on release with the toolbar, as without it', () => {
-    const { handlers, press } = open();
-    press('Alt', 'keyup');
-    expect(handlers.onOpen).toHaveBeenCalledWith(tabs[1]);
-  });
-
-  it('stays open once the search field is clicked', () => {
-    const { host, handlers, press } = open();
-    (host.querySelector('input[type="search"]') as HTMLInputElement).focus();
-    press('Alt', 'keyup');
-    expect(handlers.onOpen).not.toHaveBeenCalled();
-  });
-
-  it('shows the tabs that match what is typed, with the match highlighted', () => {
-    const { host } = open();
-    const field = host.querySelector('input[type="search"]') as HTMLInputElement;
-    field.focus();
-    field.value = 'plan';
-    field.dispatchEvent(new InputEvent('input', { bubbles: true }));
-    const shown = [...host.querySelectorAll('[role="option"]')].map((row) => row.getAttribute('aria-label'));
-    expect(shown).toEqual(['Q4 planning, example.com/3', 'Running plan, example.com/4']);
-    expect([...host.querySelectorAll('mark')].map((m) => m.textContent)).toEqual(['plan', 'plan']);
-  });
-
-  it('says so when nothing matches', () => {
-    const { host } = open();
-    const field = host.querySelector('input[type="search"]') as HTMLInputElement;
-    field.focus();
-    field.value = 'passport';
-    field.dispatchEvent(new InputEvent('input', { bubbles: true }));
-    expect(host.querySelectorAll('[role="option"]')).toHaveLength(0);
-    expect(host.textContent).toContain('No tabs match your search.');
-  });
-
-  it('shows only the tabs with the toolbar off: no search field, no buttons', () => {
-    const { host } = open({ toolbar: false });
-    expect(host.querySelector('[role="toolbar"]')).toBeNull();
-    expect(host.querySelector('input[type="search"]')).toBeNull();
-    expect(host.querySelectorAll('[role="option"]')).toHaveLength(4);
-  });
-
-  it('closes a tab and keeps the list', () => {
-    const { host, handlers } = open();
-    (host.querySelectorAll('button[aria-label="Close tab"]')[3] as HTMLButtonElement).click();
-    expect(handlers.onCloseTab).toHaveBeenCalledWith(tabs[3], expect.anything());
-    expect(host.querySelectorAll('[role="option"]')).toHaveLength(3);
-    expect(handlers.onClose).not.toHaveBeenCalled();
-  });
-
-  it('stays hidden for the delay, so a quick tap never shows it', async () => {
-    const { host, handlers, press } = open({ delayMs: 200 });
-    const backdrop = host.firstElementChild as HTMLElement;
-    expect(getComputedStyle(backdrop).visibility).toBe('hidden');
-    press('Alt', 'keyup');
-    expect(handlers.onOpen).toHaveBeenCalledWith(tabs[1]);
-    dispose?.();
-    const later = open({ delayMs: 50 });
-    await vi.waitFor(() =>
-      expect(getComputedStyle(later.host.firstElementChild as HTMLElement).visibility).toBe('visible'),
-    );
   });
 
   it("stays hidden until the page's picture is taken, so it is not in it", async () => {
@@ -334,21 +230,6 @@ describe('Switcher in the grid', () => {
     await page.viewport(1280, 800);
   });
 
-  it('fits as many tiles as the page is wide, and moves between rows with up and down', async () => {
-    // Two tiles across (lib/switcher/sizes.ts): 208 px each, with the switcher's margins and padding.
-    await page.viewport(600, 800);
-    const { host, press } = open({ view: 'grid' });
-    expect(selectedTitle(host)).toBe('Inbox (3), example.com/2');
-    press('ArrowDown');
-    expect(selectedTitle(host)).toBe('Running plan, example.com/4');
-    press('ArrowLeft');
-    expect(selectedTitle(host)).toBe('Q4 planning, example.com/3');
-    press('ArrowUp');
-    expect(selectedTitle(host)).toBe('Pull request #12, example.com/1');
-    press('ArrowRight');
-    expect(selectedTitle(host)).toBe('Inbox (3), example.com/2');
-  });
-
   it("shows the site's icon until the tab's picture arrives", () => {
     const { host, setPreviews } = open({ view: 'grid' });
     const tile = () => host.querySelector('[aria-label="Q4 planning, example.com/3"]') as HTMLElement;
@@ -356,15 +237,6 @@ describe('Switcher in the grid', () => {
     expect(tile().querySelectorAll('img[src*="_favicon"]')).toHaveLength(2);
     setPreviews({ 3: 'data:image/webp;base64,UklGRg==' });
     expect(tile().querySelector('img[src^="data:"]')).not.toBeNull();
-  });
-
-  it("shows only the sites' icons, and the selected tab's title under them, with Show Icons", () => {
-    const { host, setPreviews } = open({ view: 'grid', gridShow: 'icons' });
-    setPreviews({ 3: 'data:image/webp;base64,UklGRg==' });
-    expect(host.querySelector('img[src^="data:"]')).toBeNull();
-    expect(host.querySelectorAll('[role="option"] img[src*="_favicon"]')).toHaveLength(4);
-    expect(host.textContent).toContain('Inbox (3)');
-    expect(host.textContent).not.toContain('Q4 planning');
   });
 });
 
@@ -438,12 +310,6 @@ describe('Switcher toolbar', () => {
     const { host } = open({ view: 'grid', gridShow: 'icons' });
     expect(button(host, 'Website address')).toBeNull();
     expect(button(host, 'Last used')).toBeNull();
-  });
-
-  it('opens the settings page', () => {
-    const { host, handlers } = open();
-    button(host, 'All settings').click();
-    expect(handlers.onSettings).toHaveBeenCalledOnce();
   });
 
   it('leaves the keyboard on the tabs when a button is clicked', () => {

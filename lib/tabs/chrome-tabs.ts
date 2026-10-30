@@ -17,9 +17,7 @@ export async function readTabs(
   ]);
   const colors = new Map(groups.map((group) => [group.id, group.color as GroupColor]));
   const normal = new Set(windows.map((w) => w.id));
-  const read = tabs
-    .filter((tab) => tab.id !== undefined && normal.has(tab.windowId))
-    .map((tab) => toTabInfo(tab, colors));
+  const read = listedTabs(tabs, normal, colors);
   let currentWindowId = current?.windowId;
   if (current?.id !== undefined && !normal.has(current.windowId) && !isOwnPage(current)) {
     const opener = tabs.find((tab) => tab.id === current.openerTabId && normal.has(tab.windowId));
@@ -31,7 +29,7 @@ export async function readTabs(
       ));
     if (home !== undefined) {
       currentWindowId = home;
-      read.push({ ...toTabInfo(current, colors), windowId: home });
+      read.push({ ...tabInfo(current, colors), windowId: home });
     }
   }
   return { tabs: read, windowIds: windows.flatMap((w) => (w.id === undefined ? [] : [w.id])), currentWindowId };
@@ -50,7 +48,19 @@ function isOwnPage(tab: Browser.tabs.Tab): boolean {
   return addressOf(tab).startsWith(browser.runtime.getURL('/'));
 }
 
-function toTabInfo(tab: Browser.tabs.Tab, colors: Map<number, GroupColor>): TabInfo {
+/**
+ * What the switcher shows of the tabs in these windows (`windowIds`), as Chrome gives them: a tab without an id (one
+ * Chrome is still making) is left out. `colors` has the color of each tab group, by its id.
+ */
+export function listedTabs(
+  tabs: readonly Browser.tabs.Tab[],
+  windowIds: ReadonlySet<number | undefined>,
+  colors: ReadonlyMap<number, GroupColor>,
+): TabInfo[] {
+  return tabs.filter((tab) => tab.id !== undefined && windowIds.has(tab.windowId)).map((tab) => tabInfo(tab, colors));
+}
+
+function tabInfo(tab: Browser.tabs.Tab, colors: ReadonlyMap<number, GroupColor>): TabInfo {
   const url = addressOf(tab);
   const info: TabInfo = {
     id: tab.id as number,

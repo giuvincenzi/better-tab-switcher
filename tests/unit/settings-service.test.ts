@@ -1,46 +1,51 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fakeBrowser } from '#imports';
-import { listenToSettingsChanges } from '../../lib/settings/service';
-import { defaultSettings } from '../../lib/settings/settings';
-import { loadSettings } from '../../lib/settings/store';
+import { describe, expect, it } from 'vitest';
+import { inTurn } from '../../lib/settings/service';
 
-// The messages the settings page and the switcher send the background: the handlers it sets up, called as they are.
-const messages = await vi.hoisted(async () => (await import('./background-world')).fakeMessages());
-vi.mock('../../lib/messages', () => ({ sendMessage: messages.sendMessage, onMessage: messages.onMessage }));
+// The background's writes of the settings, one after the other (lib/settings/service.ts). Two pages saving at the same
+// moment on the real browser: tests/e2e/settings.spec.ts.
 
-beforeEach(() => {
-  fakeBrowser.reset();
-  messages.handlers.clear();
-  listenToSettingsChanges();
-});
+/** Lets the promises already settled run their callbacks. */
+const settled = () => new Promise((resolve) => setTimeout(resolve));
 
-describe('the settings changed from the pages', () => {
-  it('keeps both of two changes saved at the same moment from two pages', async () => {
-    await Promise.all([
-      messages.ask('saveSettings', { compact: true }),
-      messages.ask('saveSettings', { toolbar: false }),
-      messages.ask('saveSettings', { details: { address: false } }),
-      messages.ask('saveSettings', { details: { lastUsed: false } }),
-    ]);
-    const settings = await loadSettings();
-    expect([settings.compact, settings.toolbar, settings.details.address, settings.details.lastUsed]).toEqual([
-      true,
-      false,
-      false,
-      false,
-    ]);
+/** A write that ends when the test says so, noting in `log` when it starts and ends. */
+function heldWrite(name: string, log: string[]) {
+  let end: (fail: boolean) => void = () => {};
+  const write = () =>
+    new Promise<string>((resolve, reject) => {
+      log.push(`${name} started`);
+      end = (fail) => {
+        log.push(`${name} ended`);
+        if (fail) reject(new Error(`${name} failed`));
+        else resolve(name);
+      };
+    });
+  return { write, finish: (fail = false) => end(fail) };
+}
+
+describe('the settings written in turn', () => {
+  it('starts each write once the one asked for before it is done, in the order they come', async () => {
+    const log: string[] = [];
+    const change = heldWrite('change', log);
+    const restore = heldWrite('restore', log);
+    const changed = inTurn(change.write);
+    const restored = inTurn(restore.write);
+    await settled();
+    expect(log).toEqual(['change started']);
+    change.finish();
+    expect(await changed).toBe('change');
+    await settled();
+    restore.finish();
+    expect(await restored).toBe('restore');
+    expect(log).toEqual(['change started', 'change ended', 'restore started', 'restore ended']);
   });
 
-  it('applies a change and a restore in the order they come', async () => {
-    await Promise.all([
-      messages.ask('saveSettings', { theme: 'dark' }),
-      messages.ask('restoreDefaultSettings'),
-      messages.ask('saveSettings', { compact: true }),
-    ]);
-    expect(await loadSettings()).toEqual({ ...defaultSettings, compact: true });
-  });
-
-  it('gives back the settings as saved', async () => {
-    expect(await messages.ask('saveSettings', { view: 'grid' })).toEqual({ ...defaultSettings, view: 'grid' });
+  it('goes on with the next write after one that failed, which fails alone', async () => {
+    const failing = heldWrite('change', []);
+    const failed = inTurn(failing.write);
+    const next = inTurn(async () => 'next');
+    await settled();
+    failing.finish(true);
+    await expect(failed).rejects.toThrow('change failed');
+    expect(await next).toBe('next');
   });
 });

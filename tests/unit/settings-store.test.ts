@@ -34,14 +34,6 @@ describe('settings store', () => {
     expect(await loadSettings()).toEqual(defaultSettings);
   });
 
-  it('tells the watchers about a change', async () => {
-    const onChange = vi.fn();
-    const stop = watchSettings(onChange);
-    await saveSettings({ theme: 'light' });
-    await vi.waitFor(() => expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ theme: 'light' })));
-    stop();
-  });
-
   it('reads the settings where every earlier version saved them', async () => {
     await storage.setItem('local:settings', { theme: 'dark', details: { address: false } });
     const settings = await loadSettings();
@@ -82,15 +74,6 @@ describe('settings store', () => {
     await saveSettings({ compact: true });
     expect(await loadSettings()).toEqual({ ...defaultSettings, theme: 'dark', compact: true });
     expect(await storage.getItem('local:settings')).toEqual({ ...defaultSettings, theme: 'dark', compact: true });
-  });
-
-  it('tells the watchers the defaults when the settings are restored', async () => {
-    await saveSettings({ theme: 'dark', details: { address: false } });
-    const onChange = vi.fn();
-    const stop = watchSettings(onChange);
-    await restoreDefaultSettings();
-    await vi.waitFor(() => expect(onChange).toHaveBeenLastCalledWith(defaultSettings));
-    stop();
   });
 
   it('tells the watchers valid settings even when damaged data is saved by someone else', async () => {

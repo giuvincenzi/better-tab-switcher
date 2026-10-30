@@ -153,25 +153,13 @@ describe('Switcher in the grid of icons', () => {
   /** The selected tab's name under the icons: shown, not read (screen readers have it from the selected icon). */
   const nameUnder = (host: HTMLElement) => listbox(host).nextElementSibling as HTMLElement | null;
 
-  it("shows the selected tab's title under the icons, following the selection, hidden from screen readers", () => {
-    const { host, press } = openSwitcher({ view: 'grid', gridShow: 'icons' });
-    expect(nameUnder(host)?.textContent).toBe('Inbox (3)');
-    expect(nameUnder(host)?.getAttribute('aria-hidden')).toBe('true');
-    press('ArrowRight');
-    expect(nameUnder(host)?.textContent).toBe('Q4 planning');
-  });
+  // The title under the icons following the selection, and each icon's name, on the real browser:
+  // tests/e2e/grid.spec.ts.
 
   it('shows no title under the icons while the search field is selected', () => {
     const { host } = openSwitcher({ view: 'grid', gridShow: 'icons' });
     typeInSearch(host, 'plan');
     expect(nameUnder(host)).toBeNull();
-  });
-
-  it('names each icon after its tab, as the list does', () => {
-    const { host } = openSwitcher({ view: 'grid', gridShow: 'icons' });
-    expect(options(host).map((icon) => icon.getAttribute('aria-label'))).toEqual(
-      tabs.map((t) => `${t.title}, example.com/${t.id}`),
-    );
   });
 
   it('cuts a long title under the icons, never widening the switcher', () => {

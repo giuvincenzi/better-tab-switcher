@@ -1,7 +1,7 @@
 import { fakeBrowser } from 'wxt/testing/fake-browser';
 
 // What WXT's fake browser doesn't have of storage.session, as Chrome documents it: the bytes in use (each key and its
-// value written as JSON) and the space there is (10 MB). A test can give storage.session less space (sessionSpace).
+// value written as JSON) and the space there is (10 MB).
 const session = fakeBrowser.storage.session as Omit<typeof fakeBrowser.storage.session, 'QUOTA_BYTES'> & {
   QUOTA_BYTES: number;
 };
@@ -15,9 +15,4 @@ session.getBytesInUse = (async (keys?: string | string[] | null) => {
   return bytes;
 }) as typeof session.getBytesInUse;
 
-/** Gives storage.session this many bytes (Chrome's 10 MB when not set). */
-export function sessionSpace(bytes = 10 * 1024 * 1024): void {
-  session.QUOTA_BYTES = bytes;
-}
-
-sessionSpace();
+session.QUOTA_BYTES = 10 * 1024 * 1024;

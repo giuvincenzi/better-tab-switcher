@@ -5,7 +5,7 @@ import { browser, storage } from '#imports';
 const PREFIX = 'preview-';
 
 /** A preview as it is kept: the picture, and when it was saved (the oldest go first when memory is full). */
-interface SavedPreview {
+export interface SavedPreview {
   picture: string;
   savedAt: number;
 }
@@ -33,23 +33,42 @@ function bytesOf(key: string, value: unknown): number {
   return new TextEncoder().encode(key + JSON.stringify(value)).length;
 }
 
+/** The bytes the session's memory lacks for `saved` to take the place of `key`'s item; 0 or less when it fits. */
+export function missingBytes(
+  key: string,
+  saved: SavedPreview,
+  space: { inUse: number; replaced: number; quota: number },
+): number {
+  return space.inUse - space.replaced + bytesOf(key, saved) - space.quota;
+}
+
+/**
+ * The keys of the previews to delete, oldest first, to free `missing` bytes among the items of the session's memory
+ * (`session`, by key): never `key`'s own preview, nor anything that is not a preview.
+ */
+export function previewsToDelete(session: Record<string, unknown>, key: string, missing: number): string[] {
+  const oldestFirst = Object.entries(session)
+    .filter((entry): entry is [string, SavedPreview] => entry[0].startsWith(PREFIX) && entry[0] !== key)
+    .filter(([, value]) => isSavedPreview(value))
+    .sort(([, a], [, b]) => a.savedAt - b.savedAt);
+  const gone: string[] = [];
+  let left = missing;
+  for (const [other, value] of oldestFirst) {
+    if (left <= 0) break;
+    gone.push(other);
+    left -= bytesOf(other, value);
+  }
+  return gone;
+}
+
 /** Deletes the oldest previews, but never `key`'s, until `saved` fits in place of `key`'s preview. */
 async function makeRoom(key: string, saved: SavedPreview): Promise<void> {
   const session = browser.storage.session;
   const [inUse, replaced] = await Promise.all([session.getBytesInUse(null), session.getBytesInUse(key)]);
-  let missing = inUse - replaced + bytesOf(key, saved) - session.QUOTA_BYTES;
+  const missing = missingBytes(key, saved, { inUse, replaced, quota: session.QUOTA_BYTES });
   if (missing <= 0) return;
-  const oldestFirst = Object.entries(await storage.snapshot('session'))
-    .filter((entry): entry is [string, SavedPreview] => entry[0].startsWith(PREFIX) && entry[0] !== key)
-    .filter(([, value]) => isSavedPreview(value))
-    .sort(([, a], [, b]) => a.savedAt - b.savedAt);
-  const gone: `session:${string}`[] = [];
-  for (const [other, value] of oldestFirst) {
-    if (missing <= 0) break;
-    gone.push(`session:${other}`);
-    missing -= bytesOf(other, value);
-  }
-  if (gone.length > 0) await storage.removeItems(gone);
+  const gone = previewsToDelete(await storage.snapshot('session'), key, missing);
+  if (gone.length > 0) await storage.removeItems(gone.map((other) => `session:${other}` as const));
 }
 
 /** The previews there are of these tabs, by tab id. */

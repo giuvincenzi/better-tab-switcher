@@ -92,24 +92,8 @@ describe('the picture taken as the switcher opens', () => {
   });
 });
 
+// Deleted when their tab closes or the grid shows icons, on the real browser: tests/e2e/grid.spec.ts.
 describe('the previews kept', () => {
-  it("lose a tab's preview when the tab closes", async () => {
-    keepPreviews(onPreview);
-    await savePreview(11, 'data:image/webp;base64,AAA');
-    await savePreview(21, 'data:image/webp;base64,CCC');
-    await fakeBrowser.tabs.onRemoved.trigger(11, { windowId: 1, isWindowClosing: false });
-    await settle();
-    expect(await loadPreviews([11, 21])).toEqual({ 21: 'data:image/webp;base64,CCC' });
-  });
-
-  it('are all deleted when the grid is set to show icons', async () => {
-    keepPreviews(onPreview);
-    await savePreview(11, 'data:image/webp;base64,AAA');
-    await savePreview(21, 'data:image/webp;base64,CCC');
-    await saveSettings({ gridShow: 'icons' });
-    await vi.waitFor(async () => expect(await loadPreviews([11, 21])).toEqual({}));
-  });
-
   it('stay when the list is chosen, for when the grid comes back', async () => {
     keepPreviews(onPreview);
     await savePreview(11, 'data:image/webp;base64,AAA');
