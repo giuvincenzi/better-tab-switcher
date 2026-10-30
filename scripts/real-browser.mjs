@@ -39,11 +39,11 @@ const START_MS = 30_000;
  * Starts the browser with the extension in `extensionDir`, in a new profile, and attaches Playwright to it. `language`
  * is Chrome's own language (--lang and, on Linux, the environment's), `dark` the system's dark mode, `reducedMotion`
  * the system's "reduce motion" on or off (the system's own setting when not given); `windowSize` the first window's
- * size. Returns its one browser context, close(), and its process (pid).
+ * size. Returns its one browser context, close(), its process (pid) and sendToBrowser (browserPipe).
  * @param {{ browser?: string, extensionDir: string, headless?: boolean, language?: string, dark?: boolean,
  *   reducedMotion?: boolean, windowSize?: string }} options
  * @returns {Promise<{ context: import('@playwright/test').BrowserContext, close: () => Promise<void>,
- *   closed: Promise<unknown>, pid: number }>}
+ *   closed: Promise<unknown>, pid: number, sendToBrowser: (method: string, params?: object) => Promise<any> }>}
  */
 export async function launchRealBrowser({
   browser = 'chromium',
@@ -56,8 +56,12 @@ export async function launchRealBrowser({
 }) {
   const profile = mkdtempSync(join(tmpdir(), 'better-tab-switcher-'));
   const args = [
-    // Port 0: the browser chooses a free one and writes it in DevToolsActivePort, in the profile.
+    // Port 0: the browser chooses a free one and writes it in DevToolsActivePort, in the profile. Playwright attaches
+    // there. The pipe (the process's 4th and 5th streams) is for what the browser takes only from the program that
+    // started it: Extensions.triggerAction, the toolbar button's own action (sendToBrowser).
     '--remote-debugging-port=0',
+    '--remote-debugging-pipe',
+    '--enable-unsafe-extension-debugging',
     `--user-data-dir=${profile}`,
     '--no-first-run',
     '--no-default-browser-check',
@@ -89,9 +93,13 @@ export async function launchRealBrowser({
   const env = language
     ? { ...process.env, LANGUAGE: language, LANG: `${language.replace('-', '_')}.UTF-8` }
     : process.env;
-  const process_ = spawn(browserExecutable(browser), args, { env, stdio: ['ignore', 'ignore', 'pipe'] });
+  const process_ = spawn(browserExecutable(browser), args, {
+    env,
+    stdio: ['ignore', 'ignore', 'pipe', 'pipe', 'pipe'],
+  });
+  const sendToBrowser = browserPipe(process_);
   let output = '';
-  process_.stderr.on('data', (data) => {
+  process_.stderr?.on('data', (data) => {
     output += data.toString();
   });
   const exited = new Promise((resolve) => process_.once('exit', resolve));
@@ -135,5 +143,41 @@ export async function launchRealBrowser({
     await connected.close().catch(() => {});
     rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
   }
-  return { context, close, closed: exited, pid: /** @type {number} */ (process_.pid) };
+  return { context, close, closed: exited, pid: /** @type {number} */ (process_.pid), sendToBrowser };
+}
+
+/**
+ * Sends DevTools commands to the browser on its pipe (--remote-debugging-pipe: messages in JSON, each ended by a null
+ * character). Gives the command's result, or fails with its error.
+ * @param {import('node:child_process').ChildProcess} browserProcess
+ */
+function browserPipe(browserProcess) {
+  const toBrowser = /** @type {import('node:stream').Writable} */ (browserProcess.stdio[3]);
+  const fromBrowser = /** @type {import('node:stream').Readable} */ (browserProcess.stdio[4]);
+  /** @type {Map<number, { resolve: (result: any) => void, reject: (error: Error) => void }>} */
+  const waiting = new Map();
+  let received = '';
+  let lastId = 0;
+  fromBrowser.on('data', (data) => {
+    received += data.toString();
+    for (let end = received.indexOf('\0'); end >= 0; end = received.indexOf('\0')) {
+      const message = JSON.parse(received.slice(0, end));
+      received = received.slice(end + 1);
+      const waiter = waiting.get(message.id);
+      if (!waiter) continue;
+      waiting.delete(message.id);
+      if (message.error) waiter.reject(new Error(`${message.error.message} (${message.error.code})`));
+      else waiter.resolve(message.result);
+    }
+  });
+  // The browser closing: nothing more answers.
+  fromBrowser.on('error', () => {});
+  toBrowser.on('error', () => {});
+  /** @type {(method: string, params?: object) => Promise<any>} */
+  return (method, params = {}) =>
+    new Promise((resolve, reject) => {
+      const id = ++lastId;
+      waiting.set(id, { resolve, reject });
+      toBrowser.write(`${JSON.stringify({ id, method, params })}\0`);
+    });
 }

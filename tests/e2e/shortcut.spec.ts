@@ -1,7 +1,7 @@
 import type { Page, Worker } from '@playwright/test';
 import { expect, test } from './fixtures';
 import { activeTitle, named, openPages, rows, selected, switcherFrame } from './helpers';
-import { focusAddressBar, focusBrowser, hold, press, release } from './system';
+import { clickToolbarButton, focusAddressBar, focusBrowser, hold, press, release } from './system';
 
 // The extension's own shortcuts, pressed on the system's keyboard: Chrome runs them (commands.onCommand), which
 // Playwright's keys, sent to the page, never do. The browser's window on screen, with the system's focus.
@@ -80,6 +80,24 @@ test.describe('the shortcuts on the keyboard @shortcut', () => {
     }
     // Still open: had it opened the selected tab on letting go, beta would be in front and alpha out of reach.
     await rows(page).filter({ hasText: 'alpha' }).click();
+    await expect.poll(() => activeTitle(serviceWorker)).toBe('alpha');
+  });
+});
+
+test.describe("the extension's toolbar button @shortcut", () => {
+  test('opens the switcher on the previous tab, open until a tab is chosen', async ({
+    context,
+    serviceWorker,
+    extensionId,
+  }) => {
+    const [, , current] = await openPages(context, ['alpha', 'beta', 'gamma']);
+    const page = current as Page;
+    await clickToolbarButton(context, extensionId, page.url());
+    await frameIn(page);
+    await expect(rows(page)).toHaveCount(3);
+    await expect(selected(page)).toHaveAccessibleName(named('beta'));
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Enter');
     await expect.poll(() => activeTitle(serviceWorker)).toBe('alpha');
   });
 });

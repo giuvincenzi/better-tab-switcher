@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { type BrowserContext, chromium } from '@playwright/test';
-import { browserPid } from './fixtures';
+import { browserPid, browserPipe } from './fixtures';
 
 // The system's own input, beyond the browser: Playwright talks to the browser only, so what the user does with the
 // keyboard and outside the browser (the browser's own shortcuts, another program coming to the front) is done here with
@@ -166,4 +166,19 @@ export function focusAddressBar() {
   hold(modifier);
   press('L');
   release(modifier);
+}
+
+/**
+ * Clicks the extension's toolbar button for the tab of this page, as the browser does when the user clicks it: the
+ * button's own action (Extensions.triggerAction), with the button's grant of the page (activeTab). The browser's window
+ * on screen: a browser with none runs no button.
+ */
+export async function clickToolbarButton(context: BrowserContext, extensionId: string, pageUrl: string) {
+  const send = browserPipe.get(context) as (method: string, params?: object) => Promise<unknown>;
+  const { targetInfos } = (await send('Target.getTargets', { filter: [{ type: 'tab' }] })) as {
+    targetInfos: { targetId: string; url: string }[];
+  };
+  const tab = targetInfos.find((target) => target.url === pageUrl);
+  if (!tab) throw new Error(`No tab shows ${pageUrl}.`);
+  await send('Extensions.triggerAction', { id: extensionId, targetId: tab.targetId });
 }

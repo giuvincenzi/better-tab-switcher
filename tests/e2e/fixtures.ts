@@ -74,6 +74,7 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }>({
     });
     const { context } = real;
     browserPid.set(context, real.pid);
+    browserPipe.set(context, real.sendToBrowser);
     /** Each message, with where it comes from: a page or script's address, or the background. */
     const messages: { from: string; text: string }[] = [];
     /** The extension's own addresses (chrome-extension://<its id>/), known once its background is found. */
@@ -159,6 +160,9 @@ export const expect = test.expect;
 
 /** The process of each test's browser, for the system's own input (tests/e2e/system.ts). */
 export const browserPid = new WeakMap<BrowserContext, number>();
+
+/** Each test's browser's own DevTools pipe (scripts/real-browser.mjs), for what only it does (tests/e2e/system.ts). */
+export const browserPipe = new WeakMap<BrowserContext, (method: string, params?: object) => Promise<unknown>>();
 
 /** The browser context of each extension's background, for the helpers that only get the background (helpers.ts). */
 export const contextOf = new WeakMap<Worker, BrowserContext>();
