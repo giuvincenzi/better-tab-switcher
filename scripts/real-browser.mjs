@@ -1,10 +1,10 @@
 // The browser as a user runs it, for the end-to-end tests (tests/e2e/fixtures.ts) and make dev (scripts/dev.mjs): we
 // start it, then Playwright attaches to it with noDefaults, so it emulates nothing (no fake focus, no color scheme nor
 // reduced motion of its own): what the tests and the developer see is what users see.
-import { spawn, spawnSync } from 'node:child_process';
+import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { chromium } from '@playwright/test';
 
@@ -38,9 +38,9 @@ const START_MS = 30_000;
 /**
  * Starts the browser with the extension in `extensionDir`, in a new profile, and attaches Playwright to it;
  * `installedBefore`, other extensions installed before it (the first ones get the keys they ask for). `language`
- * is Chrome's own language (--lang and, on Linux, the environment's), `dark` the system's dark mode, `reducedMotion`
- * the system's "reduce motion" on or off (the system's own setting when not given); `windowSize` the first window's
- * size. Returns its one browser context, close(), its process (pid) and sendToBrowser (browserPipe).
+ * is Chrome's own language (--lang, on Linux the environment's too, on macOS its app's preferences: macLanguage),
+ * `dark` the system's dark mode, `reducedMotion` the system's "reduce motion" on or off (the system's own setting when
+ * not given); `windowSize` the first window's size. Returns its one browser context, close(), its process (pid) and sendToBrowser (browserPipe).
  * @param {{ browser?: string, extensionDir: string, installedBefore?: string[], headless?: boolean, language?: string,
  *   dark?: boolean,
  *   reducedMotion?: boolean, windowSize?: string }} options
@@ -91,11 +91,12 @@ export async function launchRealBrowser({
     `--load-extension=${[...installedBefore, extensionDir].join(',')}`,
     'about:blank',
   ];
-  // Chrome takes its language from --lang; on Linux it needs the environment's language too. On macOS it takes it only
-  // from the system's settings: there Chrome stays in the system's language.
+  // Chrome takes its language from --lang; on Linux it needs the environment's language too; on macOS from its app's
+  // preferences (macLanguage).
   const env = language
     ? { ...process.env, LANGUAGE: language, LANG: `${language.replace('-', '_')}.UTF-8` }
     : process.env;
+  const forgetLanguage = macLanguage(browser, language);
   const process_ = spawn(browserExecutable(browser), args, {
     env,
     stdio: ['ignore', 'ignore', 'pipe', 'pipe', 'pipe'],
@@ -125,6 +126,7 @@ export async function launchRealBrowser({
     const ended = process_.exitCode !== null || process_.signalCode !== null;
     if (ended || Date.now() - started > START_MS) {
       process_.kill();
+      forgetLanguage?.();
       throw new Error(`The browser ${ended ? 'stopped' : "didn't start"}:\n${output}`);
     }
     await delay(50);
@@ -146,9 +148,29 @@ export async function launchRealBrowser({
       await exited;
     }
     await connected.close().catch(() => {});
+    forgetLanguage?.();
     rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
   }
   return { context, close, closed: exited, pid: /** @type {number} */ (process_.pid), sendToBrowser };
+}
+
+/**
+ * Chrome on macOS takes its language from its app's preferred languages, never from --lang: they are written in the
+ * app's own preferences (defaults, under its bundle's id) before it starts, and removed once it is closed: the
+ * system's settings and the other apps stay as they are. Playwright's Chromium is an app only the tests use. Microsoft
+ * Edge on a developer's Mac is their own browser: its preferences are written only on GitHub's machines (CI), which are
+ * thrown away after the job; elsewhere it keeps the system's language (the language tests skip it there). Returns how to
+ * remove them, or nothing when none were written.
+ * @param {string} browser
+ * @param {string | undefined} language
+ */
+function macLanguage(browser, language) {
+  if (process.platform !== 'darwin' || !language || (browser === 'msedge' && !process.env.CI)) return undefined;
+  // The executable is in <app>.app/Contents/MacOS/; the bundle's id in <app>.app/Contents/Info.plist.
+  const info = join(dirname(dirname(browserExecutable(browser))), 'Info.plist');
+  const app = execFileSync('plutil', ['-extract', 'CFBundleIdentifier', 'raw', info], { encoding: 'utf8' }).trim();
+  execFileSync('defaults', ['write', app, 'AppleLanguages', '-array', language]);
+  return () => spawnSync('defaults', ['delete', app, 'AppleLanguages']);
 }
 
 /**

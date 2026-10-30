@@ -2,11 +2,12 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Locator, Page } from '@playwright/test';
 import { expect, extensionDir, test } from './fixtures';
-import { openPages, showSwitcher, switcher } from './helpers';
+import { openPages, showSwitcher, switcher, testBrowser } from './helpers';
 
-// Chrome on macOS takes its language only from the system's settings, which a test must never change (on a developer's
-// Mac they are their own browsers'): Linux and Windows run these, and tests/unit/language.test.ts everywhere.
-const MAC_REASON = "Chrome's language can't be chosen on macOS without changing the system";
+// On macOS the browser's language is written in its app's preferences (scripts/real-browser.mjs, macLanguage): Microsoft
+// Edge's only on GitHub's machines, as on a developer's Mac it is their own browser.
+const EDGE_ON_A_MAC = process.platform === 'darwin' && testBrowser === 'edge' && !process.env.CI;
+const EDGE_ON_A_MAC_REASON = "Microsoft Edge on a developer's Mac is their own: its language is never changed";
 
 // Chrome in a language the extension has texts for: the settings page is in it, its lang and direction too.
 for (const { chromeLanguage, title, dir } of [
@@ -15,7 +16,7 @@ for (const { chromeLanguage, title, dir } of [
 ]) {
   test.describe(`Chrome in ${chromeLanguage}, a language the extension has texts for @language`, () => {
     test.use({ chromeLanguage });
-    test.skip(process.platform === 'darwin', MAC_REASON);
+    test.skip(EDGE_ON_A_MAC, EDGE_ON_A_MAC_REASON);
 
     test(`shows the settings page in ${chromeLanguage}, ${dir === 'rtl' ? 'right to left' : 'left to right'}`, async ({
       context,
@@ -36,7 +37,7 @@ for (const { chromeLanguage, title, dir } of [
 for (const chromeLanguage of ['nl', 'he']) {
   test.describe(`Chrome in ${chromeLanguage}, a language the extension has no texts for @language`, () => {
     test.use({ chromeLanguage });
-    test.skip(process.platform === 'darwin', MAC_REASON);
+    test.skip(EDGE_ON_A_MAC, EDGE_ON_A_MAC_REASON);
 
     test('shows the settings page in English, left to right, its dates in English', async ({
       context,
@@ -103,7 +104,7 @@ for (const [chromeLanguage, locale] of [
 ] as const) {
   test.describe(`the extension in ${chromeLanguage} @language`, () => {
     test.use({ chromeLanguage });
-    test.skip(process.platform === 'darwin', MAC_REASON);
+    test.skip(EDGE_ON_A_MAC, EDGE_ON_A_MAC_REASON);
     const dir = chromeLanguage === 'ar' ? 'rtl' : 'ltr';
 
     test(`shows the settings page in it, ${dir}, every text whole`, async ({ context, extensionId }) => {
