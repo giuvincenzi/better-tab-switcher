@@ -3,7 +3,8 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
-import { type BrowserContext, chromium } from '@playwright/test';
+import type { BrowserContext } from '@playwright/test';
+import { browserExecutable } from '../../scripts/real-browser.mjs';
 import { browserPid, browserPipe } from './fixtures';
 
 // The system's own input, beyond the browser: Playwright talks to the browser only, so what the user does with the
@@ -122,8 +123,9 @@ export function press(letter: Letter) {
  */
 export async function focusAnotherProgram(): Promise<() => Promise<void>> {
   const profile = mkdtempSync(join(tmpdir(), 'other-program-'));
+  // The browser the tests run in, as another program of its own: the one sure to be on the machine.
   const other = spawn(
-    chromium.executablePath(),
+    browserExecutable(process.env.E2E_BROWSER ?? 'chromium'),
     [
       `--user-data-dir=${profile}`,
       '--no-first-run',

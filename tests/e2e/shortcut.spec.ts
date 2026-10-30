@@ -13,6 +13,12 @@ const MODIFIER = process.platform === 'darwin' ? 'Control' : 'Alt';
 /** Waits until the switcher's frame is in the page: the keyboard opened the switcher, not the test. */
 const frameIn = (page: Page) => expect.poll(() => switcherFrame(page) !== null).toBe(true);
 
+/** A click in the page, as the user does: the keyboard's focus is in it, not in the address bar. */
+async function focusPage(page: Page) {
+  await page.mouse.click(10, 10);
+  await expect.poll(() => page.evaluate(() => document.hasFocus())).toBe(true);
+}
+
 /** The browser's window the test pages are in, on the screen (for the system's click that brings it forward). */
 const windowOf = (worker: Worker) =>
   worker.evaluate(async () => {
@@ -28,6 +34,7 @@ test.describe('the shortcuts on the keyboard @shortcut', () => {
     const [, , current] = await openPages(context, ['alpha', 'beta', 'gamma']);
     const page = current as Page;
     await focusBrowser(context, await windowOf(serviceWorker));
+    await focusPage(page);
     hold(MODIFIER);
     try {
       press('S');
@@ -47,6 +54,7 @@ test.describe('the shortcuts on the keyboard @shortcut', () => {
     const [, , current] = await openPages(context, ['alpha', 'beta', 'gamma']);
     const page = current as Page;
     await focusBrowser(context, await windowOf(serviceWorker));
+    await focusPage(page);
     hold(MODIFIER);
     hold('Shift');
     try {
