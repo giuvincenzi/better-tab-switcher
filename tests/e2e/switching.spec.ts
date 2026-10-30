@@ -3,11 +3,9 @@ import { expect, test } from './fixtures';
 import {
   activeTitle,
   closeWithEscape,
-  focusedWindows,
   named,
   openPages,
   openWindow,
-  recordFocusedWindows,
   rows,
   selected,
   showSwitcher,
@@ -162,23 +160,6 @@ test.describe('a page that hangs @switching', () => {
 });
 
 test.describe("the switcher's own window @switching", () => {
-  test('closes its window when another window takes the focus, and leaves the focus there', async ({
-    context,
-    serviceWorker,
-  }) => {
-    await openPages(context, ['alpha', 'beta']);
-    await openChromePage(context);
-    await recordFocusedWindows(serviceWorker);
-    const opened = context.waitForEvent('page');
-    await showSwitcher(serviceWorker, 'next', 'icon');
-    const switcherWindow = await opened;
-    await expect(switcherWindow.getByRole('option')).toHaveCount(3);
-    // Another window took the focus (headless Chromium moves no focus between windows: the event says it).
-    await switcherWindow.evaluate(() => window.dispatchEvent(new Event('blur')));
-    await expect.poll(() => switcherWindow.isClosed()).toBe(true);
-    expect(await focusedWindows(serviceWorker)).toEqual([]);
-  });
-
   test('closes its window with Esc, and the shortcut then opens a new one on the same page', async ({
     context,
     serviceWorker,

@@ -1,6 +1,6 @@
-import type { Page } from '@playwright/test';
+import type { BrowserContext, Page, Worker } from '@playwright/test';
 import { expect, test } from './fixtures';
-import { named, openPages, rows, selected, showSwitcher } from './helpers';
+import { closeWithEscape, named, openPages, rows, selected, showSwitcher } from './helpers';
 import { focusAnotherProgram } from './system';
 
 // The system's focus, real: the browser's window on screen, the other program brought to the front by the system.
@@ -53,5 +53,52 @@ test.describe('the focus leaving the switcher in a page @focus', () => {
     await page.keyboard.press('ArrowDown');
     await expect(selected(page)).toHaveAccessibleName(named('alpha'));
     await expect(rows(page)).toHaveCount(3);
+  });
+});
+
+/** A page of Chrome's own, as the current tab: the switcher opens in its own window there. */
+async function openChromePage(context: BrowserContext): Promise<Page> {
+  const page = await context.newPage();
+  await page.goto('chrome://version');
+  await page.bringToFront();
+  return page;
+}
+
+/** The browser's windows that have the system's focus, as Chrome knows it: their types. */
+const focusedTypes = (worker: Worker) =>
+  worker.evaluate(async () => (await chrome.windows.getAll()).filter((w) => w.focused).map((w) => w.type));
+
+test.describe("the focus leaving the switcher's own window @focus", () => {
+  test('closes its window when another program comes to the front, and leaves the focus there', async ({
+    context,
+    serviceWorker,
+  }) => {
+    await openPages(context, ['alpha', 'beta']);
+    await openChromePage(context);
+    const opened = context.waitForEvent('page');
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    const switcherWindow = await opened;
+    await expect(switcherWindow.getByRole('option')).toHaveCount(3);
+    await expect.poll(() => focusedTypes(serviceWorker)).toEqual(['popup']);
+    const closeOther = await focusAnotherProgram();
+    try {
+      await expect.poll(() => switcherWindow.isClosed()).toBe(true);
+      // The other program keeps the focus: the browser brought none of its windows forward.
+      expect(await focusedTypes(serviceWorker)).toEqual([]);
+    } finally {
+      await closeOther();
+    }
+  });
+
+  test('gives the focus back to the window it came from when closed with Esc', async ({ context, serviceWorker }) => {
+    await openPages(context, ['alpha', 'beta']);
+    await openChromePage(context);
+    const opened = context.waitForEvent('page');
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    const switcherWindow = await opened;
+    await expect(switcherWindow.getByRole('option')).toHaveCount(3);
+    await expect.poll(() => focusedTypes(serviceWorker)).toEqual(['popup']);
+    await closeWithEscape(switcherWindow);
+    await expect.poll(() => focusedTypes(serviceWorker)).toEqual(['normal']);
   });
 });

@@ -2,11 +2,9 @@ import type { BrowserContext, Page, Worker } from '@playwright/test';
 import { contextOf, expect, test } from './fixtures';
 import {
   activeTitle,
-  focusedWindows,
   named,
   openPages,
   openWindow,
-  recordFocusedWindows,
   rowNames,
   rows,
   selected,
@@ -137,7 +135,10 @@ test.describe('which tabs the switcher lists @tabs', () => {
 });
 
 test.describe("a site's popup window @tabs", () => {
-  test('lists the popup first, then the tabs of the window it was opened from, and opens the one chosen', async ({
+  // The system's focus, real: the browser's window on screen.
+  test.use({ headed: true });
+
+  test('lists the popup first, then the tabs of the window it was opened from, and opens the one chosen there', async ({
     context,
     serviceWorker,
   }) => {
@@ -149,7 +150,6 @@ test.describe("a site's popup window @tabs", () => {
     await expect(popup).toHaveTitle('login');
     await showSwitcher(serviceWorker, 'next', 'icon');
     await expect(rows(popup)).toHaveText([/^login/, /^beta/, /^alpha/]);
-    await recordFocusedWindows(serviceWorker);
     await rows(popup).filter({ hasText: 'alpha' }).click();
     const home = await serviceWorker.evaluate(async () => (await chrome.tabs.query({ title: 'alpha' }))[0]?.windowId);
     await expect
@@ -157,7 +157,12 @@ test.describe("a site's popup window @tabs", () => {
         serviceWorker.evaluate(async (id) => (await chrome.tabs.query({ active: true, windowId: id }))[0]?.title, home),
       )
       .toBe('alpha');
-    expect(await focusedWindows(serviceWorker)).toEqual([home]);
+    // Its window comes to the front, with the system's focus.
+    await expect
+      .poll(() =>
+        serviceWorker.evaluate(async () => (await chrome.windows.getAll()).filter((w) => w.focused).map((w) => w.id)),
+      )
+      .toEqual([home]);
   });
 });
 

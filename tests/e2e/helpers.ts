@@ -132,27 +132,6 @@ export async function openWindow(context: BrowserContext, worker: Worker, title:
 }
 
 /**
- * From now on, records the windows the extension brings to the front (windows.update with focused): headless Chromium
- * moves no focus between windows by itself, so a test checks what the extension asked. focusedWindows reads them.
- */
-export function recordFocusedWindows(worker: Worker) {
-  return worker.evaluate(() => {
-    const focused: number[] = [];
-    const update = chrome.windows.update.bind(chrome.windows);
-    Object.assign(globalThis, { focusedByTheExtension: focused });
-    chrome.windows.update = ((windowId: number, info: { focused?: boolean }) => {
-      if (info.focused) focused.push(windowId);
-      return update(windowId, info);
-    }) as never;
-  });
-}
-
-/** The windows the extension brought to the front since recordFocusedWindows. */
-export function focusedWindows(worker: Worker): Promise<number[]> {
-  return worker.evaluate(() => (globalThis as unknown as { focusedByTheExtension: number[] }).focusedByTheExtension);
-}
-
-/**
  * Does what closes the switcher's own window (a key, a click) and waits until the window is closed. The window can be
  * gone before Chromium confirms the key or the click it closed on (seen on slow macOS machines), and Playwright then
  * fails the action: that error is expected only once the window is closed. Any other error fails the test, and so does
