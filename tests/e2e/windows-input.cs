@@ -1,5 +1,5 @@
-// The system's own input on Windows, for the end-to-end tests (tests/e2e/windows-input.ts builds it once with the C#
-// compiler of Windows' .NET Framework, then runs it for each step):
+// The system's own input on Windows, for the end-to-end tests (tests/e2e/windows-input.ts builds it once with
+// PowerShell's C# compiler, then runs it for each step):
 //   click X Y            a click of the system's mouse at that point of the screen, in its pixels
 //   key down|up CODE     a key going down or up (its virtual key code), to the window that has the system's focus
 //   click-window TITLE   a click in the middle of the top-level window whose title starts so, where Windows has it
