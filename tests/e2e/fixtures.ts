@@ -47,8 +47,9 @@ async function isOurs(worker: Worker): Promise<boolean> {
  * the real ones) with a fresh profile and the extension loaded, in English (chromeLanguage). The windows are real,
  * 1280 by 720 pixels: the switcher's own window measures its frame (outer and inner sizes).
  *
- * Every test also fails on any error or warning in the console of a page, a frame (the switcher's), an extension page
- * or the extension's background, and on any error nothing caught, unless the test expects it (expectedConsole).
+ * Every test also fails on any error or warning the extension causes in a console (its background, its pages, its
+ * frame in a page, its script in a page), and on any error nothing caught there, unless the test expects it
+ * (expectedConsole). The pages' own messages are theirs (Microsoft Edge's new tab page has some): not the extension's.
  */
 export const test = base.extend<ExtensionFixtures & { ours: Worker }>({
   chromeLanguage: ['en-US', { option: true }],
@@ -66,22 +67,29 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }>({
       windowSize: '1280,720',
     });
     const { context } = real;
-    const messages: string[] = [];
+    /** Each message, with where it comes from: a page or script's address, or the background. */
+    const messages: { from: string; text: string }[] = [];
+    /** The extension's own addresses (chrome-extension://<its id>/), known once its background is found. */
+    let extension = '';
     const watch = (page: Page) => {
       page.on('console', (message) => {
-        if (message.type() === 'error' || message.type() === 'warning')
-          messages.push(`${message.type()} in ${message.location().url || page.url()}: ${message.text()}`);
+        if (message.type() !== 'error' && message.type() !== 'warning') return;
+        const from = message.location().url || page.url();
+        messages.push({ from, text: `${message.type()} in ${from}: ${message.text()}` });
       });
-      page.on('pageerror', (error) => messages.push(`uncaught error in ${page.url()}: ${error.message}`));
+      page.on('pageerror', (error) =>
+        messages.push({ from: page.url(), text: `uncaught error in ${page.url()}: ${error.message}` }),
+      );
     };
     context.pages().forEach(watch);
     context.on('page', watch);
     // The extension's background, each time it starts: its console, and the errors nothing caught (read at the end).
     const watchWorker = async (worker: Worker) => {
       if (!(await isOurs(worker))) return;
+      extension = `${new URL(worker.url()).origin}/`;
       worker.on('console', (message) => {
         if (message.type() === 'error' || message.type() === 'warning')
-          messages.push(`${message.type()} in the background: ${message.text()}`);
+          messages.push({ from: 'background', text: `${message.type()} in the background: ${message.text()}` });
       });
       await worker
         .evaluate(() => {
@@ -101,10 +109,14 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }>({
       const uncaught = await worker
         .evaluate(() => (globalThis as { uncaughtErrors?: string[] }).uncaughtErrors ?? [])
         .catch(() => []);
-      for (const error of uncaught) messages.push(`uncaught error in the background: ${error}`);
+      for (const error of uncaught)
+        messages.push({ from: 'background', text: `uncaught error in the background: ${error}` });
     }
     await real.close();
-    const unexpected = messages.filter((message) => !expectedConsole.some((expected) => expected.test(message)));
+    const unexpected = messages
+      .filter(({ from }) => from === 'background' || (extension !== '' && from.startsWith(extension)))
+      .map(({ text }) => text)
+      .filter((text) => !expectedConsole.some((expected) => expected.test(text)));
     if (unexpected.length > 0 && testInfo.status === testInfo.expectedStatus) {
       throw new Error(`The console has errors or warnings no test expects:\n${unexpected.join('\n')}`);
     }

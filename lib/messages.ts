@@ -26,6 +26,21 @@ export interface SwitcherSnapshot {
    * The switcher takes its sizes from that window, as it would from its page, and its own window fits it.
    */
   centeredOn?: Rect;
+  /** Opened again as the user left it, after closing the tab it was in (Resume). */
+  resume?: Resume;
+}
+
+/**
+ * The switcher as the user left it when they closed, from it, the tab it was shown in: it opens again so in the tab the
+ * browser shows instead, the list without that tab.
+ */
+export interface Resume {
+  /** The tab selected after the closed one went; none when the search field was. */
+  selectedTabId?: number;
+  /** The text searched for. */
+  query: string;
+  /** Opened from the toolbar icon: it stays open until a tab is chosen. */
+  fromIcon: boolean;
 }
 
 /** The switcher's frame is shown in the page (showFrame). */
@@ -75,8 +90,11 @@ interface Messages {
   closeSwitcher(): void;
   /** Switcher → background: open this tab (the switcher has already closed). */
   openTab(tabId: number): void;
-  /** Switcher → background: close this tab; the switcher stays open. */
-  closeTab(tabId: number): void;
+  /**
+   * Switcher → background: close this tab; the switcher stays open. When it is the tab the switcher is in, the switcher
+   * opens again in the tab shown instead, as it was (resume).
+   */
+  closeTab(close: { tabId: number; resume: Resume }): void;
   /** Switcher → background: it closed without opening a tab (Esc, a click outside): the user is back where they were. */
   switcherClosed(): void;
   /** Switcher's window → background: another window took the focus: it closes, the focus stays where the user went. */

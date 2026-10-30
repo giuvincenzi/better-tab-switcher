@@ -55,7 +55,7 @@ Settings_Address: Dirección web
 Settings_FullAddress: Dirección completa
 Settings_FullAddressNote: La dirección completa de la página, no solo la del sitio.
 Settings_LongAddress: Direcciones web largas
-Settings_LongAddressNote: Se desplazan en la pestaña seleccionada para mostrarlas completas o se recortan con «…».
+Settings_LongAddressNote: Se desplazan en la pestaña seleccionada y en la que está bajo el cursor del ratón para mostrarlas completas o se recortan con «…».
 Settings_LongAddressCut: Recortar
 Settings_LongAddressScroll: Desplazar
 Settings_PinnedIcon: Icono de pestaña fijada

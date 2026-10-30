@@ -55,7 +55,7 @@ Settings_Address: Webadresse
 Settings_FullAddress: Vollständige Adresse
 Settings_FullAddressNote: Die ganze Adresse der Seite, nicht nur die Website.
 Settings_LongAddress: Lange Webadressen
-Settings_LongAddressNote: Sie laufen beim ausgewählten Tab durch, damit sie vollständig zu sehen sind, oder werden mit „…“ gekürzt.
+Settings_LongAddressNote: Sie laufen beim ausgewählten Tab und beim Tab unter dem Mauszeiger durch, damit sie vollständig zu sehen sind, oder werden mit „…“ gekürzt.
 Settings_LongAddressCut: Kürzen
 Settings_LongAddressScroll: Durchlaufen lassen
 Settings_PinnedIcon: Symbol für angepinnte Tabs

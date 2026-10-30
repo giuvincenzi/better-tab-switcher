@@ -55,7 +55,7 @@ Settings_Address: Адрес сайта
 Settings_FullAddress: Полный адрес
 Settings_FullAddressNote: Весь адрес страницы, а не только сайт.
 Settings_LongAddress: Длинные адреса сайтов
-Settings_LongAddressNote: Адреса прокручиваются на выделенной вкладке, чтобы их было видно целиком, или обрезаются символом «…».
+Settings_LongAddressNote: Адреса прокручиваются на выделенной вкладке и на вкладке под указателем мыши, чтобы их было видно целиком, или обрезаются символом «…».
 Settings_LongAddressCut: Обрезать
 Settings_LongAddressScroll: Прокручивать
 Settings_PinnedIcon: Значок закрепленной вкладки

@@ -55,7 +55,7 @@ Settings_Address: 网址
 Settings_FullAddress: 完整网址
 Settings_FullAddressNote: 显示网页的完整网址，而不只是网站。
 Settings_LongAddress: 较长的网址
-Settings_LongAddressNote: 在选中的标签页上滚动显示完整网址，或用“…”截断。
+Settings_LongAddressNote: 在选中的标签页和鼠标指针所在的标签页上滚动显示完整网址，或用“…”截断。
 Settings_LongAddressCut: 截断
 Settings_LongAddressScroll: 滚动显示
 Settings_PinnedIcon: 已固定标签页图标

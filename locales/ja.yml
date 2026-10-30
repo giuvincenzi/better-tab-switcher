@@ -55,7 +55,7 @@ Settings_Address: ウェブサイトのアドレス
 Settings_FullAddress: アドレス全体
 Settings_FullAddressNote: サイトだけでなく、ページのアドレス全体を表示します。
 Settings_LongAddress: 長いウェブサイトのアドレス
-Settings_LongAddressNote: 選択中のタブではスクロールして全体を表示するか、「…」で省略します。
+Settings_LongAddressNote: 選択中のタブとカーソルを合わせたタブではスクロールして全体を表示するか、「…」で省略します。
 Settings_LongAddressCut: 省略する
 Settings_LongAddressScroll: スクロールする
 Settings_PinnedIcon: 固定タブのアイコン

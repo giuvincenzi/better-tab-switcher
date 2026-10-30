@@ -182,7 +182,7 @@ describe('Switcher', () => {
   it('closes a tab and keeps the list', () => {
     const { host, handlers } = open();
     (host.querySelectorAll('button[aria-label="Close tab"]')[3] as HTMLButtonElement).click();
-    expect(handlers.onCloseTab).toHaveBeenCalledWith(tabs[3]);
+    expect(handlers.onCloseTab).toHaveBeenCalledWith(tabs[3], expect.anything());
     expect(host.querySelectorAll('[role="option"]')).toHaveLength(3);
     expect(handlers.onClose).not.toHaveBeenCalled();
   });

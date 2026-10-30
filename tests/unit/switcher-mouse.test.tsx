@@ -58,7 +58,7 @@ describe('Switcher with the mouse', () => {
       option(host, 'Q4 planning, example.com/3').dispatchEvent(
         new MouseEvent('auxclick', { button: 1, bubbles: true }),
       );
-      expect(handlers.onCloseTab).toHaveBeenCalledWith(tabs[2]);
+      expect(handlers.onCloseTab).toHaveBeenCalledWith(tabs[2], expect.anything());
       expect(handlers.onOpen).not.toHaveBeenCalled();
       expect(handlers.onClose).not.toHaveBeenCalled();
       expect(names(host)).not.toContain('Q4 planning, example.com/3');
@@ -126,7 +126,7 @@ describe('Switcher closing tabs', () => {
   it('closes the switcher with the last tab', () => {
     const { host, handlers } = openSwitcher({}, { tabs: [tabs[0] as (typeof tabs)[0]] });
     closeButton(host, 'Pull request #12, example.com/1').click();
-    expect(handlers.onCloseTab).toHaveBeenCalledWith(tabs[0]);
+    expect(handlers.onCloseTab).toHaveBeenCalledWith(tabs[0], expect.anything());
     expect(handlers.onClose).toHaveBeenCalledOnce();
   });
 
@@ -142,7 +142,7 @@ describe('Switcher closing tabs', () => {
     const { host, handlers } = openSwitcher();
     typeInSearch(host, 'plan');
     closeButton(host, 'Running plan, example.com/4').click();
-    expect(handlers.onCloseTab).toHaveBeenCalledWith(tabs[3]);
+    expect(handlers.onCloseTab).toHaveBeenCalledWith(tabs[3], expect.anything());
     expect(names(host)).toEqual(['Q4 planning, example.com/3']);
   });
 });

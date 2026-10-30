@@ -8,6 +8,7 @@ import { IconButton } from '../ui/IconButton';
 import {
   Address,
   AutoSelectLine,
+  createAddressScroll,
   LastUsed,
   MIDDLE_BUTTON,
   preventMiddleClickScroll,
@@ -39,7 +40,7 @@ export interface TabRowProps {
 
 /** One tab in the switcher's list. */
 export function TabRow(props: TabRowProps): JSX.Element {
-  const scrolls = () => props.details.longAddress === 'scroll' && props.selected;
+  const address = createAddressScroll(props);
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: the keys that open a tab (Enter, the arrows, Alt's release) belong to the list, which points to the selected row with aria-activedescendant (WAI-ARIA listbox pattern).
     <div
@@ -55,7 +56,11 @@ export function TabRow(props: TabRowProps): JSX.Element {
         [styles.sleeping as string]: props.details.sleeping && props.tab.sleeping,
       }}
       onClick={() => props.onChoose()}
-      onPointerEnter={() => props.onHover()}
+      onPointerEnter={() => {
+        address.enter();
+        props.onHover();
+      }}
+      onPointerLeave={() => address.leave()}
       onMouseDown={preventMiddleClickScroll}
       onAuxClick={(event) => {
         if (event.button === MIDDLE_BUTTON) props.onClose();
@@ -65,11 +70,11 @@ export function TabRow(props: TabRowProps): JSX.Element {
       <div class={styles.text}>
         <TabTitle tab={props.tab} title={props.title} details={props.details} />
         <Show when={props.details.address && !props.compact}>
-          <Address url={props.tab.url} full={props.details.fullAddress} scrolls={scrolls()} />
+          <Address url={props.tab.url} full={props.details.fullAddress} scrolls={address.scrolls()} />
         </Show>
       </div>
       <Show when={props.details.address && props.compact}>
-        <Address url={props.tab.url} full={props.details.fullAddress} scrolls={scrolls()} side />
+        <Address url={props.tab.url} full={props.details.fullAddress} scrolls={address.scrolls()} side />
       </Show>
       <TabIcons tab={props.tab} details={props.details} />
       <Show when={props.details.lastUsed}>

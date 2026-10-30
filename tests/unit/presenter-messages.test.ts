@@ -47,7 +47,7 @@ beforeEach(() => {
   });
   messages.state.receive = deliverTo(world);
   fakeChrome(world);
-  listenToSwitcher();
+  listenToSwitcher(async () => {});
 });
 
 afterEach(() => {
@@ -147,7 +147,7 @@ describe('the keys the page got while the frame had no focus', () => {
 describe('closing a tab from the switcher', () => {
   it('closes the tab and keeps the switcher open', async () => {
     await openInPage();
-    await messages.ask('closeTab', 12);
+    await messages.ask('closeTab', { tabId: 12, resume: { query: '', fromIcon: false } });
     expect(browser.tabs.remove).toHaveBeenCalledWith(12);
     await shortcut();
     expect(received('moveSwitcher')).toEqual([11]);

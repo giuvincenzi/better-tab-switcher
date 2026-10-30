@@ -12,7 +12,7 @@ export default defineBackground(() => {
     else if (command === 'previous-tab') void request({ direction: 'previous', from: 'shortcut' });
   });
   browser.action.onClicked.addListener(() => void request({ direction: 'next', from: 'icon' }));
-  listenToSwitcher();
+  listenToSwitcher(request);
   listenToSettingsChanges();
   // Installed while another extension had its keys: the user chooses others at once.
   browser.runtime.onInstalled.addListener(({ reason }) => {

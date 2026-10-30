@@ -114,7 +114,7 @@ Settings_Address: Website address
 Settings_FullAddress: Full address
 Settings_FullAddressNote: The whole address of the page, not only the site.
 Settings_LongAddress: Long website addresses
-Settings_LongAddressNote: Scrolling on the selected tab to show them whole, or cut short with “…”.
+Settings_LongAddressNote: Scrolling on the selected tab and on the one under the mouse to show them whole, or cut short with “…”.
 Settings_LongAddressCut: Cut short
 Settings_LongAddressScroll: Scroll
 Settings_PinnedIcon: Pinned tab icon

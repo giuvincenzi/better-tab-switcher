@@ -4,6 +4,7 @@ import {
   type FrameShown,
   onMessage,
   type Preview,
+  type Resume,
   type SwitcherSnapshot,
   sendMessage,
 } from '../messages';
@@ -19,6 +20,8 @@ import { canShowInPage, centerOn, type Rect } from './placement';
 export interface SwitcherRequest {
   direction: Direction;
   from: 'shortcut' | 'icon';
+  /** The switcher opening again as the user left it (closeTab). */
+  resume?: Resume;
 }
 
 /**
@@ -87,8 +90,11 @@ export async function showPreview(tabId: number, picture: string): Promise<void>
   if (open) await answered(sendMessage('previewReady', preview, open.tabId)).catch(() => undefined);
 }
 
-/** Answers the switcher's messages, and closes or forgets the switcher when its tab or its window goes away. */
-export function listenToSwitcher(): void {
+/**
+ * Answers the switcher's messages, and closes or forgets the switcher when its tab or its window goes away. `request`
+ * opens a switcher (requestSwitcher, with the background's previews).
+ */
+export function listenToSwitcher(request: (switcher: SwitcherRequest) => Promise<void>): void {
   onMessage('getSnapshot', async () => {
     const snapshot = await windowSnapshot.getValue();
     await windowSnapshot.setValue(null);
@@ -103,8 +109,17 @@ export function listenToSwitcher(): void {
     // Focusing a window that already has the focus can move the keyboard focus out of the page (macOS).
     if (open?.windowId !== now.windowId) await browser.windows.update(now.windowId, { focused: true });
   });
-  onMessage('closeTab', async ({ data: tabId }) => {
+  onMessage('closeTab', async ({ data: { tabId, resume } }) => {
+    const open = await openSwitcher.getValue();
+    if (open?.in !== 'page' || open.tabId !== tabId) {
+      await browser.tabs.remove(tabId);
+      return;
+    }
+    // The tab the switcher is in: the switcher goes with its page. Forgotten first, so the tab the browser shows
+    // instead closes nothing (tabs.onActivated); then it opens there, as the user left it.
+    await openSwitcher.setValue(null);
     await browser.tabs.remove(tabId);
+    await request({ direction: 'next', from: resume.fromIcon ? 'icon' : 'shortcut', resume });
   });
   onMessage('switcherClosed', async () => {
     const open = await forget();
@@ -221,6 +236,7 @@ async function takeSnapshot(current: Browser.tabs.Tab, request: SwitcherRequest)
     direction: request.direction,
     fromIcon: request.from === 'icon',
     waitForPicture: false,
+    ...(request.resume ? { resume: request.resume } : {}),
   };
 }
 

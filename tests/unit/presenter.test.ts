@@ -62,7 +62,7 @@ beforeEach(async () => {
   fakeChrome(world);
   // The background put the holder in these pages before (lib/presenter/presenter.ts, pagesWithHolder).
   await browser.storage.session.set({ pagesWithHolder: [...world.injected] });
-  listenToSwitcher();
+  listenToSwitcher(async () => {});
 });
 
 afterEach(() => {
@@ -499,7 +499,7 @@ describe('after the background restarted', () => {
     vi.resetModules();
     const restarted = await import('../../lib/presenter/presenter');
     messages.handlers.clear();
-    restarted.listenToSwitcher();
+    restarted.listenToSwitcher(async () => {});
     await ask('switcherClosed');
     await settle();
     expect(browser.windows.remove).toHaveBeenCalledWith(FIRST_POPUP_ID);

@@ -110,7 +110,7 @@ describe('mountSwitcher', () => {
   it('asks the background to close a tab and stays open', () => {
     const { onDone } = mount();
     (tile('Q4 planning, example.com/3').querySelector('button[aria-label="Close tab"]') as HTMLButtonElement).click();
-    expect(messages).toHaveBeenCalledWith('closeTab', 3);
+    expect(messages).toHaveBeenCalledWith('closeTab', { tabId: 3, resume: expect.anything() });
     expect(onDone).not.toHaveBeenCalled();
   });
 

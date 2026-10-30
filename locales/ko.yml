@@ -55,7 +55,7 @@ Settings_Address: 웹사이트 주소
 Settings_FullAddress: 전체 주소
 Settings_FullAddressNote: 사이트만이 아니라 페이지의 전체 주소를 표시합니다.
 Settings_LongAddress: 긴 웹사이트 주소
-Settings_LongAddressNote: 선택한 탭에서는 스크롤해서 전체 주소를 보여 주거나, "…"로 줄여서 표시합니다.
+Settings_LongAddressNote: 선택한 탭과 마우스 커서가 놓인 탭에서는 스크롤해서 전체 주소를 보여 주거나, "…"로 줄여서 표시합니다.
 Settings_LongAddressCut: 줄여서 표시
 Settings_LongAddressScroll: 스크롤
 Settings_PinnedIcon: 고정 탭 아이콘

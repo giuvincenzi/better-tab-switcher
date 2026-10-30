@@ -65,7 +65,7 @@ export function mountSwitcher(
           onDone();
           void sendMessage('switcherClosed');
         }}
-        onCloseTab={(tab) => void sendMessage('closeTab', tab.id)}
+        onCloseTab={(tab, resume) => void sendMessage('closeTab', { tabId: tab.id, resume })}
         onSettingsChange={(change) => void sendMessage('saveSettings', change)}
         onSettings={() => {
           onDone();

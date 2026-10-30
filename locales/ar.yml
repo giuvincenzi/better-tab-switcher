@@ -55,7 +55,7 @@ Settings_Address: عنوان الموقع الإلكتروني
 Settings_FullAddress: العنوان الكامل
 Settings_FullAddressNote: عنوان الصفحة كاملًا، وليس الموقع فقط.
 Settings_LongAddress: عناوين المواقع الإلكترونية الطويلة
-Settings_LongAddressNote: يتم تمريرها في علامة التبويب المحدّدة لعرضها كاملة، أو اقتطاعها باستخدام «…».
+Settings_LongAddressNote: يتم تمريرها في علامة التبويب المحدّدة وفي علامة التبويب الموجودة أسفل مؤشر الماوس لعرضها كاملة، أو اقتطاعها باستخدام «…».
 Settings_LongAddressCut: اقتطاع
 Settings_LongAddressScroll: تمرير
 Settings_PinnedIcon: رمز علامة التبويب المثبّتة

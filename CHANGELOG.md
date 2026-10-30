@@ -19,9 +19,11 @@
 - Sites never see your tabs: over a page, the switcher is drawn in the extension's own page, which the site can't
   read nor search for a tab's title.
 - Works in Chrome and in Microsoft Edge: the settings name the browser they run in and open its shortcuts page.
-- Close a tab from the switcher with its close button or with the mouse's middle button.
+- Close a tab from the switcher with its close button or with the mouse's middle button. Closing the tab you are on
+  keeps the switcher open, in the tab the browser shows instead.
 - Tab details: pinned, playing audio and inactive tab icons, tab group color, last used, and the website address,
-  the page's whole address or only its site, scrolling on the selected tab when it is long.
+  the page's whole address or only its site, scrolling on the selected tab and on the one under the mouse when it is
+  long.
 - The settings page, in the device's, light or dark theme. Restore default settings asks you to confirm it.
 - Keyboard shortcuts in the settings, the toolbar icon's too, with a warning when one has no keys. Installed while
   another extension uses its keys, Better Tab Switcher opens its settings to let you choose others.

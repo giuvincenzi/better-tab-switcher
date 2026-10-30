@@ -201,21 +201,43 @@ for (const reducedMotion of [false, true]) {
       expect(await page?.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches)).toBe(reducedMotion);
     });
 
-    test(`scrolls the selected tab's address ${reducedMotion ? 'never' : 'when it is set to scroll'}`, async ({
+    test(`${reducedMotion ? 'never scrolls a long address' : 'scrolls a long address to its end on the selected tab and on the one under the mouse, no other'}`, async ({
       context,
       serviceWorker,
     }) => {
       await useSettings(serviceWorker, { details: { address: true, longAddress: 'scroll' } as never });
-      const [, current] = await openPages(context, ['alpha', 'beta']);
-      const page = current as Page;
+      // Addresses far longer than their place in the switcher.
+      const long = (name: string) => `${name}-${'x'.repeat(150)}`;
+      const pages = await openPages(context, ['alpha', 'beta', 'gamma', 'delta'].map(long));
+      const page = pages[3] as Page;
       await showSwitcher(serviceWorker);
-      await expect(selected(page)).toContainText('alpha');
-      const scrolling = () =>
-        selected(page).evaluate(
-          (row) => row.getAnimations({ subtree: true }).filter((a) => a.playState === 'running').length,
-        );
-      if (reducedMotion) expect(await scrolling()).toBe(0);
-      else await expect.poll(scrolling).toBeGreaterThan(0);
+      const row = (name: string) => rows(page).filter({ hasText: `${name}-` });
+      await expect(selected(page)).toContainText('gamma-');
+      // Where the address is: still at its start, or scrolling; then, put at the far end of its scroll, whether its
+      // last letter is at the end of its place, as far as it goes and no further.
+      const address = (name: string) =>
+        row(name).evaluate((option) => {
+          const place = option.querySelector('[dir="ltr"]') as HTMLElement;
+          const text = place.firstElementChild as HTMLElement;
+          if (text.offsetWidth <= place.clientWidth) return 'not long';
+          const scroll = text.getAnimations()[0];
+          if (!scroll) return 'still';
+          const timing = scroll.effect?.getComputedTiming();
+          scroll.pause();
+          scroll.currentTime = Number(timing?.delay ?? 0) + Number(timing?.duration ?? 0);
+          const gap = place.getBoundingClientRect().right - text.getBoundingClientRect().right;
+          scroll.play();
+          return Math.abs(gap) <= 1 ? 'scrolls to its end' : `stops ${gap} px from its end`;
+        });
+      await row('beta').hover();
+      const moving = reducedMotion ? 'still' : 'scrolls to its end';
+      await expect.poll(() => address('gamma')).toBe(moving);
+      await expect.poll(() => address('beta')).toBe(moving);
+      expect(await address('alpha')).toBe('still');
+      // The mouse goes on: the address it left goes back to its start.
+      await row('alpha').hover();
+      await expect.poll(() => address('alpha')).toBe(moving);
+      await expect.poll(() => address('beta')).toBe('still');
     });
   });
 }

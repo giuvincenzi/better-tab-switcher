@@ -1,4 +1,4 @@
-import { createEffect, type JSX, on, Show } from 'solid-js';
+import { createEffect, createSignal, type JSX, on, Show } from 'solid-js';
 import { i18n } from '#i18n';
 import { timeAgo } from '../../lib/i18n/time';
 import type { TitleParts } from '../../lib/search/search';
@@ -58,7 +58,20 @@ export function TabTitle(props: { tab: SwitcherTab; title: TitleParts; details: 
 }
 
 /**
- * The website's address: cut with "…", or scrolling back and forth on the selected tab. It takes the width its place
+ * Whether a tab's long address scrolls, in its row or tile: with Scroll chosen, on the selected tab and on the one under
+ * the mouse. `enter` and `leave` follow the mouse.
+ */
+export function createAddressScroll(props: { details: TabDetails; selected: boolean }) {
+  const [hovered, setHovered] = createSignal(false);
+  return {
+    scrolls: () => props.details.longAddress === 'scroll' && (props.selected || hovered()),
+    enter: () => setHovered(true),
+    leave: () => setHovered(false),
+  };
+}
+
+/**
+ * The website's address: cut with "…", or scrolling back and forth (createAddressScroll). It takes the width its place
  * gives it, never its text's (it measures that width to scroll): `class` gives it its place. Its place follows the
  * page's direction; the address itself always reads left to right (.claude/rules/i18n.md), so a long one shows its start.
  */

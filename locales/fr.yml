@@ -55,7 +55,7 @@ Settings_Address: Adresse du site web
 Settings_FullAddress: Adresse complète
 Settings_FullAddressNote: L'adresse complète de la page, et pas seulement le site.
 Settings_LongAddress: Adresses trop longues
-Settings_LongAddressNote: Les faire défiler sur l'onglet sélectionné pour les afficher en entier, ou les tronquer avec « … ».
+Settings_LongAddressNote: Les faire défiler sur l'onglet sélectionné et sur celui situé sous le curseur de la souris pour les afficher en entier, ou les tronquer avec « … ».
 Settings_LongAddressCut: Tronquer
 Settings_LongAddressScroll: Faire défiler
 Settings_PinnedIcon: Icône des onglets épinglés

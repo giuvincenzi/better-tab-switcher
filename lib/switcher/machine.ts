@@ -55,15 +55,18 @@ export interface Start {
   count: number;
   stayOpen: boolean;
   direction: 'next' | 'previous';
+  /** Opened again as the user left it: the tab selected then (when still shown), and whether a search filtered them. */
+  resume?: { selected?: number; filtered: boolean };
 }
 
 /**
  * The state when the switcher opens: the previous tab (the current one is first) going forward, or the last one going
- * back. The search field, also when it is shown, is not selected: the user clicks it to search.
+ * back; opened again as the user left it, the tab selected then. The search field, also when it is shown, is not
+ * selected: the user clicks it to search.
  */
-export function start({ count, stayOpen, direction }: Start): SwitcherState {
-  const selected = direction === 'next' ? Math.min(1, count - 1) : count - 1;
-  return { count, selected, searching: false, filtered: false, stayOpen };
+export function start({ count, stayOpen, direction, resume }: Start): SwitcherState {
+  const selected = resume?.selected ?? (direction === 'next' ? Math.min(1, count - 1) : count - 1);
+  return { count, selected, searching: false, filtered: resume?.filtered ?? false, stayOpen };
 }
 
 export function step(state: SwitcherState, event: SwitcherEvent): Step {

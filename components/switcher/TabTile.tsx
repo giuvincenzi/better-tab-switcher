@@ -9,6 +9,7 @@ import { IconButton } from '../ui/IconButton';
 import {
   Address,
   AutoSelectLine,
+  createAddressScroll,
   LastUsed,
   MIDDLE_BUTTON,
   preventMiddleClickScroll,
@@ -45,6 +46,7 @@ export interface TabTileProps {
 
 /** One tab in the switcher's grid: the title above, the preview below. */
 export function TabTile(props: TabTileProps): JSX.Element {
+  const address = createAddressScroll(props);
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: the keys that open a tab (Enter, the arrows, Alt's release) belong to the grid, which points to the selected tile with aria-activedescendant (WAI-ARIA listbox pattern).
     <div
@@ -59,7 +61,11 @@ export function TabTile(props: TabTileProps): JSX.Element {
         [styles.sleeping as string]: props.details.sleeping && props.tab.sleeping,
       }}
       onClick={() => props.onChoose()}
-      onPointerEnter={() => props.onHover()}
+      onPointerEnter={() => {
+        address.enter();
+        props.onHover();
+      }}
+      onPointerLeave={() => address.leave()}
       onMouseDown={preventMiddleClickScroll}
       onAuxClick={(event) => {
         if (event.button === MIDDLE_BUTTON) props.onClose();
@@ -86,7 +92,7 @@ export function TabTile(props: TabTileProps): JSX.Element {
         <Address
           url={props.tab.url}
           full={props.details.fullAddress}
-          scrolls={props.details.longAddress === 'scroll' && props.selected}
+          scrolls={address.scrolls()}
           class={styles.address}
         />
       </Show>

@@ -55,7 +55,7 @@ Settings_Address: Adresa site-ului
 Settings_FullAddress: Adresa completă
 Settings_FullAddressNote: Adresa întreagă a paginii, nu doar site-ul.
 Settings_LongAddress: Adresele lungi ale site-urilor
-Settings_LongAddressNote: Se derulează pe fila selectată, ca să apară întregi, sau se scurtează cu „…”.
+Settings_LongAddressNote: Se derulează pe fila selectată și pe cea de sub cursorul mouse-ului, ca să apară întregi, sau se scurtează cu „…”.
 Settings_LongAddressCut: Scurtate
 Settings_LongAddressScroll: Derulate
 Settings_PinnedIcon: Pictograma filei fixate

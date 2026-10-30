@@ -55,7 +55,7 @@ Settings_Address: Endereço do site
 Settings_FullAddress: Endereço completo
 Settings_FullAddressNote: O endereço inteiro da página, não só o do site.
 Settings_LongAddress: Endereços de sites longos
-Settings_LongAddressNote: Eles rolam na guia selecionada para aparecerem por inteiro ou são encurtados com “…”.
+Settings_LongAddressNote: Eles rolam na guia selecionada e na que está sob o cursor do mouse para aparecerem por inteiro ou são encurtados com “…”.
 Settings_LongAddressCut: Encurtar
 Settings_LongAddressScroll: Rolar
 Settings_PinnedIcon: Ícone de guia fixada

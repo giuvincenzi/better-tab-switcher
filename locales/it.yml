@@ -55,7 +55,7 @@ Settings_Address: Indirizzo del sito web
 Settings_FullAddress: Indirizzo completo
 Settings_FullAddressNote: L'indirizzo intero della pagina, non solo il sito.
 Settings_LongAddress: Indirizzi web lunghi
-Settings_LongAddressNote: Si possono far scorrere sulla scheda selezionata per vederli per intero, oppure accorciare con “…”.
+Settings_LongAddressNote: Si possono far scorrere sulla scheda selezionata e su quella sotto il puntatore del mouse per vederli per intero, oppure accorciare con “…”.
 Settings_LongAddressCut: Accorciati
 Settings_LongAddressScroll: A scorrimento
 Settings_PinnedIcon: Icona delle schede fissate

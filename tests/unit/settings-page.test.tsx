@@ -172,7 +172,7 @@ describe('SettingsPage', () => {
     const { host } = open();
     expect(describedBy(toggle(host, 'Full address'))).toBe('The whole address of the page, not only the site.');
     expect(describedBy(select(host, 'Long website addresses'))).toBe(
-      'Scrolling on the selected tab to show them whole, or cut short with “…”.',
+      'Scrolling on the selected tab and on the one under the mouse to show them whole, or cut short with “…”.',
     );
   });
 

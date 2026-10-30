@@ -12,7 +12,7 @@ import {
 import { i18n } from '#i18n';
 import { languageInUse } from '../../lib/i18n/language';
 import { type Key, keyEvent } from '../../lib/keys/keys';
-import type { Direction, SwitcherSnapshot } from '../../lib/messages';
+import type { Direction, Resume, SwitcherSnapshot } from '../../lib/messages';
 import { matchTab } from '../../lib/search/search';
 import type { Settings } from '../../lib/settings/settings';
 import type { SettingsChange } from '../../lib/settings/store';
@@ -47,7 +47,8 @@ export interface SwitcherProps {
   pictureTaken: Accessor<boolean>;
   onOpen: (tab: SwitcherTab) => void;
   onClose: () => void;
-  onCloseTab: (tab: SwitcherTab) => void;
+  /** A tab closed from the switcher, and the switcher as it is now (Resume). */
+  onCloseTab: (tab: SwitcherTab, resume: Resume) => void;
   /** A change made in the toolbar, to save; the switcher shows it at once. */
   onSettingsChange: (change: SettingsChange) => void;
   onSettings: () => void;
@@ -68,6 +69,12 @@ function listWidth(): string {
   return `clamp(${em(min)}, calc(var(--page-width) * ${share / 100}), ${em(max)})`;
 }
 
+/** Where a tab is among those shown; none when it isn't, or when no tab is given. */
+function indexOf(shown: ShownTab[], tabId: number | undefined): number | undefined {
+  const index = shown.findIndex(({ tab }) => tab.id === tabId);
+  return index === -1 ? undefined : index;
+}
+
 /** The longest the switcher waits for the page's picture before it shows. */
 const PICTURE_WAIT_MS = 1000;
 
@@ -78,7 +85,8 @@ export function Switcher(props: SwitcherProps): JSX.Element {
   const pageWidth = () => centeredOn?.width ?? window.innerWidth;
   const [settings, setSettings] = createSignal<Settings>(props.snapshot.settings);
   const [tabs, setTabs] = createSignal(props.snapshot.tabs);
-  const [query, setQuery] = createSignal('');
+  const resume = props.snapshot.resume;
+  const [query, setQuery] = createSignal(resume?.query ?? '');
   const shown = createMemo<ShownTab[]>(() =>
     tabs().flatMap((tab) => {
       const title = matchTab(query(), tab.title, tab.url);
@@ -90,6 +98,10 @@ export function Switcher(props: SwitcherProps): JSX.Element {
       count: shown().length,
       stayOpen: settings().stayOpen || fromIcon || !props.canSeeRelease,
       direction,
+      resume: resume && {
+        selected: indexOf(shown(), resume.selectedTabId),
+        filtered: resume.query.trim() !== '',
+      },
     }),
   );
   // Shown after the delay: a quick tap opens the previous tab before the switcher ever appears. Also not before the
@@ -137,9 +149,14 @@ export function Switcher(props: SwitcherProps): JSX.Element {
   function closeTab(index: number) {
     const target = shown()[index];
     if (!target) return;
-    props.onCloseTab(target.tab);
     setTabs((all) => all.filter((tab) => tab.id !== target.tab.id));
     dispatch({ type: 'removed', index });
+    // As the switcher is now, should it open again in another tab (the closed one was the tab it is in).
+    props.onCloseTab(target.tab, {
+      selectedTabId: shown()[state().selected]?.tab.id,
+      query: query(),
+      fromIcon: fromIcon || state().stayOpen,
+    });
   }
 
   /** Takes the panel's size and the grid's columns, as they are now: they stay so until the next takeFrame. */
