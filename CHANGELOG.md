@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Fixed
+
+- A tab's preview in the grid never shows the switcher. Opening the switcher on a tab right after closing it there, or
+  right after coming back to that tab, could take a preview with the old switcher in it.
+
 ## 1.0.0
 
 ### Added

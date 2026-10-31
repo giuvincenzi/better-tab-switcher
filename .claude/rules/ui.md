@@ -1,3 +1,14 @@
+---
+paths:
+  - "components/**"
+  - "styles/**"
+  - "lib/switcher/**"
+  - "entrypoints/options/**"
+  - "entrypoints/switcher-frame/**"
+  - "entrypoints/switcher-window/**"
+  - "entrypoints/switcher.content.ts"
+---
+
 # UI
 
 - Before a UI change, follow "UI changes" in `working-rules.md` (ask whether the user wants

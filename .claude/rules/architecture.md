@@ -1,3 +1,15 @@
+---
+paths:
+  - "entrypoints/**"
+  - "lib/**"
+  - "components/**"
+  - "styles/**"
+  - "wxt.config.ts"
+  - "package.json"
+  - "tsconfig*.json"
+  - "biome.json"
+---
+
 # Architecture
 
 ## Stack

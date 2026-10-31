@@ -91,6 +91,11 @@ interface Messages {
   showFrame(): FrameShown | null;
   /** Background → holder: hide the switcher's frame; it stays in the page, ready for the next time. */
   hideFrame(): void;
+  /**
+   * Background → holder, before the page's picture: false a moment after the switcher left the page's sight (it closed,
+   * or the page came back into sight after leaving it with the switcher), when Chrome may still show it there.
+   */
+  pictureFresh(): boolean;
   /** Holder → background: a key the page got while the switcher's frame was shown without the focus. */
   keyInPage(key: Key): void;
   /** Background → switcher: a key the page got for it (keyInPage). */
