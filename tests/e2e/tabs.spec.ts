@@ -2,6 +2,7 @@ import type { BrowserContext, Page, Worker } from '@playwright/test';
 import { contextOf, expect, test } from './fixtures';
 import {
   activeTitle,
+  closeItsOwnTab,
   colorsAt,
   mouseOn,
   named,
@@ -509,7 +510,7 @@ test.describe('closing tabs from the switcher @tabs', () => {
     await expect(selected(page)).toHaveAccessibleName(named('beta'));
     const delta = rows(page).filter({ hasText: 'delta' });
     await delta.hover();
-    await delta.getByRole('button', { name: 'Close tab' }).click();
+    await closeItsOwnTab(page, delta);
     // The browser chose the tab to show instead of delta; the switcher opened there and changed nothing else.
     const instead = await shownInstead(serviceWorker, 'delta');
     await expect.poll(() => rowNames(instead.page)).toHaveLength(3);
@@ -534,7 +535,7 @@ test.describe('closing tabs from the switcher @tabs', () => {
     await expect.poll(() => rowNames(page)).toEqual([named('delta'), named('alpha')]);
     const delta = rows(page).filter({ hasText: 'delta' });
     await delta.hover();
-    await delta.getByRole('button', { name: 'Close tab' }).click();
+    await closeItsOwnTab(page, delta);
     const instead = await shownInstead(serviceWorker, 'delta');
     await expect(switcher(instead.page).getByRole('searchbox')).toHaveValue('l');
     await expect.poll(() => rowNames(instead.page)).toEqual([named('alpha')]);
@@ -553,7 +554,7 @@ test.describe('closing tabs from the switcher @tabs', () => {
     await expect(selected(page)).toHaveAccessibleName(named('beta'));
     const delta = rows(page).filter({ hasText: 'delta' });
     await delta.hover();
-    await delta.getByRole('button', { name: 'Close tab' }).click();
+    await closeItsOwnTab(page, delta);
     const instead = await shownInstead(serviceWorker, 'delta');
     await expect(selected(instead.page)).toHaveAccessibleName(named('beta'));
     // The key held since the switcher opened, let go in the page the switcher is in now.

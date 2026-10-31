@@ -194,3 +194,18 @@ export async function mouseOn(row: Locator) {
     await expect(row.getByRole('button', { name: 'Close tab' })).toBeVisible({ timeout: 500 });
   }).toPass();
 }
+
+/**
+ * Clicks a row's Close tab in the page that click closes (the tab the switcher is shown in), until the page is gone:
+ * the page may close before Playwright sees the click end, which it reports as an error that is the result expected.
+ */
+export async function closeItsOwnTab(page: Page, row: Locator) {
+  const closed = page.waitForEvent('close');
+  await row
+    .getByRole('button', { name: 'Close tab' })
+    .click()
+    .catch((error) => {
+      if (!page.isClosed()) throw error;
+    });
+  await closed;
+}
