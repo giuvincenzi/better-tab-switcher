@@ -1,4 +1,4 @@
-import { writeFileSync } from 'node:fs';
+import { appendFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { type BrowserContext, test as base, type Page, type Worker } from '@playwright/test';
 import { launchRealBrowser } from '../../scripts/real-browser.mjs';
@@ -44,6 +44,9 @@ if (!(BROWSERS as readonly string[]).includes(browser)) {
   throw new Error(`E2E_BROWSER must be one of ${BROWSERS.join(', ')}: '${browser}'.`);
 }
 
+/** How long a browser may take to get the extension's background ready before its start is written down. */
+const SLOW_START_MS = 5000;
+
 /** The worker of this extension: the browser has its own extensions' workers too. */
 async function isOurs(worker: Worker): Promise<boolean> {
   if (!worker.url().startsWith('chrome-extension://')) return false;
@@ -76,6 +79,16 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }>({
     use,
     testInfo,
   ) => {
+    // How the browser started, step by step, written to startup.txt in the test's folder once its start is slow: a test
+    // whose browser never gets ready runs out of time before anything else could be reported.
+    const started = Date.now();
+    const steps: string[] = [];
+    let slow = false;
+    const step = (what: string) => {
+      const line = `${Date.now() - started} ms ${what}\n`;
+      if (slow) appendFileSync(testInfo.outputPath('startup.txt'), line);
+      else steps.push(line);
+    };
     const real = await launchRealBrowser({
       browser,
       extensionDir,
@@ -131,10 +144,39 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }>({
     context.on('serviceworker', (worker) => void watchWorker(worker));
     // Ready as a user's browser is: with the extension loaded (its background started). A page navigating while the
     // browser still loads it can have its navigation aborted (Windows: 'net::ERR_ABORTED; maybe frame was detached').
+    step(`connected to the browser (process ${real.pid})`);
+    let looked = 0;
     while (!extension) {
       for (const worker of context.serviceWorkers()) await watchWorker(worker);
-      if (!extension) await new Promise((resolve) => setTimeout(resolve, 100));
+      if (extension) break;
+      if (!slow && Date.now() - started > SLOW_START_MS) {
+        slow = true;
+        writeFileSync(testInfo.outputPath('startup.txt'), steps.join(''));
+      }
+      // Once a second while slow: what the browser has, and the workers Playwright sees.
+      if (slow && Date.now() - looked > 1000) {
+        looked = Date.now();
+        const targets = await Promise.race([
+          real
+            .sendToBrowser('Target.getTargets')
+            .then((answer) => (answer as { targetInfos: { type: string; url: string }[] }).targetInfos),
+          new Promise<undefined>((resolve) => setTimeout(resolve, 1000)),
+        ]).catch(() => undefined);
+        step(
+          `browser targets: ${targets ? targets.map(({ type, url }) => `${type} ${url}`).join(' | ') || 'none' : 'no answer in 1 s'}`,
+        );
+        step(
+          `workers Playwright sees: ${
+            context
+              .serviceWorkers()
+              .map((worker) => worker.url())
+              .join(' | ') || 'none'
+          }`,
+        );
+      }
+      await new Promise((resolve) => setTimeout(resolve, 100));
     }
+    step("the extension's background is ready");
 
     // What the browser itself did with its tabs and frames (made, changed, closed), for a failed test's report.
     const targets: string[] = [];
