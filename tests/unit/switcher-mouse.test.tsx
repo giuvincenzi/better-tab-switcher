@@ -27,16 +27,6 @@ afterEach(async () => {
 // tabs.spec.ts, grid.spec.ts, search.spec.ts and switching.spec.ts; the selection itself: tests/unit/machine.test.ts.
 
 describe('Switcher with the mouse', () => {
-  it("keeps the browser's auto-scroll from starting on a middle press over a tab, never on a left press", () => {
-    const { host } = openSwitcher();
-    const middle = new MouseEvent('mousedown', { button: 1, bubbles: true, cancelable: true });
-    const left = new MouseEvent('mousedown', { button: 0, bubbles: true, cancelable: true });
-    option(host, 'Q4 planning, example.com/3').dispatchEvent(middle);
-    option(host, 'Q4 planning, example.com/3').dispatchEvent(left);
-    expect(middle.defaultPrevented).toBe(true);
-    expect(left.defaultPrevented).toBe(false);
-  });
-
   it('shows the close button only under the mouse', async () => {
     const { host } = openSwitcher();
     const row = option(host, 'Q4 planning, example.com/3');

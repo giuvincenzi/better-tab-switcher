@@ -13,7 +13,6 @@ import {
   option,
   options,
   panel,
-  selectedName,
   tab,
   tabs,
   typeInSearch,
@@ -38,34 +37,6 @@ const size = (element: HTMLElement) => {
 const settingsWith = (change: Partial<Settings>): Settings => ({ ...defaultSettings, ...change });
 
 describe('Switcher frame', () => {
-  it('keeps its size when the page is resized while it is open', async () => {
-    await page.viewport(1280, 800);
-    const { host } = openSwitcher();
-    const opened = size(panel(host));
-    await page.viewport(2000, 800);
-    expect(size(panel(host))).toEqual(opened);
-  });
-
-  it('tells its size once it has taken it, and again after a toolbar change', () => {
-    const { host, handlers } = openSwitcher({ view: 'grid' });
-    expect(handlers.onFrame).toHaveBeenCalledOnce();
-    expect(handlers.onFrame).toHaveBeenLastCalledWith(size(panel(host)));
-    button(host, 'Website address').click();
-    expect(handlers.onFrame).toHaveBeenCalledTimes(2);
-    expect(handlers.onFrame).toHaveBeenLastCalledWith(size(panel(host)));
-  });
-
-  it('grows taller in the grid when the website address is turned on, as the tiles grow', () => {
-    const { host } = openSwitcher({ view: 'grid', details: { ...defaultSettings.details, address: false } });
-    const before = size(panel(host)).height;
-    button(host, 'Website address').click();
-    const tile = options(host)[0] as HTMLElement;
-    expect(size(panel(host)).height).toBeGreaterThan(before);
-    // Nothing is cut: the tiles fit the frame taken again.
-    expect(listbox(host).scrollHeight).toBe(listbox(host).clientHeight);
-    expect(tile.getBoundingClientRect().bottom).toBeLessThanOrEqual(panel(host).getBoundingClientRect().bottom);
-  });
-
   it("takes the grid's columns again when the toolbar changes what the grid shows, then keeps them while searching", async () => {
     await page.viewport(1920, 800);
     const { host } = openSwitcher({ view: 'grid' });
@@ -90,18 +61,6 @@ describe('Switcher frame', () => {
 });
 
 describe('Switcher sizes', () => {
-  it("chooses the grid's columns for the user's text size", async () => {
-    await page.viewport(1280, 800);
-    const many = manyTabs(30);
-    const grid = settingsWith({ view: 'grid' });
-    const larger = gridColumns(grid, many.length, window.innerWidth, 20);
-    expect(larger).not.toBe(gridColumns(grid, many.length, window.innerWidth, DEFAULT_EM_PX));
-    document.body.style.setProperty('--bts-em', '20px');
-    const { host } = openSwitcher({ view: 'grid' }, { tabs: many });
-    expect(columnsShown(host)).toBe(larger);
-    expect(listbox(host).scrollWidth).toBe(listbox(host).clientWidth);
-  });
-
   it('fits a narrow page in the grid: never wider than the page, no tile cut', async () => {
     await page.viewport(400, 800);
     const grid = settingsWith({ view: 'grid' });
@@ -219,22 +178,6 @@ describe('Switcher right to left', () => {
     const first = option(host, 'Pull request #12, example.com/1').getBoundingClientRect();
     const second = option(host, 'Inbox (3), example.com/2').getBoundingClientRect();
     expect(first.left).toBeGreaterThan(second.right);
-  });
-
-  it('moves the selection the way the arrow points in a right-to-left grid', () => {
-    document.body.dir = 'rtl';
-    const { host, press } = openSwitcher({ view: 'grid' });
-    const place = () => option(host, selectedName(host) as string).getBoundingClientRect();
-    // The selected tab (the previous one) ends the first row; the right arrow goes back to its start.
-    press('ArrowRight');
-    const start = place();
-    expect(start.right).toBeGreaterThan(place().left);
-    press('ArrowLeft');
-    const left = place();
-    expect(left.top).toBe(start.top);
-    expect(left.left).toBeLessThan(start.left);
-    press('ArrowRight');
-    expect(place().left).toBe(start.left);
   });
 
   it("starts a tile's address past the site's icon, on the side the text starts", () => {

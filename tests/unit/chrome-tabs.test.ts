@@ -1,34 +1,9 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fakeBrowser } from '#imports';
-import { listedTabs, readTabs } from '../../lib/tabs/chrome-tabs';
+import { describe, expect, it } from 'vitest';
+import { listedTabs } from '../../lib/tabs/chrome-tabs';
 import type { GroupColor } from '../../lib/tabs/tabs';
-import { fakeChrome, newWorld, normalWindow, tab, type World } from './background-world';
+import { tab } from './background-world';
 
 // Which tabs the switcher lists, read from the real browser: tests/e2e/tabs.spec.ts and switcher.spec.ts.
-
-describe('readTabs', () => {
-  let world: World;
-
-  beforeEach(() => {
-    fakeBrowser.reset();
-    world = newWorld({ windows: [normalWindow(1), normalWindow(2)] });
-    fakeChrome(world);
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  it('counts the current tab of a window opened by no tab (an installed web app) in the normal window used last', async () => {
-    world.windows.push({ ...normalWindow(50), type: 'app' });
-    world.lastNormalWindowId = 2;
-    const app = tab(51, 50);
-    world.tabs = [tab(11, 1), tab(21, 2), app];
-    const { tabs, currentWindowId } = await readTabs(app);
-    expect(currentWindowId).toBe(2);
-    expect(tabs.find((t) => t.id === 51)?.windowId).toBe(2);
-  });
-});
 
 describe('listedTabs', () => {
   const noGroups = new Map<number, GroupColor>();

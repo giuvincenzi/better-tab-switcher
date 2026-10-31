@@ -117,19 +117,34 @@ for (const [chromeLanguage, locale] of [
       expect(await textsCut(settings.locator('body'))).toEqual([]);
     });
 
-    test(`shows the switcher in it, ${dir}, every text whole, in the list and in the grid`, async ({
+    test(`shows the switcher in it, ${dir}, every text whole, in the list and in the grid, whose arrows move the way they point`, async ({
       context,
       serviceWorker,
     }) => {
-      const [, current] = await openPages(context, ['alpha', 'beta']);
+      const [, , current] = await openPages(context, ['alpha', 'beta', 'gamma']);
       const page = current as Page;
       for (const view of ['list', 'grid'] as const) {
         await serviceWorker.evaluate((v) => chrome.storage.local.set({ settings: { view: v } }), view);
         await showSwitcher(serviceWorker, 'next', 'icon');
         const panel = switcher(page).locator('[style*="--panel-width"]');
-        await expect(switcher(page).getByRole('option')).toHaveCount(2);
+        const tiles = switcher(page).getByRole('option');
+        await expect(tiles).toHaveCount(3);
         expect(await switcher(page).evaluate((dialog) => getComputedStyle(dialog).direction)).toBe(dir);
         expect(await textsCut(panel)).toEqual([]);
+        if (view === 'grid') {
+          // The second tab is selected; the first one is beside it, on its right when the grid runs right to left.
+          await expect(tiles.nth(1)).toHaveAttribute('aria-selected', 'true');
+          const [first, second] = await Promise.all([tiles.nth(0).boundingBox(), tiles.nth(1).boundingBox()]);
+          if (!first || !second) throw new Error('The tiles are not on screen.');
+          expect(first.y).toBe(second.y);
+          expect(first.x > second.x).toBe(dir === 'rtl');
+          // The arrow that points at the first tab selects it, the other one goes back.
+          const towardFirst = first.x < second.x ? 'ArrowLeft' : 'ArrowRight';
+          await page.keyboard.press(towardFirst);
+          await expect(tiles.nth(0)).toHaveAttribute('aria-selected', 'true');
+          await page.keyboard.press(towardFirst === 'ArrowLeft' ? 'ArrowRight' : 'ArrowLeft');
+          await expect(tiles.nth(1)).toHaveAttribute('aria-selected', 'true');
+        }
         await page.keyboard.press('Escape');
       }
     });

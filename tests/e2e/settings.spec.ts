@@ -6,12 +6,14 @@ import {
   activeTitle,
   colorsAt,
   defaultShortcuts,
+  named,
   openPages,
   rows,
   selected,
   shortcutText,
   showSwitcher,
   switcher,
+  switcherFrame,
   testBrowser,
   useSettings,
 } from './helpers';
@@ -73,16 +75,32 @@ test.describe('settings page @settings', () => {
     await expect(marked).toHaveText('Reset');
   });
 
-  test("opens from the switcher's toolbar", async ({ context, serviceWorker }) => {
+  test("opens from the switcher's toolbar, and the page the switcher was in is usable again", async ({
+    context,
+    serviceWorker,
+  }) => {
     const [, current] = await openPages(context, ['alpha', 'beta']);
     const page = current as Page;
     await showSwitcher(serviceWorker);
+    // The holder's frame: its element (better-tab-switcher) has no box of its own, the frame in it shows over the page.
+    const holder = await switcherFrame(page)?.frameElement();
+    expect(await holder?.isVisible()).toBe(true);
     const opened = context.waitForEvent('page', (tab) => tab.url().endsWith('/options.html'));
     const panel = switcher(page);
     await panel.getByRole('button', { name: 'All settings' }).click();
     const settings = await opened;
     await expect(settings.getByRole('heading', { name: 'Better Tab Switcher settings' })).toBeVisible();
     await expect(rows(page)).toHaveCount(0);
+    await expect.poll(() => holder?.isVisible()).toBe(false);
+    // Back in that page, a click reaches it: no switcher left over it, which would take every click.
+    await page.bringToFront();
+    await page.evaluate(() => {
+      document.querySelector('h1')?.addEventListener('click', () => {
+        document.title = 'clicked';
+      });
+    });
+    await page.getByRole('heading', { name: 'beta' }).click();
+    await expect(page).toHaveTitle('clicked');
   });
 
   test('changes the view of the switcher', async ({ context, serviceWorker, extensionId }) => {
@@ -98,12 +116,21 @@ test.describe('settings page @settings', () => {
     await expect(switcher(page).locator('[role="listbox"]')).toHaveCSS('display', 'grid');
   });
 
-  test('follows the theme chosen in it at once', async ({ context, extensionId, serviceWorker }) => {
+  test('follows the theme chosen in it at once, and opens again with it', async ({
+    context,
+    extensionId,
+    serviceWorker,
+  }) => {
     const settings = await openSettings(context, extensionId);
     const corner = () => colorsAt(settings, serviceWorker, [{ x: 2, y: 2 }]);
-    await settings.getByRole('combobox', { name: 'Theme' }).selectOption({ label: 'Dark' });
+    const theme = settings.getByRole('combobox', { name: 'Theme' });
+    await theme.selectOption({ label: 'Dark' });
     await expect.poll(corner).toEqual(['rgb(32, 33, 36)']);
-    await settings.getByRole('combobox', { name: 'Theme' }).selectOption({ label: 'Light' });
+    // Saved: the page opened again shows the theme chosen, in its colors.
+    await settings.reload();
+    await expect(theme.locator('option:checked')).toHaveText('Dark');
+    await expect.poll(corner).toEqual(['rgb(32, 33, 36)']);
+    await theme.selectOption({ label: 'Light' });
     await expect.poll(corner).toEqual(['rgb(248, 249, 250)']);
   });
 
@@ -304,10 +331,61 @@ test.describe("the switcher's toolbar @settings", () => {
     await expect(selected(page)).toHaveAccessibleName('alpha, bts.test/alpha');
     await expect(address).toHaveAttribute('aria-pressed', 'true');
   });
+
+  test('leaves the arrows and Enter to a button reached with Tab, the keyboard staying there, and closes on Esc from it', async ({
+    context,
+    serviceWorker,
+  }) => {
+    const [, current] = await openPages(context, ['alpha', 'beta']);
+    const page = current as Page;
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    await expect(selected(page)).toHaveAccessibleName(named('alpha'));
+    // From the tabs, Tab goes to the toolbar's first button (Compact), then to the second one.
+    const address = switcher(page).getByRole('button', { name: 'Website address' });
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Tab');
+    await expect(address).toBeFocused();
+    // The arrows are the button's: the tabs' selection doesn't move.
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.press('ArrowDown');
+    await expect(address).toBeFocused();
+    await expect(selected(page)).toHaveAccessibleName(named('alpha'));
+    // Enter presses the button, opens no tab, and leaves the keyboard on the button: the user goes on from there.
+    await page.keyboard.press('Enter');
+    await expect(address).toHaveAttribute('aria-pressed', 'false');
+    await expect(selected(page)).toHaveAccessibleName('alpha');
+    expect(await activeTitle(serviceWorker)).toBe('beta');
+    await expect(address).toBeFocused();
+    // Esc from it still closes the switcher, without opening a tab.
+    await page.keyboard.press('Escape');
+    await expect(rows(page)).toHaveCount(0);
+    expect(await activeTitle(serviceWorker)).toBe('beta');
+  });
+
+  test('makes the grid taller when the website address is turned on from the toolbar, with nothing cut', async ({
+    context,
+    serviceWorker,
+  }) => {
+    await useSettings(serviceWorker, { view: 'grid', details: { address: false } } as never);
+    const [, current] = await openPages(context, ['alpha', 'beta']);
+    const page = current as Page;
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    await expect(rows(page)).toHaveCount(2);
+    const panel = switcher(page).locator('[style*="--panel-width"]');
+    const list = switcher(page).getByRole('listbox');
+    const height = async () => (await panel.boundingBox())?.height ?? 0;
+    const before = await height();
+    await switcher(page).getByRole('button', { name: 'Website address' }).click();
+    await expect(rows(page).getByText('bts.test')).toHaveCount(2);
+    await expect.poll(height).toBeGreaterThan(before);
+    // The tiles, taller with the address, fit the panel: the list has nothing to scroll.
+    await expect.poll(() => list.evaluate((element) => element.scrollHeight - element.clientHeight)).toBe(0);
+  });
 });
 
 test.describe('settings changed in two pages at once @settings', () => {
-  test('keeps both changes every time, each page showing the other one, and a damaged one as its default', async ({
+  test('keeps both changes every time, each page showing the other one and its theme, and a damaged one as its default', async ({
     context,
     extensionId,
     serviceWorker,
@@ -340,6 +418,12 @@ test.describe('settings changed in two pages at once @settings', () => {
       await expect(first.getByRole('switch', { name: 'Compact' })).toBeChecked({ checked: !on });
       await expect(second.getByRole('switch', { name: 'Show toolbar' })).toBeChecked({ checked: on });
     }
+    // The theme chosen in one page colors the other one at once.
+    const secondCorner = () => colorsAt(second, serviceWorker, [{ x: 2, y: 2 }]);
+    await expect.poll(secondCorner).toEqual(['rgb(248, 249, 250)']);
+    await first.getByRole('combobox', { name: 'Theme' }).selectOption({ label: 'Dark' });
+    await expect(second.getByRole('combobox', { name: 'Theme' }).locator('option:checked')).toHaveText('Dark');
+    await expect.poll(secondCorner).toEqual(['rgb(32, 33, 36)']);
     // Damaged values saved while both pages are open (another version's, a broken write): those settings show their
     // defaults, the others what was saved.
     await first.getByRole('switch', { name: 'Show toolbar' }).click();

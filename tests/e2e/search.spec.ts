@@ -5,7 +5,7 @@ import { activeTitle, named, openPages, rowNames, rows, selected, showSwitcher, 
 const searchField = (page: Page) => switcher(page).getByRole('searchbox', { name: 'Search tabs' });
 
 test.describe('search @search', () => {
-  test('shows only the tabs that match, the match highlighted, and the arrows and Enter open one', async ({
+  test('shows only the tabs that match, the match highlighted, up from the first goes back to the field, and the arrows and Enter open one', async ({
     context,
     serviceWorker,
   }) => {
@@ -19,6 +19,12 @@ test.describe('search @search', () => {
     await expect(rows(page).locator('mark')).toHaveText(['ta', 'ta']);
     // The search field is selected while typing: down goes to the first match, then to the next one.
     await expect(selected(page)).toHaveCount(0);
+    await page.keyboard.press('ArrowDown');
+    await expect(selected(page)).toHaveAccessibleName(named('delta'));
+    // Up from the first match goes back to the search field.
+    await page.keyboard.press('ArrowUp');
+    await expect(selected(page)).toHaveCount(0);
+    await expect(searchField(page)).toBeFocused();
     await page.keyboard.press('ArrowDown');
     await expect(selected(page)).toHaveAccessibleName(named('delta'));
     await page.keyboard.press('ArrowDown');
@@ -57,7 +63,7 @@ test.describe('search @search', () => {
     await expect.poll(() => activeTitle(serviceWorker)).toBe('Inbox');
   });
 
-  test('says when no tab matches, shows every tab again when the field is cleared, and Esc closes', async ({
+  test('says when no tab matches, where Enter does nothing, shows every tab again when the field is cleared, and Esc closes', async ({
     context,
     serviceWorker,
   }) => {
@@ -68,6 +74,11 @@ test.describe('search @search', () => {
     await page.keyboard.type('zzz');
     await expect(rows(page)).toHaveCount(0);
     await expect(switcher(page).getByText('No tabs match your search.')).toBeVisible();
+    // Enter has nothing to open: the switcher stays open, on the same tab (it still shows every tab once cleared).
+    await page.keyboard.press('Enter');
+    await expect(searchField(page)).toBeFocused();
+    await expect(switcher(page).getByText('No tabs match your search.')).toBeVisible();
+    expect(await activeTitle(serviceWorker)).toBe('gamma');
     await searchField(page).fill('');
     await expect.poll(() => rowNames(page)).toEqual([named('gamma'), named('beta'), named('alpha')]);
     await expect(switcher(page).getByText('No tabs match your search.')).toHaveCount(0);

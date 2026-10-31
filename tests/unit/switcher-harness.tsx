@@ -93,8 +93,7 @@ export const option = (host: HTMLElement, name: string) =>
 export const selectedName = (host: HTMLElement) =>
   host.querySelector('[role="option"][aria-selected="true"]')?.getAttribute('aria-label');
 export const listbox = (host: HTMLElement) => host.querySelector('[role="listbox"]') as HTMLElement;
-export const searchField = (host: HTMLElement) =>
-  host.querySelector('input[aria-label="Search tabs"]') as HTMLInputElement;
+const searchField = (host: HTMLElement) => host.querySelector('input[aria-label="Search tabs"]') as HTMLInputElement;
 export const button = (host: HTMLElement, name: string) =>
   host.querySelector(`button[aria-label="${name}"]`) as HTMLButtonElement;
 /** The panel: the box around the toolbar and the tabs. */

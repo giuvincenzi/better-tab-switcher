@@ -24,12 +24,28 @@ const openTitles = (worker: Worker) =>
   worker.evaluate(async () => (await chrome.tabs.query({})).map((tab) => tab.title).sort());
 
 test.describe('which tabs the switcher lists @tabs', () => {
-  test("lists only the current window's tabs by default", async ({ context, serviceWorker }) => {
+  test("lists only the current window's tabs by default, and stays open when the other window changes or closes", async ({
+    context,
+    serviceWorker,
+  }) => {
     await openPages(context, ['alpha', 'beta']);
     const delta = await openWindow(context, serviceWorker, 'delta');
     await openWindowTab(delta, serviceWorker, 'epsilon');
     await showSwitcher(serviceWorker, 'next', 'icon');
     await expect.poll(() => rowNames(delta)).toEqual([named('delta'), named('epsilon')]);
+    await expect(selected(delta)).toHaveAccessibleName(named('epsilon'));
+    // Another tab comes to the front of the other window (the user isn't there: a site, another extension).
+    const [alpha, beta] = await Promise.all([tabIdOf(serviceWorker, 'alpha'), tabIdOf(serviceWorker, 'beta')]);
+    await serviceWorker.evaluate((id) => chrome.tabs.update(id, { active: true }), alpha);
+    await expect.poll(() => serviceWorker.evaluate(async (id) => (await chrome.tabs.get(id)).active, alpha)).toBe(true);
+    // The other window closes.
+    const other = await serviceWorker.evaluate(async (id) => (await chrome.tabs.get(id)).windowId, beta);
+    await serviceWorker.evaluate((id) => chrome.windows.remove(id), other);
+    await expect.poll(() => serviceWorker.evaluate(async () => (await chrome.windows.getAll()).length)).toBe(1);
+    // Still the same switcher: the shortcut moves its selection on, where a new one would select epsilon again.
+    await expect(rows(delta)).toHaveCount(2);
+    await showSwitcher(serviceWorker);
+    await expect(selected(delta)).toHaveAccessibleName(named('delta'));
   });
 
   test("lists every window's tabs with All windows, each other window's with its number", async ({
@@ -344,6 +360,89 @@ test.describe("a site's popup window @tabs", () => {
         serviceWorker.evaluate(async () => (await chrome.windows.getAll()).filter((w) => w.focused).map((w) => w.id)),
       )
       .toEqual([home]);
+  });
+
+  test('lists a window opened by no tab, like an installed web app, first, then the tabs of the normal window used last', async ({
+    context,
+    serviceWorker,
+  }) => {
+    await openPages(context, ['alpha', 'beta']);
+    await openWindow(context, serviceWorker, 'delta');
+    // Back to the first window: the normal window used last, not the newest.
+    const home = await serviceWorker.evaluate(async () => (await chrome.tabs.query({ title: 'alpha' }))[0]?.windowId);
+    await serviceWorker.evaluate((id) => chrome.windows.update(id as number, { focused: true }), home);
+    await expect.poll(() => serviceWorker.evaluate(async () => (await chrome.windows.getLastFocused()).id)).toBe(home);
+    // An app's window: opened by the browser, not by a tab (no opener). Blank first, then the site: Playwright serves
+    // the site only to the pages it already knows.
+    const opened = context.waitForEvent('page');
+    await serviceWorker.evaluate(() => chrome.windows.create({ type: 'popup', url: 'about:blank', focused: true }));
+    const app = await opened;
+    await app.goto('https://bts.test/app');
+    await app.bringToFront();
+    await expect
+      .poll(() =>
+        serviceWorker.evaluate(async () =>
+          (await chrome.windows.getAll()).some((window) => window.type === 'popup' && window.focused),
+        ),
+      )
+      .toBe(true);
+    expect(
+      await serviceWorker.evaluate(async () => (await chrome.tabs.query({ title: 'app' }))[0]?.openerTabId),
+    ).toBeUndefined();
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    await expect.poll(() => rowNames(app)).toEqual([named('app'), named('beta'), named('alpha')]);
+  });
+});
+
+test.describe('tabs that move to another window @tabs', () => {
+  // The system's focus, real: the browser's window on screen.
+  test.use({ headed: true });
+
+  test('opens a tab moved to another window while the switcher was open, in the window it is in now, which gets the focus', async ({
+    context,
+    serviceWorker,
+  }) => {
+    await useSettings(serviceWorker, { scope: 'all' });
+    await openPages(context, ['alpha', 'beta']);
+    await openWindow(context, serviceWorker, 'gamma');
+    const delta = await openWindow(context, serviceWorker, 'delta');
+    await delta.bringToFront();
+    const windowOf = (title: string) =>
+      serviceWorker.evaluate(async (t) => (await chrome.tabs.query({ title: t }))[0]?.windowId as number, title);
+    const [first, gammaWindow, deltaWindow] = await Promise.all([
+      windowOf('alpha'),
+      windowOf('gamma'),
+      windowOf('delta'),
+    ]);
+    const focusedWindows = () =>
+      serviceWorker.evaluate(async () => (await chrome.windows.getAll()).filter((w) => w.focused).map((w) => w.id));
+    await expect.poll(focusedWindows).toEqual([deltaWindow]);
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    await expect(rows(delta)).toHaveCount(4);
+    // While the switcher is open, alpha goes to gamma's window, behind gamma (the user drags it, or another extension).
+    const alpha = await tabIdOf(serviceWorker, 'alpha');
+    await serviceWorker.evaluate(({ id, to }) => chrome.tabs.move(id, { windowId: to, index: -1 }), {
+      id: alpha,
+      to: gammaWindow,
+    });
+    await expect.poll(() => windowOf('alpha')).toBe(gammaWindow);
+    expect(first).not.toBe(gammaWindow);
+    const row = rows(delta).filter({ hasText: 'alpha' });
+    await mouseOn(row);
+    await row.click();
+    // Shown in the window it is in now, which comes to the front with the system's focus.
+    await expect
+      .poll(() =>
+        serviceWorker.evaluate(
+          async (id) => (await chrome.tabs.query({ active: true, windowId: id }))[0]?.title,
+          gammaWindow,
+        ),
+      )
+      .toBe('alpha');
+    await expect.poll(focusedWindows).toEqual([gammaWindow]);
+    await expect
+      .poll(() => serviceWorker.evaluate(async () => (await chrome.windows.getLastFocused()).id))
+      .toBe(gammaWindow);
   });
 });
 

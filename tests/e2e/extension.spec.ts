@@ -31,8 +31,23 @@ test.describe('extension @setup', () => {
     expect(name).toBe('Better Tab Switcher');
   });
 
-  test('gives the next and previous tab shortcuts their default keys', async ({ serviceWorker }) => {
+  test('gives the next and previous tab shortcuts their default keys, and opens no settings page about them', async ({
+    context,
+    serviceWorker,
+    extensionId,
+  }) => {
     const commands = await serviceWorker.evaluate(() => chrome.commands.getAll());
+    // The keys are free: the install opens no settings page asking for them. Asked once this test's own reading of the
+    // shortcuts answered: the install read them before, and opens the page right after its reading answered.
+    const settingsTabs = await serviceWorker.evaluate(async () =>
+      (await chrome.tabs.query({}))
+        .map((tab) => tab.pendingUrl ?? tab.url ?? '')
+        .filter((url) => url.includes('options.html')),
+    );
+    expect(settingsTabs).toEqual([]);
+    expect(context.pages().map((page) => page.url())).not.toContainEqual(
+      expect.stringContaining(`chrome-extension://${extensionId}/options.html`),
+    );
     const defaults = await defaultShortcuts(serviceWorker);
     for (const [name, expected] of [
       ['next-tab', defaults.next],

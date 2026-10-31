@@ -54,6 +54,16 @@ async function recordFrameKeys(page: Page) {
   });
 }
 
+/**
+ * Whether the page or the switcher's frame got this key (recordKeys, recordFrameKeys): the frame once it has the
+ * focus, the page before (it passes the keys on to the switcher).
+ */
+async function keySeen(page: Page, key: string): Promise<boolean> {
+  const read = () => (globalThis as unknown as { keysSeen?: string[] }).keysSeen ?? [];
+  const seen = [...(await page.evaluate(read)), ...((await switcherFrame(page)?.evaluate(read)) ?? [])];
+  return seen.includes(key);
+}
+
 /** Waits until the switcher's frame is in the page: the keyboard opened the switcher, not the test. */
 const frameIn = (page: Page) => expect.poll(() => switcherFrame(page) !== null).toBe(true);
 
@@ -100,23 +110,40 @@ test.describe('the shortcuts on the keyboard @shortcut', () => {
     await expect(rows(page)).toHaveCount(0);
   });
 
-  test('the previous tab shortcut opens the switcher on the oldest tab', async ({ context, serviceWorker }) => {
+  test('the previous tab shortcut opens the switcher on the oldest tab, letting go of Shift keeps it open', async ({
+    context,
+    serviceWorker,
+  }) => {
     const [, , current] = await openPages(context, ['alpha', 'beta', 'gamma']);
     const page = current as Page;
     await focusBrowser(context, await windowOf(serviceWorker));
     await focusPage(page);
-    hold(MODIFIER);
-    hold('Shift');
+    const report = await recordKeys(page, serviceWorker);
     try {
-      press('S');
-      await frameIn(page);
-      await expect(rows(page)).toHaveCount(3);
-      await expect(selected(page)).toHaveAccessibleName(named('alpha'));
+      hold(MODIFIER);
+      let shiftHeld = true;
+      hold('Shift');
+      try {
+        press('S');
+        await frameIn(page);
+        await recordFrameKeys(page);
+        await expect(rows(page)).toHaveCount(3);
+        await expect(selected(page)).toHaveAccessibleName(named('alpha'));
+        // Shift let go first, the modifier still held: once the switcher got that key, it is still open, on its tab.
+        release('Shift');
+        shiftHeld = false;
+        await expect.poll(() => keySeen(page, 'keyup Shift')).toBe(true);
+        await expect(rows(page)).toHaveCount(3);
+        await expect(selected(page)).toHaveAccessibleName(named('alpha'));
+        expect(await activeTitle(serviceWorker)).toBe('gamma');
+      } finally {
+        if (shiftHeld) release('Shift');
+        release(MODIFIER);
+      }
+      await expect.poll(() => activeTitle(serviceWorker)).toBe('alpha');
     } finally {
-      release('Shift');
-      release(MODIFIER);
+      await report(test.info());
     }
-    await expect.poll(() => activeTitle(serviceWorker)).toBe('alpha');
   });
 
   test('stays open when the shortcut is let go in the address bar, which the page never hears, until a tab is chosen', async ({

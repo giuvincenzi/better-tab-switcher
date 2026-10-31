@@ -1,8 +1,9 @@
-import type { BrowserContext, Page } from '@playwright/test';
+import type { BrowserContext, Locator, Page, Worker } from '@playwright/test';
 import { expect, test } from './fixtures';
 import {
   activeTitle,
   closeBy,
+  closeWithEscape,
   colorsAt,
   named,
   openPages,
@@ -12,17 +13,25 @@ import {
   selected,
   showSwitcher,
   switcher,
+  switcherFrame,
   useSettings,
 } from './helpers';
 
 test.describe('switcher in a page @switcher', () => {
-  test('lists the tabs most recently used first, the previous one selected', async ({ context, serviceWorker }) => {
+  test('lists the tabs most recently used first, the previous one selected, the search field shown without the focus', async ({
+    context,
+    serviceWorker,
+  }) => {
     const [, , current] = await openPages(context, ['alpha', 'beta', 'gamma']);
     await showSwitcher(serviceWorker);
     const page = current as Page;
     await expect(rows(page)).toHaveCount(3);
     await expect.poll(() => rowNames(page)).toEqual([named('gamma'), named('beta'), named('alpha')]);
     await expect(selected(page)).toContainText('beta');
+    // The search field is there, but the keys go to the list until the user clicks it or types.
+    const search = switcher(page).getByRole('searchbox', { name: 'Search tabs' });
+    await expect(search).toBeVisible();
+    await expect(search).not.toBeFocused();
   });
 
   test('opens the selected tab when Alt is released', async ({ context, serviceWorker }) => {
@@ -71,22 +80,42 @@ test.describe('switcher in a page @switcher', () => {
     await expect.poll(() => activeTitle(serviceWorker)).toBe('alpha');
   });
 
-  test('opens a tab with a click', async ({ context, serviceWorker }) => {
+  test('opens a tab with a click, leaving nothing over the page it was shown in', async ({
+    context,
+    serviceWorker,
+  }) => {
     const [, , current] = await openPages(context, ['alpha', 'beta', 'gamma']);
     const page = current as Page;
+    const field = await addPageField(page);
     await showSwitcher(serviceWorker);
+    await expect.poll(() => frameShown(page)).toBe(true);
     await rows(page).filter({ hasText: 'alpha' }).click();
     await expect.poll(() => activeTitle(serviceWorker)).toBe('alpha');
+    await expect.poll(() => frameShown(page)).toBe(false);
+    // Back on that page, it takes the clicks and keys.
+    await page.bringToFront();
+    await field.click();
+    await page.keyboard.type('typed');
+    await expect(field).toHaveValue('typed');
   });
 
-  test('closes with Esc and stays on the same tab', async ({ context, serviceWorker }) => {
+  test('closes with Esc and stays on the same tab, which takes the clicks and keys again', async ({
+    context,
+    serviceWorker,
+  }) => {
     const [, , current] = await openPages(context, ['alpha', 'beta', 'gamma']);
     const page = current as Page;
+    const field = await addPageField(page);
     await showSwitcher(serviceWorker);
     await expect(rows(page)).toHaveCount(3);
+    await expect.poll(() => frameShown(page)).toBe(true);
     await page.keyboard.press('Escape');
     await expect(rows(page)).toHaveCount(0);
     expect(await activeTitle(serviceWorker)).toBe('gamma');
+    await expect.poll(() => frameShown(page)).toBe(false);
+    await field.click();
+    await page.keyboard.type('typed');
+    await expect(field).toHaveValue('typed');
   });
 
   test('closes a tab from its close button and stays open', async ({ context, serviceWorker }) => {
@@ -102,6 +131,35 @@ test.describe('switcher in a page @switcher', () => {
       .not.toContain('alpha');
   });
 });
+
+/** The switcher open now, as the background keeps it (the storage helpers.ts showSwitcher reads), or null. */
+function openSwitcherNow(worker: Worker): Promise<{ in: string; tabId: number } | null> {
+  return worker.evaluate(async () => {
+    const { openSwitcher } = (await chrome.storage.session.get('openSwitcher')) as {
+      openSwitcher?: { in: string; tabId: number } | null;
+    };
+    return openSwitcher ?? null;
+  });
+}
+
+/**
+ * Whether the switcher's frame is drawn over the page. Its holder (better-tab-switcher) has no size of its own, its
+ * dialog being in the browser's top layer: a locator finds it hidden even while the switcher is open, so the frame
+ * itself is looked at.
+ */
+async function frameShown(page: Page): Promise<boolean> {
+  return (await (await switcherFrame(page)?.frameElement())?.isVisible()) ?? false;
+}
+
+/** A text field of the page's own: whether the page gets the clicks and keys. */
+async function addPageField(page: Page): Promise<Locator> {
+  await page.evaluate(() => {
+    const field = document.createElement('input');
+    field.setAttribute('aria-label', 'Page field');
+    document.body.append(field);
+  });
+  return page.getByRole('textbox', { name: 'Page field' });
+}
 
 /** The switcher panel's background in each theme (styles/theme.css, --bts-panel). */
 const PANEL = { light: 'rgb(255, 255, 255)', dark: 'rgb(43, 44, 47)' };
@@ -338,7 +396,7 @@ test.describe("Chrome's own pages @switcher", () => {
 });
 
 test.describe('one switcher at a time @switcher', () => {
-  test('closes when another tab comes to the front, and opens again where the user is', async ({
+  test('closes when another tab comes to the front, and opens again where the user is, also once its tab closed', async ({
     context,
     serviceWorker,
   }) => {
@@ -350,6 +408,21 @@ test.describe('one switcher at a time @switcher', () => {
     await showSwitcher(serviceWorker);
     await expect(rows(beta)).toHaveCount(3);
     await expect(rows(alpha)).toHaveCount(0);
+    // Its tab closes from elsewhere (a site closing itself, another extension): the switcher is gone with it, and the
+    // shortcut opens a new one in the tab the browser shows instead.
+    const closed = await serviceWorker.evaluate(async () => {
+      const [tab] = await chrome.tabs.query({ title: 'beta' });
+      await chrome.tabs.remove(tab?.id as number);
+      return tab?.id;
+    });
+    await expect.poll(() => openSwitcherNow(serviceWorker)).toBeNull();
+    // The browser chooses the tab it shows instead.
+    await expect.poll(() => activeTitle(serviceWorker)).not.toBe('beta');
+    const [shown, other] = (await activeTitle(serviceWorker)) === 'alpha' ? ['alpha', 'gamma'] : ['gamma', 'alpha'];
+    const instead = shown === 'alpha' ? alpha : gamma;
+    await showSwitcher(serviceWorker);
+    await expect.poll(() => rowNames(instead)).toEqual([named(shown), named(other)]);
+    expect((await openSwitcherNow(serviceWorker))?.tabId).not.toBe(closed);
   });
 
   test('opens again from the toolbar icon, never stays lost', async ({ context, serviceWorker }) => {
@@ -452,10 +525,64 @@ test.describe('what the page sees of the switcher @switcher', () => {
     await showSwitcher(serviceWorker, 'next', 'icon');
     const switcherWindow = await opened;
     await expect(switcherWindow.getByRole('option')).toHaveCount(3);
-    // Nothing is left over the page: it takes the clicks and keys again.
-    await expect(page.locator('better-tab-switcher')).toBeHidden();
+    // Nothing of the switcher in the page (its holder's element reads as hidden even when shown: its frame is the one
+    // to look at), and once its window is closed the page takes the clicks and keys again.
+    expect(switcherFrame(page)).toBeNull();
+    const field = await addPageField(page);
+    await closeWithEscape(switcherWindow);
+    await page.bringToFront();
+    await field.click();
+    await page.keyboard.type('typed');
+    await expect(field).toHaveValue('typed');
+  });
+
+  test("opens in its own window on a web page the browser keeps the extension's script out of (its error page)", async ({
+    context,
+    serviceWorker,
+  }) => {
+    await openPages(context, ['alpha', 'beta']);
+    const page = await errorPage(context);
+    const opened = context.waitForEvent('page');
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    const switcherWindow = await opened;
+    await expect(switcherWindow.getByRole('option')).toHaveCount(3);
+    expect(switcherFrame(page)).toBeNull();
+  });
+
+  test("leaves nothing on a web page the browser keeps the extension's script out of, with Open the switcher in a window on Chrome's pages off, then opens in another tab", async ({
+    context,
+    serviceWorker,
+  }) => {
+    const [, beta] = (await openPages(context, ['alpha', 'beta'])) as [Page, Page];
+    await useSettings(serviceWorker, { chromePagesWindow: false });
+    const page = await errorPage(context);
+    // Handled once showSwitcher is done: a window would be open by then.
+    await showSwitcher(serviceWorker);
+    expect(await serviceWorker.evaluate(async () => (await chrome.windows.getAll()).length)).toBe(1);
+    expect(context.pages().map((open) => open.url())).not.toContainEqual(
+      expect.stringContaining('chrome-extension://'),
+    );
+    expect(switcherFrame(page)).toBeNull();
+    await expect.poll(() => openSwitcherNow(serviceWorker)).toBeNull();
+    await beta.bringToFront();
+    await showSwitcher(serviceWorker);
+    await expect.poll(() => rowNames(beta)).toEqual([named('beta'), 'down.test, down.test/', named('alpha')]);
+    expect(switcherFrame(page)).toBeNull();
   });
 });
+
+/**
+ * A web page the browser shows its own error page in (the site can't be reached): no extension's script goes there,
+ * though its address is the site's. As the current tab.
+ */
+async function errorPage(context: BrowserContext): Promise<Page> {
+  await context.route('https://down.test/**', (route) => route.abort());
+  const page = await context.newPage();
+  await page.goto('https://down.test/').catch(() => {});
+  await expect.poll(() => page.url()).toMatch(/^chrome-error:/);
+  await page.bringToFront();
+  return page;
+}
 
 test.describe('pages that get in the way @switcher', () => {
   test('a page that takes the switcher out while it is open gets its keys back, and the shortcut opens a new one', async ({
@@ -481,7 +608,10 @@ test.describe('pages that get in the way @switcher', () => {
     await expect(rows(page)).toHaveCount(3);
   });
 
-  test("a page's CSS zoom leaves the switcher as large as on any page, whole", async ({ context, serviceWorker }) => {
+  test("a page's CSS zoom leaves the switcher as large as on any page, whole, and so does resizing the window while it is open", async ({
+    context,
+    serviceWorker,
+  }) => {
     const [, , current] = await openPages(context, ['alpha', 'beta', 'gamma']);
     const page = current as Page;
     await showSwitcher(serviceWorker, 'next', 'icon');
@@ -495,6 +625,20 @@ test.describe('pages that get in the way @switcher', () => {
     await expect(rows(page)).toHaveCount(3);
     const zoomed = await switcher(page).getByRole('listbox').boundingBox();
     expect(zoomed).toEqual(normal);
+    // The user makes the window smaller while the switcher is open: it keeps the size it took (opened in a window that
+    // small, the list would be narrower: its share of the page is under its least width there).
+    const before = await page.evaluate(() => ({ width: innerWidth, height: innerHeight }));
+    await serviceWorker.evaluate(async () => {
+      const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+      await chrome.windows.update(tab?.windowId as number, { width: 1000, height: 650 });
+    });
+    await expect.poll(() => page.evaluate(() => ({ width: innerWidth, height: innerHeight }))).not.toEqual(before);
+    await expect(rows(page)).toHaveCount(3);
+    const resized = await switcher(page).getByRole('listbox').boundingBox();
+    expect({ width: resized?.width, height: resized?.height }).toEqual({
+      width: normal?.width,
+      height: normal?.height,
+    });
   });
 
   test('a page that stops clicks and keys at its window still lets the switcher work', async ({

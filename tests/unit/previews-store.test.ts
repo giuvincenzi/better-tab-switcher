@@ -1,14 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
-import { storage } from '#imports';
-import {
-  deleteAllPreviews,
-  loadPreviews,
-  missingBytes,
-  previewsToDelete,
-  type SavedPreview,
-  savePreview,
-} from '../../lib/previews/store';
+import { loadPreviews, missingBytes, previewsToDelete, type SavedPreview, savePreview } from '../../lib/previews/store';
 
 // The previews kept in memory, deleted when their tab closes, and the oldest going first when the memory is full, on
 // the real browser: tests/e2e/grid.spec.ts.
@@ -23,15 +15,6 @@ describe('previews store', () => {
     await savePreview(3, 'data:image/webp;base64,CCC');
     expect(await loadPreviews([1, 2, 3])).toEqual({ 1: 'data:image/webp;base64,AAA', 3: 'data:image/webp;base64,CCC' });
     expect(await loadPreviews([])).toEqual({});
-  });
-
-  it('deletes them all, and nothing else of the session', async () => {
-    await storage.setItem('session:openSwitcher', { in: 'page', tabId: 1, fromWindowId: 1 });
-    await savePreview(1, 'data:image/webp;base64,AAA');
-    await savePreview(2, 'data:image/webp;base64,BBB');
-    await deleteAllPreviews();
-    expect(await loadPreviews([1, 2])).toEqual({});
-    expect(await storage.getItem('session:openSwitcher')).not.toBeNull();
   });
 });
 

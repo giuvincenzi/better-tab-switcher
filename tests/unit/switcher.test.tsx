@@ -70,36 +70,10 @@ function open(settings: Partial<Settings> = {}, more: Partial<SwitcherSnapshot &
   return { host, handlers, press, setPreviews };
 }
 
-const selectedTitle = (host: HTMLElement) => host.querySelector('[aria-selected="true"]')?.getAttribute('aria-label');
-
 // What the user does with the switcher on the real browser (the keys, the search, the toolbar, closing tabs, the delay):
 // tests/e2e/switcher.spec.ts, switching.spec.ts, search.spec.ts, settings.spec.ts and grid.spec.ts.
 
-describe('Switcher', () => {
-  it('shows the toolbar with its search field (the default), without the focus', () => {
-    const { host } = open();
-    const field = host.querySelector('[role="toolbar"] input[type="search"]') as HTMLInputElement;
-    expect(field).not.toBeNull();
-    expect(document.activeElement).not.toBe(field);
-    expect(selectedTitle(host)).toBe('Inbox (3), example.com/2');
-  });
-});
-
 describe('Switcher size', () => {
-  it("grows with the user's text size: rows and tiles in em", () => {
-    // The UI's root sets --bts-em to the user's text size (styles/theme.css): 20 px instead of the default 16.
-    document.body.style.setProperty('--bts-em', '20px');
-    try {
-      const row = open().host.querySelector('[role="option"]') as HTMLElement;
-      expect(row.getBoundingClientRect().height).toBe(48 * 1.25);
-      dispose?.();
-      const tile = open({ view: 'grid' }).host.querySelector('[role="option"]') as HTMLElement;
-      expect(tile.getBoundingClientRect().width).toBe(208 * 1.25);
-    } finally {
-      document.body.style.removeProperty('--bts-em');
-    }
-  });
-
   const panel = (host: HTMLElement) => host.querySelector('[style*="--panel-width"]') as HTMLElement;
   const size = (host: HTMLElement) => {
     const { width, height } = panel(host).getBoundingClientRect();

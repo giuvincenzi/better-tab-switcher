@@ -1,6 +1,5 @@
 import { vi } from 'vitest';
 import { type Browser, browser, fakeBrowser } from '#imports';
-import type { Key } from '../../lib/keys/keys';
 
 // The Chrome the background's tests run against: WXT's fake browser, with the APIs it doesn't have (or has only in
 // part) stubbed over a small list of windows and tabs. Each test builds its windows and tabs, then asks the background
@@ -11,26 +10,10 @@ export interface World {
   tabs: Browser.tabs.Tab[];
   /** The active tab of the last focused window: where the user is. */
   currentTabId: number | undefined;
-  /** Pages that keep extensions' scripts out (Chrome refuses scripting.executeScript there). */
-  refusing: Set<number>;
   /** Pages where the switcher frame's holder runs (injected, and not reloaded since), and its frame is loaded. */
   injected: Set<number>;
-  /** Pages that keep scripts out of their frames (a sandbox CSP): the holder runs there, the switcher's frame doesn't. */
-  sandboxed: Set<number>;
-  /** The keys a page got while the switcher's frame was loading, by tab: the holder gives them with showFrame. */
-  keysWhileLoading: Map<number, Key[]>;
-  /** Pages whose holder makes the switcher's frame at the next showFrame (the first time, or after the page took it out). */
-  frameToMake: Set<number>;
-  /** How long the switcher takes to answer showSwitcher in a page (0: at once). */
-  showMs: number;
-  /** Pages that hang (a script that never ends): their messages and scripts never get an answer. */
-  hung: Set<number>;
   /** The switcher's own window is open and its page listens. */
   windowListening: boolean;
-  /** The normal window used last (windows.getLastFocused of the normal windows): the first one when not set. */
-  lastNormalWindowId?: number;
-  /** The messages the switcher and the holder received from the background, in order, with the tab each went to. */
-  received: { type: string; data: unknown; tabId: number | undefined }[];
 }
 
 export function newWorld(more: Partial<World> = {}): World {
@@ -38,21 +21,11 @@ export function newWorld(more: Partial<World> = {}): World {
     windows: [],
     tabs: [],
     currentTabId: undefined,
-    refusing: new Set(),
     injected: new Set(),
-    sandboxed: new Set(),
-    keysWhileLoading: new Map(),
-    frameToMake: new Set(),
-    showMs: 0,
-    hung: new Set(),
     windowListening: false,
-    received: [],
     ...more,
   };
 }
-
-/** The messages the frame's holder answers in a page; the switcher answers the others, in its frame or its window. */
-const HOLDER_MESSAGES = new Set(['showFrame', 'hideFrame']);
 
 /**
  * A message from the background reaches its tab: in a page, the frame's holder or the switcher in its frame; in the
@@ -60,20 +33,12 @@ const HOLDER_MESSAGES = new Set(['showFrame', 'hideFrame']);
  * no tab reaches every page of the extension: it fails here, the background must never send one.
  */
 export function deliverTo(world: World) {
-  return async (type: string, data?: unknown, tabId?: number): Promise<unknown> => {
+  return async (type: string, _data?: unknown, tabId?: number): Promise<unknown> => {
     if (tabId === undefined) throw new Error(`${type} was sent to every page of the extension.`);
-    if (world.hung.has(tabId)) return new Promise<void>(() => undefined);
     const inWindow = world.tabs.find((t) => t.id === tabId)?.url?.endsWith(SWITCHER_WINDOW_PAGE);
     if (inWindow ? !world.windowListening : !world.injected.has(tabId))
       throw new Error('Could not establish connection. Receiving end does not exist.');
-    if (!inWindow && !HOLDER_MESSAGES.has(type) && world.sandboxed.has(tabId))
-      throw new Error('The message port closed before a response was received.');
-    if (type === 'showSwitcher' && world.showMs > 0) await new Promise((later) => setTimeout(later, world.showMs));
-    world.received.push({ type, data, tabId });
-    if (type === 'showFrame') {
-      const madeNow = world.frameToMake.delete(tabId);
-      return { canSeeRelease: true, keys: world.keysWhileLoading.get(tabId) ?? [], madeNow };
-    }
+    if (type === 'showFrame') return { canSeeRelease: true, keys: [], madeNow: false };
   };
 }
 
@@ -108,9 +73,7 @@ export function tab(id: number, windowId: number, more: Partial<Browser.tabs.Tab
 }
 
 /** The switcher's own windows get ids from here. */
-export const FIRST_POPUP_ID = 900;
-/** The tab of the switcher's first window. */
-export const FIRST_POPUP_TAB_ID = FIRST_POPUP_ID * 10;
+const FIRST_POPUP_ID = 900;
 
 export function fakeChrome(world: World) {
   let nextPopupId = FIRST_POPUP_ID;
@@ -129,11 +92,8 @@ export function fakeChrome(world: World) {
   vi.spyOn(browser.tabGroups, 'query').mockImplementation((async () => []) as never);
   vi.spyOn(browser.windows, 'getAll').mockImplementation((async (filter?: { windowTypes?: string[] }) =>
     world.windows.filter((w) => !filter?.windowTypes || filter.windowTypes.includes(w.type ?? 'normal'))) as never);
-  vi.spyOn(browser.windows, 'getLastFocused').mockImplementation(
-    (async () =>
-      world.windows.find((w) => w.id === world.lastNormalWindowId) ??
-      world.windows.find((w) => (w.type ?? 'normal') === 'normal')) as never,
-  );
+  vi.spyOn(browser.windows, 'getLastFocused').mockImplementation((async () =>
+    world.windows.find((w) => (w.type ?? 'normal') === 'normal')) as never);
   vi.spyOn(browser.windows, 'get').mockImplementation((async (windowId: number) => {
     const found = world.windows.find((w) => w.id === windowId);
     if (!found) throw new Error(`No window with id: ${windowId}.`);
@@ -173,8 +133,6 @@ export function fakeChrome(world: World) {
   }) as never);
   vi.spyOn(browser.scripting, 'executeScript').mockImplementation((async (injection: { target: { tabId: number } }) => {
     const { tabId } = injection.target;
-    if (world.hung.has(tabId)) return new Promise(() => undefined);
-    if (world.refusing.has(tabId)) throw new Error('Cannot access contents of the page.');
     world.injected.add(tabId);
     return [];
   }) as never);
@@ -196,12 +154,6 @@ export function fakeMessages() {
     onMessage: (type: string, handler: Handler) => {
       handlers.set(type, handler);
       return () => handlers.delete(type);
-    },
-    /** Asks the background as the switcher does, or as the page of the tab `fromTabId` does (the frame's holder). */
-    ask(type: string, data?: unknown, fromTabId?: number): unknown {
-      const handler = handlers.get(type);
-      if (!handler) throw new Error(`The background doesn't answer ${type}.`);
-      return handler({ data, sender: { tab: fromTabId === undefined ? undefined : { id: fromTabId } } });
     },
   };
 }
