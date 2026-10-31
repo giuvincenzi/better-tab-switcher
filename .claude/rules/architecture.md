@@ -36,11 +36,6 @@ the two sides Chrome paints the frame white, and inside a frame the device's the
 keeps the extension's scripts out (Chrome's pages, the stores, sandboxed and error pages) the switcher opens in a small
 window of its own.
 
-## Privacy and security
-
-- The extension never connects to the network. No new permission without the user's approval.
-- No `innerHTML`, no `eval`: texts go into the page as text.
-
 ## Repository layout
 
 ```
