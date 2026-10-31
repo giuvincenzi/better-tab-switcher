@@ -6,9 +6,22 @@ export default defineConfig({
   modules: ['@wxt-dev/module-solid', '@wxt-dev/i18n/module'],
   imports: false,
   hooks: {
-    // The licenses of the third-party code in the extension, in every build (third-party.json, docs.md).
     'build:publicAssets': (_wxt, files) => {
+      // The licenses of the third-party code in the extension, in every build (third-party.json, docs.md).
       files.push({ relativeDest: 'third-party-licenses.txt', contents: licensesText() });
+      // Every language gets the texts only English has: the global words (i18n.md), the extension's name among them.
+      // Chrome would show the English ones by itself, but the stores want the name in every language of the manifest.
+      // The i18n module writes them (contents), never copies them from a file.
+      const languages = files.flatMap((file) =>
+        'contents' in file && /^_locales[\\/][^\\/]+[\\/]messages\.json$/.test(file.relativeDest) ? [file] : [],
+      );
+      const english = languages.find((file) => /[\\/]en[\\/]/.test(file.relativeDest));
+      if (!english) throw new Error('No English texts (_locales/en) in the build.');
+      const englishTexts = JSON.parse(String(english.contents));
+      for (const language of languages) {
+        if (language === english) continue;
+        language.contents = JSON.stringify({ ...englishTexts, ...JSON.parse(String(language.contents)) }, null, 2);
+      }
     },
   },
   manifest: ({ mode }) => ({

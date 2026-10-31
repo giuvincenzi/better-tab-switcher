@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { expect, test } from './fixtures';
 import { defaultShortcuts, shortcutText } from './helpers';
 
@@ -24,6 +24,21 @@ test.describe('extension @setup', () => {
   test('has the version of package.json', async ({ serviceWorker }) => {
     const version = await serviceWorker.evaluate(() => chrome.runtime.getManifest().version);
     expect(version).toBe(pkg.version);
+  });
+
+  test('has every text of its manifest in every language, as the stores ask', () => {
+    // The published build (.output/chrome-mv3): the stores refuse a package whose name is missing in one of its
+    // languages, though Chrome shows the English text by itself.
+    const manifest = readFileSync('.output/chrome-mv3/manifest.json', 'utf8');
+    const used = [...new Set([...manifest.matchAll(/__MSG_(\w+)__/g)].map((found) => found[1] as string))];
+    expect(used).toContain('Extension_Name');
+    for (const language of readdirSync('.output/chrome-mv3/_locales')) {
+      const texts = JSON.parse(readFileSync(`.output/chrome-mv3/_locales/${language}/messages.json`, 'utf8'));
+      expect(
+        used.filter((key) => !texts[key]?.message),
+        language,
+      ).toEqual([]);
+    }
   });
 
   test('is named Better Tab Switcher', async ({ serviceWorker }) => {
