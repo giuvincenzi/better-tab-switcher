@@ -6,6 +6,8 @@
 
 - A tab's preview in the grid never shows the switcher. Opening the switcher on a tab right after closing it there, or
   right after coming back to that tab, could take a preview with the old switcher in it.
+- An arrow key pressed right after clicking a button of the switcher's toolbar moves the selected tab. It could change
+  the toolbar's choice instead, such as switching from the grid back to the list.
 
 ## 1.0.0
 

@@ -341,6 +341,32 @@ test.describe('grid @grid', () => {
     await page.keyboard.press('ArrowLeft');
     await expect(selected(page)).toHaveAccessibleName(named('gamma'));
     await expect(panel.getByRole('listbox')).toHaveCSS('display', 'grid');
+    // An arrow pressed the moment after a click on the toolbar's Grid, as a quick hand does: it moves the tabs, never
+    // the radio the click gave the focus to (which would switch back to the list). The click and the key go to the
+    // browser one after the other, nothing waited for between them.
+    const label = await panel.getByRole('radio', { name: 'Grid' }).locator('xpath=ancestor::label').boundingBox();
+    if (!label) throw new Error('The toolbar has no Grid.');
+    const at = { x: label.x + label.width / 2, y: label.y + label.height / 2, button: 'left' as const, clickCount: 1 };
+    const cdp = await context.newCDPSession(page);
+    await Promise.all([
+      cdp.send('Input.dispatchMouseEvent', { type: 'mousePressed', ...at }),
+      cdp.send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...at }),
+      cdp.send('Input.dispatchKeyEvent', {
+        type: 'rawKeyDown',
+        key: 'ArrowRight',
+        code: 'ArrowRight',
+        windowsVirtualKeyCode: 39,
+      }),
+      cdp.send('Input.dispatchKeyEvent', {
+        type: 'keyUp',
+        key: 'ArrowRight',
+        code: 'ArrowRight',
+        windowsVirtualKeyCode: 39,
+      }),
+    ]);
+    // From gamma, first in the grid, to beta beside it.
+    await expect(selected(page)).toHaveAccessibleName(named('beta'));
+    await expect(panel.getByRole('listbox')).toHaveCSS('display', 'grid');
   });
 });
 
