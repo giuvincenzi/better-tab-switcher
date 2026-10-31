@@ -5,7 +5,7 @@ paths:
   - "scripts/site.mjs"
   - "scripts/check-readme.mjs"
   - ".github/workflows/test.yml"
-  - ".github/workflows/publish_release.yml"
+  - "scripts/languages.mjs"
 ---
 
 # How people find Better Tab Switcher
@@ -23,11 +23,11 @@ paths:
     description for search engines, the link previews and the `SoftwareApplication` structured data;
   - `README.md`: title + ". " + description between its "Title and description" comments, and the slogan in its italic
     line under the name, checked by the test workflow (`site_test`, `scripts/check-readme.mjs`);
-  - the stores' pages (Chrome Web Store, Edge Add-ons): under the name, the description from the extension's manifest,
-    updated by every release; the page's own description, written by `make store-listing` in `.output/store-listing/`
+  - the stores' pages (Chrome Web Store, Edge Add-ons): under the name, the description from the extension's manifest;
+    the page's own description, written by `make store-listing` in `.output/store-listing/`
     like the README (the slogan, the links to the website and to the guide, then title + ". " + description) followed
     by the home's features and privacy (Edge asks for at least 250 characters describing every feature), and pasted by
-    hand into each store's dashboard, one per language, whenever they change: a release uploads only the extension.
+    hand into each store's dashboard, one per language, whenever they change.
     `make store-listing` also writes the rest of both dashboards, never by hand: the icon (128) and logo (300), the
     screenshots (the site's views at 1280×800) and the Privacy page's answers, one reason per permission of the
     manifest (it stops when a permission has none);
@@ -42,15 +42,15 @@ paths:
 - Google Search Console: a "Domain" property for `gviam.app` in the maintainer's account, verified by a TXT record in
   the domain's DNS. Never delete the record: the property stays verified only while Google finds it.
 - Bing Webmaster Tools: the site imported from Search Console (no tag of its own).
-- `scripts/site.mjs` writes, with one constant as the one place the site's address is written: `sitemap.xml` (submitted
-  in Search Console), a canonical link on every page (a
-  guide page of any version points to the same page of the newest guide), `hreflang` links between the home pages
-  (English as `x-default`), link previews and structured data.
+- `scripts/site.mjs` writes, with the site's address from one constant (`SITE_URL`, `scripts/languages.mjs`):
+  `sitemap.xml` (submitted in Search Console), a canonical link on every page (a guide page of any version points to
+  the same page of the newest guide), `hreflang` links between the home pages (English as `x-default`), link previews
+  and structured data.
 
 ## The home page's languages
 
 - The home page is in the extension's languages: English at the site's root, the others in a folder each, listed in
-  `scripts/site.mjs` with their flag and writing direction. Arabic runs right to left. The guide stays in
+  `scripts/languages.mjs` with their flag and writing direction. Arabic runs right to left. The guide stays in
   English: its pages have the English header and no language menu.
 - Every text of the home is in `site/home/<code>.json`, the same keys as `en.json` (except the slogan): `site.mjs` stops
   when a key is missing or added. Translations follow `i18n.md`.
@@ -59,9 +59,7 @@ paths:
 - The English home offers the browser's preferred language in a banner (`site.js`); the choice is remembered in the
   browser. The page never changes language by itself: search engines read the English one.
 
-## By hand, after a release
+## By hand
 
-- The first release: in Search Console, submit `sitemap.xml` and request indexing of the home; in Bing Webmaster Tools,
-  import the site from Search Console.
 - When the title, the description, the slogan, the home's features or privacy, the views or the permissions change:
   the repository's About and what `make store-listing` writes, in both stores' dashboards (above).

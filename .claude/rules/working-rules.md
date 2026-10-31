@@ -19,7 +19,9 @@
   the user asked, or only in a different way (another control, another structure, a workaround),
   explain it and propose the options before changing anything; never implement the different way
   on your own.
-- **Fix bugs at the root cause.** No workarounds or "patch" fixes. Explain the cause first.
+- **Fix bugs at the root cause.** No workarounds or "patch" fixes. Explain the cause first. When the root cause is a bug
+  in Chrome or in a dependency, say so with the evidence: the code works around it in one place, with a comment naming
+  the bug and the version, and a test that shows when it is gone.
 - **Do not guess.** If something is uncertain (an API, a Chrome behavior, a library
   version), check the source or documentation before relying on it, and say what was
   verified and what was not.
