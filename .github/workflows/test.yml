@@ -517,9 +517,6 @@ jobs:
                                  a failed test only, when the extension's background wrote in its console: what it
                                  wrote, in order (for example why the switcher couldn't show in a page and opened in
                                  its own window).
-              startup.txt        a test whose browser took over 5 s to get the extension's background ready: when
-                                 it connected, then second by second the browser's targets and the workers Playwright
-                                 saw (it stays also when the test ran out of time before it started).
 
           Investigating a failed test
           ---------------------------
