@@ -178,8 +178,7 @@ export async function colorsAt(page: Page, worker: Worker, points: { x: number; 
 
 /** A point of the switcher's panel that shows only its background: inside its padding, halfway down its left side. */
 export async function panelPoint(page: Page): Promise<{ x: number; y: number }> {
-  const box = await switcher(page).locator('[style*="--panel-width"]').boundingBox();
-  if (!box) throw new Error('No switcher panel in the page.');
+  const box = await boxOf(switcher(page).locator('[style*="--panel-width"]'));
   return { x: box.x + 4, y: box.y + box.height / 2 };
 }
 
@@ -208,4 +207,16 @@ export async function closeItsOwnTab(page: Page, row: Locator) {
       if (!page.isClosed()) throw error;
     });
   await closed;
+}
+
+/**
+ * Where an element is on the page, once it is there: the switcher draws its rows again as the tabs change, and an element
+ * read the moment it is replaced has no box yet.
+ */
+export async function boxOf(locator: Locator): Promise<{ x: number; y: number; width: number; height: number }> {
+  let box: { x: number; y: number; width: number; height: number } | null = null;
+  await expect
+    .poll(async () => (box = await locator.boundingBox()), { message: `${locator} on the page` })
+    .not.toBeNull();
+  return box as unknown as { x: number; y: number; width: number; height: number };
 }

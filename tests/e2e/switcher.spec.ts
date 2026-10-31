@@ -2,6 +2,7 @@ import type { BrowserContext, Locator, Page, Worker } from '@playwright/test';
 import { expect, test } from './fixtures';
 import {
   activeTitle,
+  boxOf,
   closeBy,
   closeWithEscape,
   colorsAt,
@@ -366,8 +367,7 @@ test.describe("Chrome's own pages @switcher", () => {
       )
       .toBe(true);
     // A click on a tab closes the window: the mouse's click, which waits for nothing in the window after it.
-    const alpha = await switcherWindow.getByRole('option', { name: /^alpha/ }).boundingBox();
-    if (!alpha) throw new Error('No alpha in the switcher.');
+    const alpha = await boxOf(switcherWindow.getByRole('option', { name: /^alpha/ }));
     await closeBy(switcherWindow, () =>
       switcherWindow.mouse.click(alpha.x + alpha.width / 2, alpha.y + alpha.height / 2),
     );
@@ -615,7 +615,7 @@ test.describe('pages that get in the way @switcher', () => {
     const [, , current] = await openPages(context, ['alpha', 'beta', 'gamma']);
     const page = current as Page;
     await showSwitcher(serviceWorker, 'next', 'icon');
-    const normal = await switcher(page).getByRole('listbox').boundingBox();
+    const normal = await boxOf(switcher(page).getByRole('listbox'));
     await page.keyboard.press('Escape');
     await expect(rows(page)).toHaveCount(0);
     await page.evaluate(() => {
@@ -623,7 +623,7 @@ test.describe('pages that get in the way @switcher', () => {
     });
     await showSwitcher(serviceWorker, 'next', 'icon');
     await expect(rows(page)).toHaveCount(3);
-    const zoomed = await switcher(page).getByRole('listbox').boundingBox();
+    const zoomed = await boxOf(switcher(page).getByRole('listbox'));
     expect(zoomed).toEqual(normal);
     // The user makes the window smaller while the switcher is open: it keeps the size it took (opened in a window that
     // small, the list would be narrower: its share of the page is under its least width there).
@@ -634,7 +634,7 @@ test.describe('pages that get in the way @switcher', () => {
     });
     await expect.poll(() => page.evaluate(() => ({ width: innerWidth, height: innerHeight }))).not.toEqual(before);
     await expect(rows(page)).toHaveCount(3);
-    const resized = await switcher(page).getByRole('listbox').boundingBox();
+    const resized = await boxOf(switcher(page).getByRole('listbox'));
     expect({ width: resized?.width, height: resized?.height }).toEqual({
       width: normal?.width,
       height: normal?.height,

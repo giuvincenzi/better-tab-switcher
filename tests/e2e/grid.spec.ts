@@ -1,6 +1,6 @@
 import type { Page, Worker } from '@playwright/test';
 import { expect, test } from './fixtures';
-import { activeTitle, named, openPages, rows, selected, showSwitcher, switcher, useSettings } from './helpers';
+import { activeTitle, boxOf, named, openPages, rows, selected, showSwitcher, switcher, useSettings } from './helpers';
 
 const pictures = (page: Page) => rows(page).locator('img[src^="data:image/webp"]');
 
@@ -358,8 +358,7 @@ test.describe('grid @grid', () => {
     // An arrow pressed the moment after a click on the toolbar's Grid, as a quick hand does: it moves the tabs, never
     // the radio the click gave the focus to (which would switch back to the list). The click and the key go to the
     // browser one after the other, nothing waited for between them.
-    const label = await panel.getByRole('radio', { name: 'Grid' }).locator('xpath=ancestor::label').boundingBox();
-    if (!label) throw new Error('The toolbar has no Grid.');
+    const label = await boxOf(panel.getByRole('radio', { name: 'Grid' }).locator('xpath=ancestor::label'));
     const at = { x: label.x + label.width / 2, y: label.y + label.height / 2, button: 'left' as const, clickCount: 1 };
     const cdp = await context.newCDPSession(page);
     await Promise.all([

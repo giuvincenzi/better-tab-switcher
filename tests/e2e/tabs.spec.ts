@@ -2,6 +2,7 @@ import type { BrowserContext, Page, Worker } from '@playwright/test';
 import { contextOf, expect, test } from './fixtures';
 import {
   activeTitle,
+  boxOf,
   closeItsOwnTab,
   colorsAt,
   mouseOn,
@@ -226,8 +227,7 @@ test.describe('the details of each tab @tabs', () => {
     }, beta);
     await showSwitcher(serviceWorker, 'next', 'icon');
     const dot = rows(page).filter({ hasText: 'beta' }).locator('[style*="--bts-group-"]');
-    const box = await dot.boundingBox();
-    if (!box) throw new Error('No group color on beta.');
+    const box = await boxOf(dot);
     // Chrome's red for tab groups, in the light theme (styles/theme.css).
     await expect
       .poll(() => colorsAt(page, serviceWorker, [{ x: box.x + box.width / 2, y: box.y + box.height / 2 }]))
