@@ -13,6 +13,9 @@ export default defineConfig({
   // On GitHub every test keeps its screenshot and its trace, to compare a failed test with a passed one or with
   // another system; on the PC only the failed ones, so the tests stay quick.
   use: {
+    // An action (a click, typing) that can't happen fails within 10 s, saying what it waited for (the element to be
+    // visible, still, not covered), instead of the test running out of its 30 s with no word of why.
+    actionTimeout: 10_000,
     trace: process.env.CI ? 'on' : 'retain-on-failure',
     screenshot: process.env.CI ? 'on' : 'only-on-failure',
   },
