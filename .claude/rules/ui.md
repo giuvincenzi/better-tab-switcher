@@ -22,8 +22,8 @@ cards and buttons grow.
     the theme in use, the selection in the primary color, a toolbar at the top (Show toolbar): the search field in the
     middle, buttons for the view, its options and the settings.
     - **List** (boards 1–18): favicon and title; **Compact**, off by default, lowers the rows.
-    - **Grid** (boards 19–30): tiles with the title above and the preview below; with **Previews** off, the site's
-      icon instead of the preview, never larger than its real size.
+    - **Grid** (boards 19–30): tiles with the title above and the preview below; with **Show** set to **Icons**, the
+      site's icon instead of the preview, never larger than its real size.
     - Optional details, all on by default: pinned, audio, sleeping (also greyed) and tab group icons; the website
       address, whole (Full address) and listed last, long ones scrolling on the selected tab and on the one under the
       mouse, or cut with "…"; the last used time.
