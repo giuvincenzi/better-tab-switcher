@@ -1,0 +1,88 @@
+Extension_Description: Con un atajo ves tus pestañas juntas y pasas de una a otra, las buscas o las cierras al instante. A tu manera, con total privacidad.
+Language_Tag: es
+Browser_ChromeStore: Chrome Web Store
+Browser_EdgeStore: Complementos de Microsoft Edge
+Command_NextTab: Abrir el selector en la pestaña siguiente
+Command_PreviousTab: Abrir el selector en la pestaña anterior
+Switcher_Tabs: Pestañas abiertas, de la más reciente a la más antigua
+Switcher_Toolbar: Barra de herramientas
+Switcher_Search: Buscar pestañas
+Switcher_NoMatch: Ninguna pestaña coincide con tu búsqueda.
+Switcher_Settings: Toda la configuración
+Switcher_CloseTab: Cerrar pestaña
+Switcher_Pinned: Fijada
+Switcher_PlayingAudio: Reproduciendo audio
+Switcher_Sleeping: Inactiva
+Switcher_Window: Ventana $1
+Settings_Title: Configuración de Better Tab Switcher
+Settings_Sections: Secciones de la configuración
+Settings_Appearance: Aspecto
+Settings_Theme: Tema
+Settings_ThemeDevice: Tema del dispositivo
+Settings_ThemeLight: Claro
+Settings_ThemeDark: Oscuro
+Settings_View: Vista
+Settings_ViewList: Lista
+Settings_ViewGrid: Cuadrícula
+Settings_Toolbar: Mostrar barra de herramientas
+Settings_ToolbarNote: Una barra en la parte superior del selector, con el campo de búsqueda y botones para la vista y la configuración.
+Settings_GridShow: Mostrar
+Settings_GridShowPreviews: Vistas previas
+Settings_GridShowIcons: Iconos
+Settings_GridShowNote: Con Vistas previas se ve una imagen de cada pestaña; con Iconos, solo el icono de cada sitio.
+Settings_Compact: Compacta
+Settings_CompactNote: Filas más bajas para que quepan más pestañas.
+Settings_ListRows: Pestañas visibles sin desplazarse
+Settings_RowsFit: Ajustar a la pantalla
+Settings_RowsFitNote: Con Ajustar a la pantalla se muestran todas las que quepan en la altura de la pantalla.
+Settings_Switching: Cambio de pestaña
+Settings_Scope: Mostrar pestañas de
+Settings_ScopeWindow: Esta ventana
+Settings_ScopeAll: Todas las ventanas
+Settings_ScopeNote: Con Todas las ventanas, cada pestaña de otra ventana muestra el número de su ventana.
+Settings_ShowPinned: Mostrar pestañas fijadas
+Settings_Delay: Retraso antes de mostrar el selector
+Settings_DelayNote: Si pulsas y sueltas la combinación de teclas antes de este tiempo, se cambia a la pestaña anterior sin mostrar el selector.
+Settings_StayOpen: Mantener abierto hasta que elijas una pestaña
+Settings_StayOpenNote: Al soltar las teclas de la combinación, no se cambia de pestaña. Elige una con Intro o con un clic.
+Settings_ChromePagesWindow: Abrir el selector en una ventana en las páginas de $1
+Settings_ChromePagesWindowNote: $1 no permite que las extensiones accedan a sus propias páginas, como Configuración, ni a su tienda de extensiones, $2. En ellas, el selector se abre en una pequeña ventana aparte.
+Settings_AutoSelect: Selección automática
+Settings_AutoSelectNote: La pestaña seleccionada se abre al cabo de unos segundos. Una línea muestra el tiempo que queda.
+Settings_AutoSelectTime: Tiempo de selección automática
+Settings_TabDetails: Detalles de las pestañas
+Settings_Address: Dirección web
+Settings_FullAddress: Dirección completa
+Settings_FullAddressNote: La dirección completa de la página, no solo la del sitio.
+Settings_LongAddress: Direcciones web largas
+Settings_LongAddressNote: Se desplazan en la pestaña seleccionada y en la que está bajo el cursor del ratón para mostrarlas completas o se recortan con «…».
+Settings_LongAddressCut: Recortar
+Settings_LongAddressScroll: Desplazar
+Settings_PinnedIcon: Icono de pestaña fijada
+Settings_AudioIcon: Icono de reproducción de audio
+Settings_Sleeping: Pestañas inactivas
+Settings_SleepingNote: Las pestañas inactivas llevan un icono y se muestran en gris.
+Settings_GroupColor: Color del grupo de pestañas
+Settings_LastUsed: Último uso
+Settings_LastUsedNote: Por ejemplo, $1.
+Settings_Shortcuts: Combinaciones de teclas
+Settings_ShortcutsNote: $1 no permite que las extensiones usen Ctrl+Tab.
+Settings_ShortcutsGuide: Cómo usar Ctrl+Tab
+Settings_NextTab: Pestaña siguiente
+Settings_NextTabNote: Abre el selector y mueve la selección a la pestaña siguiente.
+Settings_PreviousTab: Pestaña anterior
+Settings_PreviousTabNote: Abre el selector y mueve la selección a la pestaña anterior.
+Settings_ChangeShortcut: Cambiar combinación de teclas
+Settings_NoShortcut: Sin asignar
+Settings_IconShortcut: Icono de la barra de herramientas
+Settings_IconShortcutNote: Abre el selector igual que si hicieras clic en el icono de la barra de herramientas. Se queda abierto hasta que elijas una pestaña.
+Settings_ShortcutMissing: Una combinación de teclas está sin asignar, quizá porque otra extensión ya usa esas teclas. Elige las teclas que quieras con el botón $1.
+Settings_ShortcutsDialogTitle: Elige tus combinaciones de teclas
+Settings_ShortcutsDialogText: Better Tab Switcher ya está instalado. Elige las teclas con las que se abre.
+Settings_Reset: Restablecer configuración
+Settings_RestoreDefaults: Restaurar los valores predeterminados
+Settings_Restore: Restaurar
+Settings_RestoreTitle: ¿Restaurar los valores predeterminados?
+Settings_RestoreText: Toda la configuración vuelve a estar como cuando instalaste Better Tab Switcher. Tus combinaciones de teclas no cambian.
+Dialog_Done: Hecho
+Dialog_Cancel: Cancelar

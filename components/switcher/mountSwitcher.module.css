@@ -1,0 +1,24 @@
+/* The modal dialog the switcher is drawn in: the whole window, with nothing of its own to see. */
+.dialog {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  outline: none;
+  background: transparent;
+}
+
+/* In its own window: the panel's color around the panel, until the window fits it. */
+.ownWindow {
+  background: var(--bts-panel);
+}
+
+.dialog::backdrop {
+  background: transparent;
+}

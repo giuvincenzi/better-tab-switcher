@@ -1,0 +1,165 @@
+# GLOBAL: the extension's name, the same in every language. Shown by Chrome and in the extension.
+Extension_Name: Better Tab Switcher
+
+# What the extension is, in the stores (the manifest's description: at most 132 characters, which Chrome and Edge show
+# whole) and on the website's home page. Written with the website's title, in site/home/en.json (discoverability.md).
+Extension_Description: See your tabs in one place with one shortcut, then quickly switch, search or close them. In the view you like, and always private.
+
+# Never shown: the language of this file, as a BCP 47 tag (en, it, pt-BR, zh-Hans…). Every language file says its own,
+# so the extension knows which one Chrome uses (lib/i18n/language.ts): numbers, dates and the text direction follow it.
+Language_Tag: en
+
+# GLOBAL: the browser's name, the same in every language, in the sentences that name the browser the extension runs in
+# (lib/browser.ts, BROWSER_NAME_TEXT).
+Browser_Chrome: Chrome
+
+# GLOBAL: as Browser_Chrome, in Microsoft Edge.
+Browser_Edge: Microsoft Edge
+
+# The browser's extension store, by the name the browser gives it in this language, in Settings_ChromePagesWindowNote
+# (lib/browser.ts, STORE_NAME_TEXT).
+Browser_ChromeStore: Chrome Web Store
+# As Browser_ChromeStore, in Microsoft Edge.
+Browser_EdgeStore: Microsoft Edge Add-ons
+
+# The shortcut that opens the switcher with the next tab selected, listed in chrome://extensions/shortcuts.
+Command_NextTab: Open the switcher on the next tab
+
+# The shortcut that opens the switcher with the previous tab selected, listed in chrome://extensions/shortcuts.
+Command_PreviousTab: Open the switcher on the previous tab
+
+# The switcher's list of tabs, for screen readers.
+Switcher_Tabs: Open tabs, most recent first
+
+# The toolbar at the top of the switcher (search field and buttons), for screen readers.
+Switcher_Toolbar: Toolbar
+
+# The search field's placeholder and accessible name, in the toolbar.
+Switcher_Search: Search tabs
+
+# Under the search field when no tab matches what was typed.
+Switcher_NoMatch: No tabs match your search.
+
+# The toolbar's button that opens the settings page.
+Switcher_Settings: All settings
+
+# The button on a tab, shown under the mouse, that closes it.
+Switcher_CloseTab: Close tab
+
+# A tab's icons, for screen readers and as tooltips. Switcher_Sleeping: a tab Chrome took out of memory (Memory Saver):
+# Chrome's own word for it ("inactive tab").
+Switcher_Pinned: Pinned
+Switcher_PlayingAudio: Playing audio
+Switcher_Sleeping: Inactive
+
+# A tab's badge with "All windows": the number of the window it is in. $1: the number (2, 3…).
+Switcher_Window: Window $1
+
+# The settings page's title, in the browser tab and at the top of the page. "Better Tab Switcher" is the global name.
+Settings_Title: Better Tab Switcher settings
+
+# The settings page's sidebar, for screen readers.
+Settings_Sections: Settings sections
+
+# Section: how the switcher looks.
+Settings_Appearance: Appearance
+Settings_Theme: Theme
+Settings_ThemeDevice: Device theme
+Settings_ThemeLight: Light
+Settings_ThemeDark: Dark
+Settings_View: View
+Settings_ViewList: List
+Settings_ViewGrid: Grid
+# Shows the switcher's toolbar: the search field, and buttons for the view, its options and the settings.
+Settings_Toolbar: Show toolbar
+Settings_ToolbarNote: A bar at the top of the switcher, with the search field and buttons for the view and the settings.
+# Grid only: what the tiles show. Also in the switcher's toolbar.
+Settings_GridShow: Show
+Settings_GridShowPreviews: Previews
+Settings_GridShowIcons: Icons
+Settings_GridShowNote: Previews shows a picture of each tab, Icons only each site's icon.
+# List only. Settings_Compact is also in the switcher's toolbar.
+Settings_Compact: Compact
+Settings_CompactNote: Shorter rows, so more tabs fit.
+Settings_ListRows: Tabs shown before scrolling
+# The choice of rows that shows as many as the screen's height allows, and its note.
+Settings_RowsFit: Fit the screen
+Settings_RowsFitNote: Fit the screen shows as many as the screen's height allows.
+
+# Section: which tabs the switcher shows and how it opens them.
+Settings_Switching: Switching
+Settings_Scope: Show tabs from
+Settings_ScopeWindow: This window
+Settings_ScopeAll: All windows
+Settings_ScopeNote: With all windows, each tab from another window shows its window's number.
+Settings_ShowPinned: Show pinned tabs
+Settings_Delay: Delay before the switcher appears
+Settings_DelayNote: Press and release the shortcut quicker than this to switch to the previous tab without showing the switcher.
+Settings_StayOpen: Stay open until you choose a tab
+Settings_StayOpenNote: Releasing the shortcut's keys doesn't switch tabs. Choose a tab with Enter or a click.
+# A setting: the switcher in a window of its own where the browser keeps extensions out. $1: the browser's name
+# (Browser_Chrome, Browser_Edge).
+Settings_ChromePagesWindow: Open the switcher in a window on $1's pages
+# Under Settings_ChromePagesWindow. $1: the browser's name (Browser_Chrome, Browser_Edge). $2: its extension store's
+# name (Browser_ChromeStore, Browser_EdgeStore), set apart so that no word around it depends on it.
+Settings_ChromePagesWindowNote: $1 doesn't let extensions into its own pages, like Settings, or into its extension store, $2. There the switcher opens in a small window of its own.
+Settings_AutoSelect: Auto-select
+Settings_AutoSelectNote: The selected tab opens after a few seconds. A line shows the time left.
+Settings_AutoSelectTime: Auto-select time
+
+# Section: what each tab shows.
+Settings_TabDetails: Tab details
+Settings_Address: Website address
+# Under Settings_Address, for it: the page's whole address, or only its site.
+Settings_FullAddress: Full address
+Settings_FullAddressNote: The whole address of the page, not only the site.
+Settings_LongAddress: Long website addresses
+Settings_LongAddressNote: Scrolling on the selected tab and on the one under the mouse to show them whole, or cut short with “…”.
+Settings_LongAddressCut: Cut short
+Settings_LongAddressScroll: Scroll
+Settings_PinnedIcon: Pinned tab icon
+Settings_AudioIcon: Playing audio icon
+# Tabs Chrome took out of memory (Memory Saver), with Chrome's own words ("inactive tabs").
+Settings_Sleeping: Inactive tabs
+Settings_SleepingNote: Inactive tabs get an icon and are shown in grey.
+Settings_GroupColor: Tab group color
+Settings_LastUsed: Last used
+# $1: a time written as the switcher writes it, in the language in use ("15 min ago").
+Settings_LastUsedNote: For example, $1.
+
+# Section: the extension's shortcuts, changed in chrome://extensions/shortcuts.
+Settings_Shortcuts: Keyboard shortcuts
+# Under the section's title. $1: the browser's name (Browser_Chrome, Browser_Edge).
+Settings_ShortcutsNote: $1 doesn't let extensions use Ctrl+Tab.
+# A link to the user guide, after Settings_ShortcutsNote.
+Settings_ShortcutsGuide: How to use Ctrl+Tab
+Settings_NextTab: Next tab
+Settings_NextTabNote: Opens the switcher and moves the selection to the next tab.
+Settings_PreviousTab: Previous tab
+Settings_PreviousTabNote: Opens the switcher and moves the selection to the previous tab.
+# The button that opens chrome://extensions/shortcuts.
+Settings_ChangeShortcut: Change shortcut
+# In place of the keys, when a shortcut has none.
+Settings_NoShortcut: Not set
+# The browser's own shortcut for the toolbar icon, the third of the section.
+Settings_IconShortcut: Toolbar icon
+Settings_IconShortcutNote: Opens the switcher like a click on the toolbar icon. It stays open until you choose a tab.
+# A warning under the section's note when the next or previous tab shortcut has no keys. $1: the button's text
+# (Settings_ChangeShortcut).
+Settings_ShortcutMissing: A shortcut has no keys, maybe because another extension already uses them. Choose your own keys with $1.
+# The dialog that opens after the install when a shortcut has no keys: its title, its sentence.
+Settings_ShortcutsDialogTitle: Choose your keyboard shortcuts
+Settings_ShortcutsDialogText: Better Tab Switcher is installed. Choose the keys that open it.
+
+# Section: back to the default settings.
+Settings_Reset: Reset
+Settings_RestoreDefaults: Restore default settings
+# The button of Settings_RestoreDefaults, and of its confirmation.
+Settings_Restore: Restore
+# The confirmation before every setting goes back to its default: its title, its sentence.
+Settings_RestoreTitle: Restore default settings?
+Settings_RestoreText: Every setting goes back to how it was when you installed Better Tab Switcher. Your keyboard shortcuts stay as they are.
+
+# A dialog's buttons: closing it once the user has done what it asks, closing it without doing what it asks.
+Dialog_Done: Done
+Dialog_Cancel: Cancel

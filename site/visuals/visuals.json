@@ -1,0 +1,7 @@
+[
+  { "scene": "list", "name": "visual_list_name", "text": "visual_list_text" },
+  { "scene": "grid-previews", "name": "visual_previews_name", "text": "visual_previews_text" },
+  { "scene": "grid-icons", "name": "visual_icons_name", "text": "visual_icons_text" },
+  { "scene": "list-compact", "name": "visual_compact_name", "text": "visual_compact_text" },
+  { "scene": "minimal", "name": "visual_minimal_name", "text": "visual_minimal_text" }
+]

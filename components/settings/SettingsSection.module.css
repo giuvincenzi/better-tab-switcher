@@ -1,0 +1,37 @@
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.625 * var(--bts-em));
+  scroll-margin-top: calc(1.5 * var(--bts-em));
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.25 * var(--bts-em));
+  padding: 0 calc(0.25 * var(--bts-em));
+}
+
+.title {
+  margin: 0;
+  font-size: calc(0.9375 * var(--bts-em));
+  font-weight: 600;
+}
+
+.note {
+  margin: 0;
+  color: var(--bts-text-muted);
+  font-size: calc(0.8125 * var(--bts-em));
+  line-height: 1.5;
+}
+
+.note a {
+  color: var(--bts-link);
+}
+
+.card {
+  overflow: hidden;
+  border: calc(0.0625 * var(--bts-em)) solid var(--bts-settings-border);
+  border-radius: var(--bts-radius-large);
+  background: var(--bts-settings-card);
+}

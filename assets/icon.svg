@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img">
+  <title>Better Tab Switcher</title>
+  <rect x="8" y="8" width="112" height="112" rx="28" fill="#0F766E"/>
+  <rect x="20" y="24" width="58" height="46" rx="7" fill="#FFFFFF" fill-opacity="0.32"/>
+  <rect x="35" y="40" width="58" height="46" rx="7" fill="#FFFFFF" fill-opacity="0.58"/>
+  <rect x="50" y="56" width="58" height="46" rx="7" fill="#FFFFFF"/>
+  <circle cx="57.5" cy="63.5" r="2.6" fill="#0F766E"/>
+  <circle cx="65" cy="63.5" r="2.6" fill="#0F766E" fill-opacity="0.55"/>
+  <circle cx="72.5" cy="63.5" r="2.6" fill="#0F766E" fill-opacity="0.3"/>
+</svg>

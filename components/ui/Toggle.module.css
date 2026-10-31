@@ -1,0 +1,60 @@
+.toggle {
+  position: relative;
+  flex: none;
+  width: calc(2.25 * var(--bts-em));
+  height: calc(1.25 * var(--bts-em));
+  padding: 0;
+  border: 0;
+  border-radius: calc(0.625 * var(--bts-em));
+  background: var(--bts-switch-off);
+  cursor: pointer;
+}
+
+.knob {
+  position: absolute;
+  top: calc(0.1875 * var(--bts-em));
+  inset-inline-start: calc(0.1875 * var(--bts-em));
+  width: calc(0.875 * var(--bts-em));
+  height: calc(0.875 * var(--bts-em));
+  border-radius: calc(0.4375 * var(--bts-em));
+  background: var(--bts-switch-knob-off);
+  transition: inset-inline-start 0.15s ease;
+}
+
+.toggle[aria-checked="true"] {
+  background: var(--bts-accent);
+}
+
+.toggle[aria-checked="true"] .knob {
+  inset-inline-start: calc(1.1875 * var(--bts-em));
+  background: var(--bts-on-accent);
+}
+
+.toggle:disabled {
+  cursor: default;
+}
+
+.toggle:focus-visible {
+  outline: calc(0.125 * var(--bts-em)) solid var(--bts-accent-bright);
+  outline-offset: calc(0.125 * var(--bts-em));
+}
+
+@media (forced-colors: active) {
+  .toggle {
+    border: calc(0.0625 * var(--bts-em)) solid ButtonText;
+  }
+
+  .knob {
+    background: ButtonText;
+  }
+
+  .toggle[aria-checked="true"] {
+    background: Highlight;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .knob {
+    transition: none;
+  }
+}

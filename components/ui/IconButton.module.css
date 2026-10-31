@@ -1,0 +1,40 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: calc(1.5 * var(--bts-em));
+  height: calc(1.5 * var(--bts-em));
+  padding: 0;
+  border: 0;
+  border-radius: var(--bts-radius-small);
+  background: transparent;
+  color: var(--bts-text-muted);
+  cursor: default;
+}
+
+.button:hover {
+  background: var(--bts-close-button);
+  color: var(--bts-text);
+}
+
+.button:focus-visible {
+  outline: calc(0.125 * var(--bts-em)) solid var(--bts-accent);
+  outline-offset: calc(0.0625 * var(--bts-em));
+}
+
+.small {
+  width: calc(1.375 * var(--bts-em));
+  height: calc(1.375 * var(--bts-em));
+}
+
+.large {
+  width: calc(2 * var(--bts-em));
+  height: calc(2 * var(--bts-em));
+  border-radius: var(--bts-radius);
+}
+
+.button[aria-pressed="true"] {
+  background: var(--bts-selected);
+  color: var(--bts-selected-text);
+}

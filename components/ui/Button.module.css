@@ -1,0 +1,34 @@
+.button {
+  flex: none;
+  height: calc(2 * var(--bts-em));
+  padding: 0 calc(0.875 * var(--bts-em));
+  border: calc(0.0625 * var(--bts-em)) solid var(--bts-settings-border);
+  border-radius: calc(1 * var(--bts-em));
+  background: transparent;
+  color: var(--bts-link);
+  font: inherit;
+  font-size: calc(0.8125 * var(--bts-em));
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.button:hover {
+  background: var(--bts-hover);
+}
+
+.button:focus-visible {
+  outline: calc(0.125 * var(--bts-em)) solid var(--bts-accent-bright);
+  outline-offset: calc(0.125 * var(--bts-em));
+}
+
+.primary {
+  border-color: transparent;
+  background: var(--bts-accent);
+  color: var(--bts-on-accent);
+}
+
+.primary:hover {
+  background: var(--bts-accent);
+  filter: brightness(1.1);
+}

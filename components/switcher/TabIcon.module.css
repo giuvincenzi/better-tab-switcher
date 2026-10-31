@@ -1,0 +1,40 @@
+/* A square cell (--icon-cell, lib/switcher/sizes.ts), the site's icon in its middle. */
+.cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--icon-cell);
+  height: var(--icon-cell);
+  box-sizing: border-box;
+  overflow: hidden;
+  border: calc(0.125 * var(--bts-em)) solid transparent;
+  border-radius: calc(1 * var(--bts-em));
+  cursor: default;
+}
+
+.cell:hover {
+  background: var(--bts-hover);
+}
+
+/* At its own size, never stretched: the size limit is set by the cell. */
+.icon {
+  width: auto;
+  height: auto;
+}
+
+.sleeping {
+  opacity: 0.55;
+}
+
+.selected,
+.selected:hover {
+  border-color: var(--bts-accent-bright);
+  background: var(--bts-selected);
+}
+
+@media (forced-colors: active) {
+  .selected {
+    border-color: Highlight;
+  }
+}

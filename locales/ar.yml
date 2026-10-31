@@ -1,0 +1,88 @@
+Extension_Description: اعرض علامات التبويب في مكان واحد باختصار واحد، ثم انتقل بينها أو ابحث فيها أو أغلقها بسرعة. بطريقة العرض التي تفضّلها وبخصوصية تامة.
+Language_Tag: ar
+Browser_ChromeStore: سوق Chrome الإلكتروني
+Browser_EdgeStore: الوظائف الإضافية من Microsoft Edge
+Command_NextTab: فتح مبدّل علامات التبويب على علامة التبويب التالية
+Command_PreviousTab: فتح مبدّل علامات التبويب على علامة التبويب السابقة
+Switcher_Tabs: علامات التبويب المفتوحة، الأحدث أولاً
+Switcher_Toolbar: شريط الأدوات
+Switcher_Search: البحث في علامات التبويب
+Switcher_NoMatch: لا توجد علامات تبويب تطابق بحثك.
+Switcher_Settings: جميع الإعدادات
+Switcher_CloseTab: إغلاق علامة التبويب
+Switcher_Pinned: مثبّتة
+Switcher_PlayingAudio: يتم تشغيل الصوت
+Switcher_Sleeping: غير نشِطة
+Switcher_Window: النافذة $1
+Settings_Title: إعدادات Better Tab Switcher
+Settings_Sections: أقسام الإعدادات
+Settings_Appearance: المظهر
+Settings_Theme: الوضع
+Settings_ThemeDevice: وضع الجهاز
+Settings_ThemeLight: فاتح
+Settings_ThemeDark: داكن
+Settings_View: طريقة العرض
+Settings_ViewList: قائمة
+Settings_ViewGrid: شبكة
+Settings_Toolbar: إظهار شريط الأدوات
+Settings_ToolbarNote: شريط في أعلى مبدّل علامات التبويب يضم حقل البحث وأزرار طريقة العرض والإعدادات.
+Settings_GridShow: إظهار
+Settings_GridShowPreviews: المعاينات
+Settings_GridShowIcons: الرموز
+Settings_GridShowNote: يعرض خيار «المعاينات» صورة لكل علامة تبويب، أما خيار «الرموز» فيعرض رمز كل موقع فقط.
+Settings_Compact: العرض المكثّف
+Settings_CompactNote: صفوف أقل ارتفاعًا لتتسع لعدد أكبر من علامات التبويب.
+Settings_ListRows: علامات التبويب المعروضة قبل التمرير
+Settings_RowsFit: بحجم الشاشة
+Settings_RowsFitNote: يعرض خيار «بحجم الشاشة» أكبر عدد من علامات التبويب يسمح به ارتفاع الشاشة.
+Settings_Switching: التبديل
+Settings_Scope: عرض علامات التبويب من
+Settings_ScopeWindow: هذه النافذة
+Settings_ScopeAll: جميع النوافذ
+Settings_ScopeNote: عند اختيار جميع النوافذ، تُظهر كل علامة تبويب من نافذة أخرى رقم نافذتها.
+Settings_ShowPinned: إظهار علامات التبويب المثبّتة
+Settings_Delay: المهلة قبل ظهور مبدّل علامات التبويب
+Settings_DelayNote: إذا ضغطت على الاختصار وأفلتّه خلال مدة أقصر من هذه، يتم الانتقال إلى علامة التبويب السابقة بدون إظهار مبدّل علامات التبويب.
+Settings_StayOpen: البقاء مفتوحًا إلى أن تختار علامة تبويب
+Settings_StayOpenNote: لن يؤدي ترك مفاتيح الاختصار إلى التبديل بين علامات التبويب. اختر علامة تبويب بالضغط على Enter أو بالنقر عليها.
+Settings_ChromePagesWindow: فتح مبدّل علامات التبويب في نافذة على صفحات $1
+Settings_ChromePagesWindowNote: لا يسمح متصفّح $1 للإضافات بالعمل في صفحاته الخاصة، مثل صفحة الإعدادات، ولا في متجر الإضافات الخاص به، $2. لذلك يُفتح مبدّل علامات التبويب في هذه الصفحات ضمن نافذة صغيرة خاصة به.
+Settings_AutoSelect: الاختيار التلقائي
+Settings_AutoSelectNote: تُفتح علامة التبويب المحدّدة بعد بضع ثوانٍ، ويوضّح خط الوقت المتبقي.
+Settings_AutoSelectTime: مدة الاختيار التلقائي
+Settings_TabDetails: تفاصيل علامة التبويب
+Settings_Address: عنوان الموقع الإلكتروني
+Settings_FullAddress: العنوان الكامل
+Settings_FullAddressNote: عنوان الصفحة كاملًا، وليس الموقع فقط.
+Settings_LongAddress: عناوين المواقع الإلكترونية الطويلة
+Settings_LongAddressNote: يتم تمريرها في علامة التبويب المحدّدة وفي علامة التبويب الموجودة أسفل مؤشر الماوس لعرضها كاملة، أو اقتطاعها باستخدام «…».
+Settings_LongAddressCut: اقتطاع
+Settings_LongAddressScroll: تمرير
+Settings_PinnedIcon: رمز علامة التبويب المثبّتة
+Settings_AudioIcon: رمز تشغيل الصوت
+Settings_Sleeping: علامات التبويب غير النشطة
+Settings_SleepingNote: تحمل علامات التبويب غير النشطة رمزًا وتظهر باللون الرمادي.
+Settings_GroupColor: لون مجموعة علامات التبويب
+Settings_LastUsed: آخر استخدام
+Settings_LastUsedNote: على سبيل المثال، $1.
+Settings_Shortcuts: اختصارات لوحة المفاتيح
+Settings_ShortcutsNote: لا يسمح متصفّح $1 للإضافات باستخدام Ctrl+Tab.
+Settings_ShortcutsGuide: كيفية استخدام Ctrl+Tab
+Settings_NextTab: علامة التبويب التالية
+Settings_NextTabNote: يفتح مبدّل علامات التبويب وينقل التحديد إلى علامة التبويب التالية.
+Settings_PreviousTab: علامة التبويب السابقة
+Settings_PreviousTabNote: يفتح مبدّل علامات التبويب وينقل التحديد إلى علامة التبويب السابقة.
+Settings_ChangeShortcut: تغيير الاختصار
+Settings_NoShortcut: غير محدَّد
+Settings_IconShortcut: الرمز في شريط الأدوات
+Settings_IconShortcutNote: يفتح مبدّل علامات التبويب كما لو نقرت على الرمز في شريط الأدوات، ويبقى مفتوحًا إلى أن تختار علامة تبويب.
+Settings_ShortcutMissing: أحد الاختصارات بلا مفاتيح، ربما لأن إضافة أخرى تستخدمها من قبل. اختر المفاتيح التي تريدها باستخدام «$1».
+Settings_ShortcutsDialogTitle: اختر اختصارات لوحة المفاتيح
+Settings_ShortcutsDialogText: تم تثبيت Better Tab Switcher. اختر المفاتيح التي تفتحه.
+Settings_Reset: إعادة الضبط
+Settings_RestoreDefaults: استعادة الإعدادات إلى القيم التلقائية الأصلية
+Settings_Restore: استعادة
+Settings_RestoreTitle: هل تريد استعادة الإعدادات التلقائية؟
+Settings_RestoreText: ستعود كل الإعدادات إلى ما كانت عليه عند تثبيت Better Tab Switcher، وستبقى اختصارات لوحة المفاتيح كما هي.
+Dialog_Done: تم
+Dialog_Cancel: إلغاء

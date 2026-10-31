@@ -1,0 +1,132 @@
+.titleLine {
+  display: flex;
+  align-items: center;
+  gap: calc(0.5 * var(--bts-em));
+  min-width: 0;
+}
+
+.title {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.match {
+  background: none;
+  color: var(--tab-match);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: calc(0.1875 * var(--bts-em));
+}
+
+.group {
+  flex: none;
+  width: calc(0.5 * var(--bts-em));
+  height: calc(0.5 * var(--bts-em));
+  border-radius: calc(0.25 * var(--bts-em));
+}
+
+/* The address's place in the row or the tile, in the page's direction. */
+.address {
+  display: block;
+  min-width: 0;
+  color: var(--tab-muted);
+  font-size: calc(0.75 * var(--bts-em));
+  font-weight: 400;
+}
+
+/*
+ * What shows of the address, always left to right (dir="ltr"): cut at its end, or scrolling. When it fits, it sits where
+ * the page's text starts: on the right in a right-to-left page.
+ */
+.addressText {
+  container-type: inline-size;
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+
+/*
+ * Beside the title (the compact list): a column as wide in every row, so the addresses line up. Its width can't be
+ * its text's: the container that measures the address to scroll it takes no width from its text.
+ */
+.side {
+  flex: none;
+  width: 30%;
+}
+
+/* Scrolls a long address back and forth on the selected tab: as far as it is longer than its place, no further. */
+.scrolls .addressText {
+  text-overflow: clip;
+}
+
+.scrolls .addressText > span {
+  display: inline-block;
+  animation: scroll-address 2.25s linear 1s infinite alternate;
+}
+
+/* A right-to-left page: the address, when it fits, sits on the right, where the page's text starts. */
+.address:dir(rtl) .addressText {
+  text-align: right;
+}
+
+@keyframes scroll-address {
+  to {
+    transform: translateX(min(0em, calc(100cqw - 100%)));
+  }
+}
+
+.icon {
+  display: inline-flex;
+  flex: none;
+  color: var(--tab-muted);
+}
+
+.window {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  gap: calc(0.25 * var(--bts-em));
+  height: calc(1.25 * var(--bts-em));
+  padding: 0 calc(0.375 * var(--bts-em));
+  box-sizing: border-box;
+  border: calc(0.0625 * var(--bts-em)) solid var(--tab-chip-border);
+  border-radius: var(--bts-radius-small);
+  color: var(--tab-muted);
+  font-size: calc(0.6875 * var(--bts-em));
+  font-weight: 600;
+}
+
+.age {
+  flex: none;
+  color: var(--tab-muted);
+  font-size: calc(0.75 * var(--bts-em));
+  font-weight: 400;
+}
+
+/* Runs out towards the side the text starts (dir). */
+.autoSelect {
+  position: absolute;
+  inset-inline-start: 0;
+  bottom: 0;
+  width: 100%;
+  height: calc(0.1875 * var(--bts-em));
+  background: var(--bts-accent-bright);
+  animation-name: auto-select;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+@keyframes auto-select {
+  to {
+    width: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scrolls .addressText > span {
+    animation: none;
+  }
+}

@@ -1,0 +1,88 @@
+Extension_Description: Un raccourci réunit vos onglets pour passer vite de l'un à l'autre, les chercher ou les fermer. À votre façon, tout reste privé.
+Language_Tag: fr
+Browser_ChromeStore: Chrome Web Store
+Browser_EdgeStore: Modules complémentaires Microsoft Edge
+Command_NextTab: Ouvrir le sélecteur sur l'onglet suivant
+Command_PreviousTab: Ouvrir le sélecteur sur l'onglet précédent
+Switcher_Tabs: Onglets ouverts, du plus récent au plus ancien
+Switcher_Toolbar: Barre d'outils
+Switcher_Search: Rechercher dans les onglets
+Switcher_NoMatch: Aucun onglet ne correspond à votre recherche.
+Switcher_Settings: Tous les paramètres
+Switcher_CloseTab: Fermer l'onglet
+Switcher_Pinned: Épinglé
+Switcher_PlayingAudio: Lecture audio en cours
+Switcher_Sleeping: Inactif
+Switcher_Window: Fenêtre $1
+Settings_Title: Paramètres de Better Tab Switcher
+Settings_Sections: Sections des paramètres
+Settings_Appearance: Apparence
+Settings_Theme: Thème
+Settings_ThemeDevice: Thème de l'appareil
+Settings_ThemeLight: Clair
+Settings_ThemeDark: Sombre
+Settings_View: Affichage
+Settings_ViewList: Liste
+Settings_ViewGrid: Grille
+Settings_Toolbar: Afficher la barre d'outils
+Settings_ToolbarNote: Une barre en haut du sélecteur, avec le champ de recherche et des boutons pour l'affichage et les paramètres.
+Settings_GridShow: Afficher
+Settings_GridShowPreviews: Aperçus
+Settings_GridShowIcons: Icônes
+Settings_GridShowNote: Aperçus montre une image de chaque onglet. Icônes montre seulement l'icône de chaque site.
+Settings_Compact: Compact
+Settings_CompactNote: Des lignes moins hautes, pour voir plus d'onglets à la fois.
+Settings_ListRows: Onglets visibles sans faire défiler
+Settings_RowsFit: Adapter à l'écran
+Settings_RowsFitNote: Adapter à l'écran affiche autant d'onglets que la hauteur de l'écran le permet.
+Settings_Switching: Changement d'onglet
+Settings_Scope: Afficher les onglets de
+Settings_ScopeWindow: Cette fenêtre
+Settings_ScopeAll: Toutes les fenêtres
+Settings_ScopeNote: Avec toutes les fenêtres, les onglets des autres fenêtres indiquent le numéro de leur fenêtre.
+Settings_ShowPinned: Afficher les onglets épinglés
+Settings_Delay: Délai avant l'affichage du sélecteur
+Settings_DelayNote: Si vous appuyez sur le raccourci et le relâchez plus vite que ce délai, vous passez à l'onglet précédent sans afficher le sélecteur.
+Settings_StayOpen: Rester ouvert jusqu'au choix d'un onglet
+Settings_StayOpenNote: Relâcher les touches du raccourci ne change pas d'onglet. Choisissez un onglet avec Entrée ou d'un clic.
+Settings_ChromePagesWindow: Ouvrir le sélecteur dans une fenêtre sur les pages de $1
+Settings_ChromePagesWindowNote: $1 n'autorise pas les extensions sur ses propres pages, comme les Paramètres, ni sur sa boutique d'extensions, $2. Sur ces pages, le sélecteur s'ouvre dans une petite fenêtre à part.
+Settings_AutoSelect: Sélection automatique
+Settings_AutoSelectNote: L'onglet sélectionné s'ouvre au bout de quelques secondes. Une ligne indique le temps restant.
+Settings_AutoSelectTime: Délai de sélection automatique
+Settings_TabDetails: Détails des onglets
+Settings_Address: Adresse du site web
+Settings_FullAddress: Adresse complète
+Settings_FullAddressNote: L'adresse complète de la page, et pas seulement le site.
+Settings_LongAddress: Adresses trop longues
+Settings_LongAddressNote: Les faire défiler sur l'onglet sélectionné et sur celui situé sous le curseur de la souris pour les afficher en entier, ou les tronquer avec « … ».
+Settings_LongAddressCut: Tronquer
+Settings_LongAddressScroll: Faire défiler
+Settings_PinnedIcon: Icône des onglets épinglés
+Settings_AudioIcon: Icône de lecture audio
+Settings_Sleeping: Onglets inactifs
+Settings_SleepingNote: Les onglets inactifs ont une icône et s'affichent en gris.
+Settings_GroupColor: Couleur du groupe d'onglets
+Settings_LastUsed: Dernière utilisation
+Settings_LastUsedNote: Par exemple, $1.
+Settings_Shortcuts: Raccourcis clavier
+Settings_ShortcutsNote: $1 ne permet pas aux extensions d'utiliser Ctrl+Tab.
+Settings_ShortcutsGuide: Comment utiliser Ctrl+Tab
+Settings_NextTab: Onglet suivant
+Settings_NextTabNote: Ouvre le sélecteur et déplace la sélection sur l'onglet suivant.
+Settings_PreviousTab: Onglet précédent
+Settings_PreviousTabNote: Ouvre le sélecteur et déplace la sélection sur l'onglet précédent.
+Settings_ChangeShortcut: Modifier le raccourci
+Settings_NoShortcut: Non défini
+Settings_IconShortcut: Icône dans la barre d'outils
+Settings_IconShortcutNote: Ouvre le sélecteur comme un clic sur l'icône dans la barre d'outils. Il reste ouvert jusqu'à ce que vous choisissiez un onglet.
+Settings_ShortcutMissing: Un raccourci n'a aucune touche, peut-être parce qu'une autre extension les utilise déjà. Choisissez vos propres touches avec le bouton $1.
+Settings_ShortcutsDialogTitle: Choisissez vos raccourcis clavier
+Settings_ShortcutsDialogText: Better Tab Switcher est installé. Choisissez les touches qui l'ouvrent.
+Settings_Reset: Réinitialiser
+Settings_RestoreDefaults: Restaurer les paramètres par défaut
+Settings_Restore: Restaurer
+Settings_RestoreTitle: Restaurer les paramètres par défaut ?
+Settings_RestoreText: Tous les paramètres redeviennent tels qu'ils étaient à l'installation de Better Tab Switcher. Vos raccourcis clavier restent inchangés.
+Dialog_Done: OK
+Dialog_Cancel: Annuler

@@ -1,0 +1,14 @@
+/*
+ * The switcher's window shows only the switcher, and the panel's color in the theme in use from its first moment
+ * (the device's theme until the switcher's tabs arrive): never a white window.
+ */
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+html {
+  background: var(--bts-panel);
+}

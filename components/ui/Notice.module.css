@@ -1,0 +1,12 @@
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: calc(0.625 * var(--bts-em));
+  padding: calc(0.75 * var(--bts-em)) calc(0.875 * var(--bts-em));
+  border: calc(0.0625 * var(--bts-em)) solid var(--bts-warning-border);
+  border-radius: calc(0.625 * var(--bts-em));
+  background: var(--bts-warning);
+  color: var(--bts-warning-text);
+  font-size: calc(0.8125 * var(--bts-em));
+  line-height: 1.5;
+}

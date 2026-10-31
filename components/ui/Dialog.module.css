@@ -1,0 +1,48 @@
+.dialog {
+  box-sizing: border-box;
+  width: calc(40 * var(--bts-em));
+  max-width: calc(100% - 2 * var(--bts-em));
+  flex-direction: column;
+  gap: var(--bts-em);
+  padding: calc(1.5 * var(--bts-em));
+  border: calc(0.0625 * var(--bts-em)) solid var(--bts-settings-border);
+  border-radius: var(--bts-radius-panel);
+  background: var(--bts-panel);
+  color: var(--bts-text);
+  box-shadow: var(--bts-shadow);
+  font: inherit;
+}
+
+.dialog[open] {
+  display: flex;
+}
+
+.dialog::backdrop {
+  background: rgb(0 0 0 / 50%);
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.375 * var(--bts-em));
+}
+
+.title {
+  margin: 0;
+  font-size: calc(1.125 * var(--bts-em));
+  font-weight: 600;
+}
+
+.description {
+  margin: 0;
+  color: var(--bts-text-muted);
+  font-size: calc(0.875 * var(--bts-em));
+  line-height: 1.5;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: calc(0.5 * var(--bts-em));
+}

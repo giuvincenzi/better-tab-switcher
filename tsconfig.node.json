@@ -1,0 +1,22 @@
+{
+  // The files that run in Node: configs, scripts, their unit tests and the end-to-end tests. The extension's code can't
+  // see Node's APIs.
+  // DOM: the end-to-end tests run code in the pages they open (page.evaluate).
+  "compilerOptions": {
+    "lib": ["ES2024", "DOM"],
+    "target": "ES2022",
+    "module": "Preserve",
+    "moduleResolution": "Bundler",
+    "moduleDetection": "force",
+    "verbatimModuleSyntax": true,
+    "types": ["node"],
+    "allowJs": true,
+    "allowImportingTsExtensions": true,
+    "checkJs": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noEmit": true,
+    "skipLibCheck": true
+  },
+  "include": ["tests/e2e/**/*.ts", "tests/unit/release.test.ts", "scripts/**/*.mjs", "*.config.ts"]
+}

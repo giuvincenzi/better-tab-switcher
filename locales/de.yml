@@ -1,0 +1,88 @@
+Extension_Description: Eine Tastenkombination zeigt Ihre Tabs auf einen Blick. Schnell wechseln, suchen, schließen – in Ihrer Wunschansicht, immer privat.
+Language_Tag: de
+Browser_ChromeStore: Chrome Web Store
+Browser_EdgeStore: Microsoft Edge-Add-Ons
+Command_NextTab: Tab-Umschalter beim nächsten Tab öffnen
+Command_PreviousTab: Tab-Umschalter beim vorherigen Tab öffnen
+Switcher_Tabs: Geöffnete Tabs, zuletzt verwendete zuerst
+Switcher_Toolbar: Symbolleiste
+Switcher_Search: Tabs durchsuchen
+Switcher_NoMatch: Kein Tab passt zu Ihrer Suche.
+Switcher_Settings: Alle Einstellungen
+Switcher_CloseTab: Tab schließen
+Switcher_Pinned: Angepinnt
+Switcher_PlayingAudio: Gibt Audio wieder
+Switcher_Sleeping: Inaktiv
+Switcher_Window: Fenster $1
+Settings_Title: Einstellungen für Better Tab Switcher
+Settings_Sections: Bereiche der Einstellungen
+Settings_Appearance: Darstellung
+Settings_Theme: Design
+Settings_ThemeDevice: Gerät
+Settings_ThemeLight: Hell
+Settings_ThemeDark: Dunkel
+Settings_View: Ansicht
+Settings_ViewList: Liste
+Settings_ViewGrid: Raster
+Settings_Toolbar: Symbolleiste anzeigen
+Settings_ToolbarNote: Eine Leiste oben im Tab-Umschalter mit dem Suchfeld und Schaltflächen für die Ansicht und die Einstellungen.
+Settings_GridShow: Anzeigen
+Settings_GridShowPreviews: Vorschauen
+Settings_GridShowIcons: Symbole
+Settings_GridShowNote: Bei „Vorschauen“ sehen Sie ein Bild jedes Tabs, bei „Symbole“ nur das Symbol der jeweiligen Website.
+Settings_Compact: Kompakt
+Settings_CompactNote: Niedrigere Zeilen, damit mehr Tabs Platz haben.
+Settings_ListRows: Sichtbare Tabs ohne Scrollen
+Settings_RowsFit: An den Bildschirm anpassen
+Settings_RowsFitNote: Mit „An den Bildschirm anpassen“ werden so viele Tabs angezeigt, wie die Bildschirmhöhe zulässt.
+Settings_Switching: Tabwechsel
+Settings_Scope: Angezeigte Tabs
+Settings_ScopeWindow: Aus diesem Fenster
+Settings_ScopeAll: Aus allen Fenstern
+Settings_ScopeNote: Bei Tabs aus allen Fenstern zeigt jeder Tab aus einem anderen Fenster die Nummer seines Fensters.
+Settings_ShowPinned: Angepinnte Tabs anzeigen
+Settings_Delay: Verzögerung, bis der Tab-Umschalter erscheint
+Settings_DelayNote: Wenn Sie die Tastenkombination innerhalb dieser Zeit drücken und wieder loslassen, wechseln Sie zum vorherigen Tab, ohne dass der Tab-Umschalter erscheint.
+Settings_StayOpen: Geöffnet lassen, bis Sie einen Tab auswählen
+Settings_StayOpenNote: Wenn Sie die Tasten der Tastenkombination loslassen, wird der Tab nicht gewechselt. Wählen Sie einen Tab mit der Eingabetaste oder per Klick aus.
+Settings_ChromePagesWindow: Tab-Umschalter auf Seiten von $1 in einem eigenen Fenster öffnen
+Settings_ChromePagesWindowNote: Auf den eigenen Seiten von $1, etwa den Einstellungen, und in seinem Store für Erweiterungen, $2, sind Erweiterungen nicht zugelassen. Dort öffnet sich der Tab-Umschalter in einem eigenen kleinen Fenster.
+Settings_AutoSelect: Automatische Auswahl
+Settings_AutoSelectNote: Der ausgewählte Tab wird nach einigen Sekunden geöffnet. Eine Linie zeigt die verbleibende Zeit.
+Settings_AutoSelectTime: Zeit bis zur automatischen Auswahl
+Settings_TabDetails: Tab-Details
+Settings_Address: Webadresse
+Settings_FullAddress: Vollständige Adresse
+Settings_FullAddressNote: Die ganze Adresse der Seite, nicht nur die Website.
+Settings_LongAddress: Lange Webadressen
+Settings_LongAddressNote: Sie laufen beim ausgewählten Tab und beim Tab unter dem Mauszeiger durch, damit sie vollständig zu sehen sind, oder werden mit „…“ gekürzt.
+Settings_LongAddressCut: Kürzen
+Settings_LongAddressScroll: Durchlaufen lassen
+Settings_PinnedIcon: Symbol für angepinnte Tabs
+Settings_AudioIcon: Symbol für Audiowiedergabe
+Settings_Sleeping: Inaktive Tabs
+Settings_SleepingNote: Inaktive Tabs erhalten ein Symbol und werden grau dargestellt.
+Settings_GroupColor: Farbe der Tabgruppe
+Settings_LastUsed: Zuletzt verwendet
+Settings_LastUsedNote: Zum Beispiel $1
+Settings_Shortcuts: Tastenkombinationen
+Settings_ShortcutsNote: In $1 können Erweiterungen Strg+Tab nicht verwenden.
+Settings_ShortcutsGuide: So verwenden Sie Strg+Tab
+Settings_NextTab: Nächster Tab
+Settings_NextTabNote: Öffnet den Tab-Umschalter und wählt den nächsten Tab aus.
+Settings_PreviousTab: Vorheriger Tab
+Settings_PreviousTabNote: Öffnet den Tab-Umschalter und wählt den vorherigen Tab aus.
+Settings_ChangeShortcut: Tastenkombination ändern
+Settings_NoShortcut: Nicht festgelegt
+Settings_IconShortcut: Symbol in der Symbolleiste
+Settings_IconShortcutNote: Öffnet den Tab-Umschalter wie ein Klick auf das Symbol in der Symbolleiste. Er bleibt geöffnet, bis Sie einen Tab auswählen.
+Settings_ShortcutMissing: Für eine Tastenkombination sind keine Tasten festgelegt, vielleicht weil eine andere Erweiterung sie bereits verwendet. Legen Sie über „$1“ eigene Tasten fest.
+Settings_ShortcutsDialogTitle: Tastenkombinationen festlegen
+Settings_ShortcutsDialogText: Better Tab Switcher ist installiert. Legen Sie fest, mit welchen Tasten Sie es öffnen.
+Settings_Reset: Zurücksetzen
+Settings_RestoreDefaults: Standardeinstellungen wiederherstellen
+Settings_Restore: Wiederherstellen
+Settings_RestoreTitle: Standardeinstellungen wiederherstellen?
+Settings_RestoreText: Alle Einstellungen werden auf den Stand bei der Installation von Better Tab Switcher zurückgesetzt. Ihre Tastenkombinationen bleiben unverändert.
+Dialog_Done: Fertig
+Dialog_Cancel: Abbrechen

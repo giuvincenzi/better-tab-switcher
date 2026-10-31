@@ -1,0 +1,126 @@
+/*
+ * The base rules first, then the sleeping and selected tiles. The sizes come from lib/switcher/sizes.ts (--tile-*,
+ * --preview-*), which also makes the switcher's own window as big as the grid.
+ */
+
+.tile {
+  --tab-muted: var(--bts-text-muted);
+  --tab-match: var(--bts-match);
+  --tab-chip-border: var(--bts-border);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--tile-space);
+  min-width: 0;
+  padding: var(--tile-padding);
+  box-sizing: border-box;
+  overflow: hidden;
+  border: var(--tile-border) solid transparent;
+  border-radius: var(--bts-radius-large);
+  color: var(--bts-text);
+  cursor: default;
+}
+
+.tile:hover {
+  background: var(--bts-hover);
+}
+
+.header {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: calc(0.375 * var(--bts-em));
+  height: var(--tile-header);
+  min-width: 0;
+}
+
+.favicon {
+  flex: none;
+  width: calc(1 * var(--bts-em));
+  height: calc(1 * var(--bts-em));
+}
+
+.title {
+  flex: 1;
+  min-width: 0;
+  font-size: calc(0.75 * var(--bts-em));
+  font-weight: 500;
+}
+
+/* Under the title, where the title's text starts: past the site's icon. */
+.address {
+  flex: none;
+  height: var(--tile-line);
+  margin-top: calc(-1 * var(--address-tuck));
+  padding-inline-start: calc(1.375 * var(--bts-em));
+  font-size: calc(0.6875 * var(--bts-em));
+  line-height: var(--tile-line);
+}
+
+.preview {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: var(--preview-width);
+  height: var(--preview-height);
+  overflow: hidden;
+  border-radius: var(--bts-radius-small);
+  background: var(--bts-preview-empty);
+}
+
+/* The page as it was seen, from its top. */
+.picture {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+
+/* At its own size, never stretched: the size limit is set by the tile. */
+.siteIcon {
+  width: auto;
+  height: auto;
+}
+
+.line {
+  display: flex;
+  flex: none;
+  align-items: center;
+  height: var(--tile-line);
+}
+
+.line > * {
+  font-size: calc(0.6875 * var(--bts-em));
+}
+
+/* The close button shows under the mouse only. */
+.close {
+  visibility: hidden;
+}
+
+.tile:hover .close,
+.close:focus-visible {
+  visibility: visible;
+}
+
+.sleeping {
+  opacity: 0.55;
+}
+
+.selected,
+.selected:hover {
+  --tab-muted: var(--bts-selected-muted);
+  --tab-match: var(--bts-selected-text);
+  --tab-chip-border: var(--bts-selected-muted);
+  border-color: var(--bts-accent-bright);
+  background: var(--bts-selected);
+  color: var(--bts-selected-text);
+}
+
+@media (forced-colors: active) {
+  .selected {
+    border-color: Highlight;
+  }
+}

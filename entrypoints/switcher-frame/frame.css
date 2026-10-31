@@ -1,0 +1,19 @@
+/*
+ * The frame covers the whole page and shows only the switcher's panel, nothing of its own around it. Its root has no
+ * theme (the theme is on the switcher's dialog), so the frame stays transparent over the page in any theme. Its color
+ * scheme is written here, light dark, as on the frame's element (entrypoints/switcher.content.ts), so both sides are
+ * always the same: Chrome paints a frame whose color scheme differs from its element's on an opaque background (a page
+ * that says it supports dark would make "normal" dark on the element's side only). And never one scheme alone: inside a
+ * frame the device's theme is the element's color scheme, so "light" would make the Device theme always light.
+ */
+html {
+  color-scheme: light dark;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+}

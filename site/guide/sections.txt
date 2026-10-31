@@ -1,0 +1,8 @@
+install|Install
+using-the-switcher|Use the switcher
+list-and-grid|List and grid
+search|Search
+settings|Settings
+own-window|The switcher's own window
+privacy|Privacy
+troubleshooting|Troubleshooting

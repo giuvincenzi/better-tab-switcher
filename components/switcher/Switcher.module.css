@@ -1,0 +1,66 @@
+/* Covers the page (or the switcher's window) to center the panel and to close on a click outside it. */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--bts-font);
+  color: var(--bts-text);
+}
+
+.hidden {
+  visibility: hidden;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  width: var(--panel-width);
+  /*
+   * min-width wins over max-width: it is the page's width at most, too. The page is the browser's window, or the
+   * Chrome window the switcher's own window is centered on (--page-width, --page-height).
+   */
+  min-width: min(var(--panel-min-width), calc(var(--page-width) - 2 * var(--margin)));
+  max-width: calc(var(--page-width) - 2 * var(--margin));
+  max-height: calc(var(--page-height) - 2 * var(--margin));
+  padding: var(--panel-padding);
+  box-sizing: border-box;
+  border: calc(0.0625 * var(--bts-em)) solid var(--bts-border);
+  border-radius: var(--bts-radius-panel);
+  background: var(--bts-panel);
+  box-shadow: var(--bts-shadow);
+}
+
+/* The tabs (and "no match"): they fill the height the panel has left (fixed once it is open), then scroll. */
+.results {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.compact {
+  border-radius: var(--bts-radius-large);
+}
+
+/* In its own window the panel is the whole window: the window's frame is its edge. */
+.ownWindow {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.noMatch {
+  margin: 0;
+  padding: calc(0.875 * var(--bts-em)) calc(0.75 * var(--bts-em));
+  color: var(--bts-text-muted);
+  font-size: calc(0.8125 * var(--bts-em));
+}
+
+@media (forced-colors: active) {
+  .panel {
+    border-color: CanvasText;
+  }
+}
