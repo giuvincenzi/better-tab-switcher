@@ -58,7 +58,6 @@ In the same change as the code, for a new feature, changed behavior, new or rena
 or UI text:
 
 - translate every new or changed UI text into every language (`locales/<locale>.yml`, `i18n.md`);
-
 - update the matching file in `site/guide/` (new feature: new file and a line in
   `sections.txt`);
 - update the feature cards in `site/index.html` when the feature list changes: short, saying what the user gets, not
@@ -84,4 +83,3 @@ changes (`working-rules.md`).
 - A screenshot in the guide is a `<figure class="shot">` (the image with `alt`, a `<figcaption>`): centered, as wide as
   the text. Every guide screenshot opens at full size with a click, Enter or Space (`site.js`); every guide version uses
   the latest `site.js`, so the older guides get it too. The home's pictures do not zoom (the user's decision).
-- The install links are the extension's pages on the Chrome Web Store and Edge Add-ons: keep them stable.

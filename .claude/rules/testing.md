@@ -53,8 +53,7 @@
 the pull request says which test changes and why; it is never loosened to pass (fewer checks, wider margins, longer
 waits, skipped). When the test itself looks wrong (it checks something false, or it is flaky), say why with the
 evidence and ask before changing it: for an end-to-end test on GitHub the evidence is in its group's artifact (above).
-A test written in the same change, not on `main` yet, is part of that work and is
-fixed like its code.
+A test written in the same change, not on `main` yet, is part of that work and is fixed like its code.
 
 ## When to add and run tests
 

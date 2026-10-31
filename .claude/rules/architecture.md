@@ -17,8 +17,8 @@
 
 - What exists comes first: WXT, then the browser's APIs, then our own code; a plan that writes its own says why.
 - `entrypoints/` is what Chrome loads (the background, the switcher's frame and window, the settings page, the script
-  put into pages): only glue. The logic is in `lib/`, without UI; the views in `components/`, built only from the
-  component library (`components/ui/`). One implementation of each thing.
+  put into pages): only glue. The logic is in `lib/`, without UI; the views in `components/`. One implementation of
+  each thing.
 - `lib/browser.ts` is the one place for what differs between Chrome and Microsoft Edge.
 - The background is a service worker that Chrome stops when it is idle: no state lives only in its memory
   (`storage.session`, `storage.local`), and its listeners are added as soon as it starts. It is the one writer of the
