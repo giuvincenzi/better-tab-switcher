@@ -116,8 +116,19 @@ test.describe('grid @grid', () => {
     await showSwitcher(serviceWorker, 'next', 'icon');
     const field = switcher(page).getByRole('searchbox', { name: 'Search tabs' });
     await field.click();
-    // The click gives the field the keyboard, and it keeps it: the letters go there.
-    await expect(field).toBeFocused();
+    // The click gives the field the keyboard, and it keeps it: the letters go there. When it doesn't, whether the
+    // window had the system's focus (the page's and the frame's) or something else in the switcher had the keyboard.
+    await expect(field)
+      .toBeFocused()
+      .catch(async (error: Error) => {
+        const frame = await field.evaluate((element) => ({
+          fieldActive: document.activeElement === element,
+          active: `${document.activeElement?.tagName} ${document.activeElement?.getAttribute('role') ?? ''}`,
+          frameHasFocus: document.hasFocus(),
+        }));
+        const pageHasFocus = await page.evaluate(() => document.hasFocus());
+        throw new Error(`${error.message}\nFocus: ${JSON.stringify({ ...frame, pageHasFocus })}`);
+      });
     await page.keyboard.type('ta');
     await expect(field).toHaveValue('ta');
     await expect(rows(page)).toHaveCount(2);
