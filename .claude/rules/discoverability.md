@@ -6,6 +6,9 @@ paths:
   - "scripts/check-readme.mjs"
   - ".github/workflows/test.yml"
   - "scripts/languages.mjs"
+  - "scripts/store-listing.mjs"
+  - "lib/links.ts"
+  - "locales/**"
 ---
 
 # How people find Better Tab Switcher
@@ -32,6 +35,10 @@ paths:
   translation adds it).
 
 ## Search engines
+
+- Google Search Console and Bing Webmaster Tools know the site by its address (`SITE_URL`), and the Chrome Web Store
+  shows it as the extension's Official URL: a change of the address is made there too, in the same work.
+- The TXT record in the DNS of `gviam.app` verifies the site for Google: never delete it.
 
 - `scripts/site.mjs` writes, with the site's address from one constant (`SITE_URL`, `lib/links.ts`):
   `sitemap.xml`, a canonical link on every page (a guide page of any version points to the same page of the newest

@@ -6,6 +6,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import type { BrowserContext } from '@playwright/test';
 import { browserExecutable } from '../../scripts/real-browser.mjs';
 import { browserPid, browserPipe } from './fixtures';
+import { systemTool } from './system-tool';
 import { windowsInput } from './windows-input';
 
 // The system's own input, beyond the browser: Playwright talks to the browser only, so what the user does with the
@@ -69,15 +70,8 @@ type Modifier = Exclude<Key, Letter>;
 /** The modifiers held now, on macOS: each key event says them (its flags). */
 const held = new Set<Modifier>();
 
-/** tests/e2e/mac-keys.swift, built once (Swift comes with Xcode on GitHub's macOS machines). */
-let macKeys: string | undefined;
-function macTool(): string {
-  if (!macKeys) {
-    macKeys = join(mkdtempSync(join(tmpdir(), 'mac-keys-')), 'mac-keys');
-    execFileSync('swiftc', ['-O', 'tests/e2e/mac-keys.swift', '-o', macKeys]);
-  }
-  return macKeys;
-}
+/** tests/e2e/mac-keys.swift, built before the tests (tests/e2e/system-tool.ts). */
+const macTool = systemTool;
 function macKey(direction: 'down' | 'up', key: Key) {
   execFileSync(macTool(), [direction, String(KEYS[key].mac), ...[...held].map((modifier) => KEYS[modifier].flag)]);
 }

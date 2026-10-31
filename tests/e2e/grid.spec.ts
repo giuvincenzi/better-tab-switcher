@@ -179,7 +179,7 @@ test.describe('grid @grid', () => {
       expect(await middleOfPicture(serviceWorker, Number(key.slice('preview-'.length)))).toBeGreaterThan(200);
   });
 
-  test('takes the picture of a tab come back into sight once its page shows again, not the switcher it was left with', async ({
+  test('keeps the picture of a tab that left sight with the switcher in it once it comes back, and takes the next one', async ({
     context,
     serviceWorker,
   }) => {
@@ -187,29 +187,45 @@ test.describe('grid @grid', () => {
     await useSettings(serviceWorker, { view: 'grid', theme: 'dark', delayMs: 0 });
     const pages = await openPages(context, ['alpha', 'beta', 'gamma']);
     const page = pages[2] as Page;
-    const gamma = await tabIdOf(serviceWorker, 'gamma');
-    // Chrome takes at most two pictures a second: the round runs again until both of its pictures were taken.
-    await expect(async () => {
-      // Beta chosen from the switcher open on gamma: gamma leaves sight with the switcher in its last frame.
-      await page.bringToFront();
-      const first = await savedAt(serviceWorker, gamma);
-      await showSwitcher(serviceWorker);
-      await expect(selected(page)).toHaveAccessibleName(named('beta'));
-      await expect.poll(() => savedAt(serviceWorker, gamma), { timeout: 2000 }).not.toBe(first);
-      const before = await savedAt(serviceWorker, gamma);
-      await page.keyboard.press('Enter');
-      await expect.poll(() => activeTitle(serviceWorker)).toBe('beta');
-      // Back on gamma, and the switcher asked for in the same moment: before gamma's page has drawn itself again.
-      await serviceWorker.evaluate(async (id) => {
-        await chrome.tabs.update(id, { active: true });
-        await globalThis.betterTabSwitcherTest.requestSwitcher({ direction: 'next', from: 'shortcut' });
-      }, gamma);
-      await expect(rows(page)).toHaveCount(3);
-      await expect.poll(() => savedAt(serviceWorker, gamma), { timeout: 2000 }).not.toBe(before);
-      await page.keyboard.press('Escape');
-      await expect(rows(page)).toHaveCount(0);
-    }).toPass();
-    // The picture is of the page alone: white where the switcher's panel was.
+    const [beta, gamma] = [await tabIdOf(serviceWorker, 'beta'), await tabIdOf(serviceWorker, 'gamma')];
+    /**
+     * Opens the switcher on gamma until its picture is taken, and leaves it open. A switcher that got none (Chrome takes
+     * at most two pictures a second, and none a moment after the switcher left the page) is closed, and opened again
+     * after toPass's growing pauses.
+     */
+    const pictureOfGamma = async () => {
+      await expect(async () => {
+        const before = await savedAt(serviceWorker, gamma);
+        await showSwitcher(serviceWorker);
+        try {
+          await expect.poll(() => savedAt(serviceWorker, gamma), { timeout: 1000 }).not.toBe(before);
+        } catch (error) {
+          await page.keyboard.press('Escape');
+          await expect(rows(page)).toHaveCount(0);
+          throw error;
+        }
+      }).toPass();
+      return savedAt(serviceWorker, gamma);
+    };
+    const kept = await pictureOfGamma();
+    // Beta in sight while the switcher is still open on gamma, as when a tab is chosen in it: gamma's last frame has the
+    // switcher, which closes as gamma leaves sight.
+    await serviceWorker.evaluate((id) => chrome.tabs.update(id, { active: true }), beta);
+    await expect.poll(() => activeTitle(serviceWorker)).toBe('beta');
+    await expect(rows(page)).toHaveCount(0);
+    // Back on gamma, the switcher asked for at once, while Chrome may still show that frame.
+    await serviceWorker.evaluate(async (id) => {
+      await chrome.tabs.update(id, { active: true });
+      await globalThis.betterTabSwitcherTest.requestSwitcher({ direction: 'next', from: 'shortcut' });
+    }, gamma);
+    await expect(rows(page)).toHaveCount(3);
+    await page.keyboard.press('Escape');
+    await expect(rows(page)).toHaveCount(0);
+    // Gamma's picture stays the one of the page alone: white where the switcher's panel is.
+    expect(await savedAt(serviceWorker, gamma)).toBe(kept);
+    expect(await middleOfPicture(serviceWorker, gamma)).toBeGreaterThan(200);
+    // The next opening takes it again, of the page alone too.
+    expect(await pictureOfGamma()).not.toBe(kept);
     expect(await middleOfPicture(serviceWorker, gamma)).toBeGreaterThan(200);
   });
 
@@ -324,6 +340,32 @@ test.describe('grid @grid', () => {
     await page.keyboard.press('ArrowLeft');
     await page.keyboard.press('ArrowLeft');
     await expect(selected(page)).toHaveAccessibleName(named('gamma'));
+    await expect(panel.getByRole('listbox')).toHaveCSS('display', 'grid');
+    // An arrow pressed the moment after a click on the toolbar's Grid, as a quick hand does: it moves the tabs, never
+    // the radio the click gave the focus to (which would switch back to the list). The click and the key go to the
+    // browser one after the other, nothing waited for between them.
+    const label = await panel.getByRole('radio', { name: 'Grid' }).locator('xpath=ancestor::label').boundingBox();
+    if (!label) throw new Error('The toolbar has no Grid.');
+    const at = { x: label.x + label.width / 2, y: label.y + label.height / 2, button: 'left' as const, clickCount: 1 };
+    const cdp = await context.newCDPSession(page);
+    await Promise.all([
+      cdp.send('Input.dispatchMouseEvent', { type: 'mousePressed', ...at }),
+      cdp.send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...at }),
+      cdp.send('Input.dispatchKeyEvent', {
+        type: 'rawKeyDown',
+        key: 'ArrowRight',
+        code: 'ArrowRight',
+        windowsVirtualKeyCode: 39,
+      }),
+      cdp.send('Input.dispatchKeyEvent', {
+        type: 'keyUp',
+        key: 'ArrowRight',
+        code: 'ArrowRight',
+        windowsVirtualKeyCode: 39,
+      }),
+    ]);
+    // From gamma, first in the grid, to beta beside it.
+    await expect(selected(page)).toHaveAccessibleName(named('beta'));
     await expect(panel.getByRole('listbox')).toHaveCSS('display', 'grid');
   });
 });

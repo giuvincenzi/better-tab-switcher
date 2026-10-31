@@ -298,19 +298,13 @@ function answered<T>(sent: Promise<T>, limitMs = PAGE_ANSWER_MS, what = 'a messa
 }
 
 /**
- * Resolves once the page has drawn a frame in sight: the second requestAnimationFrame runs after the frame the first
- * one came before was drawn, and none runs while the tab is out of sight. A page that doesn't answer (it hangs, or
- * keeps scripts out) gets its picture taken all the same after PAGE_ANSWER_MS.
+ * Whether the page's picture can be taken now: not a moment after the switcher left the page's sight, when Chrome may
+ * still show it there (Messages.pictureFresh); its old picture is kept then. A page without the switcher's holder never
+ * had it; one that doesn't answer gets its picture as before.
  */
-function pageDrawn(tabId: number): Promise<void> {
-  const drawn = browser.scripting.executeScript({
-    target: { tabId },
-    func: () => new Promise<void>((done) => requestAnimationFrame(() => requestAnimationFrame(() => done()))),
-  });
-  return answered(drawn, PAGE_ANSWER_MS, 'a frame drawn').then(
-    () => undefined,
-    () => undefined,
-  );
+async function pictureFresh(tabId: number): Promise<boolean> {
+  if (!(await pagesWithHolder.getValue()).includes(tabId)) return true;
+  return answered(sendMessage('pictureFresh', undefined, tabId)).catch(() => true);
 }
 
 /** Moves the open switcher's selection. False when it is not there any more (its page closed, reloaded or hangs). */
@@ -342,11 +336,13 @@ async function takeSnapshot(current: Browser.tabs.Tab, request: SwitcherRequest)
 /** Shows the switcher in the current tab's page. False when Chrome doesn't let it in. */
 async function showInPage(current: Browser.tabs.Tab, snapshot: SwitcherSnapshot, previews: Previews): Promise<boolean> {
   const tabId = current.id as number;
-  // The page's picture is taken first: the switcher, shown in the page, would be in it. And once the page has drawn
-  // itself in sight: a tab just come back into sight shows its last frame until then, the switcher it was left with too.
+  // The page's picture is taken first: the switcher, shown in the page, would be in it. Not when the page may still
+  // show the switcher it was left with (pictureFresh): its old picture stays.
   const picture =
     wantsPreviews(snapshot.settings) && !current.incognito
-      ? pageDrawn(tabId).then(() => previews.takeForSwitcher({ id: tabId, windowId: current.windowId }))
+      ? pictureFresh(tabId).then((fresh) =>
+          fresh ? previews.takeForSwitcher({ id: tabId, windowId: current.windowId }) : undefined,
+        )
       : undefined;
   // Known before the switcher shows: a preview that arrives meanwhile goes to it.
   // Whether its window has the focus as it opens: the switcher closes when the window loses it (closeWhenWindowLeft).

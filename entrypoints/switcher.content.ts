@@ -35,6 +35,7 @@ export default defineContentScript({
       return { canSeeRelease, keys: await shown.show(), madeNow };
     });
     onMessage('hideFrame', async () => (await holder)?.hide());
+    onMessage('pictureFresh', async () => (await holder)?.pictureFresh() ?? true);
     // The page lost the focus while the switcher is shown in it: the background asks the browser whether the user went
     // to another window or program (focusLeft). Not when the focus only went into the switcher's frame, as each time it
     // shows: the page still has it then (document.hasFocus() counts its frames).
@@ -43,6 +44,13 @@ export default defineContentScript({
     });
   },
 });
+
+/**
+ * How long after the switcher left the page's sight the page's picture may still have it. Chrome showed it in pictures
+ * taken a few tens of milliseconds after, in Chromium and Microsoft Edge on Linux and macOS, even after two animation
+ * frames: the limit is far above that. A switcher opened sooner keeps the tab's last picture.
+ */
+const FRESH_AFTER_MS = 500;
 
 /** Where the holder running in this page keeps its context: in the extension's own world, out of the page's sight. */
 const HOLDER = Symbol.for('better-tab-switcher.holder');
@@ -90,6 +98,8 @@ interface FrameHolder {
   inPage: () => boolean;
   /** Shown over the page. */
   shown: () => boolean;
+  /** False within FRESH_AFTER_MS of the switcher leaving the page's sight (Messages.pictureFresh). */
+  pictureFresh: () => boolean;
   remove: () => void;
 }
 
@@ -120,6 +130,19 @@ async function holdFrame(ctx: ContentScriptContext): Promise<FrameHolder> {
   });
   ui.mount();
   const keys = passKeysOn(ctx, dialog);
+  // What Chrome shows of the page, which its picture copies, can still have the switcher for a moment after it is gone:
+  // after it closes, and after the page comes back into sight when it went out of sight with it (a tab chosen in the
+  // switcher). The page can't tell when that moment is over: no picture is taken within FRESH_AFTER_MS of either.
+  let switcherGoneAt = Number.NEGATIVE_INFINITY;
+  let leftWithSwitcher = false;
+  ctx.addEventListener(document, 'visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+      if (dialog.open || performance.now() - switcherGoneAt < FRESH_AFTER_MS) leftWithSwitcher = true;
+    } else if (leftWithSwitcher) {
+      leftWithSwitcher = false;
+      switcherGoneAt = performance.now();
+    }
+  });
   return {
     async show() {
       // The page's own zoom (CSS zoom on its root, where the holder is) would enlarge the frame: it is undone, so the
@@ -131,8 +154,12 @@ async function holdFrame(ctx: ContentScriptContext): Promise<FrameHolder> {
       await loaded;
       return keys.release();
     },
-    hide: () => dialog.close(),
+    hide() {
+      if (dialog.open) switcherGoneAt = performance.now();
+      dialog.close();
+    },
     shown: () => dialog.open,
+    pictureFresh: () => !leftWithSwitcher && performance.now() - switcherGoneAt >= FRESH_AFTER_MS,
     inPage: () => ui.shadowHost.isConnected,
     remove: () => ui.remove(),
   };

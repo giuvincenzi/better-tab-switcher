@@ -209,6 +209,7 @@ export function Switcher(props: SwitcherProps): JSX.Element {
   }
 
   function onKey(event: KeyboardEvent) {
+    if (event.type === 'keydown') clickedInToolbar = false;
     if (inToolbarControls(event) && event.key !== 'Escape') return;
     const switcherEvent = eventFor(event);
     if (!switcherEvent) return;
@@ -224,19 +225,24 @@ export function Switcher(props: SwitcherProps): JSX.Element {
     return keyEvent(key, { columns: columns(), inField: state().selected === FIELD, direction });
   }
 
+  /** The mouse was last pressed on the toolbar's controls, and no key since. */
+  let clickedInToolbar = false;
+
   /** A click on the toolbar's buttons doesn't move the keyboard focus: the arrows and Enter keep working on the tabs. */
   function onMouseDown(event: MouseEvent) {
-    if (inToolbarControls(event)) event.preventDefault();
+    clickedInToolbar = inToolbarControls(event);
+    if (clickedInToolbar) event.preventDefault();
   }
 
   /**
-   * After a click of the mouse on the toolbar's controls, the keyboard is back on the tabs: a label clicked gives its
-   * radio the focus once the click is over, which onMouseDown can't stop. Not after Enter or Space on a control (a
-   * click with no mouse, detail 0): the keyboard stays where the user is.
+   * After a click of the mouse on the toolbar's controls the keyboard stays on the tabs: a label clicked gives its radio
+   * the focus as the click ends, which onMouseDown can't stop, and the focus goes back to the tabs the moment it
+   * arrives, before any key can reach the radio. Not after Tab, Enter or Space (a key since the click): the keyboard
+   * stays where the user put it.
    */
-  function onClick(event: MouseEvent) {
-    if (event.detail > 0 && inToolbarControls(event) && state().selected !== FIELD)
-      setTimeout(() => panel?.querySelector<HTMLElement>('[role="listbox"]')?.focus({ preventScroll: true }));
+  function onFocusIn(event: FocusEvent) {
+    if (clickedInToolbar && inToolbarControls(event) && state().selected !== FIELD)
+      panel?.querySelector<HTMLElement>('[role="listbox"]')?.focus({ preventScroll: true });
   }
 
   /** A click outside the panel closes the switcher, as Esc does. */
@@ -257,7 +263,7 @@ export function Switcher(props: SwitcherProps): JSX.Element {
     window.addEventListener('keyup', onKey, true);
     window.addEventListener('pointerdown', onPointerDown, true);
     window.addEventListener('mousedown', onMouseDown, true);
-    window.addEventListener('click', onClick, true);
+    window.addEventListener('focusin', onFocusIn, true);
     takeFrame();
     const delay = delayOver() ? undefined : setTimeout(() => setDelayOver(true), settings().delayMs);
     const wait = waitOver() ? undefined : setTimeout(() => setWaitOver(true), PICTURE_WAIT_MS);
@@ -266,7 +272,7 @@ export function Switcher(props: SwitcherProps): JSX.Element {
       window.removeEventListener('keyup', onKey, true);
       window.removeEventListener('pointerdown', onPointerDown, true);
       window.removeEventListener('mousedown', onMouseDown, true);
-      window.removeEventListener('click', onClick, true);
+      window.removeEventListener('focusin', onFocusIn, true);
       clearTimeout(delay);
       clearTimeout(wait);
     });
