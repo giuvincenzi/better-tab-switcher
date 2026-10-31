@@ -22,11 +22,14 @@ const output = preview ? 'site-preview' : '_site';
 const REPOSITORY = 'https://github.com/giuvincenzi/better-tab-switcher';
 
 /**
- * The extension's pages on the stores, the install buttons' links (docs.md: kept stable). Null until the first release is
- * on that store: the preview links nowhere, a release can't be built.
+ * The extension's pages on the stores, the install buttons' links (also in the README). Null for a store the extension
+ * isn't on: the preview links nowhere, a release can't be built.
  */
 /** @type {Record<Store, string | null>} */
-const STORE_PAGES = { chrome: null, edge: null };
+const STORE_PAGES = {
+  chrome: 'https://chromewebstore.google.com/detail/fkalmlegojojpcjdfndipmnakgakokei',
+  edge: 'https://microsoftedge.microsoft.com/addons/detail/kkoilicikefpkggldhpdeabmgnpngelg',
+};
 
 /** @typedef {'chrome' | 'edge'} Store */
 

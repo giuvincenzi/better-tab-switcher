@@ -8,7 +8,9 @@
 </p>
 <p align="center">
   🌐 <a href="https://bettertabswitcher.gviam.app/">Website</a> ·
-  📖 <a href="https://bettertabswitcher.gviam.app/guide/latest/">User guide</a>
+  📖 <a href="https://bettertabswitcher.gviam.app/guide/latest/">User guide</a> ·
+  ⬇️ <a href="https://chromewebstore.google.com/detail/fkalmlegojojpcjdfndipmnakgakokei">Chrome Web Store</a> ·
+  ⬇️ <a href="https://microsoftedge.microsoft.com/addons/detail/kkoilicikefpkggldhpdeabmgnpngelg">Edge Add-ons</a>
 </p>
 
 <!-- Title and description: site/home/en.json (title) and locales/en.yml (Extension_Description), checked by scripts/check-readme.mjs -->
