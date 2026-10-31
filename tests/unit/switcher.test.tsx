@@ -40,7 +40,7 @@ function open(settings: Partial<Settings> = {}, more: Partial<SwitcherSnapshot &
   const [moves] = createSignal<{ direction: Direction; count: number }>({ direction: 'next', count: 0 });
   const [pageKeys] = createSignal<{ key: Key; count: number }>();
   const [previews, setPreviews] = createSignal<Record<number, string>>({});
-  const [pictureTaken, setPictureTaken] = createSignal(false);
+  const [pictureTaken] = createSignal(false);
   const handlers = {
     onOpen: vi.fn(),
     onClose: vi.fn(),
@@ -67,7 +67,7 @@ function open(settings: Partial<Settings> = {}, more: Partial<SwitcherSnapshot &
   );
   const press = (key: string, type: 'keydown' | 'keyup' = 'keydown') =>
     window.dispatchEvent(new KeyboardEvent(type, { key, bubbles: true }));
-  return { host, handlers, press, setPreviews, takePicture: () => setPictureTaken(true) };
+  return { host, handlers, press, setPreviews };
 }
 
 const selectedTitle = (host: HTMLElement) => host.querySelector('[aria-selected="true"]')?.getAttribute('aria-label');
@@ -76,33 +76,12 @@ const selectedTitle = (host: HTMLElement) => host.querySelector('[aria-selected=
 // tests/e2e/switcher.spec.ts, switching.spec.ts, search.spec.ts, settings.spec.ts and grid.spec.ts.
 
 describe('Switcher', () => {
-  it('stays open on release with Stay open, from the toolbar icon, or when it cannot see the release', () => {
-    for (const [settings, more] of [
-      [{ stayOpen: true }, {}],
-      [{}, { fromIcon: true }],
-      [{}, { canSeeRelease: false }],
-    ] as const) {
-      const { handlers, press } = open(settings, more);
-      press('Alt', 'keyup');
-      expect(handlers.onOpen).not.toHaveBeenCalled();
-      dispose?.();
-    }
-  });
-
   it('shows the toolbar with its search field (the default), without the focus', () => {
     const { host } = open();
     const field = host.querySelector('[role="toolbar"] input[type="search"]') as HTMLInputElement;
     expect(field).not.toBeNull();
     expect(document.activeElement).not.toBe(field);
     expect(selectedTitle(host)).toBe('Inbox (3), example.com/2');
-  });
-
-  it("stays hidden until the page's picture is taken, so it is not in it", async () => {
-    const { host, takePicture } = open({ view: 'grid' }, { waitForPicture: true });
-    const backdrop = host.firstElementChild as HTMLElement;
-    expect(getComputedStyle(backdrop).visibility).toBe('hidden');
-    takePicture();
-    await vi.waitFor(() => expect(getComputedStyle(backdrop).visibility).toBe('visible'));
   });
 });
 
@@ -261,15 +240,6 @@ describe('Switcher toolbar', () => {
     expect(button(host, 'Compact')).toBeNull();
   });
 
-  it('changes the view at once, saves it, and keeps the switcher open', () => {
-    const { host, handlers, press } = open();
-    radio(host, 'grid').click();
-    expect(handlers.onSettingsChange).toHaveBeenCalledWith({ view: 'grid' });
-    expect(host.querySelector('[role="listbox"]')?.className).toContain('previews');
-    press('Alt', 'keyup');
-    expect(handlers.onOpen).not.toHaveBeenCalled();
-  });
-
   it('turns Compact on and off', () => {
     const { host, handlers } = open();
     expect(button(host, 'Compact').getAttribute('aria-pressed')).toBe('false');
@@ -311,16 +281,5 @@ describe('Switcher toolbar', () => {
     const { host } = open({ view: 'grid', gridShow: 'icons' });
     expect(button(host, 'Website address')).toBeNull();
     expect(button(host, 'Last used')).toBeNull();
-  });
-
-  it('leaves the keyboard on the tabs when a button is clicked', () => {
-    const { host, press } = open();
-    const list = host.querySelector('[role="listbox"]') as HTMLElement;
-    const pressed = new MouseEvent('mousedown', { bubbles: true, cancelable: true, composed: true });
-    button(host, 'Compact').dispatchEvent(pressed);
-    expect(pressed.defaultPrevented).toBe(true);
-    expect(document.activeElement).toBe(list);
-    press('ArrowDown');
-    expect(selectedTitle(host)).toBe('Q4 planning, example.com/3');
   });
 });

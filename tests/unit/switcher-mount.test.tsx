@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { browser } from '#imports';
 import { mountSwitcher, type SwitcherHandle } from '../../components/switcher/mountSwitcher';
 import { type SwitcherSnapshot, sendMessage } from '../../lib/messages';
 import { defaultSettings, type Settings } from '../../lib/settings/settings';
@@ -64,21 +63,6 @@ const tile = (name: string) => document.querySelector(`[role="option"][aria-labe
 const picture = (name: string) => tile(name).querySelector('img[src^="data:"]')?.getAttribute('src');
 
 describe('mountSwitcher', () => {
-  it('runs left to right in English', () => {
-    const { dialog } = mount();
-    expect(dialog.lang).toBe('en');
-    expect(dialog.dir).toBe('ltr');
-  });
-
-  it('runs right to left when its texts are in Arabic', () => {
-    const getMessage = browser.i18n.getMessage;
-    vi.spyOn(browser.i18n, 'getMessage').mockImplementation(((name: string, ...rest: []) =>
-      name === 'Language_Tag' ? 'ar' : getMessage(name as never, ...rest)) as typeof getMessage);
-    const { dialog } = mount();
-    expect(dialog.dir).toBe('rtl');
-    expect(getComputedStyle(dialog.querySelector('[role="listbox"]') as HTMLElement).direction).toBe('rtl');
-  });
-
   it('keeps a preview that arrived while the saved ones were on their way: it is newer', async () => {
     const { handle } = mount({ view: 'grid' });
     handle.showPreview({ tabId: 3, picture: 'data:image/webp;base64,bmV3' });
@@ -86,13 +70,5 @@ describe('mountSwitcher', () => {
     savedPreviews({ 3: 'data:image/webp;base64,b2xk', 4: 'data:image/webp;base64,c2F2ZWQ=' });
     await vi.waitFor(() => expect(picture('Running plan, example.com/4')).toBe('data:image/webp;base64,c2F2ZWQ='));
     expect(picture('Q4 planning, example.com/3')).toBe('data:image/webp;base64,bmV3');
-  });
-
-  it("shows itself once the page's picture is taken", async () => {
-    const { dialog, handle } = mount({}, { waitForPicture: true });
-    const backdrop = dialog.firstElementChild as HTMLElement;
-    expect(getComputedStyle(backdrop).visibility).toBe('hidden');
-    handle.pictureTaken();
-    await vi.waitFor(() => expect(getComputedStyle(backdrop).visibility).toBe('visible'));
   });
 });

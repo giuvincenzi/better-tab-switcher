@@ -22,27 +22,11 @@ afterEach(async () => {
   await page.viewport(1280, 800);
 });
 
-const pointerDown = (target: Element) =>
-  target.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, composed: true }));
-
 // What the mouse does on the real browser (opening a tab, pressing inside the switcher, closing tabs with the middle
 // button or the close button, the selection after a tab is closed, Auto-select): tests/e2e/switcher.spec.ts,
 // tabs.spec.ts, grid.spec.ts, search.spec.ts and switching.spec.ts; the selection itself: tests/unit/machine.test.ts.
 
 describe('Switcher with the mouse', () => {
-  it('opens the tile that is clicked, in the grid', () => {
-    const { host, handlers } = openSwitcher({ view: 'grid' });
-    option(host, 'Pull request #12, example.com/1').click();
-    expect(handlers.onOpen).toHaveBeenCalledWith(tabs[0]);
-  });
-
-  it('closes on a click outside the panel', () => {
-    const { host, handlers } = openSwitcher();
-    pointerDown(host.firstElementChild as HTMLElement);
-    expect(handlers.onClose).toHaveBeenCalledOnce();
-    expect(handlers.onOpen).not.toHaveBeenCalled();
-  });
-
   it("keeps the browser's auto-scroll from starting on a middle press over a tab, never on a left press", () => {
     const { host } = openSwitcher();
     const middle = new MouseEvent('mousedown', { button: 1, bubbles: true, cancelable: true });

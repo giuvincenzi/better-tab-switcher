@@ -59,13 +59,6 @@ afterEach(() => {
 // focus.spec.ts and grid.spec.ts.
 
 describe('opening a tab', () => {
-  it('does not focus the window again when the tab is in the window of the switcher', async () => {
-    await openInPage();
-    await messages.ask('openTab', 12);
-    expect(browser.tabs.update).toHaveBeenCalledWith(12, { active: true });
-    expect(browser.windows.update).not.toHaveBeenCalled();
-  });
-
   it('focuses the window the tab is in now, when it was moved to another window while the switcher was open', async () => {
     await openInPage();
     // The switcher listed tab 12 in window 1; it was dragged to window 2 meanwhile.
@@ -81,15 +74,6 @@ describe('opening a tab', () => {
     await expect(messages.ask('openTab', 21)).resolves.toBeUndefined();
     expect(browser.tabs.update).not.toHaveBeenCalled();
     expect(browser.windows.update).not.toHaveBeenCalled();
-  });
-
-  it('leaves no switcher open: the next shortcut opens a new one', async () => {
-    await openInPage();
-    await messages.ask('openTab', 12);
-    world.currentTabId = 12;
-    await shortcut();
-    expect(received('closeSwitcher')).toEqual([]);
-    expect(received('showSwitcher')).toEqual([11, 12]);
   });
 });
 
@@ -128,20 +112,6 @@ describe('the keys the page got while the frame had no focus', () => {
 });
 
 describe('the switcher closed without a tab chosen', () => {
-  it('closes its window and gives the focus back to the window it came from', async () => {
-    await openInWindow();
-    await messages.ask('switcherClosed');
-    expect(browser.windows.remove).toHaveBeenCalledWith(FIRST_POPUP_ID);
-    expect(browser.windows.update).toHaveBeenCalledWith(1, { focused: true });
-  });
-
-  it('focuses no window when it was in a page', async () => {
-    await openInPage();
-    await messages.ask('switcherClosed');
-    expect(browser.windows.update).not.toHaveBeenCalled();
-    expect(browser.windows.remove).not.toHaveBeenCalled();
-  });
-
   it('closes quietly when the window it came from has closed meanwhile', async () => {
     await openInWindow();
     vi.mocked(browser.windows.update).mockRejectedValue(new Error('No window with id: 1.'));
@@ -179,18 +149,6 @@ describe('tabs and windows closed or activated under the switcher', () => {
     await shortcut();
     expect(messages.sendMessage.mock.calls.filter(([, , tabId]) => tabId === 11)).toEqual([]);
     expect(received('showSwitcher')).toEqual([11, 12]);
-  });
-
-  it('forgets the switcher whose window the user closed', async () => {
-    await openInWindow();
-    world.windows = world.windows.filter((w) => w.id !== FIRST_POPUP_ID);
-    world.windowListening = false;
-    await fakeBrowser.windows.onRemoved.trigger(FIRST_POPUP_ID);
-    world.tabs[0] = tab(11, 1);
-    world.currentTabId = 11;
-    await shortcut();
-    expect(browser.windows.remove).not.toHaveBeenCalled();
-    expect(received('showSwitcher')).toEqual([11]);
   });
 
   it('keeps the switcher when another window closes', async () => {

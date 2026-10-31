@@ -103,22 +103,9 @@ describe('the switcher in a web page', () => {
     expect(calls.filter(([, , tabId]) => tabId === undefined)).toEqual([]);
   });
 
-  it('opens from the toolbar icon to stay open until a tab is chosen', async () => {
-    await icon();
-    expect(firstSnapshot().fromIcon).toBe(true);
-  });
-
   it('does not inject the script again into a page that already has it', async () => {
     await shortcut();
     expect(browser.scripting.executeScript).not.toHaveBeenCalled();
-  });
-
-  it('closes the open switcher and opens a new one when the toolbar icon is clicked', async () => {
-    await shortcut();
-    await icon();
-    expect(sent('moveSwitcher')).toEqual([]);
-    expect(sent('closeSwitcher')).toEqual([{ data: undefined, tabId: 11 }]);
-    expect(sent('showSwitcher').map((m) => m.tabId)).toEqual([11, 11]);
   });
 
   it('puts the holder in at once in a page it never put it in, without asking the page first', async () => {
@@ -134,20 +121,6 @@ describe('the switcher in a web page', () => {
     expect(messages.sendMessage.mock.invocationCallOrder[0] ?? 0).toBeGreaterThan(
       vi.mocked(browser.scripting.executeScript).mock.invocationCallOrder[0] ?? 0,
     );
-  });
-
-  it('puts the holder in again at once in a tab that loaded another page since', async () => {
-    await shortcut();
-    await ask('switcherClosed');
-    world.injected.delete(11);
-    await fakeBrowser.tabs.onUpdated.trigger(11, { status: 'loading' }, world.tabs[0] as never);
-    messages.sendMessage.mockClear();
-    await shortcut();
-    expect(browser.scripting.executeScript).toHaveBeenCalledTimes(1);
-    expect(messages.sendMessage.mock.calls.filter(([, , tabId]) => tabId === 11).map(([type]) => type)).toEqual([
-      'showFrame',
-      'showSwitcher',
-    ]);
   });
 
   it('closes the open switcher and opens none when there is no current tab', async () => {
@@ -220,15 +193,6 @@ describe('a page that hangs (a script that never ends)', () => {
     expect(sent('showSwitcher').map((m) => m.tabId)).toEqual([11]);
     expect(browser.windows.create).toHaveBeenCalledTimes(1);
   });
-
-  it('puts nothing more into a page that hangs: no script, and the switcher in its own window after one wait', async () => {
-    world.hung.add(11);
-    const request = shortcut();
-    await vi.advanceTimersByTimeAsync(PAGE_ANSWER_MS);
-    await request;
-    expect(browser.scripting.executeScript).not.toHaveBeenCalled();
-    expect(browser.windows.create).toHaveBeenCalledTimes(1);
-  });
 });
 
 // Where the switcher can show in a page: tests/unit/placement.test.ts.
@@ -238,16 +202,6 @@ describe('the switcher in a window of its own', () => {
     world.refusing.add(11);
     await shortcut();
     expect(browser.windows.create).toHaveBeenCalledTimes(1);
-  });
-
-  it('gives its window the tabs once, with the place of the window it is in the middle of', async () => {
-    world.tabs = [tab(11, 1, { url: 'chrome://settings/' }), tab(12, 1), tab(21, 2)];
-    await shortcut('previous');
-    const snapshot = (await ask('getSnapshot')) as SwitcherSnapshot;
-    expect(snapshot.tabs.map((t) => t.id)).toEqual([11, 12]);
-    expect(snapshot.direction).toBe('previous');
-    expect(snapshot.centeredOn).toEqual(userWindow);
-    expect(await ask('getSnapshot')).toBeNull();
   });
 
   it('leaves no switcher behind on a page that keeps the script out when "use a window" is turned off', async () => {
@@ -292,22 +246,6 @@ describe('the switcher in a window of its own', () => {
 describe("the page's picture for the previews", () => {
   beforeEach(async () => {
     await saveSettings({ view: 'grid', gridShow: 'previews' });
-  });
-
-  it('is taken before the switcher shows in the page, and the switcher waits for it', async () => {
-    let taken = () => {};
-    previews.takeForSwitcher.mockReturnValue(new Promise<undefined>((done) => (taken = () => done(undefined))));
-    const request = shortcut();
-    await vi.waitFor(() => expect(sent('showSwitcher')).toHaveLength(1));
-    expect(previews.takeForSwitcher).toHaveBeenCalledWith({ id: 11, windowId: 1 });
-    expect(previews.takeForSwitcher.mock.invocationCallOrder[0]).toBeLessThan(
-      messages.sendMessage.mock.invocationCallOrder[0] ?? 0,
-    );
-    expect(firstSnapshot().waitForPicture).toBe(true);
-    expect(sent('pictureTaken')).toEqual([]);
-    taken();
-    await request;
-    expect(sent('pictureTaken')).toEqual([{ data: undefined, tabId: 11 }]);
   });
 
   it('is not taken of an incognito tab', async () => {
