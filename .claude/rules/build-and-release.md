@@ -11,16 +11,10 @@
 
 ## Commands
 
-- `Makefile`, which runs the npm scripts. Options are make variables, lowercase
+- The `Makefile` runs the npm scripts; its targets are described at its top. Options are make variables, lowercase
   (`make e2e category=<name>`): an option written `--category` would be taken by make itself (GNU make accepts
   abbreviations of its own options).
-  - `make setup`: installs the dependencies (`npm ci`) and Playwright's Chromium when it is missing. Run it after
-    cloning and whenever `package-lock.json` changes.
-  - `make dev`: builds the development build and starts it in Playwright's Chromium with a fresh browser profile
-    (`scripts/dev.mjs`); it rebuilds on every change.
-  - `make build`: the zip for the stores in `.output/`, for the version in `package.json`. Nothing is uploaded.
-  - `make docs serve=1` serves the website preview as the real site (`docs.md`).
-  - The other targets are in the `Makefile`.
+- Run `make setup` after cloning and whenever `package-lock.json` changes.
 - Always build after changes and fix all errors and warnings you introduced.
 
 ## Dev and prod builds
@@ -44,11 +38,11 @@ GitHub Actions, in `.github/workflows/`. Workflow, job and step names are lowerc
 it does (the workflow the phase, the job the action). Each workflow declares its own `permissions`; the default token
 stays read only (Settings > Actions > General > Workflow permissions).
 
-The ruleset "Protect main" requires the checks `unit_test` and `e2e_test` (`git-workflow.md`): renaming those jobs
-needs the ruleset changed in the same moment, or no pull request can be merged.
+Renaming `unit_test` or `e2e_test` needs the ruleset "Protect main" changed in the same moment (`git-workflow.md`), or
+no pull request can be merged.
 
 ## Changes between releases
 
 `CHANGELOG.md` starts with `## Unreleased`, split into `### Added`, `### Changed`, `### Fixed`. Every user-visible
 change adds its line there, in its own pull request. The version lives only in `package.json` (`version`); the build
-writes it into the extension's manifest. A normal pull request never changes it.
+writes it into the extension's manifest.

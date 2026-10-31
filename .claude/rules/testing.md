@@ -2,11 +2,12 @@
 
 ## Unit tests: `make test`
 
-- `tests/unit`, Vitest: only logic that doesn't depend on the browser (the order of the tabs, keys, settings,
-  placement, texts). What depends on Chrome (tabs, windows, messages, focus, storage, the switcher in a page) is tested
-  end to end only, never with a fake browser API.
-- One test file per area, named `<area>.test.ts`; a large area splits by aspect into `<area>-<aspect>.test.ts`; a file
-  that only builds test data has no `.test` in its name.
+- `tests/unit`, Vitest in two projects (`vitest.config.ts`): the logic in Node, with WXT's in-memory browser where it
+  needs storage; the components and `*.browser.test.ts` in headless Chromium. What depends on Chrome's own behavior
+  (tabs, windows, messages, focus, the switcher in a page) is tested end to end only.
+- One test file per area, named `<area>.test.ts` (`.test.tsx` for components, `.browser.test.ts` for what needs a
+  browser's APIs); a large area splits by aspect into `<area>-<aspect>.test.ts`; a file that only builds test data has
+  no `.test` in its name.
 - They run in English; a test of another language sets it itself.
 
 ## End-to-end tests: `make e2e`
@@ -34,14 +35,15 @@
 ## On GitHub
 
 - The `test` workflow runs on every pull request and push to `main`. `unit_test` and `e2e_test` are the required checks
-  (`git-workflow.md`): each passes when every test ran once and passed. The end-to-end tests run on Linux, Windows and
+  (`git-workflow.md`): `unit_test` passes when lint, types and every unit test pass; `e2e_test` when every end-to-end
+  test ran once and passed and the site built (`site_test`). The end-to-end tests run on Linux, Windows and
   macOS, in Chromium and Microsoft Edge, split in groups (`E2E_SYSTEMS`, `E2E_BROWSERS`, `E2E_GROUPS` at the top of
   `test.yml`).
 - `decide_which_tests_run` skips the tests a change can't affect: its patterns are the list of what the builds and the
   tests read. When a build or a test starts reading another file, add it there in the same pull request. Never filter
   the workflow with `paths`: a workflow that doesn't start leaves its required check pending and blocks the merge.
 - `site_test` builds the whole site and checks the README (`docs.md`); `build_extension` checks `third-party.json`
-  against the build. A pull request whose branch is not `release/…` fails when it changes the version in `package.json`.
+  against the build.
 - **When an end-to-end test fails on GitHub**, start from the test's code and the line that failed. Its group's
   artifact holds the screenshots, traces and report; its `README.txt`, written by the step `describe_group_result` of
   `test.yml`, says what each file is (change it there when the artifact changes).

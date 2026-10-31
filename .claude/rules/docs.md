@@ -3,8 +3,7 @@
 Website: `https://bettertabswitcher.gviam.app/`. Sources in `site/`, built by `scripts/site.mjs`.
 
 - `site/index.html`: the home page (features, privacy), a template filled once per language with the texts of
-  `site/home/<code>.json` (placeholders: `scripts/site.mjs`). The home is translated, the guide only in English
-  (`discoverability.md`).
+  `site/home/<code>.json` (placeholders: `scripts/site.mjs`).
 - `site/_header.html`, `site/_footer.html`: shared header and footer, with the texts of the page's language. On phones
   the header stays on one line (brand, the language's flag, a menu button that opens the links and the install button);
   the header's popups open across the whole width, so they never leave the screen.
@@ -30,7 +29,7 @@ Website: `https://bettertabswitcher.gviam.app/`. Sources in `site/`, built by `s
 ## README
 
 `README.md` is short: the logo, the name, the slogan, the badges (version, license, CI), then
-the links to the website and the user guide (and to each store's page once the extension is there), and never repeats
+the links to the website and the user guide, and never repeats
 what the website or the guide already say. Its slogan, title and description come from `site/home/en.json` and
 `locales/en.yml` and are checked by the test workflow (`discoverability.md`). It ends with "Feedback" (a link to open an
 issue), "Development" (see `.claude/rules/`) and "License", with the third-party components the extension ships.
@@ -52,7 +51,7 @@ for their notice in every copy of that code, and the stores' zip is one.
 
 ## Every user-visible change updates the documentation
 
-The extension and the home page are translated (`i18n.md`); the guide is only in English and uses the English UI texts.
+The guide uses the English UI texts.
 
 In the same change as the code, for a new feature, changed behavior, new or renamed setting
 or UI text:
@@ -68,16 +67,15 @@ or UI text:
 
 The plan given to the user before implementing (`working-rules.md`) lists every item of this
 checklist, each marked as needed or not needed with the reason: the guide file, the feature
-cards in `site/index.html`, the `CHANGELOG.md` line, the home's pictures, and the title, description and
-slogan (with the README, the repository's About and the stores' descriptions when they change). The plan also lists the rule
-changes (`working-rules.md`).
+cards in `site/index.html`, the `CHANGELOG.md` line, the home's pictures, and the title, description and slogan
+(`discoverability.md`). The plan also lists the rule changes (`working-rules.md`).
 
 ## Accuracy
 
 - Describe only what the code does. Check the code before writing a sentence about
   behavior, defaults or limits.
-- Privacy above all: the guide's Privacy page, the home's privacy and the stores' privacy answers
-  (`make store-listing`) always say what the code does, changed in the same pull request as the code.
+- Privacy above all: the guide's Privacy page and the home's privacy always say what the code does, changed in the
+  same pull request as the code.
 - Use the exact UI texts from `locales/en.yml` (button, setting and page names).
 - Pictures never show personal data, user names or other windows.
 - A screenshot in the guide is a `<figure class="shot">` (the image with `alt`, a `<figcaption>`): centered, as wide as
