@@ -28,7 +28,7 @@ paths:
 
 ## Search engines
 
-- `scripts/site.mjs` writes, with the site's address from one constant (`SITE_URL`, `scripts/languages.mjs`):
+- `scripts/site.mjs` writes, with the site's address from one constant (`SITE_URL`, `lib/links.ts`):
   `sitemap.xml`, a canonical link on every page (a guide page of any version points to the same page of the newest
   guide), `hreflang` links between the home pages (English as `x-default`), link previews and structured data.
 

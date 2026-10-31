@@ -77,14 +77,14 @@ jobs:
             lintable='\.(ts|tsx|js|mjs|cjs|json|jsonc|css|ya?ml|html|svg)$'
             build='^(entrypoints/|components/|lib/|styles/|locales/|public/|wxt\.config\.ts$|third-party\.json$|scripts/(check-)?third-party\.mjs$|tsconfig\.json$|package(-lock)?\.json$|\.tool-versions$|\.gitattributes$|\.github/workflows/test\.yml$)'
             # The site: its sources and scripts, the README it checks, and what it reads from the extension (the
-            # description and store names in locales/, the logo in public/icon/).
-            site_files='^(site/|scripts/(site|site-serve|check-readme|third-party|languages|store-listing)\.mjs$|README\.md$|third-party\.json$|locales/|public/icon/|package(-lock)?\.json$|\.tool-versions$|\.github/workflows/test\.yml$)'
+            # description and store names in locales/, the logo in public/icon/, the site's address in lib/links.ts).
+            site_files='^(site/|scripts/(site|site-serve|check-readme|third-party|languages|store-listing)\.mjs$|README\.md$|third-party\.json$|locales/|public/icon/|lib/links\.ts$|package(-lock)?\.json$|\.tool-versions$|\.github/workflows/test\.yml$)'
             lint=false
             unit=false
             e2e=false
             site=false
             if grep -qE "$lintable" <<< "$files"; then lint=true; fi
-            if grep -qE "$build|^tests/unit/|^vitest\.config\.ts$|^site/home/" <<< "$files"; then unit=true; fi
+            if grep -qE "$build|^tests/unit/|^vitest\.config\.ts$|^site/home/|^scripts/release\.mjs$" <<< "$files"; then unit=true; fi
             if grep -qE "$build|^tests/e2e/|^playwright\.config\.ts$|^scripts/real-browser\.mjs$" <<< "$files"; then e2e=true; fi
             if grep -qE "$site_files" <<< "$files"; then site=true; fi
             # The merge of a release pull request (the version in package.json changed): publish_release runs

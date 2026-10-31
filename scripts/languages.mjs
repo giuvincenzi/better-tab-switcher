@@ -2,8 +2,9 @@
 // the home page's languages and the texts each language takes from the extension.
 import { parseMessagesFile } from '@wxt-dev/i18n/build';
 
-/** Where GitHub Pages publishes the site: canonical links, link previews, sitemap.xml and the stores need its address. */
-export const SITE_URL = 'https://bettertabswitcher.gviam.app/';
+// The site's address, one constant for the extension and the site: canonical links, link previews, sitemap.xml and the
+// stores need it.
+export { SITE_URL } from '../lib/links.ts';
 
 /**
  * A home language as written below.

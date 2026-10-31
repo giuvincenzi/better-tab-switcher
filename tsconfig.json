@@ -5,5 +5,5 @@
     "jsxImportSource": "solid-js"
   },
   // The files that run in Node, not in the browser, have their own config: tsconfig.node.json.
-  "exclude": ["node_modules", ".output", "tests/e2e", "scripts", "*.config.ts"]
+  "exclude": ["node_modules", ".output", "tests/e2e", "tests/unit/release.test.ts", "scripts", "*.config.ts"]
 }

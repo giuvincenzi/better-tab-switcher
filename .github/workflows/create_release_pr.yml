@@ -1,0 +1,81 @@
+# Creates the release pull request: the next version, the CHANGELOG section and the version in package.json, on the
+# branch release/X.Y.Z, then the pull request "Release X.Y.Z". Merging that pull request publishes the release
+# (publish_release). Started only by hand: Actions > create_release_pr > Run workflow on main, or
+# `gh workflow run create_release_pr.yml --ref main` (what Claude runs when asked to prepare the release pull request).
+# Needs the repository setting "Allow GitHub Actions to create and approve pull requests" (build-and-release.md).
+# The pull request is opened by github-actions[bot], so GitHub holds its test workflow until a maintainer approves it
+# ("Approve workflows to run", or Claude through the API when the user asked it for the release pull request).
+name: create_release_pr
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write # the branch release/X.Y.Z
+  pull-requests: write # the pull request
+
+concurrency:
+  group: create_release_pr
+
+jobs:
+  prepare_and_open_pr:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: checkout_code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # the tags: the next version comes from the latest one
+
+      - name: install_node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .tool-versions
+
+      # Fails when "## Unreleased" has no entries (scripts/release.mjs) or a release pull request is already open.
+      - name: compute_next_version
+        id: next
+        run: |
+          version=$(node scripts/release.mjs next)
+          open=$(gh pr list --state open --json url,headRefName --jq '.[] | select(.headRefName | startswith("release/")) | .url')
+          if [ -n "$open" ]; then echo "::error::A release pull request is already open: $open. Merge or close it first."; exit 1; fi
+          if [ -n "$(git ls-remote --heads origin "release/$version")" ]; then
+            echo "::error::The branch release/$version already exists (an earlier release pull request): delete it first."
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Next version: $version"
+
+      - name: write_changelog_and_version
+        env:
+          VERSION: ${{ steps.next.outputs.version }}
+        run: |
+          node scripts/release.mjs move "$VERSION" > "$RUNNER_TEMP/entries.md"
+          npm version "$VERSION" --no-git-tag-version
+
+      - name: commit_and_open_pr
+        env:
+          VERSION: ${{ steps.next.outputs.version }}
+        run: |
+          branch="release/$VERSION"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch -c "$branch"
+          git add CHANGELOG.md package.json package-lock.json
+          {
+            echo "Release $VERSION"
+            echo
+            echo "Merging this pull request publishes Better Tab Switcher $VERSION (publish_release): the signed package"
+            echo "on the Chrome Web Store and the package on Microsoft Edge Add-ons, each sent for review, the GitHub Release"
+            echo "with the tag v$VERSION, and the website."
+            echo
+            echo "The tests wait for a maintainer: this pull request was opened by github-actions[bot], so press"
+            echo "\"Approve workflows to run\" below (or ask Claude, which approves them through the API)."
+            echo
+            cat "$RUNNER_TEMP/entries.md"
+          } > "$RUNNER_TEMP/message.md"
+          git commit --quiet --file "$RUNNER_TEMP/message.md"
+          git push --quiet origin "$branch"
+          gh pr create --base main --head "$branch" --title "Release $VERSION" --body-file "$RUNNER_TEMP/message.md"

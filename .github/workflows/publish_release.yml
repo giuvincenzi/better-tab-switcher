@@ -1,0 +1,260 @@
+# Publishes a release: the tests, the packages (the zip, and the CRX signed for the Chrome Web Store's Verified CRX
+# uploads), each store's submission for review, the GitHub Release with its tag vX.Y.Z, then the website.
+# Starts on a push to main that changes package.json; decide_release goes on only when the version in it changed, which
+# only the merge of the release pull request does (create_release_pr; the test workflow's block_version_change fails
+# any other pull request that changes it). A failed job is retried with "Re-run failed jobs" on its run.
+name: publish_release
+
+on:
+  push:
+    branches: [main]
+    paths: [package.json]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish_release
+
+env:
+  # The extension on each store: public IDs, from each dashboard (build-and-release.md).
+  CHROME_PUBLISHER_ID: 09f56068-3579-45d0-8b0a-592d01d85ad4
+  CHROME_EXTENSION_ID: fkalmlegojojpcjdfndipmnakgakokei
+  EDGE_PRODUCT_ID: 1d458976-6069-4bcc-9c89-4815f445508c
+
+jobs:
+  # The version, and whether this push is a release at all: package.json changes with dependencies too.
+  decide_release:
+    runs-on: ubuntu-latest
+    outputs:
+      release: ${{ steps.decide.outputs.release }}
+      version: ${{ steps.decide.outputs.version }}
+      first: ${{ steps.decide.outputs.first }}
+    steps:
+      - name: checkout_code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # the previous commit and the release tags
+
+      - name: compare_versions
+        id: decide
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          version() { git show "$1:package.json" 2>/dev/null | node -p 'JSON.parse(require("fs").readFileSync(0)).version' 2>/dev/null; }
+          current=$(version "$GITHUB_SHA")
+          if [ "$(version "$BEFORE")" = "$current" ]; then
+            echo "release=false" >> "$GITHUB_OUTPUT"
+            echo "The version in package.json is still $current: not a release." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if git rev-parse -q --verify "refs/tags/v$current" > /dev/null; then
+            echo "::error::The tag v$current already exists: version $current was released already."
+            exit 1
+          fi
+          # The first release: Microsoft Edge Add-ons publishes a new extension only from Partner Center.
+          if [ -z "$(git tag --list 'v*')" ]; then first=true; else first=false; fi
+          {
+            echo "release=true"
+            echo "version=$current"
+            echo "first=$first"
+          } >> "$GITHUB_OUTPUT"
+          echo "Release $current (first release: $first)." >> "$GITHUB_STEP_SUMMARY"
+
+  # A release never ships with failing tests.
+  run_tests:
+    needs: decide_release
+    if: needs.decide_release.outputs.release == 'true'
+    uses: ./.github/workflows/test.yml
+
+  # The zip for Microsoft Edge Add-ons and the GitHub Release, and the same build signed as a CRX for the Chrome Web
+  # Store with the key of its Verified CRX uploads (CHROME_CRX_PRIVATE_KEY, kept in 1Password; its public half is
+  # .github/chrome-crx-public-key.pem, the one given to the dashboard).
+  build_packages:
+    needs: [decide_release, run_tests]
+    runs-on: ubuntu-latest
+    environment: production # the signing key, for main only (build-and-release.md)
+    env:
+      VERSION: ${{ needs.decide_release.outputs.version }}
+    steps:
+      - name: checkout_code
+        uses: actions/checkout@v7
+
+      - name: install_node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .tool-versions
+          cache: npm
+
+      - name: install_dependencies
+        run: npm ci
+
+      # Chromium signs the CRX (--pack-extension), as Chrome's guide does it: the full browser, not the headless shell.
+      - name: install_chromium
+        run: npx playwright install --with-deps --no-shell chromium
+
+      - name: build_zip
+        run: |
+          npx wxt zip
+          mkdir -p packages
+          cp ".output/better-tab-switcher-$VERSION-chrome.zip" "packages/better-tab-switcher-$VERSION.zip"
+
+      # The key in any format 1Password copies it (OpenSSH, PKCS#1, PKCS#8), turned into the PKCS#8 Chromium reads. A key
+      # whose public half is not the dashboard's would make the store refuse the package, so it stops here.
+      - name: sign_crx
+        env:
+          CHROME_CRX_PRIVATE_KEY: ${{ secrets.CHROME_CRX_PRIVATE_KEY }}
+        run: |
+          secret="$RUNNER_TEMP/crx-secret.pem"
+          key="$RUNNER_TEMP/crx-key.pem"
+          trap 'rm -f "$secret" "$key"' EXIT
+          (umask 077 && printf '%s\n' "$CHROME_CRX_PRIVATE_KEY" > "$secret" && touch "$key")
+          if grep -q 'BEGIN OPENSSH PRIVATE KEY' "$secret"; then ssh-keygen -q -p -N '' -m PKCS8 -f "$secret"; fi
+          openssl pkey -in "$secret" -out "$key"
+          if ! openssl pkey -in "$key" -pubout | cmp -s - .github/chrome-crx-public-key.pem; then
+            echo "::error::CHROME_CRX_PRIVATE_KEY is not the key whose public half the Chrome Web Store has (.github/chrome-crx-public-key.pem)."
+            exit 1
+          fi
+          chrome=$(node -p "require('playwright').chromium.executablePath()")
+          "$chrome" --no-sandbox --pack-extension="$PWD/.output/chrome-mv3" --pack-extension-key="$key"
+          mv .output/chrome-mv3.crx "packages/better-tab-switcher-$VERSION.crx"
+
+      - name: save_packages
+        uses: actions/upload-artifact@v7
+        with:
+          name: packages
+          path: packages/
+
+  publish_chrome_web_store:
+    needs: [decide_release, build_packages]
+    runs-on: ubuntu-latest
+    environment: production # the service account's key, for main only
+    steps:
+      - name: checkout_code
+        uses: actions/checkout@v7
+
+      - name: install_node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .tool-versions
+
+      - name: get_packages
+        uses: actions/download-artifact@v8
+        with:
+          name: packages
+          path: packages
+
+      - name: upload_and_submit_for_review
+        env:
+          CHROME_SERVICE_ACCOUNT_JSON: ${{ secrets.CHROME_SERVICE_ACCOUNT_JSON }}
+        run: node scripts/chrome-store.mjs "packages/better-tab-switcher-${{ needs.decide_release.outputs.version }}.crx"
+
+  # On the first release the package only goes into the draft: Partner Center publishes a new extension, by hand
+  # (build-and-release.md). From the second release on it is submitted for review here.
+  publish_edge_add_ons:
+    needs: [decide_release, build_packages]
+    runs-on: ubuntu-latest
+    environment: production # the API key, for main only
+    steps:
+      - name: checkout_code
+        uses: actions/checkout@v7
+
+      - name: install_node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .tool-versions
+          cache: npm
+
+      - name: install_dependencies
+        run: npm ci
+
+      - name: get_packages
+        uses: actions/download-artifact@v8
+        with:
+          name: packages
+          path: packages
+
+      - name: upload_and_submit_for_review
+        env:
+          EDGE_CLIENT_ID: ${{ secrets.EDGE_CLIENT_ID }}
+          EDGE_API_KEY: ${{ secrets.EDGE_API_KEY }}
+          EDGE_SKIP_SUBMIT_REVIEW: ${{ needs.decide_release.outputs.first }}
+        run: npx wxt submit --edge-zip "packages/better-tab-switcher-${{ needs.decide_release.outputs.version }}.zip"
+
+  # The GitHub Release with the zip; GitHub creates the tag vX.Y.Z on this commit.
+  publish_github_release:
+    needs: [decide_release, build_packages]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # the GitHub Release and its tag
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERSION: ${{ needs.decide_release.outputs.version }}
+    steps:
+      - name: checkout_code
+        uses: actions/checkout@v7
+
+      - name: install_node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .tool-versions
+
+      - name: get_packages
+        uses: actions/download-artifact@v8
+        with:
+          name: packages
+          path: packages
+
+      - name: create_release
+        run: |
+          node scripts/release.mjs notes "$VERSION" > "$RUNNER_TEMP/notes.md"
+          gh release create "v$VERSION" "packages/better-tab-switcher-$VERSION.zip" \
+            --title "Better Tab Switcher $VERSION" --notes-file "$RUNNER_TEMP/notes.md" --target "$GITHUB_SHA"
+
+  # The website: the home page and one user guide per released version, each built from its tag (docs.md).
+  publish_site:
+    needs: publish_github_release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    steps:
+      - name: checkout_code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # every tag, the new one too: each guide version is built from its tag
+
+      - name: install_node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .tool-versions
+          cache: npm
+
+      - name: install_dependencies
+        run: npm ci
+
+      # The pictures of the home's carousel are drawn from site/visuals/ in Playwright's headless Chromium.
+      - name: install_chromium
+        run: npx playwright install --with-deps --only-shell chromium
+
+      - name: build_site
+        run: node scripts/site.mjs
+
+      - name: configure_pages
+        uses: actions/configure-pages@v6
+
+      - name: upload_site
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+
+      - name: deploy_to_github_pages
+        id: deploy
+        uses: actions/deploy-pages@v5

@@ -19,6 +19,7 @@ Website: `https://bettertabswitcher.gviam.app/`. Sources in `site/`, built by `s
 
 ## Versions and preview
 
+- The site is published with every release, by `publish_release` (`build-and-release.md`).
 - Each guide version is built from `site/guide/` at the tag `vX.Y.Z` of that release, so a
   released guide never changes. Home, template and style come from the latest release.
   `guide/latest/` redirects to the newest version.
