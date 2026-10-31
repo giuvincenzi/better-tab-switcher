@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.0.0
+
 ### Added
 
 - The switcher: Alt+S opens it on the next tab and Alt+Shift+S on the previous one (Control+S and Control+Shift+S on
