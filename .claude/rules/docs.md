@@ -29,7 +29,7 @@ Website: `https://bettertabswitcher.gviam.app/`. Sources in `site/`, built by `s
 
 ## README
 
-`README.md` is short, laid out as puppymacro's: the logo, the name, the slogan, the badges (version, license, CI), then
+`README.md` is short: the logo, the name, the slogan, the badges (version, license, CI), then
 the links to the website and the user guide (and to each store's page once the extension is there), and never repeats
 what the website or the guide already say. Its slogan, title and description come from `site/home/en.json` and
 `locales/en.yml` and are checked by the test workflow (`discoverability.md`). It ends with "Feedback" (a link to open an

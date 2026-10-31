@@ -64,7 +64,7 @@ function write(path, text) {
 }
 
 /**
- * Links to other sites (GitHub, the stores, PuppyMacro) open in a new tab, so the site stays open; the site's own links
+ * Links to other sites (GitHub, the stores, the programs the guide points to) open in a new tab, so the site stays open; the site's own links
  * open in the same tab.
  * @param {string} html
  */
