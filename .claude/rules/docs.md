@@ -47,9 +47,8 @@ for their notice in every copy of that code, and the stores' zip is one.
 - **`make third-party` checks the list against the build** (`scripts/check-third-party.mjs`): it builds the published
   extension with source maps and reads which packages the code comes from. On GitHub it runs in `build_extension`, so a
   dependency added or dropped without updating the list fails the pull request (`testing.md`).
-- A new package needs the user's approval (`architecture.md`); the plan says its license, and a license other than MIT
-  gets its text added to `scripts/third-party.mjs` in the same change. Assets (images, fonts) from others shipped in the
-  extension get their entry the same way.
+- A new package (`architecture.md`) with a license other than MIT gets its text added to `scripts/third-party.mjs` in
+  the same change. Assets (images, fonts) from others shipped in the extension get their entry the same way.
 
 ## Every user-visible change updates the documentation
 
@@ -65,9 +64,6 @@ or UI text:
 - update the feature cards in `site/index.html` when the feature list changes: short, saying what the user gets, not
   how it works; a new or changed text of the home goes in `site/home/en.json` and every translation in the same change;
 - when what Better Tab Switcher does changes, check that the title and description still say it (`discoverability.md`);
-  when the title, the description or the slogan change, the plan says so: the repository's About and the stores'
-  descriptions (`make store-listing`) are updated by hand (`discoverability.md`); a new feature or a fix that changes
-  none of them touches only the site and the guide;
 - add a line under `## Unreleased` in `CHANGELOG.md`, in the right subsection (see
   `build-and-release.md`).
 
