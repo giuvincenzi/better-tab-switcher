@@ -49,7 +49,8 @@ const STEP_MS = 15_000;
  *   dark?: boolean,
  *   reducedMotion?: boolean, windowSize?: string }} options
  * @returns {Promise<{ context: import('@playwright/test').BrowserContext, close: () => Promise<void>,
- *   closed: Promise<unknown>, pid: number, sendToBrowser: (method: string, params?: object) => Promise<any> }>}
+ *   closed: Promise<unknown>, pid: number, sendToBrowser: (method: string, params?: object) => Promise<any>,
+ *   output: () => string }>}
  */
 export async function launchRealBrowser({
   browser = 'chromium',
@@ -163,7 +164,14 @@ export async function launchRealBrowser({
     forgetLanguage?.();
     rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
   }
-  return { context, close, closed: exited, pid: /** @type {number} */ (process_.pid), sendToBrowser };
+  return {
+    context,
+    close,
+    closed: exited,
+    pid: /** @type {number} */ (process_.pid),
+    sendToBrowser,
+    output: () => output,
+  };
 }
 
 /**

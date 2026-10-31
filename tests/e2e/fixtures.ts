@@ -153,18 +153,8 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }>({
       };
       await Promise.all(context.serviceWorkers().map(watchWorker));
       context.on('serviceworker', (worker) => void watchWorker(worker));
-      // Ready as a user's browser is: with the extension loaded (its background started). A page navigating while the
-      // browser still loads it can have its navigation aborted (Windows: 'net::ERR_ABORTED; maybe frame was detached').
-      await waitFor(
-        async () => {
-          for (const worker of context.serviceWorkers()) await watchWorker(worker);
-          return extension || undefined;
-        },
-        BACKGROUND_MS,
-        "The extension's background didn't start",
-      );
-
-      // What the browser itself did with its tabs and frames (made, changed, closed), for a failed test's report.
+      // What the browser itself did with its tabs, frames and workers (made, changed, closed), from its start, for a
+      // failed test's report.
       const targets: string[] = [];
       const browserSession = await context.browser()?.newBrowserCDPSession();
       if (browserSession) {
@@ -177,6 +167,36 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }>({
           targets.push(`${Date.now() - started} ms closed ${targetId.slice(0, 8)}`),
         );
         await browserSession.send('Target.setDiscoverTargets', { discover: true });
+      }
+
+      // Ready as a user's browser is: with the extension loaded (its background started). A page navigating while the
+      // browser still loads it can have its navigation aborted (Windows: 'net::ERR_ABORTED; maybe frame was detached').
+      // When it doesn't start: the service workers there are (the extension's missing: not loaded; there: stuck), with
+      // what the browser made and wrote, so the cause shows.
+      try {
+        await waitFor(
+          async () => {
+            for (const worker of context.serviceWorkers()) await watchWorker(worker);
+            return extension || undefined;
+          },
+          BACKGROUND_MS,
+          "The extension's background didn't start",
+        );
+      } catch (error) {
+        const workers = context.serviceWorkers().map((worker) => worker.url());
+        await testInfo.attach('browser-start', {
+          body: [
+            `Service workers Playwright sees: ${workers.join(', ') || 'none'}`,
+            'What the browser made:',
+            ...targets,
+            "The browser's output:",
+            real.output(),
+          ].join('\n'),
+          contentType: 'text/plain',
+        });
+        throw new Error(
+          `${(error as Error).message} Service workers: ${workers.join(', ') || 'none'} (attached: browser-start).`,
+        );
       }
 
       await use(context);

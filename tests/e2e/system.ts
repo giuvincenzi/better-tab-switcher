@@ -59,7 +59,13 @@ function macKeysGoToFront() {
   if (macFrontPid === undefined || !alive(macFrontPid)) return;
   const [name, pid] = execFileSync('osascript', [
     '-e',
-    'tell application "System Events" to get {name, unix id} of first process whose frontmost is true',
+    'tell application "System Events"',
+    '-e',
+    'set frontProcess to first process whose frontmost is true',
+    '-e',
+    'return (name of frontProcess) & ", " & (unix id of frontProcess)',
+    '-e',
+    'end tell',
   ])
     .toString()
     .trim()
