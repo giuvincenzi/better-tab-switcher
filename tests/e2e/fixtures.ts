@@ -65,10 +65,12 @@ async function isOurs(worker: Worker): Promise<boolean> {
  * (expectedConsole). The pages' own messages are theirs (Microsoft Edge's new tab page has some): not the extension's.
  */
 /**
- * How long the extension's background may take to start once the browser runs. Each step of starting the browser has
- * its limit too (scripts/real-browser.mjs): one that hangs fails, saying which, never the test's own time.
+ * How long the extension's background may take to start once the browser runs: Microsoft Edge on GitHub's Windows
+ * machines started it after 15.5 s once (its own extensions' service workers after 12.7 s), with a fresh profile. Each
+ * step of starting the browser has its limit too (scripts/real-browser.mjs): one that hangs fails, saying which, never
+ * the test's own time.
  */
-const BACKGROUND_MS = 15_000;
+const BACKGROUND_MS = 30_000;
 
 /**
  * The time to start the browser with the extension, and to close it, apart from the test's own: the steps' limits fit
