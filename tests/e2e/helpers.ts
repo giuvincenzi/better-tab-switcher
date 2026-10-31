@@ -157,10 +157,13 @@ export const closeWithEscape = (window: Page) => closeBy(window, () => window.ke
  */
 export async function colorsAt(page: Page, worker: Worker, points: { x: number; y: number }[]): Promise<string[]> {
   const shot = (await page.screenshot()).toString('base64');
-  const scale = await page.evaluate(() => devicePixelRatio);
+  const width = await page.evaluate(() => innerWidth);
   return worker.evaluate(
-    async ({ shot, points, scale }) => {
+    async ({ shot, points, width }) => {
       const bitmap = await createImageBitmap(await (await fetch(`data:image/png;base64,${shot}`)).blob());
+      // The picture's own pixels for each of the page's: devicePixelRatio can say otherwise a moment (macOS), and a
+      // point read outside the picture would be black.
+      const scale = bitmap.width / width;
       const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
       const context = canvas.getContext('2d') as OffscreenCanvasRenderingContext2D;
       context.drawImage(bitmap, 0, 0);
@@ -169,7 +172,7 @@ export async function colorsAt(page: Page, worker: Worker, points: { x: number; 
         return `rgb(${r}, ${g}, ${b})`;
       });
     },
-    { shot, points, scale },
+    { shot, points, width },
   );
 }
 
