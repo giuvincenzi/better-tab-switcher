@@ -61,13 +61,21 @@ const SWITCHER_WINDOW = '/switcher-window.html';
  * quickly) would both find no switcher open and both open one.
  */
 export function requestSwitcher(request: SwitcherRequest, previews: Previews): Promise<void> {
-  const handled = lastRequest.then(() => handleRequest(request, previews));
-  lastRequest = handled.catch(() => undefined);
-  return handled;
+  return inTurn(() => handleRequest(request, previews));
 }
 
 /** The request being handled, or the last one: the next request waits for it. */
-let lastRequest: Promise<void> = Promise.resolve();
+let lastRequest: Promise<unknown> = Promise.resolve();
+
+/**
+ * Runs `work` once the requests before it are handled. The switcher's window takes its tabs in turn too (getSnapshot):
+ * a request never finds the window's tabs half given.
+ */
+function inTurn<T>(work: () => Promise<T>): Promise<T> {
+  const done = lastRequest.then(work);
+  lastRequest = done.catch(() => undefined);
+  return done;
+}
 
 async function handleRequest(request: SwitcherRequest, previews: Previews): Promise<void> {
   const [[current], open] = await Promise.all([
@@ -76,6 +84,14 @@ async function handleRequest(request: SwitcherRequest, previews: Previews): Prom
   ]);
   if (open && request.from === 'shortcut' && isWhereTheUserIs(open, current) && (await move(open, request.direction)))
     return;
+  // The switcher's window just opened, its page not there yet to hear the shortcut: it makes the move as it shows.
+  if (open?.in === 'window' && request.from === 'shortcut') {
+    const waiting = await windowSnapshot.getValue();
+    if (waiting) {
+      await windowSnapshot.setValue({ ...waiting, moves: [...(waiting.moves ?? []), request.direction] });
+      return;
+    }
+  }
   if (open) await closeSwitcher(open);
   if (current?.id === undefined) return;
 
@@ -96,14 +112,7 @@ export async function showPreview(tabId: number, picture: string): Promise<void>
  * opens a switcher (requestSwitcher, with the background's previews).
  */
 export function listenToSwitcher(request: (switcher: SwitcherRequest) => Promise<void>): void {
-  onMessage('getSnapshot', async () => {
-    const snapshot = await windowSnapshot.getValue();
-    await windowSnapshot.setValue(null);
-    if (!snapshot) return null;
-    // The tabs that had nothing to show as the switcher opened, as they are now (blankTabsNow).
-    const now = new Map((await blankTabsNow(snapshot)).map((text) => [text.tabId, text]));
-    return { ...snapshot, tabs: snapshot.tabs.map((tab) => ({ ...tab, ...now.get(tab.id) })) };
-  });
+  onMessage('getSnapshot', () => inTurn(takeWindowSnapshot));
   onMessage('openTab', async ({ data: tabId }) => {
     const open = await forget();
     // The tab as it is now: it may have moved to another window, or closed, while the switcher was open.
@@ -184,6 +193,16 @@ export function listenToSwitcher(request: (switcher: SwitcherRequest) => Promise
 
 /** The last listAgain: each reads the tabs once the one before has sent them, so the last read is the last sent. */
 let listing: Promise<void> = Promise.resolve();
+
+/** The tabs for the switcher's window, given once, as it asks for them (getSnapshot). */
+async function takeWindowSnapshot(): Promise<SwitcherSnapshot | null> {
+  const snapshot = await windowSnapshot.getValue();
+  await windowSnapshot.setValue(null);
+  if (!snapshot) return null;
+  // The tabs that had nothing to show as the switcher opened, as they are now (blankTabsNow).
+  const now = new Map((await blankTabsNow(snapshot)).map((text) => [text.tabId, text]));
+  return { ...snapshot, tabs: snapshot.tabs.map((tab) => ({ ...tab, ...now.get(tab.id) })) };
+}
 
 /**
  * Tabs changed while the switcher is open (a title, an address; closed, opened or moved to another window): it gets

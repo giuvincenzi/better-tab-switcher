@@ -28,6 +28,11 @@ export interface SwitcherSnapshot {
   centeredOn?: Rect;
   /** Opened again as the user left it, after closing the tab it was in (Resume). */
   resume?: Resume;
+  /**
+   * In its own window: the shortcut pressed again before the window was there to hear it. The switcher makes these
+   * moves as it shows.
+   */
+  moves?: Direction[];
 }
 
 /**

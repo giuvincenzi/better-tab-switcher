@@ -229,6 +229,16 @@ export function Switcher(props: SwitcherProps): JSX.Element {
     if (inToolbarControls(event)) event.preventDefault();
   }
 
+  /**
+   * After a click of the mouse on the toolbar's controls, the keyboard is back on the tabs: a label clicked gives its
+   * radio the focus once the click is over, which onMouseDown can't stop. Not after Enter or Space on a control (a
+   * click with no mouse, detail 0): the keyboard stays where the user is.
+   */
+  function onClick(event: MouseEvent) {
+    if (event.detail > 0 && inToolbarControls(event) && state().selected !== FIELD)
+      setTimeout(() => panel?.querySelector<HTMLElement>('[role="listbox"]')?.focus({ preventScroll: true }));
+  }
+
   /** A click outside the panel closes the switcher, as Esc does. */
   function onPointerDown(event: PointerEvent) {
     if (panel && !event.composedPath().includes(panel)) dispatch({ type: 'cancel' });
@@ -247,6 +257,7 @@ export function Switcher(props: SwitcherProps): JSX.Element {
     window.addEventListener('keyup', onKey, true);
     window.addEventListener('pointerdown', onPointerDown, true);
     window.addEventListener('mousedown', onMouseDown, true);
+    window.addEventListener('click', onClick, true);
     takeFrame();
     const delay = delayOver() ? undefined : setTimeout(() => setDelayOver(true), settings().delayMs);
     const wait = waitOver() ? undefined : setTimeout(() => setWaitOver(true), PICTURE_WAIT_MS);
@@ -255,6 +266,7 @@ export function Switcher(props: SwitcherProps): JSX.Element {
       window.removeEventListener('keyup', onKey, true);
       window.removeEventListener('pointerdown', onPointerDown, true);
       window.removeEventListener('mousedown', onMouseDown, true);
+      window.removeEventListener('click', onClick, true);
       clearTimeout(delay);
       clearTimeout(wait);
     });

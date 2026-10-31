@@ -58,8 +58,11 @@ export function TabList(props: TabListProps): JSX.Element {
     const id = selectedId();
     if (id !== undefined) list?.querySelector(`#${tabOptionId(id)}`)?.scrollIntoView({ block: 'nearest' });
   });
+  // Only when the list is to have the focus and didn't: a change in the switcher (a toolbar button pressed with Enter)
+  // leaves the focus where the user is.
+  const focused = createMemo(() => props.focused);
   createEffect(() => {
-    if (props.focused) list?.focus({ preventScroll: true });
+    if (focused()) list?.focus({ preventScroll: true });
   });
   return (
     <>

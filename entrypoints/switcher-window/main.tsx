@@ -2,7 +2,7 @@ import '../../styles/theme.css';
 import './switcher.css';
 import { i18n } from '#i18n';
 import { browser } from '#imports';
-import { mountSwitcher } from '../../components/switcher/mountSwitcher';
+import { mountSwitcher, type SwitcherHandle } from '../../components/switcher/mountSwitcher';
 import { applyTheme } from '../../components/ui/applyTheme';
 import { onMessage, sendMessage } from '../../lib/messages';
 import { centerOn, type Rect } from '../../lib/presenter/placement';
@@ -11,6 +11,13 @@ import { centerOn, type Rect } from '../../lib/presenter/placement';
 // that keeps scripts out of its frames), with Open the switcher in a window on Chrome's pages on. The background opens
 // this window in the middle of the Chrome window the user is in, and closes it once a tab is chosen or closed.
 document.title = i18n.t('Extension_Name');
+// Heard from the start: the shortcut pressed again while the switcher is still being drawn moves it once it is there.
+let switcher: SwitcherHandle | undefined;
+const meanwhile: ((switcher: SwitcherHandle) => void)[] = [];
+const toSwitcher = (give: (switcher: SwitcherHandle) => void) => (switcher ? give(switcher) : meanwhile.push(give));
+onMessage('moveSwitcher', ({ data: direction }) => void toSwitcher((handle) => handle.move(direction)));
+onMessage('previewReady', ({ data: preview }) => void toSwitcher((handle) => handle.showPreview(preview)));
+onMessage('tabsListed', ({ data: tabs }) => void toSwitcher((handle) => handle.listTabs(tabs)));
 const snapshot = await sendMessage('getSnapshot');
 const centeredOn = snapshot?.centeredOn;
 if (snapshot && centeredOn) {
@@ -18,7 +25,7 @@ if (snapshot && centeredOn) {
   // Chrome's zoom of this page (the extension's pages, or Chrome's default zoom): the page measures in pixels of the
   // zoom, the windows are placed in pixels of the screen.
   const zoom = await browser.tabs.getZoom();
-  const handle = mountSwitcher(
+  switcher = mountSwitcher(
     document.body,
     // The Chrome window the switcher takes its sizes from, in this page's pixels.
     { ...snapshot, centeredOn: { ...centeredOn, width: centeredOn.width / zoom, height: centeredOn.height / zoom } },
@@ -26,9 +33,9 @@ if (snapshot && centeredOn) {
     () => undefined,
     (size) => void fitWindow(centeredOn, size, zoom),
   );
-  onMessage('moveSwitcher', ({ data: direction }) => handle.move(direction));
-  onMessage('previewReady', ({ data: preview }) => handle.showPreview(preview));
-  onMessage('tabsListed', ({ data: tabs }) => handle.listTabs(tabs));
+  // The moves asked for before this page was there, then what came while the switcher was drawn.
+  for (const direction of snapshot.moves ?? []) switcher.move(direction);
+  for (const give of meanwhile) give(switcher);
   // Another window took the focus: the switcher closes, as a click outside it closes it in a page, and the focus stays
   // where the user went.
   window.addEventListener('blur', () => void sendMessage('switcherLeft'));

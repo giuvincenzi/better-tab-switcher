@@ -4,6 +4,13 @@ import { browser, storage } from '#imports';
 // closes (.claude/rules/data.md). One item per tab, so saving a picture never rewrites the others.
 const PREFIX = 'preview-';
 
+/**
+ * The room the previews always leave in the session's memory, for the switcher's own state there (where it is open,
+ * the pages that have its frame, its window's tabs: hundreds of tabs take hundreds of kilobytes). Without it, previews
+ * up to the last byte left the switcher unable to open.
+ */
+export const STATE_ROOM_BYTES = 1024 * 1024;
+
 /** A preview as it is kept: the picture, and when it was saved (the oldest go first when memory is full). */
 export interface SavedPreview {
   picture: string;
@@ -65,7 +72,7 @@ export function previewsToDelete(session: Record<string, unknown>, key: string, 
 async function makeRoom(key: string, saved: SavedPreview): Promise<void> {
   const session = browser.storage.session;
   const [inUse, replaced] = await Promise.all([session.getBytesInUse(null), session.getBytesInUse(key)]);
-  const missing = missingBytes(key, saved, { inUse, replaced, quota: session.QUOTA_BYTES });
+  const missing = missingBytes(key, saved, { inUse, replaced, quota: session.QUOTA_BYTES - STATE_ROOM_BYTES });
   if (missing <= 0) return;
   const gone = previewsToDelete(await storage.snapshot('session'), key, missing);
   if (gone.length > 0) await storage.removeItems(gone.map((other) => `session:${other}` as const));
