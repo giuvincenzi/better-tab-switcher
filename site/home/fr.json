@@ -53,5 +53,6 @@
   "guide_button": "Lire le guide",
   "footer_license": "Licence MIT",
   "footer_releases": "Toutes les versions",
-  "feedback_link": "Signaler un bug ou proposer une idée"
+  "feedback_link": "Signaler un bug ou proposer une idée",
+  "store_search_terms": "changer d'onglet, alt tab, ctrl tab, onglets récents, basculer entre onglets, rechercher onglets, gestionnaire d'onglets"
 }

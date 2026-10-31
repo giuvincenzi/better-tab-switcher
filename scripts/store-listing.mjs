@@ -5,6 +5,8 @@
 //   characters describing every feature. Every text is read from where it is written, so the stores never say anything
 //   the site doesn't; the features and the privacy are the ones of the home's template (site/index.html), in its order,
 //   so a box added to the home is in the stores too.
+// - <code>-search-terms.txt: Edge's search terms in each language, one per line (store_search_terms of
+//   site/home/<code>.json, comma-separated), within Edge's limits.
 // - icon-128.png, logo-300.png: the extension's icon (Chrome's store icon, Edge's logo, 300×300 recommended).
 // - screenshot-<n>-<scene>.png: the site's views (site/visuals/), at the 1280×800 both stores take.
 // - privacy.txt: the answers of both stores' Privacy page, one per permission of the manifest.
@@ -18,6 +20,8 @@ process.chdir(root);
 const out = '.output/store-listing';
 /** Edge's least description. */
 const EDGE_MINIMUM = 250;
+/** Edge's limits on the search terms: how many, the characters of each, the words of all. */
+const SEARCH_TERMS = { terms: 7, characters: 30, words: 21 };
 
 /** Why the extension needs each permission of its manifest (wxt.config.ts), in the stores' Privacy page. */
 const PERMISSIONS = {
@@ -100,6 +104,16 @@ for (const language of HOME_LANGUAGES) {
   if ([...page].length < EDGE_MINIMUM)
     throw new Error(`${language.code}: the description is under ${EDGE_MINIMUM} characters.`);
   writeFileSync(join(out, `${language.code}.txt`), `${page}\n`);
+  const terms = text('store_search_terms')
+    .split(',')
+    .map((term) => term.trim());
+  const words = terms.join(' ').split(/\s+/).length;
+  const long = terms.filter((term) => !term || [...term].length > SEARCH_TERMS.characters);
+  if (terms.length > SEARCH_TERMS.terms || words > SEARCH_TERMS.words || long.length)
+    throw new Error(
+      `site/home/${language.code}.json: store_search_terms takes up to ${SEARCH_TERMS.terms} terms of ${SEARCH_TERMS.characters} characters, ${SEARCH_TERMS.words} words in all (${terms.length} terms, ${words} words${long.length ? `, too long or empty: ${long.join(', ')}` : ''}).`,
+    );
+  writeFileSync(join(out, `${language.code}-search-terms.txt`), `${terms.join('\n')}\n`);
 }
 
 // The Privacy page: a reason for each permission the manifest asks for, no more and no fewer.

@@ -54,5 +54,6 @@
   "guide_button": "Read the guide",
   "footer_license": "MIT License",
   "footer_releases": "All releases",
-  "feedback_link": "Report a bug or suggest an idea"
+  "feedback_link": "Report a bug or suggest an idea",
+  "store_search_terms": "tab switcher, alt tab, ctrl tab, recent tabs, switch tabs, tab search, tab manager"
 }
