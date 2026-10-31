@@ -23,6 +23,11 @@ paths:
     description for search engines, the link previews and the `SoftwareApplication` structured data;
   - `README.md`: title + ". " + description between its "Title and description" comments, and the slogan in its italic
     line under the name, checked by the test workflow (`site_test`, `scripts/check-readme.mjs`).
+- The stores' pages (Chrome Web Store, Edge Add-ons) are written by hand from `make store-listing`
+  (`scripts/store-listing.mjs`): the descriptions in every language, Edge's search terms (`store_search_terms` in
+  `site/home/<code>.json`), the pictures and the Privacy answers, all read from the site's and the extension's texts.
+  The stores have no API for them, so a change to what they say is pasted into both dashboards, in every language it
+  changes, in the same work as the pull request.
 - The slogan is not the title: it stays in English in every language (only `en.json` has it, `site.mjs` stops when a
   translation adds it).
 

@@ -143,7 +143,7 @@ Data usage
 Collected data: none (leave every type unchecked). Tick the certifications: no selling or transfer of user data, no use unrelated to the single purpose, no use for creditworthiness or lending.
 
 Privacy policy URL
-${SITE_URL}guide/latest/privacy.html (not required: the extension collects no data)
+${SITE_URL}guide/latest/privacy.html (required: the extension reads the titles and addresses of the tabs, though it never sends them anywhere)
 `,
 );
 
