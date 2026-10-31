@@ -3,7 +3,8 @@
 //   click X Y            a click of the system's mouse at that point of the screen, in its pixels
 //   key down|up CODE     a key going down or up (its virtual key code), to the window that has the system's focus
 //   click-window TITLE   a click in the middle of the top-level window whose title starts so, where Windows has it
-//                        (waits up to 5 s for it)
+//                        (waits up to 30 s for it: another browser with a fresh profile, Microsoft Edge on GitHub's
+//                        Windows machines, took more than 15 s to start)
 //   edge-bubble          answers Microsoft Edge's "Turn off extensions in developer mode" bubble "Not now", found
 //                        with Windows' accessibility (UI Automation); waits up to 5 s for it, nothing when it doesn't come
 //   screen FILE          a picture of the whole screen, as PNG
@@ -60,7 +61,7 @@ static class WindowsInput {
         keybd_event(byte.Parse(args[2]), 0, args[1] == "up" ? KeyUp : 0, UIntPtr.Zero);
         return 0;
       case "click-window": {
-        for (int tries = 0; tries < 50; tries++) {
+        for (int tries = 0; tries < 300; tries++) {
           IntPtr window = WindowTitled(args[1]);
           if (window != IntPtr.Zero) {
             Rect rect;
