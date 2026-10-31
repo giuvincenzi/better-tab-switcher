@@ -27,12 +27,47 @@ function x11Windows(pid?: number): string[] {
 /** The X11 desktop's own input (tests/e2e/x11.py). */
 const x11 = (...args: string[]) => execFileSync('python3', ['tests/e2e/x11.py', ...args]);
 
+/** Whether a process still runs. */
+function alive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** The program a test brought to the front last, on macOS: the system's keys go to it (macKeysGoToFront). */
+let macFrontPid: number | undefined;
+
 /** Brings a program to the front, on macOS (System Events, which GitHub's machines allow to tests). */
 function macFront(pid: number) {
   execFileSync('osascript', [
     '-e',
     `tell application "System Events" to set frontmost of (first process whose unix id is ${pid}) to true`,
   ]);
+  macFrontPid = pid;
+}
+
+/**
+ * On macOS the system's keys go to the program in front. Before a key goes down, that is still the one the test brought
+ * there: another program that took the front meanwhile (a system dialog, an update) would get the keys, and the test
+ * would fail far from the cause. It fails here instead, naming that program.
+ */
+function macKeysGoToFront() {
+  // None yet in this test: the one of an earlier test has ended with its browser.
+  if (macFrontPid === undefined || !alive(macFrontPid)) return;
+  const [name, pid] = execFileSync('osascript', [
+    '-e',
+    'tell application "System Events" to get {name, unix id} of first process whose frontmost is true',
+  ])
+    .toString()
+    .trim()
+    .split(', ');
+  if (Number(pid) !== macFrontPid)
+    throw new Error(
+      `The keys would go to ${name} (process ${pid}), which came to the front instead of process ${macFrontPid}.`,
+    );
 }
 
 /**
@@ -86,6 +121,7 @@ function key(direction: 'down' | 'up', name: Key) {
 
 /** Presses a modifier and holds it. */
 export function hold(modifier: Modifier) {
+  if (process.platform === 'darwin') macKeysGoToFront();
   held.add(modifier);
   key('down', modifier);
 }
@@ -103,6 +139,7 @@ export function release(modifier: Modifier) {
  */
 export function press(letter: Letter) {
   if (process.platform === 'darwin') {
+    macKeysGoToFront();
     const using = [...held].map((modifier) => `${KEYS[modifier].flag} down`).join(', ');
     execFileSync('osascript', [
       '-e',

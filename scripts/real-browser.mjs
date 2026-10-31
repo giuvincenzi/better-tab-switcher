@@ -32,8 +32,12 @@ export function browserExecutable(name) {
   throw new Error(`Microsoft Edge is not installed here: install it with npx playwright install msedge.`);
 }
 
-/** How long the browser may take to start and open its DevTools port. */
-const START_MS = 30_000;
+/**
+ * How long each step of starting the browser may take: opening its DevTools port, then Playwright attaching to it. A
+ * step that hangs fails saying which, with what the browser wrote, inside the time the tests give the browser to start
+ * (tests/e2e/fixtures.ts), never the test's own.
+ */
+const STEP_MS = 15_000;
 
 /**
  * Starts the browser with the extension in `extensionDir`, in a new profile, and attaches Playwright to it;
@@ -124,16 +128,24 @@ export async function launchRealBrowser({
   let lines = portLines();
   while (!lines) {
     const ended = process_.exitCode !== null || process_.signalCode !== null;
-    if (ended || Date.now() - started > START_MS) {
+    if (ended || Date.now() - started > STEP_MS) {
       process_.kill();
       forgetLanguage?.();
-      throw new Error(`The browser ${ended ? 'stopped' : "didn't start"}:\n${output}`);
+      throw new Error(
+        `The browser ${ended ? 'stopped' : `didn't open its DevTools port within ${STEP_MS} ms`}:\n${output}`,
+      );
     }
     await delay(50);
     lines = portLines();
   }
   const [port, path] = lines;
-  const connected = await chromium.connectOverCDP(`ws://127.0.0.1:${port}${path}`, { noDefaults: true });
+  const connected = await chromium
+    .connectOverCDP(`ws://127.0.0.1:${port}${path}`, { noDefaults: true, timeout: STEP_MS })
+    .catch((error) => {
+      process_.kill();
+      forgetLanguage?.();
+      throw new Error(`Playwright didn't attach to the browser within ${STEP_MS} ms (${error.message}):\n${output}`);
+    });
   const context = connected.contexts()[0];
   if (!context) throw new Error('The browser has no context to attach to.');
 

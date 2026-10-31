@@ -64,6 +64,29 @@ async function isOurs(worker: Worker): Promise<boolean> {
  * frame in a page, its script in a page), and on any error nothing caught there, unless the test expects it
  * (expectedConsole). The pages' own messages are theirs (Microsoft Edge's new tab page has some): not the extension's.
  */
+/**
+ * How long the extension's background may take to start once the browser runs. Each step of starting the browser has
+ * its limit too (scripts/real-browser.mjs): one that hangs fails, saying which, never the test's own time.
+ */
+const BACKGROUND_MS = 15_000;
+
+/**
+ * The time to start the browser with the extension, and to close it, apart from the test's own: the steps' limits fit
+ * in it, so a browser slow to start is reported by its step, and the test keeps its 30 seconds for what it checks.
+ */
+const BROWSER_MS = 60_000;
+
+/** Waits for `found` to give something, every 100 ms, for at most `limitMs`; fails saying `what` didn't happen. */
+async function waitFor<T>(found: () => Promise<T | undefined>, limitMs: number, what: string): Promise<T> {
+  const until = Date.now() + limitMs;
+  for (;;) {
+    const value = await found();
+    if (value !== undefined) return value;
+    if (Date.now() > until) throw new Error(`${what} within ${limitMs} ms.`);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+}
+
 export const test = base.extend<ExtensionFixtures & { ours: Worker }>({
   chromeLanguage: ['en-US', { option: true }],
   systemDark: [false, { option: true }],
@@ -71,114 +94,124 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }>({
   expectedConsole: [[], { option: true }],
   headed: [false, { option: true }],
   installedBefore: [[], { option: true }],
-  context: async (
-    { chromeLanguage, systemDark, systemReducedMotion, expectedConsole, headed, installedBefore },
-    use,
-    testInfo,
-  ) => {
-    const real = await launchRealBrowser({
-      browser,
-      extensionDir,
-      installedBefore: installedBefore.map((dir) => resolve(dir)),
-      headless: !(headed || process.env.HEADED),
-      language: chromeLanguage,
-      dark: systemDark,
-      reducedMotion: systemReducedMotion,
-      windowSize: '1280,720',
-    });
-    const { context } = real;
-    // Microsoft Edge's bubble about developer mode would take the system's keys and focus (tests/e2e/edge-bubble.ts).
-    if ((headed || process.env.HEADED) && browser === 'msedge' && process.platform === 'win32')
-      dismissEdgeDeveloperModeBubble();
-    browserPid.set(context, real.pid);
-    browserPipe.set(context, real.sendToBrowser);
-    /** Each message, with where it comes from: a page or script's address, or the background. */
-    const messages: { from: string; text: string }[] = [];
-    /** The extension's own addresses (chrome-extension://<its id>/), known once its background is found. */
-    let extension = '';
-    const watch = (page: Page) => {
-      page.on('console', (message) => {
-        if (message.type() !== 'error' && message.type() !== 'warning') return;
-        const from = message.location().url || page.url();
-        messages.push({ from, text: `${message.type()} in ${from}: ${message.text()}` });
+  context: [
+    async (
+      { chromeLanguage, systemDark, systemReducedMotion, expectedConsole, headed, installedBefore },
+      use,
+      testInfo,
+    ) => {
+      const real = await launchRealBrowser({
+        browser,
+        extensionDir,
+        installedBefore: installedBefore.map((dir) => resolve(dir)),
+        headless: !(headed || process.env.HEADED),
+        language: chromeLanguage,
+        dark: systemDark,
+        reducedMotion: systemReducedMotion,
+        windowSize: '1280,720',
       });
-      page.on('pageerror', (error) =>
-        messages.push({ from: page.url(), text: `uncaught error in ${page.url()}: ${error.message}` }),
+      const { context } = real;
+      // Microsoft Edge's bubble about developer mode would take the system's keys and focus (tests/e2e/edge-bubble.ts).
+      if ((headed || process.env.HEADED) && browser === 'msedge' && process.platform === 'win32')
+        dismissEdgeDeveloperModeBubble();
+      browserPid.set(context, real.pid);
+      browserPipe.set(context, real.sendToBrowser);
+      /** Each message, with where it comes from: a page or script's address, or the background. */
+      const messages: { from: string; text: string }[] = [];
+      /** The extension's own addresses (chrome-extension://<its id>/), known once its background is found. */
+      let extension = '';
+      const watch = (page: Page) => {
+        page.on('console', (message) => {
+          if (message.type() !== 'error' && message.type() !== 'warning') return;
+          const from = message.location().url || page.url();
+          messages.push({ from, text: `${message.type()} in ${from}: ${message.text()}` });
+        });
+        page.on('pageerror', (error) =>
+          messages.push({ from: page.url(), text: `uncaught error in ${page.url()}: ${error.message}` }),
+        );
+      };
+      context.pages().forEach(watch);
+      context.on('page', watch);
+      // The extension's background, each time it starts: its console, and the errors nothing caught (read at the end).
+      const watched = new Set<Worker>();
+      const watchWorker = async (worker: Worker) => {
+        if (watched.has(worker) || !(await isOurs(worker)) || watched.has(worker)) return;
+        watched.add(worker);
+        extension = `${new URL(worker.url()).origin}/`;
+        worker.on('console', (message) => {
+          if (message.type() === 'error' || message.type() === 'warning')
+            messages.push({ from: 'background', text: `${message.type()} in the background: ${message.text()}` });
+        });
+        await worker
+          .evaluate(() => {
+            const errors: string[] = [];
+            Object.assign(globalThis, { uncaughtErrors: errors });
+            addEventListener('error', (event) => errors.push(event.message));
+            addEventListener('unhandledrejection', (event) => errors.push(String(event.reason)));
+          })
+          .catch(() => {});
+      };
+      await Promise.all(context.serviceWorkers().map(watchWorker));
+      context.on('serviceworker', (worker) => void watchWorker(worker));
+      // Ready as a user's browser is: with the extension loaded (its background started). A page navigating while the
+      // browser still loads it can have its navigation aborted (Windows: 'net::ERR_ABORTED; maybe frame was detached').
+      await waitFor(
+        async () => {
+          for (const worker of context.serviceWorkers()) await watchWorker(worker);
+          return extension || undefined;
+        },
+        BACKGROUND_MS,
+        "The extension's background didn't start",
       );
-    };
-    context.pages().forEach(watch);
-    context.on('page', watch);
-    // The extension's background, each time it starts: its console, and the errors nothing caught (read at the end).
-    const watched = new Set<Worker>();
-    const watchWorker = async (worker: Worker) => {
-      if (watched.has(worker) || !(await isOurs(worker)) || watched.has(worker)) return;
-      watched.add(worker);
-      extension = `${new URL(worker.url()).origin}/`;
-      worker.on('console', (message) => {
-        if (message.type() === 'error' || message.type() === 'warning')
-          messages.push({ from: 'background', text: `${message.type()} in the background: ${message.text()}` });
-      });
-      await worker
-        .evaluate(() => {
-          const errors: string[] = [];
-          Object.assign(globalThis, { uncaughtErrors: errors });
-          addEventListener('error', (event) => errors.push(event.message));
-          addEventListener('unhandledrejection', (event) => errors.push(String(event.reason)));
-        })
-        .catch(() => {});
-    };
-    await Promise.all(context.serviceWorkers().map(watchWorker));
-    context.on('serviceworker', (worker) => void watchWorker(worker));
-    // Ready as a user's browser is: with the extension loaded (its background started). A page navigating while the
-    // browser still loads it can have its navigation aborted (Windows: 'net::ERR_ABORTED; maybe frame was detached').
-    while (!extension) {
-      for (const worker of context.serviceWorkers()) await watchWorker(worker);
-      if (!extension) await new Promise((resolve) => setTimeout(resolve, 100));
-    }
 
-    // What the browser itself did with its tabs and frames (made, changed, closed), for a failed test's report.
-    const targets: string[] = [];
-    const browserSession = await context.browser()?.newBrowserCDPSession();
-    if (browserSession) {
-      const started = Date.now();
-      const note = (what: string, info: { type: string; url: string; targetId: string }) =>
-        targets.push(`${Date.now() - started} ms ${what} ${info.type} ${info.targetId.slice(0, 8)} ${info.url}`);
-      browserSession.on('Target.targetCreated', ({ targetInfo }) => note('made', targetInfo));
-      browserSession.on('Target.targetInfoChanged', ({ targetInfo }) => note('changed', targetInfo));
-      browserSession.on('Target.targetDestroyed', ({ targetId }) =>
-        targets.push(`${Date.now() - started} ms closed ${targetId.slice(0, 8)}`),
-      );
-      await browserSession.send('Target.setDiscoverTargets', { discover: true });
-    }
+      // What the browser itself did with its tabs and frames (made, changed, closed), for a failed test's report.
+      const targets: string[] = [];
+      const browserSession = await context.browser()?.newBrowserCDPSession();
+      if (browserSession) {
+        const started = Date.now();
+        const note = (what: string, info: { type: string; url: string; targetId: string }) =>
+          targets.push(`${Date.now() - started} ms ${what} ${info.type} ${info.targetId.slice(0, 8)} ${info.url}`);
+        browserSession.on('Target.targetCreated', ({ targetInfo }) => note('made', targetInfo));
+        browserSession.on('Target.targetInfoChanged', ({ targetInfo }) => note('changed', targetInfo));
+        browserSession.on('Target.targetDestroyed', ({ targetId }) =>
+          targets.push(`${Date.now() - started} ms closed ${targetId.slice(0, 8)}`),
+        );
+        await browserSession.send('Target.setDiscoverTargets', { discover: true });
+      }
 
-    await use(context);
+      await use(context);
 
-    if (testInfo.status !== testInfo.expectedStatus && targets.length > 0)
-      await testInfo.attach('browser-targets', { body: targets.join('\n'), contentType: 'text/plain' });
+      if (testInfo.status !== testInfo.expectedStatus && targets.length > 0)
+        await testInfo.attach('browser-targets', { body: targets.join('\n'), contentType: 'text/plain' });
 
-    for (const worker of context.serviceWorkers()) {
-      const uncaught = await worker
-        .evaluate(() => (globalThis as { uncaughtErrors?: string[] }).uncaughtErrors ?? [])
-        .catch(() => []);
-      for (const error of uncaught)
-        messages.push({ from: 'background', text: `uncaught error in the background: ${error}` });
-    }
-    await real.close();
-    const unexpected = messages
-      .filter(({ from }) => from === 'background' || (extension !== '' && from.startsWith(extension)))
-      .map(({ text }) => text)
-      .filter((text) => !expectedConsole.some((expected) => expected.test(text)));
-    if (unexpected.length > 0 && testInfo.status === testInfo.expectedStatus) {
-      throw new Error(`The console has errors or warnings no test expects:\n${unexpected.join('\n')}`);
-    }
-  },
+      for (const worker of context.serviceWorkers()) {
+        const uncaught = await worker
+          .evaluate(() => (globalThis as { uncaughtErrors?: string[] }).uncaughtErrors ?? [])
+          .catch(() => []);
+        for (const error of uncaught)
+          messages.push({ from: 'background', text: `uncaught error in the background: ${error}` });
+      }
+      await real.close();
+      const unexpected = messages
+        .filter(({ from }) => from === 'background' || (extension !== '' && from.startsWith(extension)))
+        .map(({ text }) => text)
+        .filter((text) => !expectedConsole.some((expected) => expected.test(text)));
+      if (unexpected.length > 0 && testInfo.status === testInfo.expectedStatus) {
+        throw new Error(`The console has errors or warnings no test expects:\n${unexpected.join('\n')}`);
+      }
+    },
+    { scope: 'test', timeout: BROWSER_MS },
+  ],
   ours: async ({ context }, use) => {
     // Looked for again until found: a worker still starting may not answer the first time.
-    let worker: Worker | undefined;
-    while (!worker) {
-      for (const candidate of context.serviceWorkers()) if (await isOurs(candidate)) worker = candidate;
-      if (!worker) await new Promise((resolve) => setTimeout(resolve, 100));
-    }
+    const worker = await waitFor(
+      async () => {
+        for (const candidate of context.serviceWorkers()) if (await isOurs(candidate)) return candidate;
+        return undefined;
+      },
+      BACKGROUND_MS,
+      "The extension's background didn't answer",
+    );
     await use(worker);
   },
   serviceWorker: async ({ context, ours }, use, testInfo) => {

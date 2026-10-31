@@ -336,14 +336,11 @@ async function takeSnapshot(current: Browser.tabs.Tab, request: SwitcherRequest)
 /** Shows the switcher in the current tab's page. False when Chrome doesn't let it in. */
 async function showInPage(current: Browser.tabs.Tab, snapshot: SwitcherSnapshot, previews: Previews): Promise<boolean> {
   const tabId = current.id as number;
-  // The page's picture is taken first: the switcher, shown in the page, would be in it. Not when the page may still
+  // The page's picture is taken first, started before the switcher's frame is shown: shown again, the frame may show
+  // its last frame for a moment (the switcher of the time before) and be in the picture. Not when the page may still
   // show the switcher it was left with (pictureFresh): its old picture stays.
-  const picture =
-    wantsPreviews(snapshot.settings) && !current.incognito
-      ? pictureFresh(tabId).then((fresh) =>
-          fresh ? previews.takeForSwitcher({ id: tabId, windowId: current.windowId }) : undefined,
-        )
-      : undefined;
+  const fresh = wantsPreviews(snapshot.settings) && !current.incognito && (await pictureFresh(tabId));
+  const picture = fresh ? previews.takeForSwitcher({ id: tabId, windowId: current.windowId }) : undefined;
   // Known before the switcher shows: a preview that arrives meanwhile goes to it.
   // Whether its window has the focus as it opens: the switcher closes when the window loses it (closeWhenWindowLeft).
   const windowFocused = await browser.windows.get(current.windowId).then(

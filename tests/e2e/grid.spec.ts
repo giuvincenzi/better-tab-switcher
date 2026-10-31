@@ -116,7 +116,10 @@ test.describe('grid @grid', () => {
     await showSwitcher(serviceWorker, 'next', 'icon');
     const field = switcher(page).getByRole('searchbox', { name: 'Search tabs' });
     await field.click();
+    // The click gives the field the keyboard, and it keeps it: the letters go there.
+    await expect(field).toBeFocused();
     await page.keyboard.type('ta');
+    await expect(field).toHaveValue('ta');
     await expect(rows(page)).toHaveCount(2);
     const caret = () => field.evaluate((input: HTMLInputElement) => input.selectionStart);
     expect(await caret()).toBe(2);
