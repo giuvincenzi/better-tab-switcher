@@ -384,9 +384,9 @@ test.describe("the switcher's own window @switching", () => {
     // Still the one window.
     expect(await popups()).toBe(1);
     expect(context.pages().filter((page) => page.url().startsWith('chrome-extension://'))).toHaveLength(1);
-    // Only the key press: the switcher opens the tab on it, and its window can be gone before a key release would arrive.
-    await switcherWindow.keyboard.down('Enter');
+    // Only the key press: the switcher opens the tab on it, and its window can be gone before a key release would arrive,
+    // or before Chromium confirms the press (macOS Microsoft Edge): closeBy.
+    await closeBy(switcherWindow, () => switcherWindow.keyboard.down('Enter'));
     await expect.poll(() => activeTitle(serviceWorker)).toBe('gamma');
-    await expect.poll(() => switcherWindow.isClosed()).toBe(true);
   });
 });
