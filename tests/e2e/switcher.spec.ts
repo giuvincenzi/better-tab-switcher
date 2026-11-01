@@ -223,16 +223,17 @@ for (const systemDark of [false, true]) {
       const switcherWindow = await opened;
       await expect(switcherWindow.getByRole('option')).toHaveCount(3);
       // The window's edges, away from its corners (macOS rounds them, the window isn't there), and the panel's
-      // padding: the whole window is the panel.
-      const size = await switcherWindow.evaluate(() => ({ width: innerWidth, height: innerHeight }));
+      // padding: the whole window is the panel. Its size read on each try: the window fits itself to the switcher once
+      // open, and a size read before (macOS: 1280 by 632, then 512 by 214) puts the points outside the picture.
       await expect
-        .poll(() =>
-          colorsAt(switcherWindow, serviceWorker, [
+        .poll(async () => {
+          const size = await switcherWindow.evaluate(() => ({ width: innerWidth, height: innerHeight }));
+          return colorsAt(switcherWindow, serviceWorker, [
             { x: size.width / 2, y: 2 },
             { x: 4, y: size.height / 2 },
             { x: size.width - 3, y: size.height / 2 },
-          ]),
-        )
+          ]);
+        })
         .toEqual(Array(3).fill(systemDark ? PANEL.dark : PANEL.light));
     });
 
