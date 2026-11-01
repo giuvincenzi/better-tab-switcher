@@ -43,7 +43,6 @@ export function openSwitcher(settings: Partial<Settings> = {}, more: Partial<Swi
     settings: { ...defaultSettings, delayMs: 0, ...settings },
     direction: 'next',
     fromIcon: false,
-    waitForPicture: false,
     ...more,
   };
   const [moves, setMoves] = createSignal<{ direction: Direction; count: number }>({ direction: 'next', count: 0 });
@@ -67,7 +66,6 @@ export function openSwitcher(settings: Partial<Settings> = {}, more: Partial<Swi
         pageKeys={pageKeys}
         canSeeRelease={more.canSeeRelease ?? true}
         previews={previews}
-        pictureTaken={() => false}
         listedTabs={() => undefined}
         {...handlers}
       />

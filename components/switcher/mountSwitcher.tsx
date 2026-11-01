@@ -18,8 +18,6 @@ export interface SwitcherHandle {
   showPreview: (preview: Preview) => void;
   /** Tabs changed (tabsListed): the tabs to show now. */
   listTabs: (tabs: SwitcherTab[]) => void;
-  /** The page's picture is taken: the switcher can show. */
-  pictureTaken: () => void;
   dispose: () => void;
 }
 
@@ -49,7 +47,6 @@ export function mountSwitcher(
   const [moves, setMoves] = createSignal({ direction: snapshot.direction, count: 0 });
   const [pageKeys, setPageKeys] = createSignal<{ key: Key; count: number }>();
   const [previews, setPreviews] = createSignal<Record<number, string>>({});
-  const [pictureTaken, setPictureTaken] = createSignal(false);
   const [listedTabs, setListedTabs] = createSignal<SwitcherTab[]>();
 
   const disposeRender = render(
@@ -60,7 +57,6 @@ export function mountSwitcher(
         pageKeys={pageKeys}
         canSeeRelease={canSeeRelease}
         previews={previews}
-        pictureTaken={pictureTaken}
         listedTabs={listedTabs}
         onOpen={(tab) => {
           onDone();
@@ -90,7 +86,6 @@ export function mountSwitcher(
     move: (direction) => setMoves((last) => ({ direction, count: last.count + 1 })),
     pressKey: (key) => setPageKeys((last) => ({ key, count: (last?.count ?? 0) + 1 })),
     showPreview: ({ tabId, picture }) => setPreviews((all) => ({ ...all, [tabId]: picture })),
-    pictureTaken: () => setPictureTaken(true),
     listTabs: (tabs) => setListedTabs(tabs),
     dispose() {
       disposeRender();

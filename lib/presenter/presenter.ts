@@ -328,7 +328,6 @@ async function takeSnapshot(current: Browser.tabs.Tab, request: SwitcherRequest)
     settings,
     direction: request.direction,
     fromIcon: request.from === 'icon',
-    waitForPicture: false,
     ...(request.resume ? { resume: request.resume } : {}),
   };
 }
@@ -336,11 +335,12 @@ async function takeSnapshot(current: Browser.tabs.Tab, request: SwitcherRequest)
 /** Shows the switcher in the current tab's page. False when Chrome doesn't let it in. */
 async function showInPage(current: Browser.tabs.Tab, snapshot: SwitcherSnapshot, previews: Previews): Promise<boolean> {
   const tabId = current.id as number;
-  // The page's picture is taken first, started before the switcher's frame is shown: shown again, the frame may show
-  // its last frame for a moment (the switcher of the time before) and be in the picture. Not when the page may still
-  // show the switcher it was left with (pictureFresh): its old picture stays.
+  // The page's picture is taken first, before the switcher's frame is shown at all: hidden, the frame draws nothing, and
+  // shown again it shows its last frame (the switcher of the time before, however long ago) until it draws again, which
+  // a picture taken meanwhile would have (GitHub's Windows machines). Not when the page may still show the switcher it
+  // was left with (pictureFresh): its old picture stays.
   const fresh = wantsPreviews(snapshot.settings) && !current.incognito && (await pictureFresh(tabId));
-  const picture = fresh ? previews.takeForSwitcher({ id: tabId, windowId: current.windowId }) : undefined;
+  if (fresh) await previews.takeForSwitcher({ id: tabId, windowId: current.windowId });
   // Known before the switcher shows: a preview that arrives meanwhile goes to it.
   // Whether its window has the focus as it opens: the switcher closes when the window loses it (closeWhenWindowLeft).
   const windowFocused = await browser.windows.get(current.windowId).then(
@@ -348,17 +348,13 @@ async function showInPage(current: Browser.tabs.Tab, snapshot: SwitcherSnapshot,
     () => false,
   );
   await openSwitcher.setValue({ in: 'page', tabId, windowId: current.windowId, windowFocused });
-  if (!(await sendSnapshot(tabId, { ...snapshot, waitForPicture: picture !== undefined }))) {
+  if (!(await sendSnapshot(tabId, snapshot))) {
     await openSwitcher.setValue(null);
     return false;
   }
   // The tabs as they are now, once the switcher is there to hear of them: a tab made a moment ago may have had no
   // address nor title yet as they were read (macOS). Not waited for: the switcher is there already.
   void listAgain();
-  if (picture) {
-    await picture;
-    await answered(sendMessage('pictureTaken', undefined, tabId)).catch(() => undefined);
-  }
   return true;
 }
 

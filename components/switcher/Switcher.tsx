@@ -43,8 +43,6 @@ export interface SwitcherProps {
   canSeeRelease: boolean;
   /** The tabs' pictures by tab id, as they arrive. */
   previews: Accessor<Record<number, string>>;
-  /** The page's picture is taken (snapshot.waitForPicture): the switcher can show. */
-  pictureTaken: Accessor<boolean>;
   /** The tabs to show now, when tabs changed while the switcher is open (tabsListed). */
   listedTabs: Accessor<SwitcherTab[] | undefined>;
   onOpen: (tab: SwitcherTab) => void;
@@ -77,9 +75,6 @@ function indexOf(shown: ShownTab[], tabId: number | undefined): number | undefin
   return index === -1 ? undefined : index;
 }
 
-/** The longest the switcher waits for the page's picture before it shows. */
-const PICTURE_WAIT_MS = 1000;
-
 /** The switcher: its rules are the state machine's (lib/switcher/machine.ts); here they meet the keys and the UI. */
 export function Switcher(props: SwitcherProps): JSX.Element {
   const { fromIcon, direction, centeredOn } = props.snapshot;
@@ -106,11 +101,10 @@ export function Switcher(props: SwitcherProps): JSX.Element {
       },
     }),
   );
-  // Shown after the delay: a quick tap opens the previous tab before the switcher ever appears. Also not before the
-  // page's picture is taken, or the switcher would be in it; never later than PICTURE_WAIT_MS all the same.
+  // Shown after the delay: a quick tap opens the previous tab before the switcher ever appears. (The page's picture is
+  // taken before the switcher's frame shows at all: lib/presenter/presenter.ts.)
   const [delayOver, setDelayOver] = createSignal(fromIcon || settings().delayMs === 0);
-  const [waitOver, setWaitOver] = createSignal(!props.snapshot.waitForPicture);
-  const visible = () => delayOver() && (waitOver() || props.pictureTaken());
+  const visible = delayOver;
   const layout = (): Layout => (settings().view === 'list' ? 'list' : settings().gridShow);
   // The panel's size and the grid's columns are taken once, as the switcher opens (or as the toolbar changes how it
   // shows the tabs): they never change while it is open, whatever is typed or closed, or however the page is resized.
@@ -266,7 +260,6 @@ export function Switcher(props: SwitcherProps): JSX.Element {
     window.addEventListener('focusin', onFocusIn, true);
     takeFrame();
     const delay = delayOver() ? undefined : setTimeout(() => setDelayOver(true), settings().delayMs);
-    const wait = waitOver() ? undefined : setTimeout(() => setWaitOver(true), PICTURE_WAIT_MS);
     onCleanup(() => {
       window.removeEventListener('keydown', onKey, true);
       window.removeEventListener('keyup', onKey, true);
@@ -274,7 +267,6 @@ export function Switcher(props: SwitcherProps): JSX.Element {
       window.removeEventListener('mousedown', onMouseDown, true);
       window.removeEventListener('focusin', onFocusIn, true);
       clearTimeout(delay);
-      clearTimeout(wait);
     });
   });
 

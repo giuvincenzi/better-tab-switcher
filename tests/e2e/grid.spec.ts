@@ -193,6 +193,34 @@ test.describe('grid @grid', () => {
       expect(await middleOfPicture(serviceWorker, Number(key.slice('preview-'.length)))).toBeGreaterThan(200);
   });
 
+  test('never has the switcher of the time before in the picture taken as it opens again on the same tab', async ({
+    context,
+    serviceWorker,
+  }) => {
+    // The dark theme: a dark panel over the test site's white pages. No delay: the switcher shows at once.
+    await useSettings(serviceWorker, { view: 'grid', theme: 'dark', delayMs: 0 });
+    const pages = await openPages(context, ['alpha', 'beta', 'gamma']);
+    const page = pages[2] as Page;
+    const gamma = (await serviceWorker.evaluate(
+      async () => (await chrome.tabs.query({ title: 'gamma' }))[0]?.id,
+    )) as number;
+    // Opened and closed again and again on gamma. A picture is taken only half a second or more after the switcher
+    // closed there (pictureFresh): each one is taken as the frame, hidden since, shows again, its last drawing the
+    // switcher of the time before (on GitHub's Windows machines it was in the picture). Toward a second picture Chrome
+    // allows twice a second, the switcher opens again after toPass's growing pauses.
+    for (let picture = 0; picture < 5; picture++) {
+      await expect(async () => {
+        const before = await savedAt(serviceWorker, gamma);
+        await showSwitcher(serviceWorker);
+        await expect(rows(page)).toHaveCount(3);
+        await page.keyboard.press('Escape');
+        await expect(rows(page)).toHaveCount(0);
+        await expect.poll(() => savedAt(serviceWorker, gamma), { timeout: 1000 }).not.toBe(before);
+      }).toPass();
+      expect(await middleOfPicture(serviceWorker, gamma)).toBeGreaterThan(200);
+    }
+  });
+
   test('keeps the picture of a tab that left sight with the switcher in it once it comes back, and takes the next one', async ({
     context,
     serviceWorker,
