@@ -49,7 +49,7 @@ const STEP_MS = 15_000;
  *   dark?: boolean,
  *   reducedMotion?: boolean, windowSize?: string }} options
  * @returns {Promise<{ context: import('@playwright/test').BrowserContext, close: () => Promise<void>,
- *   closed: Promise<unknown>, pid: number, sendToBrowser: (method: string, params?: object) => Promise<any>,
+ *   closed: Promise<string>, pid: number, sendToBrowser: (method: string, params?: object) => Promise<any>,
  *   output: () => string }>}
  */
 export async function launchRealBrowser({
@@ -113,7 +113,10 @@ export async function launchRealBrowser({
   process_.stderr?.on('data', (data) => {
     output += data.toString();
   });
-  const exited = new Promise((resolve) => process_.once('exit', resolve));
+  /** Once the browser's process has ended: how (its exit code, or the signal that stopped it). */
+  const exited = new Promise((resolve) =>
+    process_.once('exit', (code, signal) => resolve(signal ? `stopped by ${signal}` : `exit code ${code}`)),
+  );
 
   const portFile = join(profile, 'DevToolsActivePort');
   const started = Date.now();

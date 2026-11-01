@@ -271,23 +271,49 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }>({
       // one is reached with connectOverCDP inside this fixture, after the test started.
       await context.tracing.start({ screenshots: true, snapshots: true });
       const processesAtStart = await processes(browserSession);
+      // The browser leaving during the test (its process gone, or Playwright's connection to it): Playwright then closes
+      // the context, and the trace can't be saved any more. Noted with when, and how the process ended.
+      const testStarted = Date.now();
+      let disconnectedAt: number | undefined;
+      let ended: string | undefined;
+      context.browser()?.once('disconnected', () => {
+        disconnectedAt ??= Date.now() - testStarted;
+      });
+      void real.closed.then((how) => {
+        ended = how;
+      });
       await use(context);
+      const disconnected = disconnectedAt !== undefined;
+      const howItLeft = `Playwright lost the browser ${disconnectedAt} ms into the test; its process ${
+        ended === undefined ? 'was still running' : `had ended (${ended})`
+      }.`;
 
-      if (keepsReport(testInfo)) {
-        const path = testInfo.outputPath('trace.zip');
-        await context.tracing.stop({ path });
-        await testInfo.attach('trace', { path, contentType: 'application/zip' });
+      if (keepsReport(testInfo) || disconnected) {
+        // Saved first, so they are there whatever happens to the trace.
         await attachText(testInfo, 'browser-targets', targets.join('\n'));
+        await attachText(testInfo, 'browser-output', real.output());
         // Why the browser was slow, when it was: how far each frame has loaded, and which processes were busy.
         await attachText(
           testInfo,
           'browser-state',
           [
+            ...(disconnected ? [howItLeft] : []),
             ...(await framesState(context)),
             "The browser's processes, with the CPU time each used during the test:",
             ...cpuDuringTest(processesAtStart, await processes(browserSession)),
           ].join('\n'),
         );
+      }
+      if (disconnected) {
+        await real.close();
+        throw new Error(
+          `The browser left during the test, so its trace can't be saved: ${howItLeft} (attached: browser-output, browser-state).`,
+        );
+      }
+      if (keepsReport(testInfo)) {
+        const path = testInfo.outputPath('trace.zip');
+        await context.tracing.stop({ path });
+        await testInfo.attach('trace', { path, contentType: 'application/zip' });
       } else {
         await context.tracing.stop();
       }

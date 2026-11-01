@@ -519,7 +519,10 @@ jobs:
                                  switcher's frame was made in a page, when its window opened.
               browser-state.txt  the browser as the test ended: each page's frames and how far each has loaded
                                  (document.readyState, or no answer: the frame or its process stuck), and the CPU time
-                                 each of the browser's processes used during the test, the busiest first.
+                                 each of the browser's processes used during the test, the busiest first. When the
+                                 browser left during the test, its first line says when, and how its process ended:
+                                 then there is no trace.zip (Playwright can't save the trace of a browser that's gone).
+              browser-output.txt what the browser itself wrote (its errors, a crash) from its start.
               background-console.txt
                                  when the extension's background wrote in its console: what it wrote, in order (for
                                  example why the switcher couldn't show in a page and opened in its own window). The
