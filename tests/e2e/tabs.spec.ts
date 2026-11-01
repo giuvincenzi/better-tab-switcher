@@ -564,20 +564,24 @@ test.describe('closing tabs from the switcher @tabs', () => {
 
 /**
  * The tab the browser shows instead of the one just closed (it chooses it itself), with its page, once the switcher
- * shows there.
+ * shows there. Its page is found by its address, which Playwright knows without asking the page: a tab behind, asked
+ * its title, answered 8.5 s later on GitHub's macOS machines (Chrome runs the pages of tabs out of sight slower).
  */
 async function shownInstead(worker: Worker, closed: string): Promise<{ title: string; page: Page }> {
   await expect.poll(() => openTitles(worker)).not.toContain(closed);
-  const title = (await activeTitle(worker)) as string;
+  const active = await worker.evaluate(async () => {
+    const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+    return { title: tab?.title ?? '', url: tab?.url ?? '' };
+  });
   const context = contextOf.get(worker) as BrowserContext;
   let page: Page | undefined;
   await expect
     .poll(async () => {
-      for (const open of context.pages()) if ((await open.title().catch(() => '')) === title) page = open;
+      page = context.pages().find((open) => open.url() === active.url);
       return page !== undefined && (await rows(page).count()) > 0;
     })
     .toBe(true);
-  return { title, page: page as Page };
+  return { title: active.title, page: page as Page };
 }
 
 /** Opens one more tab of the test site in the window of `page`, behind it. */
