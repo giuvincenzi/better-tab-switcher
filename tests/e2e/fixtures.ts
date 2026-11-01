@@ -200,6 +200,11 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }>({
           `${(error as Error).message} Service workers: ${workers.join(', ') || 'none'} (attached: browser-start).`,
         );
       }
+      // Ready once it has loaded a page too: right after starting, GitHub's Windows machines took seconds for the first
+      // page (4.1 s) while the browser still started, and the switcher's first frame in a page ran past its limit then
+      // (FIRST_TIME_MS), opening in its own window. The tests start once the browser has finished starting.
+      const [first] = context.pages();
+      if (first) await first.goto('data:text/html,<title>ready</title>', { waitUntil: 'load' });
 
       await use(context);
 
