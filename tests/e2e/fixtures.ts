@@ -1,6 +1,13 @@
 import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { type BrowserContext, test as base, type CDPSession, type Page, type Worker } from '@playwright/test';
+import {
+  type BrowserContext,
+  test as base,
+  type CDPSession,
+  type Page,
+  type TestInfo,
+  type Worker,
+} from '@playwright/test';
 import { launchRealBrowser } from '../../scripts/real-browser.mjs';
 import { dismissEdgeDeveloperModeBubble } from './edge-bubble';
 
@@ -77,6 +84,21 @@ const BACKGROUND_MS = 120_000;
  * in it, so a browser slow to start is reported by its step, and the test keeps its 30 seconds for what it checks.
  */
 const BROWSER_MS = 180_000;
+
+/**
+ * Whether a test keeps what helps understand why it failed (its trace, the browser's state, the background's console):
+ * on GitHub every test, to compare a failed test with a passed one or with another system; on the PC the failed ones.
+ */
+function keepsReport(testInfo: TestInfo): boolean {
+  return !!process.env.CI || testInfo.status !== testInfo.expectedStatus;
+}
+
+/** Saves `body` in the test's folder, next to its screenshots and trace, and adds it to the report. */
+async function attachText(testInfo: TestInfo, name: string, body: string): Promise<void> {
+  const path = testInfo.outputPath(`${name}.txt`);
+  writeFileSync(path, body);
+  await testInfo.attach(name, { path, contentType: 'text/plain' });
+}
 
 /** The browser's processes (type and id) and the CPU time each has used, in seconds: none when the browser can't say. */
 async function processes(session: CDPSession | undefined): Promise<Map<string, number>> {
@@ -244,21 +266,30 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }>({
       const [first] = context.pages();
       if (first) await first.goto('data:text/html,<title>ready</title>', { waitUntil: 'load' });
 
+      // The test's trace: its pages (snapshots, screencast), their network and consoles, step by step. Recorded here:
+      // Playwright's own `trace` option records only the contexts it makes, or that exist as the test starts, and this
+      // one is reached with connectOverCDP inside this fixture, after the test started.
+      await context.tracing.start({ screenshots: true, snapshots: true });
       const processesAtStart = await processes(browserSession);
       await use(context);
 
-      if (testInfo.status !== testInfo.expectedStatus) {
-        if (targets.length > 0)
-          await testInfo.attach('browser-targets', { body: targets.join('\n'), contentType: 'text/plain' });
+      if (keepsReport(testInfo)) {
+        const path = testInfo.outputPath('trace.zip');
+        await context.tracing.stop({ path });
+        await testInfo.attach('trace', { path, contentType: 'application/zip' });
+        await attachText(testInfo, 'browser-targets', targets.join('\n'));
         // Why the browser was slow, when it was: how far each frame has loaded, and which processes were busy.
-        await testInfo.attach('browser-state', {
-          body: [
+        await attachText(
+          testInfo,
+          'browser-state',
+          [
             ...(await framesState(context)),
             "The browser's processes, with the CPU time each used during the test:",
             ...cpuDuringTest(processesAtStart, await processes(browserSession)),
           ].join('\n'),
-          contentType: 'text/plain',
-        });
+        );
+      } else {
+        await context.tracing.stop();
       }
 
       for (const worker of context.serviceWorkers()) {
@@ -293,16 +324,13 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }>({
   },
   serviceWorker: async ({ context, ours }, use, testInfo) => {
     contextOf.set(ours, context);
-    // What the background wrote in its console (why the switcher fell back to its window…): with a failed test.
+    // What the background wrote in its console (why the switcher fell back to its window…): the trace has the pages'
+    // consoles, not the background's.
     const console: string[] = [];
     ours.on('console', (message) => console.push(`${message.type()}: ${message.text()}`));
     await use(ours);
-    if (testInfo.status !== testInfo.expectedStatus && console.length > 0) {
-      // A file in the test's folder, next to its screenshots and trace, and in the report.
-      const path = testInfo.outputPath('background-console.txt');
-      writeFileSync(path, console.join('\n'));
-      await testInfo.attach('background-console', { path, contentType: 'text/plain' });
-    }
+    if (keepsReport(testInfo) && console.length > 0)
+      await attachText(testInfo, 'background-console', console.join('\n'));
   },
   extensionId: async ({ serviceWorker }, use) => {
     await use(new URL(serviceWorker.url()).host);

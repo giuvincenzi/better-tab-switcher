@@ -507,24 +507,34 @@ jobs:
           tests/
             Playwright's output as plain files, a folder for each test that ran:
               test-finished-1.png / test-failed-1.png  the page at the end of the test (passed / failed).
-              trace.zip          every step of the test. A zip of text files: the actions and their timing as JSON
-                                 lines, the network requests, and the pictures of the page at each step (resources/).
-                                 Read it unzipped, or look at it with `npx playwright show-trace trace.zip` or by
-                                 dropping it on https://trace.playwright.dev (it stays in the browser, nothing is
-                                 uploaded).
-              error-context.md   a failed test only: the error and what the page held at that moment, in text.
+              trace.zip          every step of the test in the browser it ran in: the actions and their timing, each
+                                 page's snapshot at every step (the switcher's frame in it too), a film of the screen,
+                                 the pages' network requests and consoles. Look at it with
+                                 `npx playwright show-trace trace.zip` or by dropping it on https://trace.playwright.dev
+                                 (it stays in the browser, nothing is uploaded), or read it unzipped: JSON lines
+                                 (trace.trace, trace.network) and pictures (resources/).
+              browser-targets.txt
+                                 what the browser made, changed and closed from its start (pages, frames, the
+                                 extensions' workers), each with the milliseconds since the browser started: when the
+                                 switcher's frame was made in a page, when its window opened.
+              browser-state.txt  the browser as the test ended: each page's frames and how far each has loaded
+                                 (document.readyState, or no answer: the frame or its process stuck), and the CPU time
+                                 each of the browser's processes used during the test, the busiest first.
               background-console.txt
-                                 a failed test only, when the extension's background wrote in its console: what it
-                                 wrote, in order (for example why the switcher couldn't show in a page and opened in
-                                 its own window).
+                                 when the extension's background wrote in its console: what it wrote, in order (for
+                                 example why the switcher couldn't show in a page and opened in its own window). The
+                                 trace has the pages' consoles, not the background's.
+              error-context.md   a failed test only: the error and what the page held at that moment, in text.
 
           Investigating a failed test
           ---------------------------
           Start from the test itself: its code (tests/e2e/<file>.spec.ts), what it does and what it expects, and the
           line that failed (in the job's log, step run_group_tests, in e2e_test's summary or in group_<n>.json). Then
           error-context.md and the trace show what the browser did at each step, and the screenshot what was on the page
-          when it failed. A test that fails on one system or in one browser only: compare with the same test's
-          screenshot and trace on another system or in the other browser. Fix the cause, not the wait.
+          when it failed. When something took too long: browser-targets.txt says when each frame and window appeared,
+          browser-state.txt whether a frame was still loading and which process was busy, background-console.txt why the
+          extension did what it did. Every test keeps all of these, the passed ones too: a test that fails on one system
+          or in one browser only, or once in a while, is compared with the same test passed. Fix the cause, not the wait.
           EOF
 
       # Also when tests failed: e2e_test needs every group's list and report. The name has the run's attempt: after a

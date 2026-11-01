@@ -44,9 +44,14 @@
   the workflow with `paths`: a workflow that doesn't start leaves its required check pending and blocks the merge.
 - `site_test` builds the whole site and checks the README (`docs.md`); `build_extension` checks `third-party.json`
   against the build.
-- **When an end-to-end test fails on GitHub**, start from the test's code and the line that failed. Its group's
-  artifact holds the screenshots, traces and report; its `README.txt`, written by the step `describe_group_result` of
-  `test.yml`, says what each file is (change it there when the artifact changes).
+- **Every end-to-end test on GitHub keeps what helps understand why it failed**, the passed ones too (to compare): its
+  screenshot, its trace with the browser's pages (snapshots, network, consoles), the background's console and the
+  browser's state (its frames and how far each loaded, the CPU each process used). The fixture records the trace
+  itself: Playwright's `trace` option doesn't reach the browser it connects to. A file that should help but holds
+  nothing of the browser is a bug of the tests.
+- **When an end-to-end test fails on GitHub**, start from the test's code and the line that failed, then its group's
+  artifact; its `README.txt`, written by the step `describe_group_result` of `test.yml`, says what each file is and
+  how it helps (change it there when the artifact changes).
 
 ## When a test fails
 
