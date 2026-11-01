@@ -66,17 +66,17 @@ async function isOurs(worker: Worker): Promise<boolean> {
  */
 /**
  * How long the extension's background may take to start once the browser runs: Microsoft Edge on GitHub's Windows
- * machines started it after 15.5 s once (its own extensions' service workers after 12.7 s), with a fresh profile. Each
- * step of starting the browser has its limit too (scripts/real-browser.mjs): one that hangs fails, saying which, never
- * the test's own time.
+ * machines, with a fresh profile, delays every extension's service worker: once its own started after 24.2 s and ours
+ * not within 30 s (the user chose to wait up to 120 s, keeping the fresh profile). Each step of starting the browser
+ * has its limit too (scripts/real-browser.mjs): one that hangs fails, saying which, never the test's own time.
  */
-const BACKGROUND_MS = 30_000;
+const BACKGROUND_MS = 120_000;
 
 /**
  * The time to start the browser with the extension, and to close it, apart from the test's own: the steps' limits fit
  * in it, so a browser slow to start is reported by its step, and the test keeps its 30 seconds for what it checks.
  */
-const BROWSER_MS = 60_000;
+const BROWSER_MS = 180_000;
 
 /** Waits for `found` to give something, every 100 ms, for at most `limitMs`; fails saying `what` didn't happen. */
 async function waitFor<T>(found: () => Promise<T | undefined>, limitMs: number, what: string): Promise<T> {
