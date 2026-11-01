@@ -119,16 +119,34 @@ function cpuDuringTest(before: Map<string, number>, after: Map<string, number>):
 }
 
 /**
- * For a failed test's report: each page's frames, with how far each has loaded (document.readyState), or that it
- * didn't answer within a second (its process busy, or the frame stuck).
+ * In every page and frame from its start: when the browser showed or hid it (visibilitychange, with Date.now()). A page
+ * the browser takes as hidden (a window it thinks covered) draws nothing and runs no animation frame.
  */
-async function framesState(context: BrowserContext): Promise<string[]> {
-  const lines = ["The pages' frames as the test ended:"];
+function recordVisibility() {
+  const seen: [number, string][] = [[Date.now(), document.visibilityState]];
+  Object.assign(globalThis, { visibilitySeen: seen });
+  addEventListener('visibilitychange', () => seen.push([Date.now(), document.visibilityState]), true);
+}
+
+/**
+ * For a failed test's report: each page's frames, with how far each has loaded (document.readyState) and when it was
+ * shown or hidden (ms since the test started), or that it didn't answer within a second (its process busy, or the frame
+ * stuck).
+ */
+async function framesState(context: BrowserContext, testStarted: number): Promise<string[]> {
+  const lines = ["The pages' frames as the test ended, and when each was visible or hidden (ms into the test):"];
   for (const page of context.pages()) {
     for (const frame of page.frames()) {
       const state = await Promise.race([
         frame
-          .evaluate(() => document.readyState)
+          .evaluate(() => {
+            const seen = (globalThis as { visibilitySeen?: [number, string][] }).visibilitySeen ?? [];
+            return { ready: document.readyState, seen };
+          })
+          .then(
+            ({ ready, seen }) =>
+              `${ready}, ${seen.map(([at, visibility]) => `${visibility} at ${at - testStarted}`).join(', ') || 'visibility not recorded'}`,
+          )
           .catch((error: Error) => `unreadable: ${error.message.split('\n')[0]}`),
         new Promise<string>((late) => setTimeout(() => late('no answer within 1 s'), 1000)),
       ]);
@@ -265,6 +283,8 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }>({
       // (FIRST_TIME_MS), opening in its own window. The tests start once the browser has finished starting.
       const [first] = context.pages();
       if (first) await first.goto('data:text/html,<title>ready</title>', { waitUntil: 'load' });
+      // Every page and frame the test opens notes when the browser shows or hides it (browser-state).
+      await context.addInitScript(recordVisibility);
 
       // The test's trace: its pages (snapshots, screencast), their network and consoles, step by step. Recorded here:
       // Playwright's own `trace` option records only the contexts it makes, or that exist as the test starts, and this
@@ -298,7 +318,7 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }>({
           'browser-state',
           [
             ...(disconnected ? [howItLeft] : []),
-            ...(await framesState(context)),
+            ...(await framesState(context, testStarted)),
             "The browser's processes, with the CPU time each used during the test:",
             ...cpuDuringTest(processesAtStart, await processes(browserSession)),
           ].join('\n'),
