@@ -126,6 +126,9 @@ function recordVisibility() {
   const seen: [number, string][] = [[Date.now(), document.visibilityState]];
   Object.assign(globalThis, { visibilitySeen: seen });
   addEventListener('visibilitychange', () => seen.push([Date.now(), document.visibilityState]), true);
+  // And when the document itself finished loading: a frame's parent learns of it from its load event.
+  addEventListener('DOMContentLoaded', () => seen.push([Date.now(), 'parsed']), true);
+  addEventListener('load', (event) => event.target === document && seen.push([Date.now(), 'loaded']), true);
 }
 
 /**
@@ -134,7 +137,9 @@ function recordVisibility() {
  * stuck).
  */
 async function framesState(context: BrowserContext, testStarted: number): Promise<string[]> {
-  const lines = ["The pages' frames as the test ended, and when each was visible or hidden (ms into the test):"];
+  const lines = [
+    "The pages' frames as the test ended, and when each was visible or hidden, parsed and loaded (ms into the test):",
+  ];
   for (const page of context.pages()) {
     for (const frame of page.frames()) {
       const state = await Promise.race([
