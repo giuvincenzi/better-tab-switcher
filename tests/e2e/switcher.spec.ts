@@ -665,9 +665,9 @@ test.describe('tabs of other windows @switcher', () => {
     await useSettings(serviceWorker, { scope: 'all' });
     await openPages(context, ['alpha', 'beta']);
     // A new window, the last focused one, with a blank tab; then its page goes to the site (Playwright serves the
-    // site's pages it knows).
+    // site's pages it knows). About:blank, not the New Tab page Microsoft Edge prepares in advance (openWindow).
     const opened = context.waitForEvent('page');
-    await serviceWorker.evaluate(() => chrome.windows.create({}));
+    await serviceWorker.evaluate(() => chrome.windows.create({ url: 'about:blank' }));
     const delta = await opened;
     await delta.goto('https://bts.test/delta');
     const firstWindow = await serviceWorker.evaluate(

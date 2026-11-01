@@ -287,17 +287,16 @@ test.describe('the details of each tab @tabs', () => {
     const page = current as Page;
     await serviceWorker.evaluate(async (id) => chrome.tabs.discard(id), await tabIdOf(serviceWorker, 'alpha'));
     await showSwitcher(serviceWorker, 'next', 'icon');
-    const opacity = (title: string) =>
-      rows(page)
-        .filter({ hasText: title })
-        .evaluate((row) => getComputedStyle(row).opacity);
-    expect(await opacity('alpha')).toBe('0.55');
-    expect(await opacity('beta')).toBe('1');
+    // Waited for, never read once: the switcher draws its rows again as the browser tells it of the tab it unloaded, and
+    // a row read the moment it is replaced has no style (macOS Microsoft Edge read "").
+    const row = (title: string) => rows(page).filter({ hasText: title });
+    await expect(row('alpha')).toHaveCSS('opacity', '0.55');
+    await expect(row('beta')).toHaveCSS('opacity', '1');
     await page.keyboard.press('Escape');
     await useSettings(serviceWorker, { details: { sleeping: false } as never });
     await showSwitcher(serviceWorker, 'next', 'icon');
     await expect(rows(page)).toHaveCount(3);
-    expect(await opacity('alpha')).toBe('1');
+    await expect(row('alpha')).toHaveCSS('opacity', '1');
   });
 });
 
@@ -588,8 +587,9 @@ async function openWindowTab(page: Page, worker: Worker, title: string): Promise
     async (t) => (await chrome.tabs.query({ title: t }))[0]?.windowId as number,
     await page.title(),
   );
-  // A blank tab first, then the site: Playwright serves the site only to the pages it already knows.
+  // A blank tab first, then the site: Playwright serves the site only to the pages it already knows. About:blank, not
+  // the New Tab page Microsoft Edge prepares in advance (openWindow).
   const opened = context.waitForEvent('page');
-  await worker.evaluate((id) => chrome.tabs.create({ windowId: id, active: false }), windowId);
+  await worker.evaluate((id) => chrome.tabs.create({ windowId: id, active: false, url: 'about:blank' }), windowId);
   await (await opened).goto(`https://bts.test/${title}`);
 }

@@ -122,10 +122,14 @@ export function useSettings(worker: Worker, settings: Partial<Settings>) {
   return worker.evaluate((saved) => chrome.storage.local.set({ settings: saved }), settings);
 }
 
-/** A new browser window, the last focused one, with one page of the test site in it. */
+/**
+ * A new browser window, the last focused one, with one page of the test site in it. Opened on about:blank: without an
+ * address it would show the New Tab page, which Microsoft Edge prepares in advance and then puts in the window as a page
+ * Playwright never hears of (a target of type "other": seen on GitHub's macOS machines).
+ */
 export async function openWindow(context: BrowserContext, worker: Worker, title: string): Promise<Page> {
   const opened = context.waitForEvent('page');
-  await worker.evaluate(() => chrome.windows.create({}));
+  await worker.evaluate(() => chrome.windows.create({ url: 'about:blank' }));
   const page = await opened;
   await page.goto(`https://bts.test/${title}`);
   return page;
