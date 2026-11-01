@@ -31,12 +31,23 @@ async function recordKeys(page: Page, worker: Worker): Promise<(info: TestInfo) 
   return async (info) => {
     const read = () => (globalThis as unknown as { keysSeen?: string[] }).keysSeen ?? [];
     const frame = switcherFrame(page);
+    // Where the keyboard was as the test ended: whether the page and the switcher's frame had the system's focus, and
+    // which element in each would get a key.
+    const focus = () => ({
+      hasFocus: document.hasFocus(),
+      active:
+        `${document.activeElement?.tagName ?? 'none'} ${document.activeElement?.getAttribute('role') ?? ''}`.trim(),
+    });
     const keys = {
       page: await page.evaluate(read).catch(() => []),
       frame: (await frame?.evaluate(read).catch(() => [])) ?? [],
       commands: await worker
         .evaluate(() => (globalThis as unknown as { commandsSeen?: string[] }).commandsSeen ?? [])
         .catch(() => []),
+      focus: {
+        page: await page.evaluate(focus).catch((error: Error) => error.message),
+        frame: (await frame?.evaluate(focus).catch((error: Error) => error.message)) ?? 'no frame',
+      },
     };
     await info.attach('keys-seen', { body: JSON.stringify(keys, null, 2), contentType: 'application/json' });
     const screen = screenPicture();
