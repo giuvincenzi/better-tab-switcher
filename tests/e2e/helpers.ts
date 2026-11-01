@@ -51,7 +51,14 @@ export async function showSwitcher(
         ?.pages()
         .find((open) => open.url() === shownIn)
     : undefined;
-  if (page) await expect.poll(() => switcherFrame(page) !== null).toBe(true);
+  if (!page) return;
+  await expect.poll(() => switcherFrame(page) !== null).toBe(true);
+  // Until the switcher is on screen, as a user sees it before clicking: its frame drawn once (two animation frames: the
+  // first runs before the next drawing, the second after it). On GitHub's macOS machines Microsoft Edge drew it after
+  // Playwright had found its search field visible and stable in the page, and a click then went to the page below.
+  await switcherFrame(page)?.evaluate(
+    () => new Promise((drawn) => requestAnimationFrame(() => requestAnimationFrame(drawn))),
+  );
 }
 
 export function activeTitle(worker: Worker) {
