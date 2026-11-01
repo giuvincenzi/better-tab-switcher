@@ -1,6 +1,6 @@
 import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { type BrowserContext, test as base, type Page, type Worker } from '@playwright/test';
+import { type BrowserContext, test as base, type CDPSession, type Page, type Worker } from '@playwright/test';
 import { launchRealBrowser } from '../../scripts/real-browser.mjs';
 import { dismissEdgeDeveloperModeBubble } from './edge-bubble';
 
@@ -77,6 +77,44 @@ const BACKGROUND_MS = 120_000;
  * in it, so a browser slow to start is reported by its step, and the test keeps its 30 seconds for what it checks.
  */
 const BROWSER_MS = 180_000;
+
+/** The browser's processes (type and id) and the CPU time each has used, in seconds: none when the browser can't say. */
+async function processes(session: CDPSession | undefined): Promise<Map<string, number>> {
+  const used = new Map<string, number>();
+  const info = await session?.send('SystemInfo.getProcessInfo').catch(() => undefined);
+  for (const { type, id, cpuTime } of info?.processInfo ?? []) used.set(`${type} ${id}`, cpuTime);
+  return used;
+}
+
+/** For a failed test's report: the CPU time each process used between `before` and `after`, the busiest first. */
+function cpuDuringTest(before: Map<string, number>, after: Map<string, number>): string[] {
+  return [...after]
+    .map(([process, cpu]) => ({ process, used: cpu - (before.get(process) ?? 0) }))
+    .sort((a, b) => b.used - a.used)
+    .map(
+      ({ process, used }) => `${used.toFixed(2)} s ${process}${before.has(process) ? '' : ' (started in the test)'}`,
+    );
+}
+
+/**
+ * For a failed test's report: each page's frames, with how far each has loaded (document.readyState), or that it
+ * didn't answer within a second (its process busy, or the frame stuck).
+ */
+async function framesState(context: BrowserContext): Promise<string[]> {
+  const lines = ["The pages' frames as the test ended:"];
+  for (const page of context.pages()) {
+    for (const frame of page.frames()) {
+      const state = await Promise.race([
+        frame
+          .evaluate(() => document.readyState)
+          .catch((error: Error) => `unreadable: ${error.message.split('\n')[0]}`),
+        new Promise<string>((late) => setTimeout(() => late('no answer within 1 s'), 1000)),
+      ]);
+      lines.push(`${frame === page.mainFrame() ? 'page' : '  frame'} ${frame.url()}: ${state}`);
+    }
+  }
+  return lines;
+}
 
 /** Waits for `found` to give something, every 100 ms, for at most `limitMs`; fails saying `what` didn't happen. */
 async function waitFor<T>(found: () => Promise<T | undefined>, limitMs: number, what: string): Promise<T> {
@@ -206,10 +244,22 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }>({
       const [first] = context.pages();
       if (first) await first.goto('data:text/html,<title>ready</title>', { waitUntil: 'load' });
 
+      const processesAtStart = await processes(browserSession);
       await use(context);
 
-      if (testInfo.status !== testInfo.expectedStatus && targets.length > 0)
-        await testInfo.attach('browser-targets', { body: targets.join('\n'), contentType: 'text/plain' });
+      if (testInfo.status !== testInfo.expectedStatus) {
+        if (targets.length > 0)
+          await testInfo.attach('browser-targets', { body: targets.join('\n'), contentType: 'text/plain' });
+        // Why the browser was slow, when it was: how far each frame has loaded, and which processes were busy.
+        await testInfo.attach('browser-state', {
+          body: [
+            ...(await framesState(context)),
+            "The browser's processes, with the CPU time each used during the test:",
+            ...cpuDuringTest(processesAtStart, await processes(browserSession)),
+          ].join('\n'),
+          contentType: 'text/plain',
+        });
+      }
 
       for (const worker of context.serviceWorkers()) {
         const uncaught = await worker
