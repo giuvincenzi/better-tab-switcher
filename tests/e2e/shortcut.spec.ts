@@ -50,7 +50,7 @@ async function recordKeys(page: Page, worker: Worker): Promise<(info: TestInfo) 
       },
     };
     await info.attach('keys-seen', { body: JSON.stringify(keys, null, 2), contentType: 'application/json' });
-    const screen = screenPicture();
+    const screen = await screenPicture();
     if (screen) await info.attach('screen', { body: screen, contentType: 'image/png' });
   };
 }
@@ -102,17 +102,17 @@ test.describe('the shortcuts on the keyboard @shortcut', () => {
     await focusPage(page);
     const report = await recordKeys(page, serviceWorker);
     try {
-      hold(MODIFIER);
+      await hold(MODIFIER);
       try {
-        press('S');
+        await press('S');
         await frameIn(page);
         await recordFrameKeys(page);
         await expect(rows(page)).toHaveCount(3);
         await expect(selected(page)).toHaveAccessibleName(named('beta'));
-        press('S');
+        await press('S');
         await expect(selected(page)).toHaveAccessibleName(named('alpha'));
       } finally {
-        release(MODIFIER);
+        await release(MODIFIER);
       }
       await expect.poll(() => activeTitle(serviceWorker)).toBe('alpha');
     } finally {
@@ -131,25 +131,25 @@ test.describe('the shortcuts on the keyboard @shortcut', () => {
     await focusPage(page);
     const report = await recordKeys(page, serviceWorker);
     try {
-      hold(MODIFIER);
+      await hold(MODIFIER);
       let shiftHeld = true;
-      hold('Shift');
+      await hold('Shift');
       try {
-        press('S');
+        await press('S');
         await frameIn(page);
         await recordFrameKeys(page);
         await expect(rows(page)).toHaveCount(3);
         await expect(selected(page)).toHaveAccessibleName(named('alpha'));
         // Shift let go first, the modifier still held: once the switcher got that key, it is still open, on its tab.
-        release('Shift');
+        await release('Shift');
         shiftHeld = false;
         await expect.poll(() => keySeen(page, 'keyup Shift')).toBe(true);
         await expect(rows(page)).toHaveCount(3);
         await expect(selected(page)).toHaveAccessibleName(named('alpha'));
         expect(await activeTitle(serviceWorker)).toBe('gamma');
       } finally {
-        if (shiftHeld) release('Shift');
-        release(MODIFIER);
+        if (shiftHeld) await release('Shift');
+        await release(MODIFIER);
       }
       await expect.poll(() => activeTitle(serviceWorker)).toBe('alpha');
     } finally {
@@ -164,15 +164,15 @@ test.describe('the shortcuts on the keyboard @shortcut', () => {
     const [, , current] = await openPages(context, ['alpha', 'beta', 'gamma']);
     const page = current as Page;
     await focusBrowser(context, await windowOf(serviceWorker));
-    focusAddressBar();
+    await focusAddressBar();
     await expect.poll(() => page.evaluate(() => document.hasFocus())).toBe(false);
-    hold(MODIFIER);
+    await hold(MODIFIER);
     try {
-      press('S');
+      await press('S');
       await frameIn(page);
       await expect(selected(page)).toHaveAccessibleName(named('beta'));
     } finally {
-      release(MODIFIER);
+      await release(MODIFIER);
     }
     const alpha = rows(page).filter({ hasText: 'alpha' });
     await mouseOn(alpha);

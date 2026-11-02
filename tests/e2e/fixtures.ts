@@ -260,7 +260,7 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }, WorkerFixt
       const { context } = real;
       // Microsoft Edge's bubble about developer mode would take the system's keys and focus (tests/e2e/edge-bubble.ts).
       if ((headed || process.env.HEADED) && browser === 'msedge' && process.platform === 'win32')
-        dismissEdgeDeveloperModeBubble();
+        await dismissEdgeDeveloperModeBubble();
       browserPid.set(context, real.pid);
       browserPipe.set(context, real.sendToBrowser);
       /** Each message, with where it comes from: a page or script's address, or the background. */
@@ -399,7 +399,7 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }, WorkerFixt
         );
         // A failed test: the whole screen too, what covers a window or what took the focus (macOS and Windows).
         if (testInfo.status !== testInfo.expectedStatus) {
-          const screen = screenPicture();
+          const screen = await screenPicture();
           if (screen) {
             const path = testInfo.outputPath('screen.png');
             writeFileSync(path, screen);
