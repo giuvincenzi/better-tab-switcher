@@ -59,9 +59,15 @@ async function macFront(pid: number) {
   macFrontPid = pid;
 }
 
-/** The program in front on macOS: its name and process. */
-async function macFrontProcess(): Promise<{ name: string; pid: number }> {
-  const [name = '', pid] = (
+/**
+ * On macOS the system's keys go to the program in front. Before a key goes down, that is still the one the test brought
+ * there: another program that took the front meanwhile (a system dialog, an update) would get the keys, and the test
+ * would fail far from the cause. It fails here instead, naming that program.
+ */
+async function macKeysGoToFront() {
+  // None yet in this test: the one of an earlier test has ended with its browser.
+  if (macFrontPid === undefined || !alive(macFrontPid)) return;
+  const [name, pid] = (
     await run('osascript', [
       '-e',
       'tell application "System Events"',
@@ -75,19 +81,7 @@ async function macFrontProcess(): Promise<{ name: string; pid: number }> {
   )
     .trim()
     .split(', ');
-  return { name, pid: Number(pid) };
-}
-
-/**
- * On macOS the system's keys go to the program in front. Before a key goes down, that is still the one the test brought
- * there: another program that took the front meanwhile (a system dialog, an update) would get the keys, and the test
- * would fail far from the cause. It fails here instead, naming that program.
- */
-async function macKeysGoToFront() {
-  // None yet in this test: the one of an earlier test has ended with its browser.
-  if (macFrontPid === undefined || !alive(macFrontPid)) return;
-  const { name, pid } = await macFrontProcess();
-  if (pid !== macFrontPid)
+  if (Number(pid) !== macFrontPid)
     throw new Error(
       `The keys would go to ${name} (process ${pid}), which came to the front instead of process ${macFrontPid}.`,
     );
@@ -239,15 +233,6 @@ export async function clickToolbarButton(context: BrowserContext, extensionId: s
   };
   const tab = targetInfos.find((target) => target.url === pageUrl);
   if (!tab) throw new Error(`No tab shows ${pageUrl}.`);
-  // On macOS, which program was in front as the click was sent: the switcher opened seconds late in Microsoft Edge
-  // there (2 s in the middle, once 6.1 s) and in a few ms after the keyboard's shortcuts, whose tests bring the browser
-  // to the front first.
-  if (process.platform === 'darwin') {
-    const front = await macFrontProcess();
-    console.info(
-      `(test) In front as the toolbar button is clicked: ${front.name} (process ${front.pid}); the browser is process ${browserPid.get(context)}.`,
-    );
-  }
   // When the click was sent, against when Chrome gave it to the extension (background-console).
   console.info(`(test) Toolbar button clicked at ${Date.now()}`);
   await send('Extensions.triggerAction', { id: extensionId, targetId: tab.targetId });
