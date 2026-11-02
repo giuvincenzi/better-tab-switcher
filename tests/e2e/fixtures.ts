@@ -11,7 +11,7 @@ import {
 import { launchRealBrowser } from '../../scripts/real-browser.mjs';
 import { dismissEdgeDeveloperModeBubble } from './edge-bubble';
 import { type SiteAnswer, startTestSites, type TestSites } from './site';
-import { screenPicture } from './system';
+import { run, screenPicture } from './system';
 
 /** The extension's test build (`wxt build --mode e2e`): the published one plus the hook that opens the switcher. */
 export const extensionDir = resolve('.output/chrome-mv3-e2e');
@@ -130,6 +130,37 @@ function cpuDuringTest(before: Map<string, number>, after: Map<string, number>):
     .map(
       ({ process, used }) => `${used.toFixed(2)} s ${process}${before.has(process) ? '' : ' (started in the test)'}`,
     );
+}
+
+/**
+ * For a failed test's report on Windows: when each of the browser's processes started (ms since the test started), from
+ * the system. In Chromium on GitHub's Windows machines the switcher's frame and window once both waited 6.8 s for the
+ * process of the extension's pages, which used almost no CPU: whether the browser started that process late, or the
+ * process took long to start.
+ */
+async function processStarts(processesNow: Map<string, number>, testStarted: number): Promise<string[]> {
+  if (process.platform !== 'win32') return [];
+  const pidOf = (key: string) => key.split(' ').at(-1) ?? '';
+  const ids = [...processesNow.keys()].map(pidOf).filter((id) => /^\d+$/.test(id));
+  if (ids.length === 0) return [];
+  const listed = await run('powershell', [
+    '-NoProfile',
+    '-Command',
+    `Get-Process -Id ${ids.join(',')} -ErrorAction SilentlyContinue | ForEach-Object { "$($_.Id) $(([DateTimeOffset]$_.StartTime).ToUnixTimeMilliseconds())" }`,
+  ]).catch(() => '');
+  const started = new Map(
+    listed
+      .trim()
+      .split(/\r?\n/)
+      .map((line) => line.trim().split(' ') as [string, string]),
+  );
+  return [
+    "When each of the browser's processes started (ms into the test, from the system):",
+    ...[...processesNow.keys()].map((key) => {
+      const at = started.get(pidOf(key));
+      return `${key}: ${at === undefined ? 'not found' : Number(at) - testStarted}`;
+    }),
+  ];
 }
 
 /**
@@ -388,6 +419,7 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }, WorkerFixt
       }.`;
 
       if (keepsReport(testInfo) || disconnected) {
+        const processesAtEnd = await processes(browserSession);
         // Saved first, so they are there whatever happens to the trace.
         await attachText(testInfo, 'browser-targets', targets.join('\n'));
         await attachText(testInfo, 'browser-output', real.output());
@@ -401,7 +433,8 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }, WorkerFixt
             ...(await framesState(context, testStarted)),
             ...(await windowsState(context)),
             "The browser's processes, with the CPU time each used during the test:",
-            ...cpuDuringTest(processesAtStart, await processes(browserSession)),
+            ...cpuDuringTest(processesAtStart, processesAtEnd),
+            ...(testInfo.status !== testInfo.expectedStatus ? await processStarts(processesAtEnd, testStarted) : []),
           ].join('\n'),
         );
         // A failed test: the whole screen too, what covers a window or what took the focus (macOS and Windows).
