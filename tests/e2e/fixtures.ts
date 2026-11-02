@@ -353,8 +353,15 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }, WorkerFixt
       // Ready once it has loaded a page too: right after starting, GitHub's Windows machines took seconds for the first
       // page (4.1 s) while the browser still started, and the switcher's first frame in a page ran past its limit then
       // (FIRST_TIME_MS), opening in its own window. The tests start once the browser has finished starting.
+      // A page of the test sites first: a page from the network waits for the browser's cookies, which a data: page
+      // never reads. Microsoft Edge on GitHub's Windows machines once loaded them 71.7 s after its start (its NetLog:
+      // COOKIE_PERSISTENT_STORE_LOAD, waiting for the key that encrypts them), and the test's first page waited for
+      // them 23 s of its 30. Then the data: page as before, so the tab the tests find is the same.
       const [first] = context.pages();
-      if (first) await first.goto('data:text/html,<title>ready</title>', { waitUntil: 'load' });
+      if (first) {
+        await first.goto('https://bts.test/ready', { waitUntil: 'load', timeout: BACKGROUND_MS });
+        await first.goto('data:text/html,<title>ready</title>', { waitUntil: 'load' });
+      }
       // Every page and frame the test opens notes when the browser shows or hides it (browser-state).
       await context.addInitScript(recordVisibility);
 
