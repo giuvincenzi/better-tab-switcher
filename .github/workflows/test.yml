@@ -473,6 +473,9 @@ jobs:
           PLAYWRIGHT_JSON_OUTPUT_NAME: e2e_results/group_${{ matrix.group }}.json
           PLAYWRIGHT_HTML_OUTPUT_DIR: e2e_results/report
           PLAYWRIGHT_HTML_OPEN: never
+          # Playwright's own account of its connection to each browser (three lines a test): when it loses one, the
+          # line '<ws disconnected> … code=… reason=…' or '<closing ws> …' says who closed it and why.
+          DEBUG: pw:browser
         # On Linux the tests that use the desktop (tests/e2e/system.ts) need one: a virtual screen (xvfb-run). Windows
         # and macOS machines have theirs.
         run: >-
@@ -555,7 +558,9 @@ jobs:
           error-context.md and the trace show what the browser did at each step, and the screenshot what was on the page
           when it failed. When something took too long: browser-targets.txt says when each frame and window appeared,
           browser-state.txt whether a frame was still loading and which process was busy, background-console.txt why the
-          extension did what it did. Every test keeps all of these, the passed ones too: a test that fails on one system
+          extension did what it did. When Playwright lost the browser, this group's job log (step run_group_tests) has
+          its line 'pw:browser <ws disconnected> … code=… reason=…', or '<closing ws> …' when Playwright closed it. Every
+          test keeps all of these, the passed ones too: a test that fails on one system
           or in one browser only, or once in a while, is compared with the same test passed. Fix the cause, not the wait.
           EOF
 
