@@ -452,6 +452,22 @@ jobs:
           mkdir -p e2e_results
           npx playwright test --list --reporter=json > e2e_results/all_tests.json
 
+      # The runner's own windows (its agent's console) stay in front of the browser on Windows (screen.png of a failed
+      # test: the console over the whole screen, the browser behind it, without the focus): the tests start from a clear
+      # desktop, as on a contributor's PC. The windows still shown (visible, not minimized) are written to the log.
+      - name: minimize_other_windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Add-Type -Namespace Win32 -Name Window -MemberDefinition '
+            [DllImport("user32.dll")] public static extern bool IsWindowVisible(System.IntPtr hWnd);
+            [DllImport("user32.dll")] public static extern bool IsIconic(System.IntPtr hWnd);'
+          (New-Object -ComObject Shell.Application).MinimizeAll()
+          Start-Sleep -Seconds 2
+          Get-Process | Where-Object { $_.MainWindowHandle -ne 0 -and [Win32.Window]::IsWindowVisible($_.MainWindowHandle) -and
+              -not [Win32.Window]::IsIconic($_.MainWindowHandle) } |
+            ForEach-Object { Write-Host "Window still shown: $($_.ProcessName): $($_.MainWindowTitle)" }
+
       - name: run_group_tests
         env:
           PLAYWRIGHT_JSON_OUTPUT_NAME: e2e_results/group_${{ matrix.group }}.json
