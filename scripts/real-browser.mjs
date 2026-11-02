@@ -42,17 +42,42 @@ export function browserExecutable(name) {
 const STEP_MS = 60_000;
 
 /**
+ * For the tests, Microsoft Edge without the services it runs by itself (quietEdge): with a fresh profile on GitHub's
+ * Windows machines it started the extension after 50 s and loaded the tests' first page 31 s late, its CPU idle (1.9 s
+ * in 85 s), waiting. The switches Playwright gives the browsers it starts that turn off background services (updates,
+ * network requests of its own, forced sign-in, its relaunch on Windows that loses DevTools), none that changes what a
+ * page or the extension does. Chromium, which has none of Microsoft's services, starts as a user's.
+ */
+const EDGE_QUIET_SWITCHES = [
+  '--disable-background-networking',
+  '--disable-component-update',
+  '--disable-default-apps',
+  '--disable-edgeupdater',
+  '--disable-updater-scheduler',
+  '--no-service-autorun',
+  '--edge-skip-compat-layer-relaunch',
+];
+const EDGE_QUIET_FEATURES = [
+  'OptimizationHints',
+  'NetworkTimeServiceQuerying',
+  'AimEnabled',
+  'msForceBrowserSignIn',
+  'msEdgeUpdateLaunchServicesPreferredVersion',
+];
+
+/**
  * Starts the browser with the extension in `extensionDir`, in a new profile, and attaches Playwright to it;
  * `installedBefore`, other extensions installed before it (the first ones get the keys they ask for). `language`
  * is Chrome's own language (--lang, on Linux the environment's too, on macOS its app's preferences: macLanguage),
  * `dark` the system's dark mode, `reducedMotion` the system's "reduce motion" on or off (the system's own setting when
  * not given); `windowSize` the first window's size; `siteRules`, for the tests, the test sites' server (tests/e2e/site.ts):
  * every *.test site goes to its port on this machine, down.test is a site that can't be found, and the server's
- * certificate (the hash of its public key) is the one trusted besides the usual ones. Returns its one browser context,
+ * certificate (the hash of its public key) is the one trusted besides the usual ones; `quietEdge`, for the tests,
+ * Microsoft Edge without the services it runs by itself (EDGE_QUIET_SWITCHES). Returns its one browser context,
  * close(), its process (pid) and sendToBrowser (browserPipe).
  * @param {{ browser?: string, extensionDir: string, installedBefore?: string[], headless?: boolean, language?: string,
  *   dark?: boolean, reducedMotion?: boolean, windowSize?: string,
- *   siteRules?: { port: number, certificate: string } }} options
+ *   siteRules?: { port: number, certificate: string }, quietEdge?: boolean }} options
  * @returns {Promise<{ context: import('@playwright/test').BrowserContext, close: () => Promise<void>,
  *   closed: Promise<string>, pid: number, sendToBrowser: (method: string, params?: object) => Promise<any>,
  *   output: () => string }>}
@@ -67,7 +92,15 @@ export async function launchRealBrowser({
   reducedMotion,
   windowSize,
   siteRules,
+  quietEdge = false,
 }) {
+  const disabledFeatures = [
+    // On Windows, Chrome pauses the pages of a window it thinks other windows cover. A machine with no screen of its own
+    // (GitHub's) makes it think so of a window in plain sight, whose pages then never load: as Playwright does, Chrome
+    // doesn't look for covered windows there.
+    ...(process.platform === 'win32' ? ['CalculateNativeWinOcclusion'] : []),
+    ...(quietEdge && browser === 'msedge' ? EDGE_QUIET_FEATURES : []),
+  ];
   const profile = mkdtempSync(join(tmpdir(), 'better-tab-switcher-'));
   const args = [
     // Port 0: the browser chooses a free one and writes it in DevToolsActivePort, in the profile. Playwright attaches
@@ -86,10 +119,9 @@ export async function launchRealBrowser({
     // On Linux, X11 even on a Wayland desktop (WSL's): the tests give its windows the focus and the keys with X11's
     // own input (tests/e2e/x11.py).
     ...(process.platform === 'linux' ? ['--ozone-platform=x11'] : []),
-    // On Windows, Chrome pauses the pages of a window it thinks other windows cover. A machine with no screen of its own
-    // (GitHub's) makes it think so of a window in plain sight, whose pages then never load: as Playwright does, Chrome
-    // doesn't look for covered windows there.
-    ...(process.platform === 'win32' ? ['--disable-features=CalculateNativeWinOcclusion'] : []),
+    // Chrome takes only the last --disable-features: one for all.
+    ...(disabledFeatures.length > 0 ? [`--disable-features=${disabledFeatures.join(',')}`] : []),
+    ...(quietEdge && browser === 'msedge' ? EDGE_QUIET_SWITCHES : []),
     ...(headless ? ['--headless'] : []),
     ...(language ? [`--lang=${language}`] : []),
     ...(dark ? ['--force-dark-mode'] : []),

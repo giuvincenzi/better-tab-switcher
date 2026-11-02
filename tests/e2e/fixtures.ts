@@ -243,6 +243,7 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }, WorkerFixt
         reducedMotion: systemReducedMotion,
         windowSize: '1280,720',
         siteRules: testSites.rules,
+        quietEdge: true,
       });
       const { context } = real;
       // Microsoft Edge's bubble about developer mode would take the system's keys and focus (tests/e2e/edge-bubble.ts).
