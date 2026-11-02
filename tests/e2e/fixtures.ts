@@ -10,6 +10,7 @@ import {
 } from '@playwright/test';
 import { launchRealBrowser } from '../../scripts/real-browser.mjs';
 import { dismissEdgeDeveloperModeBubble } from './edge-bubble';
+import { screenPicture } from './system';
 
 /** The extension's test build (`wxt build --mode e2e`): the published one plus the hook that opens the switcher. */
 export const extensionDir = resolve('.output/chrome-mv3-e2e');
@@ -157,6 +158,26 @@ async function framesState(context: BrowserContext, testStarted: number): Promis
       ]);
       lines.push(`${frame === page.mainFrame() ? 'page' : '  frame'} ${frame.url()}: ${state}`);
     }
+  }
+  return lines;
+}
+
+/**
+ * For a failed test's report: the window of each page, as the browser places it on the screen (its id, state, place
+ * and size), asked of the browser itself (the extension's background may be stopped as the test ends).
+ */
+async function windowsState(context: BrowserContext): Promise<string[]> {
+  const lines = ["The pages' windows as the test ended:"];
+  for (const page of context.pages()) {
+    const where = await context
+      .newCDPSession(page)
+      .then((session) => session.send('Browser.getWindowForTarget'))
+      .then(
+        ({ windowId, bounds }) =>
+          `window ${windowId} ${bounds.windowState} at ${bounds.left},${bounds.top} ${bounds.width}x${bounds.height}`,
+      )
+      .catch((error: Error) => `unreadable: ${error.message.split('\n')[0]}`);
+    lines.push(`${page.url()}: ${where}`);
   }
   return lines;
 }
@@ -324,10 +345,20 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }>({
           [
             ...(disconnected ? [howItLeft] : []),
             ...(await framesState(context, testStarted)),
+            ...(await windowsState(context)),
             "The browser's processes, with the CPU time each used during the test:",
             ...cpuDuringTest(processesAtStart, await processes(browserSession)),
           ].join('\n'),
         );
+        // A failed test: the whole screen too, what covers a window or what took the focus (macOS and Windows).
+        if (testInfo.status !== testInfo.expectedStatus) {
+          const screen = screenPicture();
+          if (screen) {
+            const path = testInfo.outputPath('screen.png');
+            writeFileSync(path, screen);
+            await testInfo.attach('screen', { path, contentType: 'image/png' });
+          }
+        }
       }
       if (disconnected) {
         await real.close();
