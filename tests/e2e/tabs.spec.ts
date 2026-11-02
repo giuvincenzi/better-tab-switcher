@@ -8,6 +8,7 @@ import {
   mouseOn,
   named,
   openPages,
+  openTabs,
   openWindow,
   rowNames,
   rows,
@@ -24,6 +25,9 @@ function tabIdOf(worker: Worker, title: string): Promise<number> {
 
 const openTitles = (worker: Worker) =>
   worker.evaluate(async () => (await chrome.tabs.query({})).map((tab) => tab.title).sort());
+
+/** The tabs open for the list longer than the switcher: more than fit in it, so it scrolls. */
+const TABS = 30;
 
 test.describe('which tabs the switcher lists @tabs', () => {
   test("lists only the current window's tabs by default, and stays open when the other window changes or closes", async ({
@@ -190,26 +194,39 @@ test.describe('which tabs the switcher lists @tabs', () => {
     await expect.poll(() => activeTitle(serviceWorker)).toBe('gamma');
   });
 
-  test('lists 60 tabs, the selection scrolled into sight', async ({ context, serviceWorker }) => {
-    // Opening 60 pages takes most of a test's time on a slow machine (macOS on GitHub).
-    test.slow();
-    const names = Array.from({ length: 60 }, (_, i) => `tab${String(i + 1).padStart(2, '0')}`);
-    const pages = await openPages(context, names);
-    const page = pages[59] as Page;
-    // Going back: the least recently used tab, at the bottom of the list.
+  test('lists more tabs than fit, the selection scrolled into sight', async ({ context, serviceWorker }) => {
+    // The page the switcher opens in, and more tabs in the background, unloaded (as the performance tests open them):
+    // more loaded pages only kept the machine and Playwright busy (on GitHub's Windows machines Playwright lost the
+    // browser while it took a screenshot of each of 60 pages).
+    const [page] = (await openPages(context, ['current'])) as [Page];
+    await openTabs(serviceWorker, TABS - 1);
+    await page.bringToFront();
+    // Going back: the least recently used tab, the last row.
     await showSwitcher(serviceWorker, 'previous', 'icon');
-    await expect(rows(page)).toHaveCount(60);
-    await expect(selected(page)).toHaveAccessibleName(named('tab01'));
+    await expect(rows(page)).toHaveCount(TABS);
+    const last = (await rows(page).last().getAttribute('aria-label')) as string;
+    const first = (await rows(page).first().getAttribute('aria-label')) as string;
+    await expect(selected(page)).toHaveAccessibleName(last);
     const list = switcher(page).locator('[role="listbox"]');
     expect(await list.evaluate((l) => l.scrollHeight > l.clientHeight)).toBe(true);
     await expect(selected(page)).toBeInViewport();
     await expect(rows(page).first()).not.toBeInViewport();
+    // On past the last row, to the first.
     await page.keyboard.press('ArrowDown');
-    await expect(selected(page)).toHaveAccessibleName(named('tab60'));
+    await expect(selected(page)).toHaveAccessibleName(first);
     await expect(selected(page)).toBeInViewport();
     await page.keyboard.press('ArrowUp');
+    await expect(selected(page)).toHaveAccessibleName(last);
+    // Enter opens it: the tab used longest ago, as Chrome says, the current one apart (the switcher lists it first);
+    // unloaded, it reloads, its title coming back after.
+    const leastUsed = await serviceWorker.evaluate(
+      async () =>
+        (await chrome.tabs.query({ currentWindow: true, active: false })).sort(
+          (a, b) => (a.lastAccessed ?? 0) - (b.lastAccessed ?? 0),
+        )[0]?.title,
+    );
     await page.keyboard.press('Enter');
-    await expect.poll(() => activeTitle(serviceWorker)).toBe('tab01');
+    await expect.poll(() => activeTitle(serviceWorker)).toBe(leastUsed);
   });
 });
 

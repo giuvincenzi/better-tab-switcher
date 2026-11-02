@@ -231,3 +231,35 @@ export async function boxOf(locator: Locator): Promise<{ x: number; y: number; w
     .not.toBeNull();
   return box as unknown as { x: number; y: number; width: number; height: number };
 }
+
+/**
+ * `count` more tabs of the test site, in the background and unloaded: they take no memory, so the switcher is measured
+ * with the tabs open, not while the machine loads pages (the page it opens in would answer late). Chrome unloads no tab
+ * still loading: a tab Chrome didn't unload at once is unloaded once it has loaded. One that never loads fails the
+ * test, named, instead of the test running out of time.
+ */
+export async function openTabs(worker: Worker, count: number) {
+  const ids = await worker.evaluate(async (count) => {
+    const ids: number[] = [];
+    for (let i = 1; i <= count; i++) {
+      const tab = await chrome.tabs.create({ url: `https://bts.test/tab-${i}`, active: false });
+      ids.push(tab.id as number);
+      // Refused while the tab is loading: done below, once it has loaded.
+      await chrome.tabs.discard(tab.id as number).catch(() => undefined);
+    }
+    return ids;
+  }, count);
+  const stillLoading = () =>
+    worker.evaluate(
+      async (ids) =>
+        (await chrome.tabs.query({ status: 'loading' }))
+          .filter((tab) => ids.includes(tab.id as number))
+          .map((tab) => tab.url),
+      ids,
+    );
+  await expect.poll(stillLoading, { message: 'tabs that never finished loading', timeout: 20_000 }).toEqual([]);
+  await worker.evaluate(async (ids) => {
+    for (const tab of await chrome.tabs.query({ active: false, discarded: false }))
+      if (ids.includes(tab.id as number)) await chrome.tabs.discard(tab.id as number).catch(() => undefined);
+  }, ids);
+}

@@ -44,6 +44,8 @@
   the workflow with `paths`: a workflow that doesn't start leaves its required check pending and blocks the merge.
 - `site_test` builds the whole site and checks the README (`docs.md`); `build_extension` checks `third-party.json`
   against the build.
+- On Windows the runner's own windows (its agent's console) stay in front of the browser and keep the focus, unlike on
+  a user's PC: `minimize_other_windows` minimizes them before the tests and logs the ones still shown.
 - **Every end-to-end test on GitHub keeps what helps understand why it failed**, the passed ones too (to compare): its
   screenshot, its trace with the browser's pages (snapshots, network, consoles), the background's console and the
   browser's state (its frames and how far each loaded, the CPU each process used). The fixture records the trace
