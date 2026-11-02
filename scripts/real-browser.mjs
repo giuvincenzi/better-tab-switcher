@@ -73,11 +73,12 @@ const EDGE_QUIET_FEATURES = [
  * not given); `windowSize` the first window's size; `siteRules`, for the tests, the test sites' server (tests/e2e/site.ts):
  * every *.test site goes to its port on this machine, down.test is a site that can't be found, and the server's
  * certificate (the hash of its public key) is the one trusted besides the usual ones; `quietEdge`, for the tests,
- * Microsoft Edge without the services it runs by itself (EDGE_QUIET_SWITCHES). Returns its one browser context,
+ * Microsoft Edge without the services it runs by itself (EDGE_QUIET_SWITCHES); `netLog`, a file the browser writes
+ * its NetLog in (every request, and what each waited for), whole once it is closed. Returns its one browser context,
  * close(), its process (pid) and sendToBrowser (browserPipe).
  * @param {{ browser?: string, extensionDir: string, installedBefore?: string[], headless?: boolean, language?: string,
  *   dark?: boolean, reducedMotion?: boolean, windowSize?: string,
- *   siteRules?: { port: number, certificate: string }, quietEdge?: boolean }} options
+ *   siteRules?: { port: number, certificate: string }, quietEdge?: boolean, netLog?: string }} options
  * @returns {Promise<{ context: import('@playwright/test').BrowserContext, close: () => Promise<void>,
  *   closed: Promise<string>, pid: number, sendToBrowser: (method: string, params?: object) => Promise<any>,
  *   output: () => string }>}
@@ -93,6 +94,7 @@ export async function launchRealBrowser({
   windowSize,
   siteRules,
   quietEdge = false,
+  netLog,
 }) {
   const disabledFeatures = [
     // On Windows, Chrome pauses the pages of a window it thinks other windows cover. A machine with no screen of its own
@@ -122,6 +124,7 @@ export async function launchRealBrowser({
     // Chrome takes only the last --disable-features: one for all.
     ...(disabledFeatures.length > 0 ? [`--disable-features=${disabledFeatures.join(',')}`] : []),
     ...(quietEdge && browser === 'msedge' ? EDGE_QUIET_SWITCHES : []),
+    ...(netLog ? [`--log-net-log=${netLog}`, '--net-log-capture-mode=Default'] : []),
     ...(headless ? ['--headless'] : []),
     ...(language ? [`--lang=${language}`] : []),
     ...(dark ? ['--force-dark-mode'] : []),

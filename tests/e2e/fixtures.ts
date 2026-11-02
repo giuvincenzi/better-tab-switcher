@@ -1,4 +1,4 @@
-import { writeFileSync } from 'node:fs';
+import { existsSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
   type BrowserContext,
@@ -233,6 +233,17 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }, WorkerFixt
     ) => {
       // The sites of the test before are forgotten: bts.test alone, until this test serves its own.
       testSites.reset();
+      // On GitHub, Microsoft Edge writes its NetLog (Chrome's own account of every request: names looked up,
+      // connections, certificates, checks, and how long each waited), kept for a failed test: a fresh Edge on Windows
+      // loaded a test's first page 31 s late, its CPU idle.
+      const netLog = process.env.CI && browser === 'msedge' ? testInfo.outputPath('netlog.json') : undefined;
+      /** Once the browser is closed (its NetLog is whole then): kept for a failed test, else removed. */
+      const keepNetLog = async () => {
+        if (!netLog || !existsSync(netLog)) return;
+        if (testInfo.status !== testInfo.expectedStatus)
+          await testInfo.attach('netlog', { path: netLog, contentType: 'application/json' });
+        else rmSync(netLog);
+      };
       const real = await launchRealBrowser({
         browser,
         extensionDir,
@@ -244,6 +255,7 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }, WorkerFixt
         windowSize: '1280,720',
         siteRules: testSites.rules,
         quietEdge: true,
+        netLog,
       });
       const { context } = real;
       // Microsoft Edge's bubble about developer mode would take the system's keys and focus (tests/e2e/edge-bubble.ts).
@@ -397,6 +409,7 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }, WorkerFixt
       }
       if (disconnected) {
         await real.close();
+        await keepNetLog();
         throw new Error(
           `The browser left during the test, so its trace can't be saved: ${howItLeft} (attached: browser-output, browser-state).`,
         );
@@ -417,6 +430,7 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }, WorkerFixt
           messages.push({ from: 'background', text: `uncaught error in the background: ${error}` });
       }
       await real.close();
+      await keepNetLog();
       const unexpected = messages
         .filter(({ from }) => from === 'background' || (extension !== '' && from.startsWith(extension)))
         .map(({ text }) => text)

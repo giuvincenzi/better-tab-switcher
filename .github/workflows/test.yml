@@ -539,6 +539,9 @@ jobs:
                                  browser left during the test, its first line says when, and how its process ended:
                                  then there is no trace.zip (Playwright can't save the trace of a browser that's gone).
               browser-output.txt what the browser itself wrote (its errors, a crash) from its start.
+              netlog.json        Microsoft Edge only, a failed test only: the browser's NetLog, every request with the
+                                 names it looked up, its connections, certificates and checks, and how long each
+                                 waited. Open it in https://netlog-viewer.appspot.com (it stays in the browser).
               background-console.txt
                                  when the extension's background wrote in its console: what it wrote, in order (for
                                  example why the switcher couldn't show in a page and opened in its own window). The
