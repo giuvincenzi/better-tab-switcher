@@ -202,18 +202,16 @@ test.describe('a page that hangs @switching', () => {
   test('gets the switcher in its own window, never shows one late, and the shortcut keeps working in other tabs', async ({
     context,
     serviceWorker,
+    site,
   }) => {
     const [, beta] = (await openPages(context, ['alpha', 'beta'])) as [Page, Page];
     // A page with a script that, once started, runs for 12 seconds: the page answers nothing meanwhile, long past the
     // time the background waits for it.
-    await context.route('https://hang.test/**', (route) =>
-      route.fulfill({
-        contentType: 'text/html',
-        body: `<title>hang</title><script>
+    site.serve('hang.test', () => ({
+      body: `<title>hang</title><script>
           window.hang = () => setTimeout(() => { const end = Date.now() + 12000; while (Date.now() < end) {} });
         </script>`,
-      }),
-    );
+    }));
     const hanging = await context.newPage();
     await hanging.goto('https://hang.test/');
     await hanging.bringToFront();

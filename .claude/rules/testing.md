@@ -15,6 +15,10 @@
 - `tests/e2e`: Playwright on the real browser (`scripts/real-browser.mjs`), Chromium or Microsoft Edge
   (`make e2e browser=msedge`), with the extension's e2e build, a fresh profile, in English. Nothing is emulated: no fake
   focus, color scheme or motion; the system's dark mode or reduced motion is a launch option, only where a test needs it.
+- The test sites (`bts.test` and the pages a test makes, `*.test`) are served over HTTPS by the tests' own server on
+  the machine (`tests/e2e/site.ts`, its certificate made with `openssl` before the tests), which the browser reaches
+  through its host rules and whose certificate alone it trusts besides the usual ones. Never Playwright's request
+  interception (`route`): it holds every request of every page, the extension's own files too.
 - The tests that use the desktop (real keys, mouse, focus, another program: `tests/e2e/system.ts`) act only on the
   tested browser or on a window the test opened itself. On Linux they run on a virtual screen (`xvfb-run`), on Windows
   and macOS on the PC's own.

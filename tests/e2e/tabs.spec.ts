@@ -102,6 +102,7 @@ test.describe('which tabs the switcher lists @tabs', () => {
   test('names a tab still loading its first page by the address it is loading, and asks for no icon of nothing', async ({
     context,
     serviceWorker,
+    site,
   }) => {
     const [, current] = await openPages(context, ['alpha', 'beta']);
     const page = current as Page;
@@ -110,9 +111,9 @@ test.describe('which tabs the switcher lists @tabs', () => {
     const answered = new Promise<void>((resolve) => {
       answer = resolve;
     });
-    await context.route('https://slow.test/**', async (route) => {
+    site.serve('slow.test', async () => {
       await answered;
-      await route.fulfill({ contentType: 'text/html', body: '<title>slow</title>' }).catch(() => {});
+      return { body: '<title>slow</title>' };
     });
     const slow = await serviceWorker.evaluate(
       async () => (await chrome.tabs.create({ url: 'https://slow.test/page', active: false })).id as number,
@@ -393,8 +394,8 @@ test.describe("a site's popup window @tabs", () => {
     const home = await serviceWorker.evaluate(async () => (await chrome.tabs.query({ title: 'alpha' }))[0]?.windowId);
     await serviceWorker.evaluate((id) => chrome.windows.update(id as number, { focused: true }), home);
     await expect.poll(() => serviceWorker.evaluate(async () => (await chrome.windows.getLastFocused()).id)).toBe(home);
-    // An app's window: opened by the browser, not by a tab (no opener). Blank first, then the site: Playwright serves
-    // the site only to the pages it already knows.
+    // An app's window: opened by the browser, not by a tab (no opener). Blank first, then the site: the test holds its
+    // page from the start.
     const opened = context.waitForEvent('page');
     await serviceWorker.evaluate(() => chrome.windows.create({ type: 'popup', url: 'about:blank', focused: true }));
     const app = await opened;
@@ -612,8 +613,8 @@ async function openWindowTab(page: Page, worker: Worker, title: string): Promise
     async (t) => (await chrome.tabs.query({ title: t }))[0]?.windowId as number,
     await page.title(),
   );
-  // A blank tab first, then the site: Playwright serves the site only to the pages it already knows. About:blank, not
-  // the New Tab page Microsoft Edge prepares in advance (openWindow).
+  // A blank tab first, then the site: the test holds its page from the start. About:blank, not the New Tab page
+  // Microsoft Edge prepares in advance (openWindow).
   const opened = context.waitForEvent('page');
   await worker.evaluate((id) => chrome.tabs.create({ windowId: id, active: false, url: 'about:blank' }), windowId);
   await (await opened).goto(`https://bts.test/${title}`);

@@ -10,6 +10,7 @@ import {
 } from '@playwright/test';
 import { launchRealBrowser } from '../../scripts/real-browser.mjs';
 import { dismissEdgeDeveloperModeBubble } from './edge-bubble';
+import { type SiteAnswer, startTestSites, type TestSites } from './site';
 import { screenPicture } from './system';
 
 /** The extension's test build (`wxt build --mode e2e`): the published one plus the hook that opens the switcher. */
@@ -40,6 +41,18 @@ interface ExtensionFixtures {
   context: BrowserContext;
   serviceWorker: Worker;
   extensionId: string;
+  /** The test sites (tests/e2e/site.ts): a test serves a page of its own on a *.test host for its duration. */
+  site: TestSite;
+}
+
+/** What a test does with the test sites: serve a page of its own on a *.test host, for its duration. */
+export interface TestSite {
+  serve: (host: string, answer: SiteAnswer) => void;
+}
+
+interface WorkerFixtures {
+  /** The test sites' server, one for each of Playwright's workers (tests/e2e/site.ts). */
+  testSites: TestSites;
 }
 
 /**
@@ -193,7 +206,19 @@ async function waitFor<T>(found: () => Promise<T | undefined>, limitMs: number, 
   }
 }
 
-export const test = base.extend<ExtensionFixtures & { ours: Worker }>({
+export const test = base.extend<ExtensionFixtures & { ours: Worker }, WorkerFixtures>({
+  testSites: [
+    // biome-ignore lint/correctness/noEmptyPattern: Playwright reads what a fixture needs from this pattern: nothing here.
+    async ({}, use) => {
+      const sites = await startTestSites();
+      await use(sites);
+      await sites.close();
+    },
+    { scope: 'worker' },
+  ],
+  site: async ({ testSites }, use) => {
+    await use({ serve: testSites.serve });
+  },
   chromeLanguage: ['en-US', { option: true }],
   systemDark: [false, { option: true }],
   systemReducedMotion: [false, { option: true }],
@@ -202,10 +227,12 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }>({
   installedBefore: [[], { option: true }],
   context: [
     async (
-      { chromeLanguage, systemDark, systemReducedMotion, expectedConsole, headed, installedBefore },
+      { chromeLanguage, systemDark, systemReducedMotion, expectedConsole, headed, installedBefore, testSites },
       use,
       testInfo,
     ) => {
+      // The sites of the test before are forgotten: bts.test alone, until this test serves its own.
+      testSites.reset();
       const real = await launchRealBrowser({
         browser,
         extensionDir,
@@ -215,6 +242,7 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }>({
         dark: systemDark,
         reducedMotion: systemReducedMotion,
         windowSize: '1280,720',
+        siteRules: testSites.rules,
       });
       const { context } = real;
       // Microsoft Edge's bubble about developer mode would take the system's keys and focus (tests/e2e/edge-bubble.ts).

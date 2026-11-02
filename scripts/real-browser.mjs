@@ -46,10 +46,13 @@ const STEP_MS = 60_000;
  * `installedBefore`, other extensions installed before it (the first ones get the keys they ask for). `language`
  * is Chrome's own language (--lang, on Linux the environment's too, on macOS its app's preferences: macLanguage),
  * `dark` the system's dark mode, `reducedMotion` the system's "reduce motion" on or off (the system's own setting when
- * not given); `windowSize` the first window's size. Returns its one browser context, close(), its process (pid) and sendToBrowser (browserPipe).
+ * not given); `windowSize` the first window's size; `siteRules`, for the tests, the test sites' server (tests/e2e/site.ts):
+ * every *.test site goes to its port on this machine, down.test is a site that can't be found, and the server's
+ * certificate (the hash of its public key) is the one trusted besides the usual ones. Returns its one browser context,
+ * close(), its process (pid) and sendToBrowser (browserPipe).
  * @param {{ browser?: string, extensionDir: string, installedBefore?: string[], headless?: boolean, language?: string,
- *   dark?: boolean,
- *   reducedMotion?: boolean, windowSize?: string }} options
+ *   dark?: boolean, reducedMotion?: boolean, windowSize?: string,
+ *   siteRules?: { port: number, certificate: string } }} options
  * @returns {Promise<{ context: import('@playwright/test').BrowserContext, close: () => Promise<void>,
  *   closed: Promise<string>, pid: number, sendToBrowser: (method: string, params?: object) => Promise<any>,
  *   output: () => string }>}
@@ -63,6 +66,7 @@ export async function launchRealBrowser({
   dark = false,
   reducedMotion,
   windowSize,
+  siteRules,
 }) {
   const profile = mkdtempSync(join(tmpdir(), 'better-tab-switcher-'));
   const args = [
@@ -94,6 +98,13 @@ export async function launchRealBrowser({
       ? []
       : [reducedMotion ? '--force-prefers-reduced-motion' : '--force-prefers-no-reduced-motion']),
     ...(windowSize ? [`--window-size=${windowSize}`] : []),
+    // The first rule that matches a host applies: down.test can't be found, as a site that is down.
+    ...(siteRules
+      ? [
+          `--host-resolver-rules=MAP down.test ~NOTFOUND, MAP *.test 127.0.0.1:${siteRules.port}`,
+          `--ignore-certificate-errors-spki-list=${siteRules.certificate}`,
+        ]
+      : []),
     `--disable-extensions-except=${[...installedBefore, extensionDir].join(',')}`,
     `--load-extension=${[...installedBefore, extensionDir].join(',')}`,
     'about:blank',

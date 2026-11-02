@@ -39,11 +39,10 @@ test.describe('the focus leaving the switcher in a page @focus', () => {
   test('keeps the switcher open when the page takes the focus as it loads, the keys still moving it', async ({
     context,
     serviceWorker,
+    site,
   }) => {
     await openPages(context, ['alpha', 'beta']);
-    await context.route('https://form.test/**', (route) =>
-      route.fulfill({ contentType: 'text/html', body: '<title>form</title><input aria-label="Search the site">' }),
-    );
+    site.serve('form.test', () => ({ body: '<title>form</title><input aria-label="Search the site">' }));
     const page = await context.newPage();
     await page.goto('https://form.test/');
     await page.bringToFront();

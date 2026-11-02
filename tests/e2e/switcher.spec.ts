@@ -1,5 +1,5 @@
 import type { BrowserContext, Locator, Page, Worker } from '@playwright/test';
-import { expect, test } from './fixtures';
+import { expect, type TestSite, test } from './fixtures';
 import {
   activeTitle,
   boxOf,
@@ -173,14 +173,11 @@ const PAGE = 'rgb(0, 0, 255)';
  * A page of its own color, saying it supports dark or not (a color-scheme meta, as Google, GitHub and Microsoft's
  * pages do), shown as the current tab after alpha.
  */
-async function coloredPage(context: BrowserContext, saysDark: boolean): Promise<Page> {
+async function coloredPage(context: BrowserContext, site: TestSite, saysDark: boolean): Promise<Page> {
   await openPages(context, ['alpha']);
-  await context.route('https://colors.test/**', (route) =>
-    route.fulfill({
-      contentType: 'text/html',
-      body: `<title>colors</title>${saysDark ? '<meta name="color-scheme" content="light dark">' : ''}<body style="margin:0;background:${PAGE}"></body>`,
-    }),
-  );
+  site.serve('colors.test', () => ({
+    body: `<title>colors</title>${saysDark ? '<meta name="color-scheme" content="light dark">' : ''}<body style="margin:0;background:${PAGE}"></body>`,
+  }));
   const page = await context.newPage();
   await page.goto('https://colors.test/');
   await page.bringToFront();
@@ -200,8 +197,9 @@ for (const systemDark of [false, true]) {
       test(`gives the switcher the device's theme, the page around it in sight, on a page that ${saysDark ? 'says it supports dark' : 'says nothing of its colors'}`, async ({
         context,
         serviceWorker,
+        site,
       }) => {
-        const page = await coloredPage(context, saysDark);
+        const page = await coloredPage(context, site, saysDark);
         await showSwitcher(serviceWorker);
         await expect(rows(page)).toHaveCount(2);
         await expect
@@ -251,9 +249,10 @@ for (const systemDark of [false, true]) {
     test(`shows the switcher in the ${chosen} theme when it is chosen in the settings, the page around it in sight`, async ({
       context,
       serviceWorker,
+      site,
     }) => {
       await useSettings(serviceWorker, { theme: chosen });
-      const page = await coloredPage(context, true);
+      const page = await coloredPage(context, site, true);
       await showSwitcher(serviceWorker);
       await expect(rows(page)).toHaveCount(2);
       await expect
@@ -464,15 +463,13 @@ test.describe('pages that isolate themselves @switcher', () => {
   test('shows in a page that takes only frames allowed to it (Cross-Origin-Embedder-Policy: require-corp)', async ({
     context,
     serviceWorker,
+    site,
   }) => {
     await openPages(context, ['alpha']);
-    await context.route('https://isolated.test/**', (route) =>
-      route.fulfill({
-        contentType: 'text/html',
-        headers: { 'Cross-Origin-Embedder-Policy': 'require-corp', 'Cross-Origin-Opener-Policy': 'same-origin' },
-        body: '<title>isolated</title><h1>isolated</h1>',
-      }),
-    );
+    site.serve('isolated.test', () => ({
+      headers: { 'Cross-Origin-Embedder-Policy': 'require-corp', 'Cross-Origin-Opener-Policy': 'same-origin' },
+      body: '<title>isolated</title><h1>isolated</h1>',
+    }));
     const page = await context.newPage();
     await page.goto('https://isolated.test/');
     expect(await page.evaluate(() => crossOriginIsolated)).toBe(true);
@@ -509,16 +506,17 @@ test.describe('what the page sees of the switcher @switcher', () => {
     expect(await find('mybank')).toBe(false);
   });
 
-  test('opens in its own window on a page that keeps scripts out of its frames', async ({ context, serviceWorker }) => {
+  test('opens in its own window on a page that keeps scripts out of its frames', async ({
+    context,
+    serviceWorker,
+    site,
+  }) => {
     await openPages(context, ['alpha', 'beta']);
     // The rule raw.githubusercontent.com sends: the page's frames run no script, the switcher's frame neither.
-    await context.route('https://sandboxed.test/**', (route) =>
-      route.fulfill({
-        contentType: 'text/html',
-        headers: { 'content-security-policy': "default-src 'none'; sandbox" },
-        body: '<title>sandboxed</title><h1>sandboxed</h1>',
-      }),
-    );
+    site.serve('sandboxed.test', () => ({
+      headers: { 'content-security-policy': "default-src 'none'; sandbox" },
+      body: '<title>sandboxed</title><h1>sandboxed</h1>',
+    }));
     const page = await context.newPage();
     await page.goto('https://sandboxed.test/file');
     await page.bringToFront();
@@ -573,11 +571,10 @@ test.describe('what the page sees of the switcher @switcher', () => {
 });
 
 /**
- * A web page the browser shows its own error page in (the site can't be reached): no extension's script goes there,
- * though its address is the site's. As the current tab.
+ * A web page the browser shows its own error page in (the site can't be found: down.test, scripts/real-browser.mjs):
+ * no extension's script goes there, though its address is the site's. As the current tab.
  */
 async function errorPage(context: BrowserContext): Promise<Page> {
-  await context.route('https://down.test/**', (route) => route.abort());
   const page = await context.newPage();
   await page.goto('https://down.test/').catch(() => {});
   await expect.poll(() => page.url()).toMatch(/^chrome-error:/);
@@ -665,8 +662,8 @@ test.describe('tabs of other windows @switcher', () => {
   test('opens a tab of another window', async ({ context, serviceWorker }) => {
     await useSettings(serviceWorker, { scope: 'all' });
     await openPages(context, ['alpha', 'beta']);
-    // A new window, the last focused one, with a blank tab; then its page goes to the site (Playwright serves the
-    // site's pages it knows). About:blank, not the New Tab page Microsoft Edge prepares in advance (openWindow).
+    // A new window, the last focused one, with a blank tab; then its page goes to the site, the test holding it from
+    // the start. About:blank, not the New Tab page Microsoft Edge prepares in advance (openWindow).
     const opened = context.waitForEvent('page');
     await serviceWorker.evaluate(() => chrome.windows.create({ url: 'about:blank' }));
     const delta = await opened;

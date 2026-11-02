@@ -4,14 +4,10 @@ import type { Settings } from '../../lib/settings/settings';
 import { contextOf, expect } from './fixtures';
 
 /**
- * Pages of a site that exists only in the tests (Playwright serves them, nothing goes to the network), as the only
+ * Pages of a site that exists only in the tests (bts.test, served on this machine: tests/e2e/site.ts), as the only
  * tabs: the blank tab Chromium starts with is closed.
  */
 export async function openPages(context: BrowserContext, titles: string[]): Promise<Page[]> {
-  await context.route('https://bts.test/**', (route) => {
-    const name = new URL(route.request().url()).pathname.slice(1);
-    return route.fulfill({ contentType: 'text/html', body: `<title>${name}</title><h1>${name}</h1>` });
-  });
   const blank = context.pages();
   const pages: Page[] = [];
   for (const title of titles) {
