@@ -217,16 +217,20 @@ test.describe('which tabs the switcher lists @tabs', () => {
     await expect(selected(page)).toBeInViewport();
     await page.keyboard.press('ArrowUp');
     await expect(selected(page)).toHaveAccessibleName(last);
-    // Enter opens it: the tab used longest ago, as Chrome says, the current one apart (the switcher lists it first);
-    // unloaded, it reloads, its title coming back after.
+    // Enter opens it: the tab used longest ago, as Chrome says, the current one apart (the switcher lists it first).
+    // Known by its id: unloaded, its title can be its address until it has loaded again (macOS Microsoft Edge).
     const leastUsed = await serviceWorker.evaluate(
       async () =>
         (await chrome.tabs.query({ currentWindow: true, active: false })).sort(
           (a, b) => (a.lastAccessed ?? 0) - (b.lastAccessed ?? 0),
-        )[0]?.title,
+        )[0]?.id,
     );
     await page.keyboard.press('Enter');
-    await expect.poll(() => activeTitle(serviceWorker)).toBe(leastUsed);
+    await expect
+      .poll(() =>
+        serviceWorker.evaluate(async () => (await chrome.tabs.query({ active: true, currentWindow: true }))[0]?.id),
+      )
+      .toBe(leastUsed);
   });
 });
 
