@@ -222,6 +222,8 @@ export async function clickToolbarButton(context: BrowserContext, extensionId: s
   };
   const tab = targetInfos.find((target) => target.url === pageUrl);
   if (!tab) throw new Error(`No tab shows ${pageUrl}.`);
+  // When the click was sent, against when Chrome gave it to the extension (background-console).
+  console.info(`(test) Toolbar button clicked at ${Date.now()}`);
   await send('Extensions.triggerAction', { id: extensionId, targetId: tab.targetId });
 }
 

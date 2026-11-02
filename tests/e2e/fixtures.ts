@@ -84,7 +84,7 @@ const BACKGROUND_MS = 120_000;
  * The time to start the browser with the extension, and to close it, apart from the test's own: the steps' limits fit
  * in it, so a browser slow to start is reported by its step, and the test keeps its 30 seconds for what it checks.
  */
-const BROWSER_MS = 180_000;
+const BROWSER_MS = 300_000;
 
 /**
  * Whether a test keeps what helps understand why it failed (its trace, the browser's state, the background's console):
@@ -254,6 +254,11 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }>({
             Object.assign(globalThis, { uncaughtErrors: errors });
             addEventListener('error', (event) => errors.push(event.message));
             addEventListener('unhandledrejection', (event) => errors.push(String(event.reason)));
+            // When Chrome gives the extension a click of its toolbar button, in background-console (a click once took
+            // 5 s to bring the switcher, on macOS Microsoft Edge: Chrome's delay or the extension's).
+            chrome.action.onClicked.addListener(() =>
+              console.info(`(test) Chrome gave the toolbar button's click at ${Date.now()}`),
+            );
           })
           .catch(() => {});
       };
@@ -343,6 +348,7 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }>({
           testInfo,
           'browser-state',
           [
+            `The test started at ${testStarted} (ms since 1970; the times below are ms after it).`,
             ...(disconnected ? [howItLeft] : []),
             ...(await framesState(context, testStarted)),
             ...(await windowsState(context)),

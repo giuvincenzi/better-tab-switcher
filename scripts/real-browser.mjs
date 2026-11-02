@@ -35,9 +35,11 @@ export function browserExecutable(name) {
 /**
  * How long each step of starting the browser may take: opening its DevTools port, then Playwright attaching to it. A
  * step that hangs fails saying which, with what the browser wrote, inside the time the tests give the browser to start
- * (tests/e2e/fixtures.ts), never the test's own.
+ * (tests/e2e/fixtures.ts), never the test's own. Microsoft Edge on GitHub's Windows machines, with a fresh profile, once
+ * answered Playwright's first question only after 15 s (busy starting: nothing in its output for 14 s); as for its
+ * extensions' start (the user's choice), it is waited for longer: 60 s.
  */
-const STEP_MS = 15_000;
+const STEP_MS = 60_000;
 
 /**
  * Starts the browser with the extension in `extensionDir`, in a new profile, and attaches Playwright to it;
