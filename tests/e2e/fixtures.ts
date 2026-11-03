@@ -197,9 +197,9 @@ async function startChromeTrace(pipe: BrowserPipe): Promise<(path?: string) => P
   });
   return async (path) => {
     const complete = new Promise<{ stream?: string }>((resolve) => {
-      const stop = pipe.on('Tracing.tracingComplete', (params: { stream?: string }) => {
+      const stop = pipe.on('Tracing.tracingComplete', (params) => {
         stop();
-        resolve(params);
+        resolve(params as { stream?: string });
       });
     });
     await pipe.send('Tracing.end');
@@ -226,7 +226,7 @@ async function startChromeTrace(pipe: BrowserPipe): Promise<(path?: string) => P
 /** DevTools on the browser's own pipe (scripts/real-browser.mjs, browserPipe): it stays when Playwright's goes. */
 interface BrowserPipe {
   send: (method: string, params?: object) => Promise<unknown>;
-  on: (method: string, listener: (params: never) => void) => () => void;
+  on: (method: string, listener: (params: unknown) => void) => () => void;
 }
 
 /**
