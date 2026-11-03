@@ -483,7 +483,10 @@ jobs:
             Start-Sleep -Seconds 2
           }
           "@
-          Start-Process pwsh -WindowStyle Hidden -ArgumentList '-NoProfile', '-Command', $loop -PassThru |
+          # From a file: on the command line the script's double quotes would end its argument.
+          $script = "$env:RUNNER_TEMP\record-connections.ps1"
+          Set-Content $script $loop
+          Start-Process pwsh -WindowStyle Hidden -ArgumentList '-NoProfile', '-File', $script -PassThru |
             ForEach-Object { $_.Id } | Set-Content "$env:RUNNER_TEMP\connections-pid.txt"
 
       - name: minimize_other_windows
