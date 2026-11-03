@@ -93,12 +93,14 @@ export function Switcher(props: SwitcherProps): JSX.Element {
       return title ? [{ id: tab.id, tab: { ...tab }, title }] : [];
     }),
   );
-  // The tabs shown, each the same object (so the same row) for as long as its tab is listed: a change of the tabs or of
+  // The tabs drawn, each the same object (so the same row) for as long as its tab is listed: a change of the tabs or of
   // the search updates what changed in the rows there are, and adds or removes only the rows of the tabs that come or
   // go. Rebuilt each time, every row was made again on every change (a title, a favicon), losing what it was doing.
-  const [shownTabs, setShownTabs] = createStore<ShownTab[]>([]);
-  createComputed(() => setShownTabs(reconcile(matched(), { key: 'id' })));
-  const shown = () => shownTabs;
+  // Only for drawing: the store follows `matched` once the change is done, and the switcher's own logic (the selection,
+  // the counts) reads `matched` itself, up to date at once.
+  const [drawnTabs, setDrawnTabs] = createStore<ShownTab[]>([]);
+  createComputed(() => setDrawnTabs(reconcile(matched(), { key: 'id' })));
+  const shown = matched;
   const [state, setState] = createSignal(
     start({
       count: shown().length,
@@ -339,7 +341,7 @@ export function Switcher(props: SwitcherProps): JSX.Element {
         <div class={styles.results}>
           <TabList
             layout={layout()}
-            tabs={shown()}
+            tabs={drawnTabs}
             selected={state().selected}
             focused={state().selected !== FIELD}
             compact={compact()}
