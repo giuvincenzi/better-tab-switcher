@@ -175,11 +175,8 @@ async function processStarts(processesNow: Map<string, number>, testStarted: num
  * and loads, kept in memory as they happen (the last ones only). Returns how to stop it: with a path, the trace is saved
  * there.
  */
-async function startChromeTrace(
-  session: CDPSession | undefined,
-): Promise<((path?: string) => Promise<boolean>) | undefined> {
-  if (!session) return undefined;
-  await session.send('Tracing.start', {
+async function startChromeTrace(pipe: BrowserPipe): Promise<(path?: string) => Promise<boolean>> {
+  await pipe.send('Tracing.start', {
     transferMode: 'ReturnAsStream',
     traceConfig: {
       recordMode: 'recordContinuously',
@@ -193,27 +190,43 @@ async function startChromeTrace(
         'ipc',
         'mojom',
         'ServiceWorker',
+        'devtools',
         'disabled-by-default-navigation',
       ],
     },
   });
   return async (path) => {
-    const complete = new Promise<{ stream?: string }>((resolve) => session.once('Tracing.tracingComplete', resolve));
-    await session.send('Tracing.end');
+    const complete = new Promise<{ stream?: string }>((resolve) => {
+      const stop = pipe.on('Tracing.tracingComplete', (params: { stream?: string }) => {
+        stop();
+        resolve(params);
+      });
+    });
+    await pipe.send('Tracing.end');
     const { stream } = await complete;
     if (!stream) return false;
     if (path) {
       const chunks: Buffer[] = [];
       for (;;) {
-        const { data, eof, base64Encoded } = await session.send('IO.read', { handle: stream });
+        const { data, eof, base64Encoded } = (await pipe.send('IO.read', { handle: stream })) as {
+          data: string;
+          eof: boolean;
+          base64Encoded?: boolean;
+        };
         chunks.push(Buffer.from(data, base64Encoded ? 'base64' : 'utf8'));
         if (eof) break;
       }
       writeFileSync(path, Buffer.concat(chunks));
     }
-    await session.send('IO.close', { handle: stream });
+    await pipe.send('IO.close', { handle: stream });
     return path !== undefined;
   };
+}
+
+/** DevTools on the browser's own pipe (scripts/real-browser.mjs, browserPipe): it stays when Playwright's goes. */
+interface BrowserPipe {
+  send: (method: string, params?: object) => Promise<unknown>;
+  on: (method: string, listener: (params: never) => void) => () => void;
 }
 
 /**
@@ -476,7 +489,7 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }, WorkerFixt
       const processesAtStart = await processes(browserSession);
       const stopChromeTrace =
         ((browser === 'chromium' && process.platform === 'win32') || process.platform === 'darwin') && process.env.CI
-          ? await startChromeTrace(browserSession).catch(() => undefined)
+          ? await startChromeTrace({ send: real.sendToBrowser, on: real.onBrowserEvent }).catch(() => undefined)
           : undefined;
       // The browser leaving during the test (its process gone, or Playwright's connection to it): Playwright then closes
       // the context, and the trace can't be saved any more. Noted with when, and how the process ended.
@@ -495,8 +508,9 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }, WorkerFixt
         ended === undefined ? 'was still running' : `had ended (${ended})`
       }.`;
 
-      if (stopChromeTrace && !disconnected) {
-        const failed = testInfo.status !== testInfo.expectedStatus;
+      // On the browser's pipe: kept when Playwright lost the browser too, what the browser did as it happened.
+      if (stopChromeTrace) {
+        const failed = disconnected || testInfo.status !== testInfo.expectedStatus;
         const path = testInfo.outputPath('chrome-trace.json');
         if (await stopChromeTrace(failed ? path : undefined).catch(() => false))
           await testInfo.attach('chrome-trace', { path, contentType: 'application/json' });
