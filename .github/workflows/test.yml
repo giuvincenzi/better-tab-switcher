@@ -440,6 +440,16 @@ jobs:
           if [ "$E2E_BROWSER" = chromium ]; then set -- --no-shell chromium; else set -- msedge; fi
           npx playwright install ${{ runner.os == 'Linux' && '--with-deps' || '' }} "$@"
 
+      # On Windows Chrome's sandboxed processes (its network service among them) must be able to read the browser's
+      # files, a permission Chrome's installer gives and Playwright's download doesn't: without it the browser writes
+      # "Sandbox cannot access executable … Access is denied" and its network service crashes as it starts: Chrome
+      # restarts it, and a page loading then is aborted (net::ERR_ABORTED). The same permission Chromium's own tests
+      # give (testing/scripts/common.py): ALL RESTRICTED APPLICATION PACKAGES may read.
+      - name: let_sandbox_read_chromium
+        if: runner.os == 'Windows' && matrix.browser == 'chromium'
+        shell: pwsh
+        run: icacls "$env:LOCALAPPDATA\ms-playwright" /grant '*S-1-15-2-2:(OI)(CI)(RX)' /q
+
       - name: get_builds
         uses: actions/download-artifact@v8
         with:
