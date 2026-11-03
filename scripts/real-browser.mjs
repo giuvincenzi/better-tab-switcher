@@ -253,7 +253,9 @@ export async function launchRealBrowser({
 export async function prepareProfile({ browser = 'chromium', siteRules, quietEdge = false }) {
   const real = await launchRealBrowser({ browser, siteRules, quietEdge, keepProfile: true });
   try {
-    const page = real.context.pages()[0] ?? (await real.context.newPage());
+    // A tab of its own: the first one can still be loading as the browser starts, and a navigation there can be
+    // aborted (net::ERR_ABORTED, seen on GitHub's Windows machines).
+    const page = await real.context.newPage();
     await page.goto('https://bts.test/ready', { waitUntil: 'load', timeout: STEP_MS });
   } finally {
     await real.close();
