@@ -159,12 +159,15 @@ test.describe('which tabs the switcher lists @tabs', () => {
     const page = current as Page;
     await showSwitcher(serviceWorker, 'next', 'icon');
     await expect.poll(() => rowNames(page)).toEqual([named('gamma'), named('beta'), named('alpha')]);
+    // The rows on screen now: a change of one tab updates its own row, and every row stays in the list as it was.
+    const before = await rows(page).elementHandles();
     await alpha?.evaluate(() => {
       document.title = 'alpha (2 new messages)';
     });
     await expect
       .poll(() => rowNames(page))
       .toEqual([named('gamma'), named('beta'), 'alpha (2 new messages), bts.test/alpha']);
+    for (const row of before) expect(await row.evaluate((element) => element.isConnected)).toBe(true);
   });
 
   test('leaves out the tabs closed or moved to another window while it is open, and lists the ones opened', async ({
