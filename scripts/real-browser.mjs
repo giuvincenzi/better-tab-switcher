@@ -1,11 +1,12 @@
 // The browser as a user runs it, for the end-to-end tests (tests/e2e/fixtures.ts) and make dev (scripts/dev.mjs): we
 // start it, then Playwright attaches to it with noDefaults, so it emulates nothing (no fake focus, no color scheme nor
 // reduced motion of its own): what the tests and the developer see is what users see.
-import { execFileSync, spawn, spawnSync } from 'node:child_process';
+import { execFile, execFileSync, spawn, spawnSync } from 'node:child_process';
 import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
+import { promisify } from 'node:util';
 import { chromium } from '@playwright/test';
 
 /**
@@ -195,10 +196,13 @@ export async function launchRealBrowser({
   while (!lines) {
     const ended = process_.exitCode !== null || process_.signalCode !== null;
     if (ended || Date.now() - started > STEP_MS) {
+      // Where a browser stuck before opening its port waits: on GitHub's macOS machines Chromium once wrote nothing for
+      // 60 s, its profile the same as in the tests before. macOS's own sample: each of its threads' calls.
+      const stuck = !ended && process.platform === 'darwin' ? await sampleProcess(process_.pid) : '';
       process_.kill();
       forgetLanguage?.();
       throw new Error(
-        `The browser ${ended ? 'stopped' : `didn't open its DevTools port within ${STEP_MS} ms`}:\n${output}`,
+        `The browser ${ended ? 'stopped' : `didn't open its DevTools port within ${STEP_MS} ms`}:\n${output}${stuck}`,
       );
     }
     await delay(50);
@@ -295,6 +299,25 @@ function macLanguage(browser, language) {
   const app = execFileSync('plutil', ['-extract', 'CFBundleIdentifier', 'raw', info], { encoding: 'utf8' }).trim();
   execFileSync('defaults', ['write', app, 'AppleLanguages', '-array', language]);
   return () => spawnSync('defaults', ['delete', app, 'AppleLanguages']);
+}
+
+/**
+ * macOS's sample of a process for 1 s: each of its threads' calls, the main thread's first (where it waits). Without
+ * blocking this process (the tests' sites are served from it). Its first lines, or why there is none.
+ * @param {number | undefined} pid
+ */
+async function sampleProcess(pid) {
+  if (!pid) return '';
+  const file = join(mkdtempSync(join(tmpdir(), 'sample-')), 'sample.txt');
+  try {
+    await promisify(execFile)('sample', [String(pid), '1', '-file', file], { timeout: 30_000 });
+    const lines = readFileSync(file, 'utf8').split('\n');
+    return `\nWhere its process was (sample, the first ${Math.min(lines.length, 200)} lines):\n${lines.slice(0, 200).join('\n')}`;
+  } catch (error) {
+    return `\nNo sample of its process: ${/** @type {Error} */ (error).message}`;
+  } finally {
+    rmSync(dirname(file), { recursive: true, force: true });
+  }
 }
 
 /**
