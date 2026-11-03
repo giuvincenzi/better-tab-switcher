@@ -256,7 +256,20 @@ export async function prepareProfile({ browser = 'chromium', siteRules, quietEdg
     // A tab of its own: the first one can still be loading as the browser starts, and a navigation there can be
     // aborted (net::ERR_ABORTED, seen on GitHub's Windows machines).
     const page = await real.context.newPage();
-    await page.goto('https://bts.test/ready', { waitUntil: 'load', timeout: STEP_MS });
+    // When the page doesn't load: what the tab did and which requests failed, with the browser's output.
+    /** @type {string[]} */
+    const seen = [];
+    page.on('framenavigated', (frame) => seen.push(`${Date.now()} navigated ${frame.url()}`));
+    page.on('requestfailed', (request) =>
+      seen.push(`${Date.now()} failed ${request.url()}: ${request.failure()?.errorText}`),
+    );
+    page.on('close', () => seen.push(`${Date.now()} the tab closed`));
+    real.context.on('page', (other) => seen.push(`${Date.now()} another tab opened: ${other.url()}`));
+    await page.goto('https://bts.test/ready', { waitUntil: 'load', timeout: STEP_MS }).catch((error) => {
+      throw new Error(
+        `${error.message}\nWhat the tab did:\n${seen.join('\n')}\nThe browser's output:\n${real.output()}`,
+      );
+    });
   } finally {
     await real.close();
   }
