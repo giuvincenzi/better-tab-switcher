@@ -610,7 +610,8 @@ jobs:
               netlog.json        Microsoft Edge only, a failed test only: the browser's NetLog, every request with the
                                  names it looked up, its connections, certificates and checks, and how long each
                                  waited. Open it in https://netlog-viewer.appspot.com (it stays in the browser).
-              chrome-trace.json  Chromium on Windows only, a failed test only: what Chromium itself did in the last
+              chrome-trace.json  Chromium on Windows and both browsers on macOS, a failed test only: what the browser
+                                 itself did in the last
                                  moments, its tasks on every thread, its navigations and loads. Open it in
                                  https://ui.perfetto.dev (it stays in the browser): what a page or frame that loaded
                                  late waited for.

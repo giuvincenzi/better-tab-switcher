@@ -169,9 +169,11 @@ async function processStarts(processesNow: Map<string, number>, testStarted: num
  * What Chromium itself did, for a failed test on GitHub's Windows machines (chrome-trace.json, opened in
  * https://ui.perfetto.dev): in Chromium there the switcher's frame and its own window, two navigations, both waited
  * 7 to 15 s for something in the browser and went on at the same moment, while the disk, the CPU and the connections
- * were idle and Microsoft Edge on the same machines never waited more than 0.25 s. The browser's tasks on every thread,
- * its navigations and loads, kept in memory as they happen (the last ones only). Returns how to stop it: with a path, the
- * trace is saved there.
+ * were idle and Microsoft Edge on the same machines never waited more than 0.25 s. On GitHub's macOS machines too, in
+ * both browsers: there, after the toolbar button's click, every answer of Microsoft Edge to the extension took seconds
+ * (the current tab 2.6 s, the tabs 1.4 s), with nothing on screen. The browser's tasks on every thread, its navigations
+ * and loads, kept in memory as they happen (the last ones only). Returns how to stop it: with a path, the trace is saved
+ * there.
  */
 async function startChromeTrace(
   session: CDPSession | undefined,
@@ -473,7 +475,7 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }, WorkerFixt
       await context.tracing.start({ screenshots: true, snapshots: true });
       const processesAtStart = await processes(browserSession);
       const stopChromeTrace =
-        browser === 'chromium' && process.platform === 'win32' && process.env.CI
+        ((browser === 'chromium' && process.platform === 'win32') || process.platform === 'darwin') && process.env.CI
           ? await startChromeTrace(browserSession).catch(() => undefined)
           : undefined;
       // The browser leaving during the test (its process gone, or Playwright's connection to it): Playwright then closes
