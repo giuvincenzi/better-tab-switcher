@@ -78,15 +78,14 @@ const EDGE_QUIET_FEATURES = [
  * its NetLog in (every request, and what each waited for), whole once it is closed; `profileFrom`, a profile the
  * browser has started in before (prepareProfile), copied as this one's start; `keepProfile`, the profile left in place
  * once closed (prepareProfile). Without `extensionDir`, no extension of ours. Returns its one browser context, close(),
- * its process (pid), sendToBrowser and onBrowserEvent (browserPipe) and its profile's folder.
+ * its process (pid), sendToBrowser (browserPipe) and its profile's folder.
  * @param {{ browser?: string, extensionDir?: string, installedBefore?: string[], headless?: boolean, language?: string,
  *   dark?: boolean, reducedMotion?: boolean, windowSize?: string,
  *   siteRules?: { port: number, certificate: string }, quietEdge?: boolean, netLog?: string, profileFrom?: string,
  *   keepProfile?: boolean }} options
  * @returns {Promise<{ context: import('@playwright/test').BrowserContext, close: () => Promise<void>,
  *   closed: Promise<string>, pid: number, sendToBrowser: (method: string, params?: object) => Promise<any>,
- *   onBrowserEvent: (method: string, listener: (params: any) => void) => () => void, output: () => string,
- *   profile: string }>}
+ *   output: () => string, profile: string }>}
  */
 export async function launchRealBrowser({
   browser = 'chromium',
@@ -180,7 +179,7 @@ export async function launchRealBrowser({
     // On macOS and Linux a process group of its own, so its pages' processes can be stopped with it (stopTree).
     detached: process.platform !== 'win32',
   });
-  const { send: sendToBrowser, on: onBrowserEvent } = browserPipe(process_);
+  const sendToBrowser = browserPipe(process_);
   let output = '';
   process_.stderr?.on('data', (data) => {
     output += data.toString();
@@ -248,7 +247,6 @@ export async function launchRealBrowser({
     closed: exited,
     pid: /** @type {number} */ (process_.pid),
     sendToBrowser,
-    onBrowserEvent,
     output: () => output,
     profile,
   };
@@ -353,9 +351,8 @@ async function sampleProcess(pid) {
 }
 
 /**
- * DevTools on the browser's pipe (--remote-debugging-pipe: messages in JSON, each ended by a null character): `send`
- * gives a command's result, or fails with its error; `on` hears the browser's events of one kind until the returned
- * function is called. The pipe stays when Playwright's connection to the browser (its DevTools port) is lost.
+ * Sends DevTools commands to the browser on its pipe (--remote-debugging-pipe: messages in JSON, each ended by a null
+ * character). Gives the command's result, or fails with its error.
  * @param {import('node:child_process').ChildProcess} browserProcess
  */
 function browserPipe(browserProcess) {
@@ -363,8 +360,6 @@ function browserPipe(browserProcess) {
   const fromBrowser = /** @type {import('node:stream').Readable} */ (browserProcess.stdio[4]);
   /** @type {Map<number, { resolve: (result: any) => void, reject: (error: Error) => void }>} */
   const waiting = new Map();
-  /** @type {Map<string, Set<(params: any) => void>>} */
-  const listeners = new Map();
   let received = '';
   let lastId = 0;
   fromBrowser.on('data', (data) => {
@@ -372,10 +367,6 @@ function browserPipe(browserProcess) {
     for (let end = received.indexOf('\0'); end >= 0; end = received.indexOf('\0')) {
       const message = JSON.parse(received.slice(0, end));
       received = received.slice(end + 1);
-      if (message.id === undefined) {
-        for (const listener of listeners.get(message.method) ?? []) listener(message.params);
-        continue;
-      }
       const waiter = waiting.get(message.id);
       if (!waiter) continue;
       waiting.delete(message.id);
@@ -387,20 +378,12 @@ function browserPipe(browserProcess) {
   fromBrowser.on('error', () => {});
   toBrowser.on('error', () => {});
   /** @type {(method: string, params?: object) => Promise<any>} */
-  const send = (method, params = {}) =>
+  return (method, params = {}) =>
     new Promise((resolve, reject) => {
       const id = ++lastId;
       waiting.set(id, { resolve, reject });
       toBrowser.write(`${JSON.stringify({ id, method, params })}\0`);
     });
-  /** @type {(method: string, listener: (params: any) => void) => () => void} */
-  const on = (method, listener) => {
-    const set = listeners.get(method) ?? new Set();
-    set.add(listener);
-    listeners.set(method, set);
-    return () => set.delete(listener);
-  };
-  return { send, on };
 }
 
 /**

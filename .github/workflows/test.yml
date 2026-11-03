@@ -610,11 +610,6 @@ jobs:
               netlog.json        Microsoft Edge only, a failed test only: the browser's NetLog, every request with the
                                  names it looked up, its connections, certificates and checks, and how long each
                                  waited. Open it in https://netlog-viewer.appspot.com (it stays in the browser).
-              chrome-trace.json  Chromium on Windows and both browsers on macOS, a failed test only: what the browser
-                                 itself did in the last
-                                 moments, its tasks on every thread, its navigations and loads. Open it in
-                                 https://ui.perfetto.dev (it stays in the browser): what a page or frame that loaded
-                                 late waited for.
               background-console.txt
                                  when the extension's background wrote in its console: what it wrote, in order (for
                                  example why the switcher couldn't show in a page and opened in its own window). The
