@@ -1,5 +1,6 @@
 import {
   type Accessor,
+  createComputed,
   createEffect,
   createMemo,
   createSignal,
@@ -9,6 +10,7 @@ import {
   onMount,
   Show,
 } from 'solid-js';
+import { createStore, reconcile } from 'solid-js/store';
 import { i18n } from '#i18n';
 import { languageInUse } from '../../lib/i18n/language';
 import { type Key, keyEvent } from '../../lib/keys/keys';
@@ -84,12 +86,19 @@ export function Switcher(props: SwitcherProps): JSX.Element {
   const [tabs, setTabs] = createSignal(props.snapshot.tabs);
   const resume = props.snapshot.resume;
   const [query, setQuery] = createSignal(resume?.query ?? '');
-  const shown = createMemo<ShownTab[]>(() =>
+  const matched = createMemo<ShownTab[]>(() =>
     tabs().flatMap((tab) => {
       const title = matchTab(query(), tab.title, tab.url);
-      return title ? [{ tab, title }] : [];
+      // A copy: the store below changes its own objects in place, never the snapshot's or the background's.
+      return title ? [{ id: tab.id, tab: { ...tab }, title }] : [];
     }),
   );
+  // The tabs shown, each the same object (so the same row) for as long as its tab is listed: a change of the tabs or of
+  // the search updates what changed in the rows there are, and adds or removes only the rows of the tabs that come or
+  // go. Rebuilt each time, every row was made again on every change (a title, a favicon), losing what it was doing.
+  const [shownTabs, setShownTabs] = createStore<ShownTab[]>([]);
+  createComputed(() => setShownTabs(reconcile(matched(), { key: 'id' })));
+  const shown = () => shownTabs;
   const [state, setState] = createSignal(
     start({
       count: shown().length,

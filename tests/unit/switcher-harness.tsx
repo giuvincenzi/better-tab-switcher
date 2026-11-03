@@ -48,6 +48,7 @@ export function openSwitcher(settings: Partial<Settings> = {}, more: Partial<Swi
   const [moves, setMoves] = createSignal<{ direction: Direction; count: number }>({ direction: 'next', count: 0 });
   const [pageKeys, setPageKeys] = createSignal<{ key: Key; count: number }>();
   const [previews, setPreviews] = createSignal<Record<number, string>>({});
+  const [listedTabs, setListedTabs] = createSignal<SwitcherTab[]>();
   const handlers = {
     onOpen: vi.fn(),
     onClose: vi.fn(),
@@ -66,7 +67,7 @@ export function openSwitcher(settings: Partial<Settings> = {}, more: Partial<Swi
         pageKeys={pageKeys}
         canSeeRelease={more.canSeeRelease ?? true}
         previews={previews}
-        listedTabs={() => undefined}
+        listedTabs={listedTabs}
         {...handlers}
       />
     ),
@@ -74,6 +75,8 @@ export function openSwitcher(settings: Partial<Settings> = {}, more: Partial<Swi
   );
   const press = (key: string, type: 'keydown' | 'keyup' = 'keydown') =>
     window.dispatchEvent(new KeyboardEvent(type, { key, bubbles: true }));
+  /** The tabs as they are now, as the background sends them when tabs change while the switcher is open. */
+  const listTabs = (now: SwitcherTab[]) => setListedTabs(now);
   const move = (direction: Direction) => setMoves((m) => ({ direction, count: m.count + 1 }));
   /** A key the page got and passed on to the switcher (its frame didn't have the focus). */
   const pageKey = (key: Partial<Key> & Pick<Key, 'type' | 'key'>) =>
@@ -81,7 +84,7 @@ export function openSwitcher(settings: Partial<Settings> = {}, more: Partial<Swi
       key: { altKey: false, ctrlKey: false, metaKey: false, isComposing: false, ...key },
       count: (last?.count ?? 0) + 1,
     }));
-  return { host, handlers, press, move, pageKey, setPreviews, snapshot };
+  return { host, handlers, press, move, pageKey, setPreviews, listTabs, snapshot };
 }
 
 export const options = (host: HTMLElement) => [...host.querySelectorAll<HTMLElement>('[role="option"]')];

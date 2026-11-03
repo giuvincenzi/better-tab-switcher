@@ -60,6 +60,31 @@ describe('Switcher frame', () => {
   });
 });
 
+describe('Switcher rows while the tabs change', () => {
+  it("keeps every row when a tab's title changes, the new title in its own row", () => {
+    const { host, listTabs } = openSwitcher();
+    const before = options(host);
+    listTabs(tabs.map((each) => (each.id === 3 ? { ...each, title: 'Q4 planning (edited)' } : { ...each })));
+    const after = options(host);
+    expect(after).toHaveLength(before.length);
+    for (const [index, row] of after.entries()) expect(row).toBe(before[index]);
+    expect(after[2]?.textContent).toContain('Q4 planning (edited)');
+  });
+
+  it('keeps the rows of the tabs still there when one closes, and when a search leaves out some', () => {
+    const { host, listTabs } = openSwitcher();
+    const [first, , third, fourth] = options(host);
+    listTabs(tabs.filter((each) => each.id !== 2).map((each) => ({ ...each })));
+    const afterClose = options(host);
+    expect(afterClose).toHaveLength(3);
+    for (const [index, row] of afterClose.entries()) expect(row).toBe([first, third, fourth][index]);
+    typeInSearch(host, 'plan');
+    const afterSearch = options(host);
+    expect(afterSearch).toHaveLength(2);
+    for (const [index, row] of afterSearch.entries()) expect(row).toBe([third, fourth][index]);
+  });
+});
+
 describe('Switcher sizes', () => {
   it('fits a narrow page in the grid: never wider than the page, no tile cut', async () => {
     await page.viewport(400, 800);
