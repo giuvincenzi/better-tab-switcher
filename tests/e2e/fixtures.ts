@@ -164,6 +164,55 @@ async function processStarts(processesNow: Map<string, number>, testStarted: num
 }
 
 /**
+ * What Chromium itself did, for a failed test on GitHub's Windows machines (chrome-trace.json, opened in
+ * https://ui.perfetto.dev): in Chromium there the switcher's frame and its own window, two navigations, both waited
+ * 7 to 15 s for something in the browser and went on at the same moment, while the disk, the CPU and the connections
+ * were idle and Microsoft Edge on the same machines never waited more than 0.25 s. The browser's tasks on every thread,
+ * its navigations and loads, kept in memory as they happen (the last ones only). Returns how to stop it: with a path, the
+ * trace is saved there.
+ */
+async function startChromeTrace(
+  session: CDPSession | undefined,
+): Promise<((path?: string) => Promise<boolean>) | undefined> {
+  if (!session) return undefined;
+  await session.send('Tracing.start', {
+    transferMode: 'ReturnAsStream',
+    traceConfig: {
+      recordMode: 'recordContinuously',
+      includedCategories: [
+        'toplevel',
+        'navigation',
+        'loading',
+        'browser',
+        'content',
+        'extensions',
+        'ipc',
+        'mojom',
+        'ServiceWorker',
+        'disabled-by-default-navigation',
+      ],
+    },
+  });
+  return async (path) => {
+    const complete = new Promise<{ stream?: string }>((resolve) => session.once('Tracing.tracingComplete', resolve));
+    await session.send('Tracing.end');
+    const { stream } = await complete;
+    if (!stream) return false;
+    if (path) {
+      const chunks: Buffer[] = [];
+      for (;;) {
+        const { data, eof, base64Encoded } = await session.send('IO.read', { handle: stream });
+        chunks.push(Buffer.from(data, base64Encoded ? 'base64' : 'utf8'));
+        if (eof) break;
+      }
+      writeFileSync(path, Buffer.concat(chunks));
+    }
+    await session.send('IO.close', { handle: stream });
+    return path !== undefined;
+  };
+}
+
+/**
  * In every page and frame from its start: when the browser showed or hid it (visibilitychange, with Date.now()). A page
  * the browser takes as hidden (a window it thinks covered) draws nothing and runs no animation frame.
  */
@@ -401,6 +450,10 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }, WorkerFixt
       // one is reached with connectOverCDP inside this fixture, after the test started.
       await context.tracing.start({ screenshots: true, snapshots: true });
       const processesAtStart = await processes(browserSession);
+      const stopChromeTrace =
+        browser === 'chromium' && process.platform === 'win32' && process.env.CI
+          ? await startChromeTrace(browserSession).catch(() => undefined)
+          : undefined;
       // The browser leaving during the test (its process gone, or Playwright's connection to it): Playwright then closes
       // the context, and the trace can't be saved any more. Noted with when, and how the process ended.
       const testStarted = Date.now();
@@ -417,6 +470,13 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }, WorkerFixt
       const howItLeft = `Playwright lost the browser ${disconnectedAt} ms into the test; its process ${
         ended === undefined ? 'was still running' : `had ended (${ended})`
       }.`;
+
+      if (stopChromeTrace && !disconnected) {
+        const failed = testInfo.status !== testInfo.expectedStatus;
+        const path = testInfo.outputPath('chrome-trace.json');
+        if (await stopChromeTrace(failed ? path : undefined).catch(() => false))
+          await testInfo.attach('chrome-trace', { path, contentType: 'application/json' });
+      }
 
       if (keepsReport(testInfo) || disconnected) {
         const processesAtEnd = await processes(browserSession);
