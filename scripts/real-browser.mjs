@@ -111,11 +111,14 @@ export async function launchRealBrowser({
     ...(quietEdge && browser === 'msedge' ? EDGE_QUIET_FEATURES : []),
   ];
   const profile = mkdtempSync(join(tmpdir(), 'better-tab-switcher-'));
-  // Without what belonged to the browser that ran in it: its port (read below to attach to this one) and its locks.
+  // Without what belonged to the browser that ran in it: its port (read below to attach to this one), its locks, and
+  // its tabs (Sessions, and the files of the older format): Microsoft Edge on macOS once opened the tabs of the
+  // profile's preparation again, as a session to restore, besides the test's own.
   if (profileFrom)
     cpSync(profileFrom, profile, {
       recursive: true,
-      filter: (source) => !/^(DevToolsActivePort|Singleton\w*|lockfile)$/.test(basename(source)),
+      filter: (source) =>
+        !/^(DevToolsActivePort|Singleton\w*|lockfile|Sessions|(Current|Last) (Session|Tabs))$/.test(basename(source)),
     });
   const extensions = extensionDir ? [...installedBefore, extensionDir] : [];
   const args = [
