@@ -128,6 +128,12 @@ export async function launchRealBrowser({
     `--user-data-dir=${profile}`,
     '--no-first-run',
     '--no-default-browser-check',
+    // Playwright's Chromium is a build for testing, and applies Chromium's experiments for its own tests
+    // (testing/variations/fieldtrial_testing_config.json), which Chrome, the browser users have, never does
+    // (testing/variations/README.md). One of them, on Windows, moves the code cache's disk work onto a thread of its
+    // own (UsePersistentCacheForCodeCache): on GitHub's Windows machines the switcher's frame waited 5 to 6 s for it.
+    // Without them, as Playwright starts its browsers. Microsoft Edge, a browser of its own, has none.
+    ...(browser === 'chromium' ? ['--disable-field-trial-config'] : []),
     // Ubuntu (24.04 and later) lets no program it doesn't know use the sandbox Chrome isolates its pages with, and
     // Playwright's Chromium is not known to it: as Playwright does, on Linux the pages are not isolated from each other
     // (a matter of security, not of what the extension or the pages do).
