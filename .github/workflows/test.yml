@@ -455,10 +455,13 @@ jobs:
       # The runner's own windows (its agent's console) stay in front of the browser on Windows (screen.png of a failed
       # test: the console over the whole screen, the browser behind it, without the focus): the tests start from a clear
       # desktop, as on a contributor's PC. The windows still shown (visible, not minimized) are written to the log.
-      # On Windows the disk's state every second while the tests run (disk.csv): the browser's work that reads or
-      # writes its files (the extension's start, chrome.storage, the extension's pages, the cookies) once waited 10 to
-      # 70 s with its CPU idle. Hidden: no window over the browser's.
-      - name: record_disk
+      # On Windows the machine's state while the tests run: the browser's work that reads or writes its files (the
+      # extension's start, chrome.storage, the extension's pages, the cookies) once waited 10 to 70 s with its CPU
+      # idle, and a connection to the tests' sites once failed with the system's error 10055 (WSAENOBUFS: no buffer
+      # space, its local ports or its memory for connections used up). Every second the disk, the CPU, the TCP
+      # connections and the kernel's memory for them (system.csv); every 2 s the TCP connections by state and the
+      # programs holding the most (connections.txt). Hidden: no window over the browser's.
+      - name: record_system
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
@@ -466,7 +469,22 @@ jobs:
           Start-Process typeperf -WindowStyle Hidden -ArgumentList @(
             '"\PhysicalDisk(_Total)\Avg. Disk sec/Read"', '"\PhysicalDisk(_Total)\Avg. Disk sec/Write"',
             '"\PhysicalDisk(_Total)\Current Disk Queue Length"', '"\Processor(_Total)\% Processor Time"',
-            '-si', '1', '-f', 'CSV', '-o', 'e2e_results\disk.csv', '-y')
+            '"\TCPv4\Connections Established"', '"\TCPv4\Connection Failures"', '"\TCPv4\Connections Reset"',
+            '"\Memory\Pool Nonpaged Bytes"', '-si', '1', '-f', 'CSV', '-o', 'e2e_results\system.csv', '-y')
+          $connections = Join-Path (Resolve-Path e2e_results) 'connections.txt'
+          $loop = @"
+          while (`$true) {
+            `$all = Get-NetTCPConnection -ErrorAction SilentlyContinue
+            `$states = (`$all | Group-Object State | ForEach-Object { "`$(`$_.Name)=`$(`$_.Count)" }) -join ' '
+            `$owners = (`$all | Group-Object OwningProcess | Sort-Object Count -Descending | Select-Object -First 3 |
+              ForEach-Object { "`$((Get-Process -Id `$_.Name -ErrorAction SilentlyContinue).ProcessName) `$(`$_.Name)=`$(`$_.Count)" }) -join ', '
+            "`$((Get-Date).ToUniversalTime().ToString('HH:mm:ss')) total=`$(`$all.Count) `$states | `$owners" |
+              Add-Content '$connections'
+            Start-Sleep -Seconds 2
+          }
+          "@
+          Start-Process pwsh -WindowStyle Hidden -ArgumentList '-NoProfile', '-Command', $loop -PassThru |
+            ForEach-Object { $_.Id } | Set-Content "$env:RUNNER_TEMP\connections-pid.txt"
 
       - name: minimize_other_windows
         if: runner.os == 'Windows'
@@ -495,10 +513,13 @@ jobs:
           ${{ runner.os == 'Linux' && 'xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24"' || '' }}
           npx playwright test --shard="$GROUP/$E2E_GROUPS" --reporter=list,json,html --output=e2e_results/tests
 
-      - name: stop_recording_disk
+      - name: stop_recording_system
         if: always() && runner.os == 'Windows'
         shell: pwsh
-        run: Stop-Process -Name typeperf -ErrorAction SilentlyContinue
+        run: |
+          Stop-Process -Name typeperf -ErrorAction SilentlyContinue
+          $loop = Get-Content "$env:RUNNER_TEMP\connections-pid.txt" -ErrorAction SilentlyContinue
+          if ($loop) { Stop-Process -Id $loop -ErrorAction SilentlyContinue }
 
       # README.txt: what each file of the artifact is and how it helps investigate a failed test. The one description
       # of the artifact: testing.md points here.
@@ -534,10 +555,17 @@ jobs:
             The test report of this group (Playwright's JSON reporter): every test that ran, with its status, duration
             and errors. Missing: the tests did not run.
 
-          disk.csv
-            Windows only: every second while the tests ran, the disk's average time to read and to write (seconds),
-            its queue of requests waiting, and the CPU in use (%), with the machine's time (UTC). Lines up with the
-            times in a test's files: whether the browser waited for the disk.
+          system.csv
+            Windows only: every second while the tests ran, with the machine's time (UTC): the disk's average time to
+            read and to write (seconds) and its queue of requests waiting, the CPU in use (%), the TCP connections
+            established, failed and reset (the last two counted since the machine started), and the kernel's memory
+            that connections use (Pool Nonpaged Bytes). Lines up with the times in a test's files: whether the browser
+            waited for the disk, or a connection failed for want of the system's resources.
+
+          connections.txt
+            Windows only: every 2 s while the tests ran (UTC), the machine's TCP connections by state (TimeWait: closed,
+            their local port still held) and the three programs holding the most. A connection that failed with the
+            system's error 10055 (WSAENOBUFS, in a test's netlog.json) points here: the local ports used up.
 
           report/
             The same results as a web page (Playwright's HTML report). Every test shows its steps, its screenshot and its
