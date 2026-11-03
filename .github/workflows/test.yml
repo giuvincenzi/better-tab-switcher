@@ -455,6 +455,19 @@ jobs:
       # The runner's own windows (its agent's console) stay in front of the browser on Windows (screen.png of a failed
       # test: the console over the whole screen, the browser behind it, without the focus): the tests start from a clear
       # desktop, as on a contributor's PC. The windows still shown (visible, not minimized) are written to the log.
+      # On Windows the disk's state every second while the tests run (disk.csv): the browser's work that reads or
+      # writes its files (the extension's start, chrome.storage, the extension's pages, the cookies) once waited 10 to
+      # 70 s with its CPU idle. Hidden: no window over the browser's.
+      - name: record_disk
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force e2e_results | Out-Null
+          Start-Process typeperf -WindowStyle Hidden -ArgumentList @(
+            '"\PhysicalDisk(_Total)\Avg. Disk sec/Read"', '"\PhysicalDisk(_Total)\Avg. Disk sec/Write"',
+            '"\PhysicalDisk(_Total)\Current Disk Queue Length"', '"\Processor(_Total)\% Processor Time"',
+            '-si', '1', '-f', 'CSV', '-o', 'e2e_results\disk.csv', '-y')
+
       - name: minimize_other_windows
         if: runner.os == 'Windows'
         shell: pwsh
@@ -481,6 +494,11 @@ jobs:
         run: >-
           ${{ runner.os == 'Linux' && 'xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24"' || '' }}
           npx playwright test --shard="$GROUP/$E2E_GROUPS" --reporter=list,json,html --output=e2e_results/tests
+
+      - name: stop_recording_disk
+        if: always() && runner.os == 'Windows'
+        shell: pwsh
+        run: Stop-Process -Name typeperf -ErrorAction SilentlyContinue
 
       # README.txt: what each file of the artifact is and how it helps investigate a failed test. The one description
       # of the artifact: testing.md points here.
@@ -516,6 +534,11 @@ jobs:
             The test report of this group (Playwright's JSON reporter): every test that ran, with its status, duration
             and errors. Missing: the tests did not run.
 
+          disk.csv
+            Windows only: every second while the tests ran, the disk's average time to read and to write (seconds),
+            its queue of requests waiting, and the CPU in use (%), with the machine's time (UTC). Lines up with the
+            times in a test's files: whether the browser waited for the disk.
+
           report/
             The same results as a web page (Playwright's HTML report). Every test shows its steps, its screenshot and its
             trace; a failed one also its error. Extract the artifact first, then serve the page: opened as a file
@@ -538,7 +561,8 @@ jobs:
                                  switcher's frame was made in a page, when its window opened.
               browser-state.txt  the browser as the test ended: each page's frames and how far each has loaded
                                  (document.readyState, or no answer: the frame or its process stuck), and the CPU time
-                                 each of the browser's processes used during the test, the busiest first. When the
+                                 each of the browser's processes used during the test, the busiest first; on Windows,
+                                 for a failed test, when the system started each process. When the
                                  browser left during the test, its first line says when, and how its process ended:
                                  then there is no trace.zip (Playwright can't save the trace of a browser that's gone).
               browser-output.txt what the browser itself wrote (its errors, a crash) from its start.
