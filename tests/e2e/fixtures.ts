@@ -8,7 +8,7 @@ import {
   type TestInfo,
   type Worker,
 } from '@playwright/test';
-import { launchRealBrowser } from '../../scripts/real-browser.mjs';
+import { launchRealBrowser, prepareProfile } from '../../scripts/real-browser.mjs';
 import { dismissEdgeDeveloperModeBubble } from './edge-bubble';
 import { type SiteAnswer, startTestSites, type TestSites } from './site';
 import { run, screenPicture } from './system';
@@ -53,6 +53,8 @@ export interface TestSite {
 interface WorkerFixtures {
   /** The test sites' server, one for each of Playwright's workers (tests/e2e/site.ts). */
   testSites: TestSites;
+  /** A profile the browser has started in once, one for each worker: each test starts from a copy of it. */
+  preparedProfile: string;
 }
 
 /**
@@ -296,6 +298,16 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }, WorkerFixt
     },
     { scope: 'worker' },
   ],
+  // Each test's browser starts as a user's does, in a profile it has started in before (scripts/real-browser.mjs,
+  // prepareProfile): not while it is still building a new one. A copy for each test, so no test sees another's.
+  preparedProfile: [
+    async ({ testSites }, use) => {
+      const profile = await prepareProfile({ browser, siteRules: testSites.rules, quietEdge: true });
+      await use(profile);
+      rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+    },
+    { scope: 'worker', timeout: BROWSER_MS },
+  ],
   site: async ({ testSites }, use) => {
     await use({ serve: testSites.serve });
   },
@@ -307,7 +319,16 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }, WorkerFixt
   installedBefore: [[], { option: true }],
   context: [
     async (
-      { chromeLanguage, systemDark, systemReducedMotion, expectedConsole, headed, installedBefore, testSites },
+      {
+        chromeLanguage,
+        systemDark,
+        systemReducedMotion,
+        expectedConsole,
+        headed,
+        installedBefore,
+        testSites,
+        preparedProfile,
+      },
       use,
       testInfo,
     ) => {
@@ -336,6 +357,7 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }, WorkerFixt
         siteRules: testSites.rules,
         quietEdge: true,
         netLog,
+        profileFrom: preparedProfile,
       });
       const { context } = real;
       // Microsoft Edge's bubble about developer mode would take the system's keys and focus (tests/e2e/edge-bubble.ts).

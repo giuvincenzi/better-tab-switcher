@@ -2,9 +2,9 @@
 // start it, then Playwright attaches to it with noDefaults, so it emulates nothing (no fake focus, no color scheme nor
 // reduced motion of its own): what the tests and the developer see is what users see.
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { chromium } from '@playwright/test';
 
@@ -74,14 +74,17 @@ const EDGE_QUIET_FEATURES = [
  * every *.test site goes to its port on this machine, down.test is a site that can't be found, and the server's
  * certificate (the hash of its public key) is the one trusted besides the usual ones; `quietEdge`, for the tests,
  * Microsoft Edge without the services it runs by itself (EDGE_QUIET_SWITCHES); `netLog`, a file the browser writes
- * its NetLog in (every request, and what each waited for), whole once it is closed. Returns its one browser context,
- * close(), its process (pid) and sendToBrowser (browserPipe).
- * @param {{ browser?: string, extensionDir: string, installedBefore?: string[], headless?: boolean, language?: string,
+ * its NetLog in (every request, and what each waited for), whole once it is closed; `profileFrom`, a profile the
+ * browser has started in before (prepareProfile), copied as this one's start; `keepProfile`, the profile left in place
+ * once closed (prepareProfile). Without `extensionDir`, no extension of ours. Returns its one browser context, close(),
+ * its process (pid), sendToBrowser (browserPipe) and its profile's folder.
+ * @param {{ browser?: string, extensionDir?: string, installedBefore?: string[], headless?: boolean, language?: string,
  *   dark?: boolean, reducedMotion?: boolean, windowSize?: string,
- *   siteRules?: { port: number, certificate: string }, quietEdge?: boolean, netLog?: string }} options
+ *   siteRules?: { port: number, certificate: string }, quietEdge?: boolean, netLog?: string, profileFrom?: string,
+ *   keepProfile?: boolean }} options
  * @returns {Promise<{ context: import('@playwright/test').BrowserContext, close: () => Promise<void>,
  *   closed: Promise<string>, pid: number, sendToBrowser: (method: string, params?: object) => Promise<any>,
- *   output: () => string }>}
+ *   output: () => string, profile: string }>}
  */
 export async function launchRealBrowser({
   browser = 'chromium',
@@ -95,6 +98,8 @@ export async function launchRealBrowser({
   siteRules,
   quietEdge = false,
   netLog,
+  profileFrom,
+  keepProfile = false,
 }) {
   const disabledFeatures = [
     // On Windows, Chrome pauses the pages of a window it thinks other windows cover. A machine with no screen of its own
@@ -104,6 +109,13 @@ export async function launchRealBrowser({
     ...(quietEdge && browser === 'msedge' ? EDGE_QUIET_FEATURES : []),
   ];
   const profile = mkdtempSync(join(tmpdir(), 'better-tab-switcher-'));
+  // Without what belonged to the browser that ran in it: its port (read below to attach to this one) and its locks.
+  if (profileFrom)
+    cpSync(profileFrom, profile, {
+      recursive: true,
+      filter: (source) => !/^(DevToolsActivePort|Singleton\w*|lockfile)$/.test(basename(source)),
+    });
+  const extensions = extensionDir ? [...installedBefore, extensionDir] : [];
   const args = [
     // Port 0: the browser chooses a free one and writes it in DevToolsActivePort, in the profile. Playwright attaches
     // there. The pipe (the process's 4th and 5th streams) is for what the browser takes only from the program that
@@ -140,8 +152,9 @@ export async function launchRealBrowser({
           `--ignore-certificate-errors-spki-list=${siteRules.certificate}`,
         ]
       : []),
-    `--disable-extensions-except=${[...installedBefore, extensionDir].join(',')}`,
-    `--load-extension=${[...installedBefore, extensionDir].join(',')}`,
+    ...(extensions.length > 0
+      ? [`--disable-extensions-except=${extensions.join(',')}`, `--load-extension=${extensions.join(',')}`]
+      : []),
     'about:blank',
   ];
   // Chrome takes its language from --lang; on Linux it needs the environment's language too; on macOS from its app's
@@ -213,7 +226,7 @@ export async function launchRealBrowser({
     }
     await connected.close().catch(() => {});
     forgetLanguage?.();
-    rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+    if (!keepProfile) rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
   }
   return {
     context,
@@ -222,7 +235,30 @@ export async function launchRealBrowser({
     pid: /** @type {number} */ (process_.pid),
     sendToBrowser,
     output: () => output,
+    profile,
   };
+}
+
+/**
+ * For the tests: a profile the browser has started in once, as a user's browser has, to copy as each test's start
+ * (launchRealBrowser's profileFrom). In a new profile the browser first builds it (its databases, history, top sites,
+ * session, the key it encrypts cookies with): on GitHub's Windows machines, whose disk takes seconds for each write it
+ * confirms, that went on for tens of seconds after the start, and the switcher's frame waited 6 s for the browser's
+ * code cache behind it. Started without any extension (each test's extension is installed then, as new), it loads one
+ * page of the test sites (the cookies too), then closes as a user closes it, writing everything. Returns the profile's
+ * folder; the caller removes it.
+ * @param {{ browser?: string, siteRules: { port: number, certificate: string }, quietEdge?: boolean }} options
+ * @returns {Promise<string>}
+ */
+export async function prepareProfile({ browser = 'chromium', siteRules, quietEdge = false }) {
+  const real = await launchRealBrowser({ browser, siteRules, quietEdge, keepProfile: true });
+  try {
+    const page = real.context.pages()[0] ?? (await real.context.newPage());
+    await page.goto('https://bts.test/ready', { waitUntil: 'load', timeout: STEP_MS });
+  } finally {
+    await real.close();
+  }
+  return real.profile;
 }
 
 /**
