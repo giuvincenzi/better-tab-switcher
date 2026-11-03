@@ -1,5 +1,6 @@
 import { existsSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { setTimeout as delay } from 'node:timers/promises';
 import {
   type BrowserContext,
   test as base,
@@ -100,6 +101,9 @@ const BACKGROUND_MS = 120_000;
  * in it, so a browser slow to start is reported by its step, and the test keeps its 30 seconds for what it checks.
  */
 const BROWSER_MS = 300_000;
+
+/** How long the browser's trace may take to be handed over (startChromeTrace): a diagnostic never holds a test up. */
+const TRACE_STOP_MS = 30_000;
 
 /**
  * Whether a test keeps what helps understand why it failed (its trace, the browser's state, the background's console):
@@ -508,12 +512,17 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }, WorkerFixt
         ended === undefined ? 'was still running' : `had ended (${ended})`
       }.`;
 
-      // On the browser's pipe: kept when Playwright lost the browser too, what the browser did as it happened.
+      // On the browser's pipe: kept when Playwright lost the browser too, what the browser did as it happened. Within
+      // TRACE_STOP_MS, or without it: the trace waits for every process of the browser, and after a test that closed the
+      // extension's service worker (switching.spec.ts) it waited past the 300 s of the browser's own teardown.
       if (stopChromeTrace) {
         const failed = disconnected || testInfo.status !== testInfo.expectedStatus;
         const path = testInfo.outputPath('chrome-trace.json');
-        if (await stopChromeTrace(failed ? path : undefined).catch(() => false))
-          await testInfo.attach('chrome-trace', { path, contentType: 'application/json' });
+        const saved = await Promise.race([
+          stopChromeTrace(failed ? path : undefined).catch(() => false),
+          delay(TRACE_STOP_MS).then(() => false),
+        ]);
+        if (saved) await testInfo.attach('chrome-trace', { path, contentType: 'application/json' });
       }
 
       if (keepsReport(testInfo) || disconnected) {
