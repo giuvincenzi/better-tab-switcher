@@ -319,9 +319,32 @@ async function sampleProcess(pid) {
   if (!pid) return '';
   const file = join(mkdtempSync(join(tmpdir(), 'sample-')), 'sample.txt');
   try {
+    // Its processes first: Microsoft Edge once waited at its start for one it started to end (__wait4), and the
+    // sample can't name it.
+    const { stdout } = await promisify(execFile)('ps', ['-axo', 'pid=,ppid=,stat=,etime=,command='], {
+      timeout: 30_000,
+    });
+    const all = stdout.split('\n').map((line) => line.trim().split(/\s+/));
+    const family = new Set([String(pid)]);
+    for (let grew = true; grew; ) {
+      grew = false;
+      for (const [child, parent] of all)
+        if (child && parent && family.has(parent) && !family.has(child)) {
+          family.add(child);
+          grew = true;
+        }
+    }
+    const processes = all
+      .filter(([child]) => child && family.has(child))
+      .map((fields) => `  ${fields.slice(0, 4).join(' ')} ${fields.slice(4).join(' ').slice(0, 400)}`);
     await promisify(execFile)('sample', [String(pid), '1', '-file', file], { timeout: 30_000 });
     const lines = readFileSync(file, 'utf8').split('\n');
-    return `\nWhere its process was (sample, the first ${Math.min(lines.length, 200)} lines):\n${lines.slice(0, 200).join('\n')}`;
+    return [
+      "\nIts processes (pid, parent's pid, state, time since they started, command):",
+      ...processes,
+      `Where its process was (sample, the first ${Math.min(lines.length, 200)} lines):`,
+      ...lines.slice(0, 200),
+    ].join('\n');
   } catch (error) {
     return `\nNo sample of its process: ${/** @type {Error} */ (error).message}`;
   } finally {
