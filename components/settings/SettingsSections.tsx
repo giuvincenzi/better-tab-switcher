@@ -1,4 +1,4 @@
-import { createSignal, type JSX, Match, Show, Switch } from 'solid-js';
+import { createSignal, type JSX, Show } from 'solid-js';
 import { i18n } from '#i18n';
 import { BROWSER_NAME_TEXT, browserName, STORE_NAME_TEXT, storeReviewUrl } from '../../lib/browser';
 import { timeAgo } from '../../lib/i18n/time';
@@ -6,7 +6,6 @@ import { GUIDE_URL, NEW_ISSUE_URL, REPOSITORY_URL, releaseUrl, SITE_URL } from '
 import { limits, ROW_CHOICES, type RowCount, type Settings, type TabDetails } from '../../lib/settings/settings';
 import type { SettingsChange } from '../../lib/settings/store';
 import { type Shortcuts, shortcutMissing } from '../../lib/shortcuts';
-import type { UpdateCheck } from '../../lib/updates';
 import { Button } from '../ui/Button';
 import { Dialog } from '../ui/Dialog';
 import { Notice } from '../ui/Notice';
@@ -446,69 +445,19 @@ export interface AboutSectionProps {
   version: string;
   /** The extension's icon. */
   iconUrl: string;
-  /**
-   * Checking for a new version (lib/updates.ts), and restarting the extension once one is ready, as Restart in System
-   * does. Also in a copy loaded from a folder, which the browser answers too: no new version, or to try again later.
-   */
-  updates: { check: () => Promise<UpdateCheck>; restart: () => void };
 }
 
-/** What the last check for updates found, or that one is running; none before the first check. */
-type UpdateState = UpdateCheck | { kind: 'checking' };
-
 /**
- * About: the extension's version, a check for a new one (Restart extension once one is ready), and the links to its release notes, its guide, its
- * issues, its website, its store page (to rate it) and its repository (to star it).
+ * About: the extension's version, and the links to its release notes, its guide, its issues, its website, its store
+ * page (to rate it) and its repository (to star it).
  */
 export function AboutSection(props: AboutSectionProps): JSX.Element {
-  const [update, setUpdate] = createSignal<UpdateState>();
-  const check = async (updates: NonNullable<AboutSectionProps['updates']>) => {
-    if (update()?.kind === 'checking') return;
-    setUpdate({ kind: 'checking' });
-    setUpdate(await updates.check());
-  };
-  const status = (): string | undefined => {
-    const now = update();
-    if (now === undefined) return undefined;
-    switch (now.kind) {
-      case 'checking':
-        return i18n.t('Settings_Checking');
-      case 'current':
-        return i18n.t('Settings_UpToDate');
-      case 'ready':
-        return now.version ? i18n.t('Settings_UpdateReady', [now.version]) : i18n.t('Settings_UpdateReadyNoVersion');
-      case 'later':
-        return i18n.t('Settings_UpdateLater', [browserTitle()]);
-      case 'failed':
-        return i18n.t('Settings_UpdateFailed');
-    }
-  };
   return (
     <SettingsSection id="about" title={sectionTitle('about')} chosen={props.chosen}>
       <SettingRow
         label={i18n.t('Extension_Name')}
         note={i18n.t('Settings_Version', [props.version])}
         icon={<img class={styles.aboutIcon} src={props.iconUrl} alt="" width="40" height="40" />}
-        status={
-          // Read by screen readers as it changes.
-          <div class={styles.status} role="status">
-            {status()}
-          </div>
-        }
-        control={(ids) => (
-          <Switch>
-            <Match when={update()?.kind === 'ready'}>
-              <Button describedBy={ids.label} onClick={() => props.updates.restart()}>
-                {i18n.t('Settings_RestartExtension')}
-              </Button>
-            </Match>
-            <Match when={update()?.kind !== 'ready'}>
-              <Button describedBy={ids.label} onClick={() => void check(props.updates)}>
-                {i18n.t('Settings_CheckUpdates')}
-              </Button>
-            </Match>
-          </Switch>
-        )}
       />
       <LinkRow
         label={i18n.t('Settings_WhatsNew')}

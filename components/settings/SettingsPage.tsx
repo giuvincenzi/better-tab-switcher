@@ -11,7 +11,6 @@ import { SearchBox } from '../ui/SearchBox';
 import styles from './SettingsPage.module.css';
 import {
   AboutSection,
-  type AboutSectionProps,
   AppearanceSection,
   DetailsSection,
   type SectionId,
@@ -39,8 +38,8 @@ export interface SettingsPageProps {
   guideUrl: string;
   /** The version installed. */
   version: string;
-  /** Checking for a new version (AboutSection). */
-  updates: AboutSectionProps['updates'];
+  /** Restart in System: restarts the extension. */
+  onRestartExtension: () => void;
   onChangeShortcut: () => void;
   onRestore: () => void;
 }
@@ -188,13 +187,8 @@ function Sections(props: SettingsPageProps & { current: SectionId }): JSX.Elemen
           onChangeShortcut={props.onChangeShortcut}
           chosen={chosen('shortcuts')}
         />
-        <SystemSection onRestart={props.updates.restart} onRestore={props.onRestore} chosen={chosen('system')} />
-        <AboutSection
-          version={props.version}
-          iconUrl={props.iconUrl}
-          updates={props.updates}
-          chosen={chosen('about')}
-        />
+        <SystemSection onRestart={props.onRestartExtension} onRestore={props.onRestore} chosen={chosen('system')} />
+        <AboutSection version={props.version} iconUrl={props.iconUrl} chosen={chosen('about')} />
       </scope.Provider>
       <Show when={!scope.shown()}>
         <div class={styles.none} role="status">

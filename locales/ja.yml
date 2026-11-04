@@ -100,17 +100,9 @@ Settings_NoResultsNote: 別の言葉で検索するか、検索をクリアし�
 Settings_Menu: メインメニュー
 Settings_About: 概要
 Settings_Version: バージョン $1
-Settings_CheckUpdates: アップデートを確認
-Settings_Checking: アップデートを確認しています…
-Settings_UpToDate: Better Tab Switcher は最新版です。
-Settings_UpdateReady: バージョン $1 の準備ができました。今すぐ使うには Better Tab Switcher を再起動してください。
-Settings_UpdateReadyNoVersion: 新しいバージョンの準備ができました。今すぐ使うには Better Tab Switcher を再起動してください。
 Settings_Restart: 再起動
-Settings_RestartExtension: 拡張機能を再起動
 Settings_RestartExtensionRow: Better Tab Switcher を再起動
 Settings_RestartExtensionNote: Better Tab Switcher を再起動します。このページは閉じます。
-Settings_UpdateLater: $1 はたった今アップデートを確認しました。数分後にもう一度お試しください。
-Settings_UpdateFailed: Better Tab Switcher はアップデートを確認できませんでした。しばらくしてからもう一度お試しください。
 Settings_WhatsNew: 新機能
 Settings_WhatsNewNote: バージョン $1 の変更内容を確認できます。
 Settings_Guide: ユーザーガイド

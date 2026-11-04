@@ -100,17 +100,9 @@ Settings_NoResultsNote: Încearcă alte cuvinte sau șterge căutarea ca să vez
 Settings_Menu: Meniul principal
 Settings_About: Despre
 Settings_Version: Versiunea $1
-Settings_CheckUpdates: Caută actualizări
-Settings_Checking: Se caută actualizări…
-Settings_UpToDate: Better Tab Switcher este actualizat.
-Settings_UpdateReady: Versiunea $1 este gata. Repornește Better Tab Switcher ca s-o folosești acum.
-Settings_UpdateReadyNoVersion: O versiune nouă este gata. Repornește Better Tab Switcher ca s-o folosești acum.
 Settings_Restart: Repornește
-Settings_RestartExtension: Repornește extensia
 Settings_RestartExtensionRow: Repornește Better Tab Switcher
 Settings_RestartExtensionNote: Better Tab Switcher repornește, iar această pagină se închide.
-Settings_UpdateLater: $1 tocmai a căutat actualizări. Încearcă din nou peste câteva minute.
-Settings_UpdateFailed: Better Tab Switcher nu a putut căuta actualizări. Încearcă din nou mai târziu.
 Settings_WhatsNew: Noutăți
 Settings_WhatsNewNote: Vezi ce s-a schimbat în versiunea $1.
 Settings_Guide: Ghid de utilizare

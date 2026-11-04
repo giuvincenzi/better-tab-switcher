@@ -5,7 +5,6 @@ import { userEvent } from 'vitest/browser';
 import { SettingsPage, type SettingsPageProps } from '../../components/settings/SettingsPage';
 import { defaultSettings, type Settings } from '../../lib/settings/settings';
 import type { SettingsChange } from '../../lib/settings/store';
-import type { UpdateCheck } from '../../lib/updates';
 
 let dispose: (() => void) | undefined;
 afterEach(() => {
@@ -28,7 +27,7 @@ function open(
     saved.push(change);
     setSettings((now) => ({ ...now, ...change, details: { ...now.details, ...change.details } }));
   };
-  const handlers = { onChangeShortcut: vi.fn(), onRestore: vi.fn() };
+  const handlers = { onChangeShortcut: vi.fn(), onRestore: vi.fn(), onRestartExtension: vi.fn() };
   const host = document.createElement('div');
   document.body.append(host);
   dispose = render(
@@ -43,7 +42,6 @@ function open(
         iconUrl=""
         guideUrl="https://example.com/guide"
         version="1.2.0"
-        updates={{ check: async () => ({ kind: 'current' }), restart: () => {} }}
         {...handlers}
         {...more}
       />
@@ -833,57 +831,24 @@ describe('SettingsPage, About', () => {
     userAgent.mockRestore();
   });
 
-  it('checks for updates, and says what it found', async () => {
-    let answer: (check: UpdateCheck) => void = () => {};
-    const check = vi.fn(
-      () =>
-        new Promise<UpdateCheck>((resolve) => {
-          answer = resolve;
-        }),
-    );
-    const restart = vi.fn();
-    const { host } = open({}, undefined, false, { updates: { check, restart } });
+  it('shows the version with no button: only the links do something', () => {
+    const { host } = open();
     choose(host, 'About');
-    const status = () => host.querySelector('#about [role="status"]')?.textContent;
-    const [checkButton] = button(host, 'Check for updates');
-    expect(describedBy(checkButton as Element)).toBe('Better Tab Switcher');
-    checkButton?.click();
-    expect(status()).toBe('Checking for updates…');
-    // A second click while it checks asks nothing more.
-    checkButton?.click();
-    expect(check).toHaveBeenCalledTimes(1);
-    answer({ kind: 'current' });
-    await vi.waitFor(() => expect(status()).toBe('Better Tab Switcher is up to date.'));
-    const answers: [UpdateCheck, string][] = [
-      [{ kind: 'later' }, 'Chrome checked for updates a moment ago. Try again in a few minutes.'],
-      [{ kind: 'failed' }, "Better Tab Switcher couldn't check for updates. Try again later."],
-      [{ kind: 'ready', version: '1.3.0' }, 'Version 1.3.0 is ready. Restart Better Tab Switcher to use it now.'],
-    ];
-    for (const [found, text] of answers) {
-      button(host, 'Check for updates')[0]?.click();
-      answer(found);
-      await vi.waitFor(() => expect(status()).toBe(text));
-    }
-    // Ready: Restart extension in place of the check, which restarts as Restart in System does.
-    expect(button(host, 'Check for updates')).toEqual([]);
-    const [restartExtension] = button(host, 'Restart extension');
-    expect(describedBy(restartExtension as Element)).toBe('Better Tab Switcher');
-    restartExtension?.click();
-    expect(restart).toHaveBeenCalledTimes(1);
+    expect(host.querySelector('#about')?.textContent).toContain('Version 1.2.0');
+    expect(host.querySelectorAll('#about button')).toHaveLength(0);
   });
 });
 
 describe('SettingsPage, System', () => {
   it('restarts the extension with Restart, named by its row, and asks nothing first', () => {
-    const restart = vi.fn();
-    const { host, handlers } = open({}, undefined, false, { updates: { check: vi.fn(), restart } });
+    const { host, handlers } = open();
     choose(host, 'System');
     const [restartButton, ...others] = button(host, 'Restart');
     expect(others).toEqual([]);
     expect(describedBy(restartButton as Element)).toBe('Restart Better Tab Switcher');
     expect(host.querySelector('#system')?.textContent).toContain('Starts Better Tab Switcher again. This page closes.');
     restartButton?.click();
-    expect(restart).toHaveBeenCalledTimes(1);
+    expect(handlers.onRestartExtension).toHaveBeenCalledTimes(1);
     expect(host.querySelector('dialog[open]')).toBeNull();
     expect(handlers.onRestore).not.toHaveBeenCalled();
   });

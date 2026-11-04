@@ -100,17 +100,9 @@ Settings_NoResultsNote: 다른 단어로 검색하거나 검색어를 지워 모
 Settings_Menu: 기본 메뉴
 Settings_About: 정보
 Settings_Version: 버전 $1
-Settings_CheckUpdates: 업데이트 확인
-Settings_Checking: 업데이트 확인 중…
-Settings_UpToDate: Better Tab Switcher가 최신 버전입니다.
-Settings_UpdateReady: 버전 $1이(가) 준비되었습니다. 지금 사용하려면 Better Tab Switcher를 다시 시작하세요.
-Settings_UpdateReadyNoVersion: 새 버전이 준비되었습니다. 지금 사용하려면 Better Tab Switcher를 다시 시작하세요.
 Settings_Restart: 다시 시작
-Settings_RestartExtension: 확장 프로그램 다시 시작
 Settings_RestartExtensionRow: Better Tab Switcher 다시 시작
 Settings_RestartExtensionNote: Better Tab Switcher를 다시 시작합니다. 이 페이지는 닫힙니다.
-Settings_UpdateLater: $1에서 방금 업데이트를 확인했습니다. 몇 분 후에 다시 시도하세요.
-Settings_UpdateFailed: Better Tab Switcher에서 업데이트를 확인하지 못했습니다. 나중에 다시 시도하세요.
 Settings_WhatsNew: 새로운 기능
 Settings_WhatsNewNote: 버전 $1에서 바뀐 내용을 확인하세요.
 Settings_Guide: 사용자 가이드

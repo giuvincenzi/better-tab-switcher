@@ -100,17 +100,9 @@ Settings_NoResultsNote: Prueba con otras palabras o borra la búsqueda para ver 
 Settings_Menu: Menú principal
 Settings_About: Información
 Settings_Version: Versión $1
-Settings_CheckUpdates: Buscar actualizaciones
-Settings_Checking: Buscando actualizaciones…
-Settings_UpToDate: Better Tab Switcher está actualizado.
-Settings_UpdateReady: La versión $1 está lista. Reinicia Better Tab Switcher para usarla ahora.
-Settings_UpdateReadyNoVersion: Hay una nueva versión lista. Reinicia Better Tab Switcher para usarla ahora.
 Settings_Restart: Reiniciar
-Settings_RestartExtension: Reiniciar extensión
 Settings_RestartExtensionRow: Reiniciar Better Tab Switcher
 Settings_RestartExtensionNote: Better Tab Switcher se reinicia y esta página se cierra.
-Settings_UpdateLater: $1 acaba de buscar actualizaciones. Vuelve a intentarlo en unos minutos.
-Settings_UpdateFailed: Better Tab Switcher no ha podido buscar actualizaciones. Vuelve a intentarlo más tarde.
 Settings_WhatsNew: Novedades
 Settings_WhatsNewNote: Descubre qué ha cambiado en la versión $1.
 Settings_Guide: Guía de uso

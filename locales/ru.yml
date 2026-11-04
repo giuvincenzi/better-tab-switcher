@@ -100,17 +100,9 @@ Settings_NoResultsNote: Попробуйте другие слова или оч
 Settings_Menu: Главное меню
 Settings_About: О расширении
 Settings_Version: Версия $1
-Settings_CheckUpdates: Проверить наличие обновлений
-Settings_Checking: Проверка обновлений…
-Settings_UpToDate: Установлена последняя версия Better Tab Switcher.
-Settings_UpdateReady: Версия $1 готова. Перезапустите Better Tab Switcher, чтобы начать пользоваться ею сейчас.
-Settings_UpdateReadyNoVersion: Новая версия готова. Перезапустите Better Tab Switcher, чтобы начать пользоваться ею сейчас.
 Settings_Restart: Перезапустить
-Settings_RestartExtension: Перезапустить расширение
 Settings_RestartExtensionRow: Перезапустить Better Tab Switcher
 Settings_RestartExtensionNote: Better Tab Switcher перезапустится, а эта страница закроется.
-Settings_UpdateLater: $1 только что проверил наличие обновлений. Повторите попытку через несколько минут.
-Settings_UpdateFailed: Better Tab Switcher не удалось проверить наличие обновлений. Повторите попытку позже.
 Settings_WhatsNew: Что нового
 Settings_WhatsNewNote: Посмотрите, что изменилось в версии $1.
 Settings_Guide: Руководство пользователя

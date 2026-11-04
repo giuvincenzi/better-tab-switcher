@@ -189,22 +189,11 @@ test.describe('settings page @settings', () => {
     await expect(page.getByRole('heading', { name: 'Tab details', level: 2 })).toBeVisible();
   });
 
-  test('shows its version in About, and checks for updates there, which the browser answers', async ({
-    context,
-    extensionId,
-    serviceWorker,
-  }) => {
+  test('shows its version in About, and its links', async ({ context, extensionId, serviceWorker }) => {
     const page = await openSettings(context, extensionId);
     await choose(page, 'About');
     const version = await serviceWorker.evaluate(() => chrome.runtime.getManifest().version);
     await expect(page.getByText(`Version ${version}`, { exact: true })).toBeVisible();
-    // A copy loaded from a folder, as the tests' one: the browser has no new version for it, then asks to wait.
-    const check = page.getByRole('button', { name: 'Check for updates' });
-    const status = page.getByRole('status');
-    await check.click();
-    await expect(status).toHaveText('Better Tab Switcher is up to date.');
-    await check.click();
-    await expect(status).toHaveText(`${BROWSER} checked for updates a moment ago. Try again in a few minutes.`);
     await expect(page.getByRole('link', { name: /^Report an issue/ })).toHaveAttribute(
       'href',
       'https://github.com/giuvincenzi/better-tab-switcher/issues/new/choose',

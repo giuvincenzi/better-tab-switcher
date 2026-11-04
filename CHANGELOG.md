@@ -10,9 +10,8 @@
   a moment. It takes no room of its own. On by default; turn it off in Tab details.
 - Search settings: a search field at the top of the settings page finds settings in every section, by their name,
   their description or their choices, and highlights what it found.
-- About, a new section of the settings: the version installed, Check for updates (Restart extension once a new version
-  is ready), and links to What's new, the user guide, Report an issue, the website, Rate this extension and Star on
-  GitHub.
+- About, a new section of the settings: the version installed, and links to What's new, the user guide, Report an
+  issue, the website, Rate this extension and Star on GitHub.
 - Restart Better Tab Switcher, in System: restarts the extension.
 
 ### Changed
