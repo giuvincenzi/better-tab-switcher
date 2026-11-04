@@ -10,40 +10,77 @@ import { onMessage, sendMessage } from '../lib/messages';
 export default defineContentScript({
   registration: 'runtime',
   main(ctx) {
-    // Put in again while it runs (the background lost track of it): the holder already there answers. One left by an
-    // older version of the extension is no longer valid, and this one takes over.
-    const running = (globalThis as Record<symbol, ContentScriptContext | undefined>)[HOLDER];
-    if (running?.isValid) return;
-    (globalThis as Record<symbol, ContentScriptContext | undefined>)[HOLDER] = ctx;
+    // One copy of this script runs in a page, with one frame. The background puts the script in again when it doesn't
+    // know the page has it (the extension updated, or a page restored from the browser's cache): the copy already there
+    // stops first. Two copies both answered the background, each showing a frame of its own, the newest over the
+    // switcher and taking its clicks and keys. One left by an older version of the extension stops too: it no longer
+    // hears the extension, and WXT's signal to stop doesn't reach it (it names the extension, which that copy no longer
+    // knows).
+    const copies = globalThis as Record<symbol, RunningCopy | undefined>;
+    copies[HOLDER]?.stop();
     let holder: Promise<FrameHolder> | undefined;
+    let stopped = false;
 
-    onMessage('showFrame', async () => {
-      // A sandboxed page (its origin opaque) keeps scripts out of its frames: the switcher's couldn't run there, and
-      // Chrome would say so in the console. No frame: the switcher opens in its own window.
-      if (origin === 'null') return null;
-      // The page has the focus (the frame in it too): the keys let go reach the switcher.
-      const canSeeRelease = document.hasFocus();
-      let shown = await holder;
-      // A page that rebuilds itself can take the frame out: it is made again.
-      let madeNow = false;
-      if (!shown?.inPage()) {
-        shown?.remove();
-        holder = holdFrame(ctx);
-        shown = await holder;
-        madeNow = true;
-      }
-      return { canSeeRelease, keys: await shown.show(), madeNow };
-    });
-    onMessage('hideFrame', async () => (await holder)?.hide());
-    onMessage('pictureFresh', async () => (await holder)?.pictureFresh() ?? true);
+    const listeners = [
+      onMessage('showFrame', async () => {
+        // A sandboxed page (its origin opaque) keeps scripts out of its frames: the switcher's couldn't run there, and
+        // Chrome would say so in the console. No frame: the switcher opens in its own window.
+        if (origin === 'null') return null;
+        // The page has the focus (the frame in it too): the keys let go reach the switcher.
+        const canSeeRelease = document.hasFocus();
+        let shown = await holder;
+        // A page that rebuilds itself can take the frame out: it is made again.
+        let madeNow = false;
+        if (!shown?.inPage()) {
+          if (stopped) throw new Error('This copy of the switcher script stopped: a newer one runs in the page.');
+          shown?.remove();
+          holder = holdFrame(ctx);
+          shown = await holder;
+          madeNow = true;
+        }
+        return { canSeeRelease, keys: await shown.show(), madeNow };
+      }),
+      onMessage('hideFrame', async () => (await holder)?.hide()),
+      onMessage('pictureFresh', async () => (await holder)?.pictureFresh() ?? true),
+    ];
     // The page lost the focus while the switcher is shown in it: the background asks the browser whether the user went
     // to another window or program (focusLeft). Not when the focus only went into the switcher's frame, as each time it
     // shows: the page still has it then (document.hasFocus() counts its frames).
-    addEventListener('blur', async () => {
+    const onBlur = async () => {
       if ((await holder)?.shown() && !document.hasFocus()) void sendMessage('focusLeft');
-    });
+    };
+    addEventListener('blur', onBlur);
+
+    const running: RunningCopy = {
+      stop() {
+        if (stopped) return;
+        stopped = true;
+        // The frame first: it leaves the page also where the extension is gone, and its listeners with it.
+        const leaving = holder;
+        holder = undefined;
+        void leaving?.then((shown) => shown.remove());
+        removeEventListener('blur', onBlur);
+        if (copies[HOLDER] === running) copies[HOLDER] = undefined;
+        // A copy of an older version of the extension has lost the extension's runtime: its listeners went with it, and
+        // the newer copy that stops it must start all the same.
+        try {
+          for (const remove of listeners) remove();
+        } catch (error) {
+          console.info('The old copy of the switcher script could not remove its listeners:', error);
+        }
+      },
+    };
+    copies[HOLDER] = running;
+    // WXT stops this copy's context when a newer copy starts.
+    ctx.onInvalidated(() => running.stop());
   },
 });
+
+/** The copy of this script running in the page (HOLDER). */
+interface RunningCopy {
+  /** Takes its frame out of the page and stops answering the background. */
+  stop: () => void;
+}
 
 /**
  * How long after the switcher left the page's sight the page's picture may still have it. Chrome showed it in pictures
@@ -52,7 +89,7 @@ export default defineContentScript({
  */
 const FRESH_AFTER_MS = 500;
 
-/** Where the holder running in this page keeps its context: in the extension's own world, out of the page's sight. */
+/** Where the copy of this script running in the page is kept: in the extension's own world, out of the page's sight. */
 const HOLDER = Symbol.for('better-tab-switcher.holder');
 
 /** The holder's own look: a dialog over the whole window, the frame filling it, and nothing of theirs to see. */
