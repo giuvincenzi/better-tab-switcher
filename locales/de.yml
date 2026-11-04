@@ -93,5 +93,31 @@ Settings_RestoreDefaults: Standardeinstellungen wiederherstellen
 Settings_Restore: Wiederherstellen
 Settings_RestoreTitle: Standardeinstellungen wiederherstellen?
 Settings_RestoreText: Alle Einstellungen werden auf den Stand bei der Installation von Better Tab Switcher zurückgesetzt. Ihre Tastenkombinationen bleiben unverändert.
+Settings_Search: Einstellungen durchsuchen
+Settings_ClearSearch: Suche löschen
+Settings_NoResults: Keine Einstellung passt zu Ihrer Suche.
+Settings_NoResultsNote: Versuchen Sie es mit anderen Wörtern oder löschen Sie die Suche, um alle Einstellungen zu sehen.
+Settings_Menu: Hauptmenü
+Settings_About: Über Better Tab Switcher
+Settings_Version: Version $1
+Settings_CheckUpdates: Nach Updates suchen
+Settings_Checking: Es wird nach Updates gesucht…
+Settings_UpToDate: Better Tab Switcher ist auf dem neuesten Stand.
+Settings_UpdateReady: Version $1 ist bereit. Starten Sie Better Tab Switcher neu, um sie sofort zu verwenden.
+Settings_UpdateReadyNoVersion: Eine neue Version ist bereit. Starten Sie Better Tab Switcher neu, um sie sofort zu verwenden.
+Settings_Restart: Neu starten
+Settings_UpdateLater: $1 hat gerade erst nach Updates gesucht. Versuchen Sie es in ein paar Minuten noch einmal.
+Settings_UpdateFailed: Better Tab Switcher konnte nicht nach Updates suchen. Versuchen Sie es später noch einmal.
+Settings_WhatsNew: Neuigkeiten
+Settings_WhatsNewNote: Sehen Sie, was sich in Version $1 geändert hat.
+Settings_Guide: Benutzerhandbuch
+Settings_GuideNote: So verwenden Sie den Tab-Umschalter und was jede Einstellung bewirkt.
+Settings_ReportIssue: Problem melden
+Settings_ReportIssueNote: Melden Sie uns auf GitHub einen Fehler oder schlagen Sie eine Idee vor.
+Settings_Website: Website
+Settings_Rate: Erweiterung bewerten
+Settings_RateNote: Schreiben Sie eine Rezension im Store für Erweiterungen, $1.
+Settings_Star: Auf GitHub mit einem Stern markieren
+Settings_StarNote: Wenn Ihnen Better Tab Switcher gefällt, geben Sie dem Projekt auf GitHub einen Stern.
 Dialog_Done: Fertig
 Dialog_Cancel: Abbrechen

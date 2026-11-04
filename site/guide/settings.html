@@ -1,4 +1,9 @@
 <p>To open the settings, click <strong>All settings</strong> in the switcher's toolbar. Every change is saved automatically, so there is no Save button.</p>
+<p>The sidebar on the left lists the sections, and the page shows the one you choose. The page's address keeps it, so reloading the page or going back shows the same section. In a narrow window, the sections are behind the <strong>Main menu</strong> button at the top left.</p>
+
+<h2 id="search">Search settings</h2>
+<p>Type in <strong>Search settings</strong>, at the top of the page, to find a setting in any section. The page then shows only the settings whose name, description or choices have what you typed, with the matching text highlighted, grouped by their section. When a section's name matches, it shows whole. The <strong>×</strong> button or <kbd>Esc</kbd> clears the search, and choosing a section in the sidebar clears it too.</p>
+<p>Some settings apply only while another one is on, like <strong>Auto-select time</strong> with <strong>Auto-select</strong>. They are shown indented under it, and only while it is on. A search finds them even while it is off: they are then shown faded, and you can't change them until you turn it on.</p>
 
 <h2 id="appearance">Appearance</h2>
 <ul>
@@ -24,7 +29,7 @@
   <li><strong>Stay open until you choose a tab</strong>: letting go of the shortcut's keys doesn't switch tabs. You choose a tab with <kbd>Enter</kbd> or a click. Off by default.</li>
   <li><strong>Open the switcher in a window on Chrome's pages</strong> (in Microsoft Edge, <strong>Open the switcher in a window on Microsoft Edge's pages</strong>): where the browser doesn't let extensions in, the switcher opens in a small window of its own. On by default. See <a href="own-window.html">The switcher's own window</a>.</li>
   <li><strong>Auto-select</strong>: the selected tab opens by itself after a few seconds, and a line shows the time left. Off by default.</li>
-  <li><strong>Auto-select time</strong>: how many seconds Auto-select waits, from 1 to 10, 3 by default. You can change it only when Auto-select is on.</li>
+  <li><strong>Auto-select time</strong>, under Auto-select and only while it is on: how many seconds Auto-select waits, from 1 to 10, 3 by default.</li>
 </ul>
 
 <h2 id="tab-details">Tab details</h2>
@@ -36,9 +41,12 @@
   <li><strong>Last used</strong>: how long ago you used each tab, like “15 min ago”. On by default.</li>
   <li><strong>Tabs not opened yet</strong>: <strong>New</strong> on the tabs opened in the background, until you open them. On by default. See <a href="list-and-grid.html#tab-details">Tab details</a>.</li>
   <li><strong>Copy address button</strong>: a button on the tab under the mouse that copies its address. On by default.</li>
-  <li><strong>Website address</strong>: the page's address on each tab. On by default.</li>
-  <li><strong>Full address</strong>: the whole address of the page, like github.com/giuvincenzi/better-tab-switcher, or, when off, only the site, like github.com. On by default. You can change it only when Website address is on.</li>
-  <li><strong>Long website addresses</strong>: <strong>Scroll</strong> on the selected tab and on the one under the mouse to show them whole (the default), or <strong>Cut short</strong> with “…”. You can change it only when Website address is on.</li>
+  <li><strong>Website address</strong>: the page's address on each tab. On by default. Under it, only while it is on:
+    <ul>
+      <li><strong>Full address</strong>: the whole address of the page, like github.com/giuvincenzi/better-tab-switcher, or, when off, only the site, like github.com. On by default.</li>
+      <li><strong>Long website addresses</strong>: <strong>Scroll</strong> on the selected tab and on the one under the mouse to show them whole (the default), or <strong>Cut short</strong> with “…”.</li>
+    </ul>
+  </li>
 </ul>
 
 <h2 id="keyboard-shortcuts">Keyboard shortcuts</h2>
@@ -46,3 +54,16 @@
 
 <h2 id="reset">Reset</h2>
 <p>Under <strong>Restore default settings</strong>, the <strong>Restore</strong> button puts every setting back to its default at once, after you confirm it. It doesn't change your keyboard shortcuts, which the browser manages.</p>
+
+<h2 id="about">About Better Tab Switcher</h2>
+<p>The last section, apart from the others in the sidebar, shows the version you have installed.</p>
+<p>The browser checks for a new version of Better Tab Switcher by itself every few hours, and installs it. <strong>Check for updates</strong> asks it to check now. It says whether Better Tab Switcher is up to date, or that a new version is ready: then <strong>Restart</strong> restarts Better Tab Switcher with it, which closes the settings page. Without restarting, the browser installs it by itself a little later. When the browser has just checked, it says to try again in a few minutes. The button is there only when you installed Better Tab Switcher from the Chrome Web Store or Microsoft Edge Add-ons.</p>
+<p>The links under it open, in a new tab:</p>
+<ul>
+  <li><strong>What's new</strong>: the release notes of your version, on GitHub.</li>
+  <li><strong>User guide</strong>: this guide.</li>
+  <li><strong>Report an issue</strong>: the page on GitHub where you report a bug or suggest an idea.</li>
+  <li><strong>Website</strong>: Better Tab Switcher's website.</li>
+  <li><strong>Rate this extension</strong>: Better Tab Switcher's page on the Chrome Web Store, or on Microsoft Edge Add-ons in Microsoft Edge, where you can write a review.</li>
+  <li><strong>Star on GitHub</strong>: Better Tab Switcher's project on GitHub, where you can give it a star.</li>
+</ul>

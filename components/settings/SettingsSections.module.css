@@ -16,3 +16,20 @@
   white-space: nowrap;
   direction: ltr;
 }
+
+.aboutIcon {
+  flex: none;
+  width: calc(2.5 * var(--bts-em));
+  height: calc(2.5 * var(--bts-em));
+}
+
+/* The result of the check for updates, under the version. */
+.status {
+  color: var(--bts-link);
+  font-size: calc(0.8125 * var(--bts-em));
+  line-height: 1.4;
+}
+
+.status:empty {
+  display: none;
+}

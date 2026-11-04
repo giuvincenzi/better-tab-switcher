@@ -8,6 +8,17 @@
   until you open it. On by default; turn it off in Tab details.
 - Copy address button: under the mouse, a button at the end of a tab's address copies it, and says “Address copied” for
   a moment. It takes no room of its own. On by default; turn it off in Tab details.
+- Search settings: a search field at the top of the settings page finds settings in every section, by their name,
+  their description or their choices, and highlights what it found.
+- About Better Tab Switcher, a new section of the settings: the version installed, Check for updates, and links to
+  What's new, the user guide, Report an issue, the website, Rate this extension and Star on GitHub.
+
+### Changed
+
+- The settings page looks more like Chrome's settings: the sidebar sits at the left edge of the window, and the page
+  shows only the section chosen in it (behind the Main menu button in a narrow window).
+- A setting that depends on another one is shown indented under it, and only while that one is on: Auto-select time
+  under Auto-select, Full address and Long website addresses under Website address.
 
 ### Fixed
 

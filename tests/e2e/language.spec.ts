@@ -46,7 +46,7 @@ for (const chromeLanguage of ['nl', 'he']) {
     }) => {
       expect(await serviceWorker.evaluate(() => chrome.i18n.getUILanguage())).toBe(chromeLanguage);
       const settings = await context.newPage();
-      await settings.goto(`chrome-extension://${extensionId}/options.html`);
+      await settings.goto(`chrome-extension://${extensionId}/options.html#details`);
       await expect(settings.getByText('For example, 15 min. ago.')).toBeVisible();
       expect(
         await settings.evaluate(() => ({ lang: document.documentElement.lang, dir: document.documentElement.dir })),
@@ -114,7 +114,13 @@ for (const [chromeLanguage, locale] of [
       expect(
         await settings.evaluate(() => ({ lang: document.documentElement.lang, dir: document.documentElement.dir })),
       ).toEqual({ lang: text(locale, 'Language_Tag'), dir });
-      expect(await textsCut(settings.locator('body'))).toEqual([]);
+      // Each section, one at a time, as the sidebar shows them.
+      const links = settings.getByRole('navigation').getByRole('link');
+      for (let i = 0; i < (await links.count()); i++) {
+        await links.nth(i).click();
+        await expect(links.nth(i)).toHaveAttribute('aria-current', 'page');
+        expect(await textsCut(settings.locator('body')), (await links.nth(i).textContent()) ?? undefined).toEqual([]);
+      }
     });
 
     test(`shows the switcher in it, ${dir}, every text whole, in the list and in the grid, whose arrows move the way they point`, async ({

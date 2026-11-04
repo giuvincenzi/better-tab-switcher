@@ -1,0 +1,26 @@
+.drawer {
+  box-sizing: border-box;
+  width: calc(16 * var(--bts-em));
+  max-width: calc(100% - 3.5 * var(--bts-em));
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  margin-inline-end: auto;
+  padding: 0;
+  border: 0;
+  background: var(--bts-settings-card);
+  color: var(--bts-text);
+  box-shadow: var(--bts-shadow);
+  font: inherit;
+}
+
+.drawer::backdrop {
+  background: rgb(0 0 0 / 40%);
+}
+
+.content {
+  height: 100%;
+  padding-block: calc(0.5 * var(--bts-em));
+  box-sizing: border-box;
+  overflow-y: auto;
+}

@@ -13,6 +13,7 @@ import { CTRL_TAB_GUIDE_URL } from '../../lib/links';
 import { sendMessage } from '../../lib/messages';
 import { loadSettings, watchSettings } from '../../lib/settings/store';
 import { readShortcuts } from '../../lib/shortcuts';
+import { checkForUpdate, restartWithUpdate, updatesFromStore } from '../../lib/updates';
 
 // The settings page: every change is saved at once by the background, the one writer of the settings
 // (lib/settings/service.ts), and the page follows changes made elsewhere (another settings page, Restore) and the
@@ -43,6 +44,8 @@ render(
       now={Date.now()}
       iconUrl={browser.runtime.getURL('/icon/128.png')}
       guideUrl={CTRL_TAB_GUIDE_URL}
+      version={browser.runtime.getManifest().version}
+      updates={updatesFromStore() ? { check: checkForUpdate, restart: restartWithUpdate } : undefined}
       onChangeShortcut={() => void browser.tabs.create({ url: shortcutsPageUrl() })}
       onRestore={() => void sendMessage('restoreDefaultSettings')}
     />

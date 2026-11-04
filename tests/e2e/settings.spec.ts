@@ -24,6 +24,12 @@ async function openSettings(context: BrowserContext, extensionId: string, query 
   return page;
 }
 
+/** Shows a section of the settings page: chosen in its sidebar, by its name. */
+async function choose(page: Page, name: string): Promise<void> {
+  await page.getByRole('navigation', { name: 'Settings sections' }).getByRole('link', { name, exact: true }).click();
+  await expect(page.getByRole('heading', { name, exact: true, level: 2 })).toBeVisible();
+}
+
 /** The browser's name and its extension store's, as the settings page writes them in English (lib/browser.ts). */
 const BROWSER = testBrowser === 'edge' ? 'Microsoft Edge' : 'Chrome';
 const STORE = testBrowser === 'edge' ? 'Microsoft Edge Add-ons' : 'Chrome Web Store';
@@ -35,6 +41,9 @@ const savedSettings = (worker: Worker) =>
 test.describe('settings page @settings', () => {
   test('gives screen readers the whole unit of its number fields', async ({ context, extensionId }) => {
     const page = await openSettings(context, extensionId);
+    await choose(page, 'Switching');
+    // The auto-select time shows with Auto-select on.
+    await page.getByRole('switch', { name: 'Auto-select', exact: true }).click();
     await expect(
       page.getByRole('spinbutton', { name: 'Delay before the switcher appears' }),
     ).toHaveAccessibleDescription(
@@ -43,36 +52,125 @@ test.describe('settings page @settings', () => {
     await expect(page.getByRole('spinbutton', { name: 'Auto-select time' })).toHaveAccessibleDescription('seconds');
   });
 
-  test('marks in its sidebar the section chosen there, and the one at the top as the page scrolls', async ({
+  test('shows the section chosen in its sidebar alone, and keeps it on a reload and with Back', async ({
     context,
     extensionId,
   }) => {
     const page = await openSettings(context, extensionId);
     const sidebar = page.getByRole('navigation', { name: 'Settings sections' });
-    const marked = sidebar.locator('a[aria-current="true"]');
+    const marked = sidebar.locator('a[aria-current="page"]');
+    const sections = page.getByRole('main').getByRole('heading', { level: 2 });
     await expect(marked).toHaveText('Appearance');
-    /** Waits until the page stops moving: a section jumped to, or scrolled to. */
-    const settled = () =>
-      expect
-        .poll(async () => {
-          const before = await page.evaluate(() => window.scrollY);
-          await page.waitForTimeout(100);
-          return (await page.evaluate(() => window.scrollY)) === before;
-        })
-        .toBe(true);
-    // The last sections are too short to reach the top of the window: the one chosen stays marked.
-    for (const name of ['Keyboard shortcuts', 'Reset', 'Switching']) {
-      await sidebar.getByRole('link', { name }).click();
-      await settled();
-      await expect(marked).toHaveText(name);
-    }
-    await page.mouse.move(800, 400);
-    await page.mouse.wheel(0, -10000);
-    await settled();
-    await expect(marked).toHaveText('Appearance');
-    await page.mouse.wheel(0, 10000);
-    await settled();
+    await expect(sections.filter({ visible: true })).toHaveText(['Appearance']);
+    await choose(page, 'Keyboard shortcuts');
+    await expect(marked).toHaveText('Keyboard shortcuts');
+    await expect(sections.filter({ visible: true })).toHaveText(['Keyboard shortcuts']);
+    await choose(page, 'Reset');
+    await page.reload();
     await expect(marked).toHaveText('Reset');
+    await expect(sections.filter({ visible: true })).toHaveText(['Reset']);
+    await page.goBack();
+    await expect(marked).toHaveText('Keyboard shortcuts');
+    await expect(sections.filter({ visible: true })).toHaveText(['Keyboard shortcuts']);
+  });
+
+  test('keeps its sidebar at the left edge of the window, with the sections beside it', async ({
+    context,
+    extensionId,
+  }) => {
+    const page = await openSettings(context, extensionId);
+    await page.setViewportSize({ width: 1600, height: 900 });
+    const link = page.getByRole('navigation', { name: 'Settings sections' }).getByRole('link', { name: 'Appearance' });
+    const box = await link.boundingBox();
+    expect(box?.x).toBe(0);
+    const card = await page.getByRole('heading', { name: 'Appearance', level: 2 }).boundingBox();
+    expect(card?.x).toBeGreaterThan((box?.x ?? 0) + (box?.width ?? 0));
+  });
+
+  test('finds settings in every section with its search, marked, and the sections come back once it is cleared', async ({
+    context,
+    extensionId,
+    serviceWorker,
+  }) => {
+    const page = await openSettings(context, extensionId);
+    const field = page.getByRole('searchbox', { name: 'Search settings' });
+    const sections = page.getByRole('main').getByRole('heading', { level: 2 });
+    await field.click();
+    await page.keyboard.type('shortcut');
+    await expect(sections.filter({ visible: true })).toHaveText(['Switching', 'Keyboard shortcuts']);
+    await expect(page.getByRole('spinbutton', { name: 'Delay before the switcher appears' })).toBeVisible();
+    await expect(page.getByRole('switch', { name: 'Compact' })).toBeHidden();
+    // What it found is marked in yellow on the screen.
+    const mark = page.locator('mark').filter({ visible: true }).first();
+    await expect(mark).toHaveText('shortcut');
+    const box = (await mark.boundingBox()) as { x: number; y: number; width: number; height: number };
+    await expect
+      .poll(() => colorsAt(page, serviceWorker, [{ x: box.x + box.width / 2, y: box.y + 1 }]))
+      .toEqual(['rgb(253, 230, 138)']);
+    // A choice of a list finds its setting too.
+    await field.fill('all windows');
+    await expect(page.getByRole('combobox', { name: 'Show tabs from' })).toBeVisible();
+    await field.fill('xyzzy');
+    await expect(page.getByText('No settings match your search.')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(field).toHaveValue('');
+    await expect(sections.filter({ visible: true })).toHaveText(['Appearance']);
+  });
+
+  test('shows the settings that depend on another one under it only while that one is on', async ({
+    context,
+    extensionId,
+  }) => {
+    const page = await openSettings(context, extensionId);
+    await choose(page, 'Switching');
+    const autoSelect = page.getByRole('switch', { name: 'Auto-select', exact: true });
+    const seconds = page.getByRole('spinbutton', { name: 'Auto-select time' });
+    await expect(seconds).toBeHidden();
+    await autoSelect.click();
+    await expect(seconds).toBeVisible();
+    // Indented under it.
+    const main = await autoSelect.boundingBox();
+    const label = await page.getByText('Auto-select time', { exact: true }).boundingBox();
+    const mainLabel = await page.getByText('Auto-select', { exact: true }).boundingBox();
+    expect(label?.y).toBeGreaterThan(main?.y ?? 0);
+    expect(label?.x).toBeGreaterThan(mainLabel?.x ?? 0);
+    await autoSelect.click();
+    await expect(seconds).toBeHidden();
+  });
+
+  test('opens its sections from a menu button in a narrow window', async ({ context, extensionId }) => {
+    const page = await openSettings(context, extensionId);
+    await page.setViewportSize({ width: 600, height: 800 });
+    const sidebar = page.getByRole('navigation', { name: 'Settings sections' });
+    await expect(sidebar).toBeHidden();
+    await page.getByRole('button', { name: 'Main menu' }).click();
+    const menu = page.getByRole('dialog', { name: 'Settings sections' });
+    await expect(menu).toBeVisible();
+    await menu.getByRole('link', { name: 'Tab details' }).click();
+    await expect(menu).toBeHidden();
+    await expect(page.getByRole('heading', { name: 'Tab details', level: 2 })).toBeVisible();
+    // Esc closes it without choosing.
+    await page.getByRole('button', { name: 'Main menu' }).click();
+    await expect(menu).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(menu).toBeHidden();
+    await expect(page.getByRole('heading', { name: 'Tab details', level: 2 })).toBeVisible();
+  });
+
+  test('shows its version in About, without a check for updates in a build not from a store', async ({
+    context,
+    extensionId,
+    serviceWorker,
+  }) => {
+    const page = await openSettings(context, extensionId);
+    await choose(page, 'About Better Tab Switcher');
+    const version = await serviceWorker.evaluate(() => chrome.runtime.getManifest().version);
+    await expect(page.getByText(`Version ${version}`, { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Check for updates' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: /^Report an issue/ })).toHaveAttribute(
+      'href',
+      'https://github.com/giuvincenzi/better-tab-switcher/issues/new/choose',
+    );
   });
 
   test("opens from the switcher's toolbar, and the page the switcher was in is usable again", async ({
@@ -136,6 +234,7 @@ test.describe('settings page @settings', () => {
 
   test("opens the browser's shortcuts page to change a shortcut", async ({ context, extensionId, serviceWorker }) => {
     const settings = await openSettings(context, extensionId);
+    await choose(settings, 'Keyboard shortcuts');
     const defaults = await defaultShortcuts(serviceWorker);
     // The toolbar icon's, third, has no keys unless the user gives it some.
     await expect(settings.locator('kbd')).toHaveText([
@@ -150,23 +249,27 @@ test.describe('settings page @settings', () => {
     await opened;
   });
 
-  test('restores the default settings', async ({ context, extensionId }) => {
+  test('restores the default settings', async ({ context, extensionId, serviceWorker }) => {
     const settings = await openSettings(context, extensionId);
     const compact = settings.getByRole('switch', { name: 'Compact' });
     await compact.click();
     await expect(compact).toBeChecked();
     const confirmation = settings.getByRole('alertdialog', { name: 'Restore default settings?' });
+    await choose(settings, 'Reset');
     // Cancelled: nothing changes.
     await settings.getByRole('button', { name: 'Restore' }).click();
     await confirmation.getByRole('button', { name: 'Cancel' }).click();
     await expect(confirmation).toBeHidden();
+    await choose(settings, 'Appearance');
     await expect(compact).toBeChecked();
+    await choose(settings, 'Reset');
     await settings.getByRole('button', { name: 'Restore' }).click();
-    // Nothing yet: the user confirms it first.
+    // Nothing yet: the user confirms it first. The page behind the confirmation can't be used: what is saved says it.
     await expect(confirmation).toBeVisible();
-    await expect(compact).toBeChecked();
+    expect((await savedSettings(serviceWorker))?.compact).toBe(true);
     await confirmation.getByRole('button', { name: 'Restore' }).click();
     await expect(confirmation).toBeHidden();
+    await choose(settings, 'Appearance');
     await expect(compact).not.toBeChecked();
   });
 
@@ -217,6 +320,8 @@ test.describe('each control of the settings page @settings', () => {
     };
     const toggle = (name: string) => page.getByRole('switch', { name, exact: true }).click();
     const choose = (name: string, label: string) => page.getByRole('combobox', { name }).selectOption({ label });
+    const show = (section: string) =>
+      page.getByRole('navigation', { name: 'Settings sections' }).getByRole('link', { name: section }).click();
     const type = async (name: string, value: number) => {
       const field = page.getByRole('spinbutton', { name });
       await field.fill(String(value));
@@ -246,6 +351,7 @@ test.describe('each control of the settings page @settings', () => {
     });
 
     // Switching.
+    await show('Switching');
     await choose('Show tabs from', 'All windows');
     await saves((s) => {
       s.scope = 'all';
@@ -281,7 +387,8 @@ test.describe('each control of the settings page @settings', () => {
       s.autoSelectSeconds = 5;
     });
 
-    // Tab details: the address last, as it turns off the two settings after it.
+    // Tab details: the address last, as it hides the two settings under it.
+    await show('Tab details');
     for (const [name, key] of [
       ['Pinned tab icon', 'pinnedIcon'],
       ['Playing audio icon', 'audioIcon'],
@@ -433,9 +540,11 @@ test.describe('settings changed in two pages at once @settings', () => {
       await chrome.storage.local.set({ settings: { ...(settings as object), compact: 'yes', delayMs: 'soon' } });
     });
     for (const page of [first, second]) {
+      await choose(page, 'Switching');
       await expect(page.getByRole('spinbutton', { name: 'Delay before the switcher appears' })).toHaveValue(
         String(defaultSettings.delayMs),
       );
+      await choose(page, 'Appearance');
       await expect(page.getByRole('switch', { name: 'Compact' })).toBeChecked({ checked: defaultSettings.compact });
       await expect(page.getByRole('switch', { name: 'Show toolbar' })).not.toBeChecked();
     }

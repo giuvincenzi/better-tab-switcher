@@ -93,5 +93,31 @@ Settings_RestoreDefaults: 설정을 기본값으로 복원
 Settings_Restore: 복원
 Settings_RestoreTitle: 설정을 기본값으로 복원하시겠습니까?
 Settings_RestoreText: 모든 설정이 Better Tab Switcher를 설치했을 때로 돌아갑니다. 키보드 단축키는 그대로 유지됩니다.
+Settings_Search: 설정 검색
+Settings_ClearSearch: 검색어 지우기
+Settings_NoResults: 검색과 일치하는 설정이 없습니다.
+Settings_NoResultsNote: 다른 단어로 검색하거나 검색어를 지워 모든 설정을 확인하세요.
+Settings_Menu: 기본 메뉴
+Settings_About: Better Tab Switcher 정보
+Settings_Version: 버전 $1
+Settings_CheckUpdates: 업데이트 확인
+Settings_Checking: 업데이트 확인 중…
+Settings_UpToDate: Better Tab Switcher가 최신 버전입니다.
+Settings_UpdateReady: 버전 $1이(가) 준비되었습니다. 지금 사용하려면 Better Tab Switcher를 다시 시작하세요.
+Settings_UpdateReadyNoVersion: 새 버전이 준비되었습니다. 지금 사용하려면 Better Tab Switcher를 다시 시작하세요.
+Settings_Restart: 다시 시작
+Settings_UpdateLater: $1에서 방금 업데이트를 확인했습니다. 몇 분 후에 다시 시도하세요.
+Settings_UpdateFailed: Better Tab Switcher에서 업데이트를 확인하지 못했습니다. 나중에 다시 시도하세요.
+Settings_WhatsNew: 새로운 기능
+Settings_WhatsNewNote: 버전 $1에서 바뀐 내용을 확인하세요.
+Settings_Guide: 사용자 가이드
+Settings_GuideNote: 탭 전환기를 사용하는 방법과 각 설정의 기능을 알아보세요.
+Settings_ReportIssue: 문제 신고
+Settings_ReportIssueNote: GitHub에서 버그를 알려 주시거나 아이디어를 제안해 주세요.
+Settings_Website: 웹사이트
+Settings_Rate: 이 확장 프로그램 평가
+Settings_RateNote: 확장 프로그램 스토어($1)에 리뷰를 남겨 주세요.
+Settings_Star: GitHub에서 별표 주기
+Settings_StarNote: Better Tab Switcher가 마음에 드신다면 GitHub에서 별표를 주세요.
 Dialog_Done: 완료
 Dialog_Cancel: 취소

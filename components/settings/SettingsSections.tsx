@@ -1,10 +1,12 @@
-import { createSignal, type JSX, Show } from 'solid-js';
+import { createSignal, type JSX, Match, Show, Switch } from 'solid-js';
 import { i18n } from '#i18n';
-import { BROWSER_NAME_TEXT, browserName, STORE_NAME_TEXT } from '../../lib/browser';
+import { BROWSER_NAME_TEXT, browserName, STORE_NAME_TEXT, storeReviewUrl } from '../../lib/browser';
 import { timeAgo } from '../../lib/i18n/time';
+import { GUIDE_URL, NEW_ISSUE_URL, REPOSITORY_URL, releaseUrl, SITE_URL } from '../../lib/links';
 import { limits, ROW_CHOICES, type RowCount, type Settings, type TabDetails } from '../../lib/settings/settings';
 import type { SettingsChange } from '../../lib/settings/store';
 import { type Shortcuts, shortcutMissing } from '../../lib/shortcuts';
+import type { UpdateCheck } from '../../lib/updates';
 import { Button } from '../ui/Button';
 import { Dialog } from '../ui/Dialog';
 import { Notice } from '../ui/Notice';
@@ -12,19 +14,24 @@ import { NumberField } from '../ui/NumberField';
 import { SegmentedControl } from '../ui/SegmentedControl';
 import { Select, type SelectOption } from '../ui/Select';
 import { Toggle } from '../ui/Toggle';
+import { LinkRow } from './LinkRow';
+import { SettingGroup } from './SettingGroup';
 import { SettingRow } from './SettingRow';
 import { SettingsSection } from './SettingsSection';
 import styles from './SettingsSections.module.css';
+import { SearchProvider, useSearch } from './search';
 
 /** What every section gets: the settings as saved, and how to change them. */
 export interface SectionProps {
   settings: Settings;
   save: (change: SettingsChange) => void;
   language: string;
+  /** Whether it is the section chosen in the sidebar (SettingsSection). */
+  chosen?: boolean;
 }
 
 /** The sections, in the order of the page and of its sidebar. */
-export const sectionIds = ['appearance', 'switching', 'details', 'shortcuts', 'reset'] as const;
+export const sectionIds = ['appearance', 'switching', 'details', 'shortcuts', 'reset', 'about'] as const;
 export type SectionId = (typeof sectionIds)[number];
 
 export function sectionTitle(id: SectionId): string {
@@ -34,23 +41,26 @@ export function sectionTitle(id: SectionId): string {
     details: i18n.t('Settings_TabDetails'),
     shortcuts: i18n.t('Settings_Shortcuts'),
     reset: i18n.t('Settings_Reset'),
+    about: i18n.t('Settings_About'),
   }[id];
 }
 
 export function AppearanceSection(props: SectionProps): JSX.Element {
   const grid = () => props.settings.view === 'grid';
+  const themes = (): SelectOption<Settings['theme']>[] => [
+    { value: 'device', label: i18n.t('Settings_ThemeDevice') },
+    { value: 'light', label: i18n.t('Settings_ThemeLight') },
+    { value: 'dark', label: i18n.t('Settings_ThemeDark') },
+  ];
   return (
-    <SettingsSection id="appearance" title={sectionTitle('appearance')}>
+    <SettingsSection id="appearance" title={sectionTitle('appearance')} chosen={props.chosen}>
       <SettingRow
         label={i18n.t('Settings_Theme')}
+        search={themes().map((theme) => theme.label)}
         control={(ids) => (
           <Select
             value={props.settings.theme}
-            options={[
-              { value: 'device', label: i18n.t('Settings_ThemeDevice') },
-              { value: 'light', label: i18n.t('Settings_ThemeLight') },
-              { value: 'dark', label: i18n.t('Settings_ThemeDark') },
-            ]}
+            options={themes()}
             labelledBy={ids.label}
             onChange={(theme) => props.save({ theme })}
           />
@@ -58,6 +68,7 @@ export function AppearanceSection(props: SectionProps): JSX.Element {
       />
       <SettingRow
         label={i18n.t('Settings_View')}
+        search={[i18n.t('Settings_ViewList'), i18n.t('Settings_ViewGrid')]}
         control={(ids) => (
           <SegmentedControl
             value={props.settings.view}
@@ -98,6 +109,7 @@ export function AppearanceSection(props: SectionProps): JSX.Element {
         <SettingRow
           label={i18n.t('Settings_GridShow')}
           note={i18n.t('Settings_GridShowNote')}
+          search={[i18n.t('Settings_GridShowPreviews'), i18n.t('Settings_GridShowIcons')]}
           control={(ids) => (
             <SegmentedControl
               value={props.settings.gridShow}
@@ -117,10 +129,11 @@ export function AppearanceSection(props: SectionProps): JSX.Element {
 
 export function SwitchingSection(props: SectionProps): JSX.Element {
   return (
-    <SettingsSection id="switching" title={sectionTitle('switching')}>
+    <SettingsSection id="switching" title={sectionTitle('switching')} chosen={props.chosen}>
       <SettingRow
         label={i18n.t('Settings_Scope')}
         note={i18n.t('Settings_ScopeNote')}
+        search={[i18n.t('Settings_ScopeWindow'), i18n.t('Settings_ScopeAll')]}
         control={(ids) => (
           <Select
             value={props.settings.scope}
@@ -165,43 +178,49 @@ export function SwitchingSection(props: SectionProps): JSX.Element {
         checked={props.settings.chromePagesWindow}
         onChange={(chromePagesWindow) => props.save({ chromePagesWindow })}
       />
-      <ToggleRow
-        label={i18n.t('Settings_AutoSelect')}
-        note={i18n.t('Settings_AutoSelectNote')}
-        checked={props.settings.autoSelect}
-        onChange={(autoSelect) => props.save({ autoSelect })}
-      />
-      <SettingRow
-        label={i18n.t('Settings_AutoSelectTime')}
-        dim={!props.settings.autoSelect}
-        control={(ids) => (
-          <NumberField
-            value={props.settings.autoSelectSeconds}
-            {...limits.autoSelectSeconds}
-            unit={{ unit: 'second', language: props.language }}
-            labelledBy={ids.label}
-            disabled={!props.settings.autoSelect}
-            onChange={(autoSelectSeconds) => props.save({ autoSelectSeconds })}
-          />
-        )}
-      />
+      <SettingGroup on={props.settings.autoSelect}>
+        <ToggleRow
+          label={i18n.t('Settings_AutoSelect')}
+          note={i18n.t('Settings_AutoSelectNote')}
+          checked={props.settings.autoSelect}
+          onChange={(autoSelect) => props.save({ autoSelect })}
+        />
+        <SettingRow
+          label={i18n.t('Settings_AutoSelectTime')}
+          child
+          control={(ids) => (
+            <NumberField
+              value={props.settings.autoSelectSeconds}
+              {...limits.autoSelectSeconds}
+              unit={{ unit: 'second', language: props.language }}
+              labelledBy={ids.label}
+              disabled={ids.disabled}
+              onChange={(autoSelectSeconds) => props.save({ autoSelectSeconds })}
+            />
+          )}
+        />
+      </SettingGroup>
     </SettingsSection>
   );
 }
 
 export function DetailsSection(props: SectionProps & { now: number }): JSX.Element {
-  const detail = (key: Exclude<keyof TabDetails, 'longAddress'>, label: string, note?: string, dim?: boolean) => (
+  const detail = (key: Exclude<keyof TabDetails, 'longAddress'>, label: string, note?: string, child?: boolean) => (
     <ToggleRow
       label={label}
       note={note}
-      dim={dim}
+      child={child}
       checked={props.settings.details[key]}
       onChange={(on) => props.save({ details: { [key]: on } })}
     />
   );
   const fifteenMinutesAgo = () => timeAgo(props.now - 15 * 60_000, props.now, props.language);
+  const longAddresses = (): SelectOption<TabDetails['longAddress']>[] => [
+    { value: 'scroll', label: i18n.t('Settings_LongAddressScroll') },
+    { value: 'cut', label: i18n.t('Settings_LongAddressCut') },
+  ];
   return (
-    <SettingsSection id="details" title={sectionTitle('details')}>
+    <SettingsSection id="details" title={sectionTitle('details')} chosen={props.chosen}>
       {detail('pinnedIcon', i18n.t('Settings_PinnedIcon'))}
       {detail('audioIcon', i18n.t('Settings_AudioIcon'))}
       {detail('sleeping', i18n.t('Settings_Sleeping'), i18n.t('Settings_SleepingNote'))}
@@ -210,32 +229,27 @@ export function DetailsSection(props: SectionProps & { now: number }): JSX.Eleme
       {detail('notOpened', i18n.t('Settings_NotOpened'), i18n.t('Settings_NotOpenedNote', [i18n.t('Switcher_New')]))}
       {/* Not with the address's settings: without the address, the button sits at the end of the title. */}
       {detail('copyAddress', i18n.t('Settings_CopyAddress'), i18n.t('Settings_CopyAddressNote'))}
-      {/* The address last, with the two settings that apply to it: faded while it is off. */}
-      {detail('address', i18n.t('Settings_Address'))}
-      {detail(
-        'fullAddress',
-        i18n.t('Settings_FullAddress'),
-        i18n.t('Settings_FullAddressNote'),
-        !props.settings.details.address,
-      )}
-      <SettingRow
-        label={i18n.t('Settings_LongAddress')}
-        note={i18n.t('Settings_LongAddressNote')}
-        dim={!props.settings.details.address}
-        control={(ids) => (
-          <Select
-            value={props.settings.details.longAddress}
-            options={[
-              { value: 'scroll', label: i18n.t('Settings_LongAddressScroll') },
-              { value: 'cut', label: i18n.t('Settings_LongAddressCut') },
-            ]}
-            labelledBy={ids.label}
-            describedBy={ids.note}
-            disabled={!props.settings.details.address}
-            onChange={(longAddress) => props.save({ details: { longAddress } })}
-          />
-        )}
-      />
+      {/* The address last, with the two settings that apply to it under it. */}
+      <SettingGroup on={props.settings.details.address}>
+        {detail('address', i18n.t('Settings_Address'))}
+        {detail('fullAddress', i18n.t('Settings_FullAddress'), i18n.t('Settings_FullAddressNote'), true)}
+        <SettingRow
+          label={i18n.t('Settings_LongAddress')}
+          note={i18n.t('Settings_LongAddressNote')}
+          search={longAddresses().map((choice) => choice.label)}
+          child
+          control={(ids) => (
+            <Select
+              value={props.settings.details.longAddress}
+              options={longAddresses()}
+              labelledBy={ids.label}
+              describedBy={ids.note}
+              disabled={ids.disabled}
+              onChange={(longAddress) => props.save({ details: { longAddress } })}
+            />
+          )}
+        />
+      </SettingGroup>
     </SettingsSection>
   );
 }
@@ -245,6 +259,8 @@ export interface ShortcutsSectionProps {
   shortcuts: Shortcuts;
   /** The section's id: "shortcuts" in the page, another one where it shows a second time (the shortcuts' dialog). */
   id?: string;
+  /** Whether it is the section chosen in the sidebar (SettingsSection); always in the dialog. */
+  chosen?: boolean;
   /** The user guide's page about Ctrl+Tab. */
   guideUrl: string;
   onChangeShortcut: () => void;
@@ -269,6 +285,7 @@ export function ShortcutsSection(props: ShortcutsSectionProps): JSX.Element {
     <SettingsSection
       id={props.id ?? 'shortcuts'}
       title={sectionTitle('shortcuts')}
+      chosen={props.chosen}
       note={
         <>
           {i18n.t('Settings_ShortcutsNote', [browserTitle()])}{' '}
@@ -307,16 +324,19 @@ export function ShortcutsDialog(props: ShortcutsSectionProps & { open: boolean; 
         </Button>
       }
     >
-      <ShortcutsSection {...props} id="shortcuts-dialog" />
+      {/* Over the page, whatever the page's search finds: the whole section. */}
+      <SearchProvider value={{ term: () => '', language: useSearch().language }}>
+        <ShortcutsSection {...props} id="shortcuts-dialog" chosen />
+      </SearchProvider>
     </Dialog>
   );
 }
 
-export function ResetSection(props: { onRestore: () => void }): JSX.Element {
+export function ResetSection(props: { chosen?: boolean; onRestore: () => void }): JSX.Element {
   // Every setting at once, with no way back: the user confirms it first.
   const [asking, setAsking] = createSignal(false);
   return (
-    <SettingsSection id="reset" title={sectionTitle('reset')}>
+    <SettingsSection id="reset" title={sectionTitle('reset')} chosen={props.chosen}>
       <SettingRow
         label={i18n.t('Settings_RestoreDefaults')}
         control={(ids) => (
@@ -353,8 +373,8 @@ export function ResetSection(props: { onRestore: () => void }): JSX.Element {
 function ToggleRow(props: {
   label: string;
   note?: string;
-  /** It doesn't apply now (it depends on a setting that is off): faded, its switch disabled. */
-  dim?: boolean;
+  /** It depends on the main setting of its group (SettingGroup). */
+  child?: boolean;
   checked: boolean;
   onChange: (on: boolean) => void;
 }) {
@@ -362,13 +382,13 @@ function ToggleRow(props: {
     <SettingRow
       label={props.label}
       note={props.note}
-      dim={props.dim}
+      child={props.child}
       control={(ids) => (
         <Toggle
           checked={props.checked}
           labelledBy={ids.label}
           describedBy={ids.note}
-          disabled={props.dim}
+          disabled={ids.disabled}
           onChange={props.onChange}
         />
       )}
@@ -386,6 +406,7 @@ function RowsRow(props: { label: string; value: RowCount; language: string; onCh
     <SettingRow
       label={props.label}
       note={i18n.t('Settings_RowsFitNote')}
+      search={options().map((option) => option.label)}
       control={(ids) => (
         <Select
           value={String(props.value)}
@@ -407,4 +428,93 @@ function browserTitle(): string {
 /** The name of the extension store of the browser the extension runs in (lib/browser.ts). */
 function storeTitle(): string {
   return i18n.t(STORE_NAME_TEXT[browserName()]);
+}
+
+export interface AboutSectionProps {
+  chosen?: boolean;
+  /** The version installed, from the manifest. */
+  version: string;
+  /** The extension's icon. */
+  iconUrl: string;
+  /** Checking for a new version (lib/updates.ts); none when the extension isn't from a store (a development build). */
+  updates?: { check: () => Promise<UpdateCheck>; restart: () => void };
+}
+
+/** What the last check for updates found, or that one is running; none before the first check. */
+type UpdateState = UpdateCheck | { kind: 'checking' };
+
+/**
+ * About Better Tab Switcher: its version, a check for a new one, and the links to its release notes, its guide, its
+ * issues, its website, its store page (to rate it) and its repository (to star it).
+ */
+export function AboutSection(props: AboutSectionProps): JSX.Element {
+  const [update, setUpdate] = createSignal<UpdateState>();
+  const check = async (updates: NonNullable<AboutSectionProps['updates']>) => {
+    if (update()?.kind === 'checking') return;
+    setUpdate({ kind: 'checking' });
+    setUpdate(await updates.check());
+  };
+  const status = (): string | undefined => {
+    const now = update();
+    if (now === undefined) return undefined;
+    switch (now.kind) {
+      case 'checking':
+        return i18n.t('Settings_Checking');
+      case 'current':
+        return i18n.t('Settings_UpToDate');
+      case 'ready':
+        return now.version ? i18n.t('Settings_UpdateReady', [now.version]) : i18n.t('Settings_UpdateReadyNoVersion');
+      case 'later':
+        return i18n.t('Settings_UpdateLater', [browserTitle()]);
+      case 'failed':
+        return i18n.t('Settings_UpdateFailed');
+    }
+  };
+  return (
+    <SettingsSection id="about" title={sectionTitle('about')} chosen={props.chosen}>
+      <SettingRow
+        label={i18n.t('Extension_Name')}
+        note={i18n.t('Settings_Version', [props.version])}
+        icon={<img class={styles.aboutIcon} src={props.iconUrl} alt="" width="40" height="40" />}
+        status={
+          // Read by screen readers as it changes.
+          <div class={styles.status} role="status">
+            {status()}
+          </div>
+        }
+        control={(ids) => (
+          <Show when={props.updates}>
+            {(updates) => (
+              <Switch>
+                <Match when={update()?.kind === 'ready'}>
+                  <Button primary describedBy={ids.label} onClick={() => updates().restart()}>
+                    {i18n.t('Settings_Restart')}
+                  </Button>
+                </Match>
+                <Match when={update()?.kind !== 'ready'}>
+                  <Button describedBy={ids.label} onClick={() => void check(updates())}>
+                    {i18n.t('Settings_CheckUpdates')}
+                  </Button>
+                </Match>
+              </Switch>
+            )}
+          </Show>
+        )}
+      />
+      <LinkRow
+        label={i18n.t('Settings_WhatsNew')}
+        note={i18n.t('Settings_WhatsNewNote', [props.version])}
+        href={releaseUrl(props.version)}
+      />
+      <LinkRow label={i18n.t('Settings_Guide')} note={i18n.t('Settings_GuideNote')} href={GUIDE_URL} />
+      <LinkRow label={i18n.t('Settings_ReportIssue')} note={i18n.t('Settings_ReportIssueNote')} href={NEW_ISSUE_URL} />
+      <LinkRow label={i18n.t('Settings_Website')} note={new URL(SITE_URL).host} href={SITE_URL} />
+      <LinkRow
+        label={i18n.t('Settings_Rate')}
+        note={i18n.t('Settings_RateNote', [storeTitle()])}
+        href={storeReviewUrl()}
+      />
+      <LinkRow label={i18n.t('Settings_Star')} note={i18n.t('Settings_StarNote')} href={REPOSITORY_URL} />
+    </SettingsSection>
+  );
 }

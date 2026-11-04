@@ -19,7 +19,9 @@ export type IconName =
   | 'lastUsed'
   | 'warning'
   | 'copy'
-  | 'check';
+  | 'check'
+  | 'menu'
+  | 'external';
 
 interface IconProps {
   name: IconName;
@@ -119,6 +121,14 @@ export function Icon(props: IconProps): JSX.Element {
         <Match when={props.name === 'window'}>
           <rect x="3" y="4" width="18" height="16" rx="2" />
           <path d="M3 9h18" />
+        </Match>
+        <Match when={props.name === 'menu'}>
+          <path d="M4 6h16M4 12h16M4 18h16" />
+        </Match>
+        {/* A link to another tab. Drawn left to right: a right-to-left page mirrors it (SettingRow.module.css). */}
+        <Match when={props.name === 'external'}>
+          <path d="M14 4h6v6M20 4l-9 9" />
+          <path d="M18 14v5a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h5" />
         </Match>
       </Switch>
     </svg>

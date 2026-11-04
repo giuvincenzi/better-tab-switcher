@@ -93,5 +93,31 @@ Settings_RestoreDefaults: Restaurar los valores predeterminados
 Settings_Restore: Restaurar
 Settings_RestoreTitle: ¿Restaurar los valores predeterminados?
 Settings_RestoreText: Toda la configuración vuelve a estar como cuando instalaste Better Tab Switcher. Tus combinaciones de teclas no cambian.
+Settings_Search: Buscar en la configuración
+Settings_ClearSearch: Borrar búsqueda
+Settings_NoResults: Ningún ajuste coincide con tu búsqueda.
+Settings_NoResultsNote: Prueba con otras palabras o borra la búsqueda para ver todos los ajustes.
+Settings_Menu: Menú principal
+Settings_About: Información de Better Tab Switcher
+Settings_Version: Versión $1
+Settings_CheckUpdates: Buscar actualizaciones
+Settings_Checking: Buscando actualizaciones…
+Settings_UpToDate: Better Tab Switcher está actualizado.
+Settings_UpdateReady: La versión $1 está lista. Reinicia Better Tab Switcher para usarla ahora.
+Settings_UpdateReadyNoVersion: Hay una nueva versión lista. Reinicia Better Tab Switcher para usarla ahora.
+Settings_Restart: Reiniciar
+Settings_UpdateLater: $1 acaba de buscar actualizaciones. Vuelve a intentarlo en unos minutos.
+Settings_UpdateFailed: Better Tab Switcher no ha podido buscar actualizaciones. Vuelve a intentarlo más tarde.
+Settings_WhatsNew: Novedades
+Settings_WhatsNewNote: Descubre qué ha cambiado en la versión $1.
+Settings_Guide: Guía de uso
+Settings_GuideNote: Cómo usar el selector y para qué sirve cada ajuste.
+Settings_ReportIssue: Informar de un problema
+Settings_ReportIssueNote: Cuéntanos un error o propón una idea en GitHub.
+Settings_Website: Sitio web
+Settings_Rate: Valorar esta extensión
+Settings_RateNote: Escribe una reseña en la tienda de extensiones, $1.
+Settings_Star: Dar una estrella en GitHub
+Settings_StarNote: Si te gusta Better Tab Switcher, dale una estrella en GitHub.
 Dialog_Done: Hecho
 Dialog_Cancel: Cancelar

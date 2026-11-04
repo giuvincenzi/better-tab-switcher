@@ -7,8 +7,19 @@
   box-sizing: border-box;
 }
 
-.row + .row {
+/* The rows of a section and its groups of linked settings, a line between each two shown. */
+.item:not(.hidden) ~ .item:not(.hidden) {
   border-top: calc(0.0625 * var(--bts-em)) solid var(--bts-settings-border);
+}
+
+/* A setting that depends on the one above it: indented under it, in the same block. */
+.child {
+  min-height: calc(3 * var(--bts-em));
+  padding-inline-start: calc(3.25 * var(--bts-em));
+}
+
+.hidden {
+  display: none;
 }
 
 .text {
@@ -31,4 +42,29 @@
 
 .dim {
   opacity: 0.5;
+}
+
+/* A row that is a link (LinkRow): the whole row opens it. */
+.link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.link:hover {
+  background: var(--bts-hover);
+}
+
+.link:focus-visible {
+  outline: calc(0.125 * var(--bts-em)) solid var(--bts-accent-bright);
+  outline-offset: calc(-0.125 * var(--bts-em));
+}
+
+.opens {
+  display: flex;
+  color: var(--bts-text-muted);
+}
+
+/* The icon of a link to another tab points to the end of the line, also in a right-to-left page. */
+.opens:dir(rtl) {
+  transform: scaleX(-1);
 }
