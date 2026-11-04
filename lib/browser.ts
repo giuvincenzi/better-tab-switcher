@@ -15,6 +15,16 @@ export const BROWSER_NAME_TEXT = { chrome: 'Browser_Chrome', edge: 'Browser_Edge
 /** The text (locales/en.yml) with each browser's extension store, by the name the browser gives it in each language. */
 export const STORE_NAME_TEXT = { chrome: 'Browser_ChromeStore', edge: 'Browser_EdgeStore' } as const;
 
+/**
+ * The extension's page on the store of the browser it runs in, where users rate it: the reviews of the Chrome Web
+ * Store, the page of Microsoft Edge Add-ons (its reviews are on it). The README links the same pages.
+ */
+export function storeReviewUrl(name: BrowserName = browserName()): string {
+  return name === 'edge'
+    ? 'https://microsoftedge.microsoft.com/addons/detail/kkoilicikefpkggldhpdeabmgnpngelg'
+    : 'https://chromewebstore.google.com/detail/fkalmlegojojpcjdfndipmnakgakokei/reviews';
+}
+
 /** The browser's page where the extensions' shortcuts are changed. */
 export function shortcutsPageUrl(name: BrowserName = browserName()): string {
   return name === 'edge' ? 'edge://extensions/shortcuts' : 'chrome://extensions/shortcuts';

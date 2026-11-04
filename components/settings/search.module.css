@@ -1,0 +1,5 @@
+.mark {
+  border-radius: calc(0.125 * var(--bts-em));
+  background: var(--bts-search-mark);
+  color: inherit;
+}

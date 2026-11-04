@@ -2,14 +2,17 @@ import { createSignal } from 'solid-js';
 import { render } from 'solid-js/web';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
-import { SettingsPage } from '../../components/settings/SettingsPage';
+import { SettingsPage, type SettingsPageProps } from '../../components/settings/SettingsPage';
 import { defaultSettings, type Settings } from '../../lib/settings/settings';
 import type { SettingsChange } from '../../lib/settings/store';
+import type { UpdateCheck } from '../../lib/updates';
 
 let dispose: (() => void) | undefined;
 afterEach(() => {
   dispose?.();
   document.body.innerHTML = '';
+  // The section chosen is in the page's address: each test starts without one.
+  history.replaceState(null, '', location.pathname + location.search);
 });
 
 /** The page with the settings kept in memory, as the settings page keeps them in storage. */
@@ -17,6 +20,7 @@ function open(
   start: Partial<Settings> = {},
   shortcuts = { next: 'Alt+S', previous: 'Alt+Shift+S', icon: '' },
   askShortcuts = false,
+  more: Partial<SettingsPageProps> = {},
 ) {
   const [settings, setSettings] = createSignal<Settings>({ ...defaultSettings, ...start });
   const saved: SettingsChange[] = [];
@@ -38,7 +42,9 @@ function open(
         now={Date.UTC(2026, 9, 28, 12)}
         iconUrl=""
         guideUrl="https://example.com/guide"
+        version="1.2.0"
         {...handlers}
+        {...more}
       />
     ),
     host,
@@ -66,6 +72,23 @@ function change(element: HTMLInputElement | HTMLSelectElement, value: string) {
   element.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
+/** Whether the user sees it: it, its row and its section are shown. */
+const shown = (element: Element) => element.checkVisibility();
+
+/** Chooses a section in the sidebar, by its name. */
+function choose(host: HTMLElement, name: string) {
+  const link = [...host.querySelectorAll<HTMLAnchorElement>('nav a')].find((element) => element.textContent === name);
+  if (!link) throw new Error(`No section "${name}"`);
+  link.click();
+}
+
+/** Types in the search field (the whole text at once, as a paste). */
+function search(host: HTMLElement, text: string) {
+  const field = host.querySelector<HTMLInputElement>('input[type="search"]') as HTMLInputElement;
+  field.value = text;
+  field.dispatchEvent(new InputEvent('input', { bubbles: true }));
+}
+
 describe('SettingsPage', () => {
   it('has the sections in its sidebar, the first one marked', () => {
     const { host } = open();
@@ -76,8 +99,9 @@ describe('SettingsPage', () => {
       'Tab details',
       'Keyboard shortcuts',
       'Reset',
+      'About Better Tab Switcher',
     ]);
-    expect(links[0]?.getAttribute('aria-current')).toBe('true');
+    expect(links[0]?.getAttribute('aria-current')).toBe('page');
   });
 
   it("shows the list's options for the list, the grid's for the grid", () => {
@@ -130,25 +154,46 @@ describe('SettingsPage', () => {
     expect(saved).toEqual([{ listRows: 'fit' }, { listRows: 15 }]);
   });
 
-  it('turns on the auto-select time only with Auto-select', () => {
+  it('shows the auto-select time only with Auto-select, under it', () => {
     const { host } = open();
-    expect(number(host, 'Auto-select time').disabled).toBe(true);
+    choose(host, 'Switching');
+    expect(shown(number(host, 'Auto-select time'))).toBe(false);
     toggle(host, 'Auto-select').click();
-    expect(number(host, 'Auto-select time').disabled).toBe(false);
+    const seconds = number(host, 'Auto-select time');
+    expect(shown(seconds)).toBe(true);
+    expect(seconds.disabled).toBe(false);
+    toggle(host, 'Auto-select').click();
+    expect(shown(seconds)).toBe(false);
   });
 
-  it('turns on Full address and the long addresses choice only with the website address', () => {
+  it('shows Full address and the long addresses choice only with the website address', () => {
     const { host, saved } = open();
-    expect(toggle(host, 'Full address').disabled).toBe(false);
-    expect(select(host, 'Long website addresses').disabled).toBe(false);
+    choose(host, 'Tab details');
+    expect(shown(toggle(host, 'Full address'))).toBe(true);
+    expect(shown(select(host, 'Long website addresses'))).toBe(true);
     toggle(host, 'Website address').click();
+    expect(shown(toggle(host, 'Full address'))).toBe(false);
+    expect(shown(select(host, 'Long website addresses'))).toBe(false);
     expect(toggle(host, 'Full address').disabled).toBe(true);
-    expect(select(host, 'Long website addresses').disabled).toBe(true);
     toggle(host, 'Full address').click();
     expect(saved).toEqual([{ details: { address: false } }]);
     toggle(host, 'Website address').click();
+    expect(shown(toggle(host, 'Full address'))).toBe(true);
     expect(toggle(host, 'Full address').disabled).toBe(false);
     expect(select(host, 'Long website addresses').disabled).toBe(false);
+  });
+
+  it('indents the settings that depend on another one under it, in the same block', () => {
+    const { host } = open({ autoSelect: true });
+    choose(host, 'Switching');
+    const row = (element: Element) => element.closest('[class*="row"]') as HTMLElement;
+    const main = row(toggle(host, 'Auto-select'));
+    const seconds = row(number(host, 'Auto-select time'));
+    expect(main.parentElement).toBe(seconds.parentElement);
+    const start = (element: HTMLElement) => Number.parseFloat(getComputedStyle(element).paddingInlineStart);
+    expect(start(seconds)).toBeGreaterThan(start(main));
+    // No line between them: one block.
+    expect(getComputedStyle(seconds).borderTopStyle).toBe('none');
   });
 
   it('lists the tab details in their order: the icons, the last used time, New, Copy address, then the address and its two settings', () => {
@@ -414,18 +459,20 @@ describe('SettingsPage, every setting', () => {
     expect(number(host, 'Auto-select time').disabled).toBe(true);
   });
 
-  it('shows the auto-select time, Full address and the long addresses faded while what they depend on is off', () => {
+  it('shows the auto-select time, Full address and the long addresses faded when a search finds them while what they depend on is off', () => {
     const { host } = open({ details: { ...defaultSettings.details, address: false } });
     const row = (name: string) =>
       [...host.querySelectorAll('div[id]')].find((element) => element.textContent === name)?.parentElement
         ?.parentElement as HTMLElement;
+    search(host, 'auto-select time');
+    expect(shown(row('Auto-select time'))).toBe(true);
     expect(Number(getComputedStyle(row('Auto-select time')).opacity)).toBeLessThan(1);
+    expect(number(host, 'Auto-select time').disabled).toBe(true);
+    search(host, 'address');
     expect(Number(getComputedStyle(row('Full address')).opacity)).toBeLessThan(1);
     expect(Number(getComputedStyle(row('Long website addresses')).opacity)).toBeLessThan(1);
-    expect(Number(getComputedStyle(row('Delay before the switcher appears')).opacity)).toBe(1);
-    toggle(host, 'Auto-select').click();
+    expect(Number(getComputedStyle(row('Website address')).opacity)).toBe(1);
     toggle(host, 'Website address').click();
-    expect(Number(getComputedStyle(row('Auto-select time')).opacity)).toBe(1);
     expect(Number(getComputedStyle(row('Full address')).opacity)).toBe(1);
     expect(Number(getComputedStyle(row('Long website addresses')).opacity)).toBe(1);
   });
@@ -473,6 +520,7 @@ describe('SettingsPage, number fields', () => {
 
   it('saves a number typed when Enter is pressed', async () => {
     const { host, saved } = open();
+    choose(host, 'Switching');
     const delay = number(host, delayName);
     await userEvent.clear(delay);
     await userEvent.type(delay, '300');
@@ -483,6 +531,7 @@ describe('SettingsPage, number fields', () => {
 
   it('saves a number typed when the field is left with Tab', async () => {
     const { host, saved } = open();
+    choose(host, 'Switching');
     const delay = number(host, delayName);
     await userEvent.clear(delay);
     await userEvent.type(delay, '75');
@@ -492,6 +541,8 @@ describe('SettingsPage, number fields', () => {
 
   it('can not be changed while it is turned off', async () => {
     const { host, saved } = open();
+    // Shown, faded, only to a search that finds it.
+    search(host, 'auto-select time');
     const seconds = number(host, 'Auto-select time');
     expect(seconds.disabled).toBe(true);
     await userEvent.click(seconds, { force: true });
@@ -527,21 +578,35 @@ describe('SettingsPage, with the keyboard', () => {
     expect(saved).toEqual([{ theme: 'light' }]);
   });
 
-  it('reaches the switches, lists and buttons with Tab, and skips the controls turned off', async () => {
-    const { host } = open({ details: { ...defaultSettings.details, address: false } });
-    const reached: Element[] = [];
-    (host.querySelector('a') as HTMLElement).focus();
-    for (let i = 0; i < 40 && host.contains(document.activeElement); i++) {
-      reached.push(document.activeElement as Element);
-      await userEvent.tab();
-    }
-    expect(reached).toContain(toggle(host, 'Compact'));
-    expect(reached).toContain(select(host, 'Theme'));
-    expect(reached).toContain(number(host, 'Delay before the switcher appears'));
-    expect(reached).toContain(button(host, 'Restore')[0]);
-    expect(reached).not.toContain(number(host, 'Auto-select time'));
-    expect(reached).not.toContain(toggle(host, 'Full address'));
-    expect(reached).not.toContain(select(host, 'Long website addresses'));
+  it("reaches the chosen section's switches, lists and buttons with Tab, and skips the controls not shown", async () => {
+    const reachedIn = async (section: string, start: Partial<Settings> = {}) => {
+      const { host } = open(start);
+      choose(host, section);
+      const reached: Element[] = [];
+      (host.querySelector('input[type="search"]') as HTMLElement).focus();
+      for (let i = 0; i < 40 && host.contains(document.activeElement); i++) {
+        reached.push(document.activeElement as Element);
+        await userEvent.tab();
+      }
+      return { host, reached };
+    };
+    const appearance = await reachedIn('Appearance');
+    expect(appearance.reached).toContain(toggle(appearance.host, 'Compact'));
+    expect(appearance.reached).toContain(select(appearance.host, 'Theme'));
+    expect(appearance.reached).not.toContain(number(appearance.host, 'Delay before the switcher appears'));
+    dispose?.();
+    const switching = await reachedIn('Switching');
+    expect(switching.reached).toContain(number(switching.host, 'Delay before the switcher appears'));
+    expect(switching.reached).not.toContain(number(switching.host, 'Auto-select time'));
+    expect(switching.reached).not.toContain(toggle(switching.host, 'Compact'));
+    dispose?.();
+    const details = await reachedIn('Tab details', { details: { ...defaultSettings.details, address: false } });
+    expect(details.reached).toContain(toggle(details.host, 'Website address'));
+    expect(details.reached).not.toContain(toggle(details.host, 'Full address'));
+    expect(details.reached).not.toContain(select(details.host, 'Long website addresses'));
+    dispose?.();
+    const reset = await reachedIn('Reset');
+    expect(reset.reached).toContain(button(reset.host, 'Restore')[0]);
   });
 });
 
@@ -621,14 +686,189 @@ describe('SettingsPage, shortcuts and restore', () => {
     const { host } = open();
     const links = [...host.querySelectorAll<HTMLAnchorElement>('nav a')];
     links.find((link) => link.textContent === 'Reset')?.click();
-    expect(links.map((link) => link.getAttribute('aria-current'))).toEqual([null, null, null, null, 'true']);
+    expect(links.map((link) => link.getAttribute('aria-current'))).toEqual([null, null, null, null, 'page', null]);
     expect(links.map((link) => link.getAttribute('href'))).toEqual([
       '#appearance',
       '#switching',
       '#details',
       '#shortcuts',
       '#reset',
+      '#about',
     ]);
     for (const link of links) expect(host.querySelector(link.getAttribute('href') as string)).not.toBeNull();
+  });
+});
+
+/** The titles of the sections the user sees. */
+const sectionsShown = (host: HTMLElement) =>
+  [...host.querySelectorAll('section')].filter(shown).map((section) => section.querySelector('h2')?.textContent);
+
+describe('SettingsPage, one section at a time', () => {
+  it('shows the first section alone, then the one chosen in the sidebar, named in the address', () => {
+    const { host } = open();
+    expect(sectionsShown(host)).toEqual(['Appearance']);
+    choose(host, 'Keyboard shortcuts');
+    expect(sectionsShown(host)).toEqual(['Keyboard shortcuts']);
+    expect(location.hash).toBe('#shortcuts');
+  });
+
+  it('opens on the section its address names, and follows Back', async () => {
+    history.replaceState(null, '', '#details');
+    const { host } = open();
+    expect(sectionsShown(host)).toEqual(['Tab details']);
+    choose(host, 'Reset');
+    expect(sectionsShown(host)).toEqual(['Reset']);
+    history.back();
+    await vi.waitFor(() => expect(sectionsShown(host)).toEqual(['Tab details']));
+  });
+});
+
+describe('SettingsPage, search', () => {
+  /** The names of the settings the user sees: each row's label. */
+  const labelsShown = (host: HTMLElement) =>
+    [...host.querySelectorAll('section [class*="row"]')]
+      .filter(shown)
+      .map((row) => row.querySelector('[class*="label"]')?.textContent);
+
+  it('shows the settings of every section that match, and only them', () => {
+    const { host } = open();
+    search(host, 'shortcut');
+    // Two notes in Switching, and the section whose title says it, whole.
+    expect(sectionsShown(host)).toEqual(['Switching', 'Keyboard shortcuts']);
+    expect(labelsShown(host)).toEqual([
+      'Delay before the switcher appears',
+      'Stay open until you choose a tab',
+      'Next tab',
+      'Previous tab',
+      'Toolbar icon',
+    ]);
+  });
+
+  it('finds a setting by one of its choices', () => {
+    const { host } = open();
+    search(host, 'all windows');
+    expect(labelsShown(host)).toEqual(['Show tabs from']);
+  });
+
+  it('marks what it found, without case', () => {
+    const { host } = open();
+    search(host, 'COMPACT');
+    expect([...host.querySelectorAll('mark')].filter(shown).map((mark) => mark.textContent)).toEqual(['Compact']);
+  });
+
+  it('shows linked settings together when it finds one of them', () => {
+    const { host } = open({ autoSelect: true });
+    search(host, 'line shows the time');
+    expect(labelsShown(host)).toEqual(['Auto-select', 'Auto-select time']);
+  });
+
+  it('marks no section in the sidebar while searching, and a section chosen ends the search', () => {
+    const { host } = open();
+    search(host, 'theme');
+    expect(host.querySelector('nav a[aria-current]')).toBeNull();
+    choose(host, 'Reset');
+    expect((host.querySelector('input[type="search"]') as HTMLInputElement).value).toBe('');
+    expect(sectionsShown(host)).toEqual(['Reset']);
+  });
+
+  it('says so when no setting matches, and the chosen section comes back once the search is cleared', () => {
+    const { host } = open();
+    search(host, 'xyzzy');
+    expect(sectionsShown(host)).toEqual([]);
+    expect(host.textContent).toContain('No settings match your search.');
+    (host.querySelector('button[aria-label="Clear search"]') as HTMLButtonElement).click();
+    expect(sectionsShown(host)).toEqual(['Appearance']);
+    expect(host.textContent).not.toContain('No settings match your search.');
+  });
+
+  it('is cleared with Esc', async () => {
+    const { host } = open();
+    const field = host.querySelector('input[type="search"]') as HTMLInputElement;
+    await userEvent.type(field, 'compact');
+    expect(sectionsShown(host)).toEqual(['Appearance']);
+    await userEvent.keyboard('{Escape}');
+    expect(field.value).toBe('');
+  });
+});
+
+describe('SettingsPage, About', () => {
+  const link = (host: HTMLElement, name: string) =>
+    [...host.querySelectorAll<HTMLAnchorElement>('#about a')].find((element) =>
+      element.textContent?.startsWith(name),
+    ) as HTMLAnchorElement;
+
+  it('shows the version, and links that open in a new tab', () => {
+    const { host } = open();
+    choose(host, 'About Better Tab Switcher');
+    expect(host.querySelector('#about')?.textContent).toContain('Version 1.2.0');
+    const links: [string, string][] = [
+      ["What's new", 'https://github.com/giuvincenzi/better-tab-switcher/releases/tag/v1.2.0'],
+      ['User guide', 'https://bettertabswitcher.gviam.app/guide/latest/'],
+      ['Report an issue', 'https://github.com/giuvincenzi/better-tab-switcher/issues/new/choose'],
+      ['Website', 'https://bettertabswitcher.gviam.app/'],
+      ['Rate this extension', 'https://chromewebstore.google.com/detail/fkalmlegojojpcjdfndipmnakgakokei/reviews'],
+      ['Star on GitHub', 'https://github.com/giuvincenzi/better-tab-switcher'],
+    ];
+    for (const [name, href] of links) {
+      const element = link(host, name);
+      expect(element.href, name).toBe(href);
+      expect(element.target, name).toBe('_blank');
+      expect(element.rel, name).toContain('noopener');
+      expect(shown(element), name).toBe(true);
+    }
+    expect(link(host, 'Rate this extension').textContent).toContain('Write a review on Chrome Web Store.');
+  });
+
+  it('rates the extension on Microsoft Edge Add-ons in Edge', () => {
+    const userAgent = vi.spyOn(Navigator.prototype, 'userAgent', 'get');
+    userAgent.mockReturnValue('Mozilla/5.0 (X11; Linux x86_64) Chrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0');
+    const { host } = open();
+    expect(link(host, 'Rate this extension').href).toBe(
+      'https://microsoftedge.microsoft.com/addons/detail/kkoilicikefpkggldhpdeabmgnpngelg',
+    );
+    expect(link(host, 'Rate this extension').textContent).toContain('Write a review on Microsoft Edge Add-ons.');
+    userAgent.mockRestore();
+  });
+
+  it('has no check for updates in a build not from a store', () => {
+    const { host } = open();
+    expect(button(host, 'Check for updates')).toEqual([]);
+  });
+
+  it('checks for updates, and says what it found', async () => {
+    let answer: (check: UpdateCheck) => void = () => {};
+    const check = vi.fn(
+      () =>
+        new Promise<UpdateCheck>((resolve) => {
+          answer = resolve;
+        }),
+    );
+    const restart = vi.fn();
+    const { host } = open({}, undefined, false, { updates: { check, restart } });
+    choose(host, 'About Better Tab Switcher');
+    const status = () => host.querySelector('#about [role="status"]')?.textContent;
+    const [checkButton] = button(host, 'Check for updates');
+    expect(describedBy(checkButton as Element)).toBe('Better Tab Switcher');
+    checkButton?.click();
+    expect(status()).toBe('Checking for updates…');
+    // A second click while it checks asks nothing more.
+    checkButton?.click();
+    expect(check).toHaveBeenCalledTimes(1);
+    answer({ kind: 'current' });
+    await vi.waitFor(() => expect(status()).toBe('Better Tab Switcher is up to date.'));
+    const answers: [UpdateCheck, string][] = [
+      [{ kind: 'later' }, 'Chrome checked for updates a moment ago. Try again in a few minutes.'],
+      [{ kind: 'failed' }, "Better Tab Switcher couldn't check for updates. Try again later."],
+      [{ kind: 'ready', version: '1.3.0' }, 'Version 1.3.0 is ready. Restart Better Tab Switcher to use it now.'],
+    ];
+    for (const [found, text] of answers) {
+      button(host, 'Check for updates')[0]?.click();
+      answer(found);
+      await vi.waitFor(() => expect(status()).toBe(text));
+    }
+    // Ready: Restart instead of the check.
+    expect(button(host, 'Check for updates')).toEqual([]);
+    button(host, 'Restart')[0]?.click();
+    expect(restart).toHaveBeenCalledTimes(1);
   });
 });

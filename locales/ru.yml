@@ -93,5 +93,31 @@ Settings_RestoreDefaults: Восстановить настройки по ум�
 Settings_Restore: Восстановить
 Settings_RestoreTitle: Восстановить настройки по умолчанию?
 Settings_RestoreText: Все настройки вернутся к тем, что были при установке Better Tab Switcher. Быстрые клавиши останутся без изменений.
+Settings_Search: Поиск настроек
+Settings_ClearSearch: Очистить поиск
+Settings_NoResults: По вашему запросу настройки не найдены.
+Settings_NoResultsNote: Попробуйте другие слова или очистите поиск, чтобы увидеть все настройки.
+Settings_Menu: Главное меню
+Settings_About: О расширении Better Tab Switcher
+Settings_Version: Версия $1
+Settings_CheckUpdates: Проверить наличие обновлений
+Settings_Checking: Проверка обновлений…
+Settings_UpToDate: Установлена последняя версия Better Tab Switcher.
+Settings_UpdateReady: Версия $1 готова. Перезапустите Better Tab Switcher, чтобы начать пользоваться ею сейчас.
+Settings_UpdateReadyNoVersion: Новая версия готова. Перезапустите Better Tab Switcher, чтобы начать пользоваться ею сейчас.
+Settings_Restart: Перезапустить
+Settings_UpdateLater: $1 только что проверил наличие обновлений. Повторите попытку через несколько минут.
+Settings_UpdateFailed: Better Tab Switcher не удалось проверить наличие обновлений. Повторите попытку позже.
+Settings_WhatsNew: Что нового
+Settings_WhatsNewNote: Посмотрите, что изменилось в версии $1.
+Settings_Guide: Руководство пользователя
+Settings_GuideNote: Как пользоваться переключателем и что делает каждая настройка.
+Settings_ReportIssue: Сообщить о проблеме
+Settings_ReportIssueNote: Расскажите нам об ошибке или предложите идею на GitHub.
+Settings_Website: Сайт
+Settings_Rate: Оценить расширение
+Settings_RateNote: Напишите отзыв в магазине расширений, $1.
+Settings_Star: Поставить звезду на GitHub
+Settings_StarNote: Если вам нравится Better Tab Switcher, поставьте ему звезду на GitHub.
 Dialog_Done: Готово
 Dialog_Cancel: Отмена

@@ -93,5 +93,31 @@ Settings_RestoreDefaults: 恢复默认设置
 Settings_Restore: 恢复
 Settings_RestoreTitle: 要恢复默认设置吗？
 Settings_RestoreText: 所有设置都将恢复为安装 Better Tab Switcher 时的状态。键盘快捷键保持不变。
+Settings_Search: 搜索设置
+Settings_ClearSearch: 清除搜索
+Settings_NoResults: 没有与搜索内容匹配的设置。
+Settings_NoResultsNote: 请尝试其他字词，或清除搜索以查看所有设置。
+Settings_Menu: 主菜单
+Settings_About: 关于 Better Tab Switcher
+Settings_Version: 版本 $1
+Settings_CheckUpdates: 检查更新
+Settings_Checking: 正在检查更新…
+Settings_UpToDate: Better Tab Switcher 已是最新版本。
+Settings_UpdateReady: 版本 $1 已准备就绪。重启 Better Tab Switcher 即可立即使用。
+Settings_UpdateReadyNoVersion: 新版本已准备就绪。重启 Better Tab Switcher 即可立即使用。
+Settings_Restart: 重启
+Settings_UpdateLater: $1 刚刚检查过更新。请过几分钟再试。
+Settings_UpdateFailed: Better Tab Switcher 无法检查更新。请稍后再试。
+Settings_WhatsNew: 新功能
+Settings_WhatsNewNote: 查看版本 $1 中的变化。
+Settings_Guide: 用户指南
+Settings_GuideNote: 如何使用切换器，以及每项设置的作用。
+Settings_ReportIssue: 报告问题
+Settings_ReportIssueNote: 在 GitHub 上告诉我们遇到的错误或提出您的想法。
+Settings_Website: 网站
+Settings_Rate: 为此扩展程序评分
+Settings_RateNote: 在扩展程序商店（$1）中撰写评价。
+Settings_Star: 在 GitHub 上加星标
+Settings_StarNote: 如果您喜欢 Better Tab Switcher，请在 GitHub 上为它加星标。
 Dialog_Done: 完成
 Dialog_Cancel: 取消

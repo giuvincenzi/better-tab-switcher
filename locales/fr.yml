@@ -93,5 +93,31 @@ Settings_RestoreDefaults: Restaurer les paramètres par défaut
 Settings_Restore: Restaurer
 Settings_RestoreTitle: Restaurer les paramètres par défaut ?
 Settings_RestoreText: Tous les paramètres redeviennent tels qu'ils étaient à l'installation de Better Tab Switcher. Vos raccourcis clavier restent inchangés.
+Settings_Search: Rechercher dans les paramètres
+Settings_ClearSearch: Effacer la recherche
+Settings_NoResults: Aucun paramètre ne correspond à votre recherche.
+Settings_NoResultsNote: Essayez d'autres mots, ou effacez la recherche pour voir tous les paramètres.
+Settings_Menu: Menu principal
+Settings_About: À propos de Better Tab Switcher
+Settings_Version: Version $1
+Settings_CheckUpdates: Rechercher des mises à jour
+Settings_Checking: Recherche de mises à jour…
+Settings_UpToDate: Better Tab Switcher est à jour.
+Settings_UpdateReady: La version $1 est prête. Redémarrez Better Tab Switcher pour l'utiliser dès maintenant.
+Settings_UpdateReadyNoVersion: Une nouvelle version est prête. Redémarrez Better Tab Switcher pour l'utiliser dès maintenant.
+Settings_Restart: Redémarrer
+Settings_UpdateLater: $1 vient de rechercher des mises à jour. Réessayez dans quelques minutes.
+Settings_UpdateFailed: Better Tab Switcher n'a pas pu rechercher de mises à jour. Réessayez plus tard.
+Settings_WhatsNew: Nouveautés
+Settings_WhatsNewNote: Découvrez ce qui a changé dans la version $1.
+Settings_Guide: Guide d'utilisation
+Settings_GuideNote: Comment utiliser le sélecteur et à quoi sert chaque paramètre.
+Settings_ReportIssue: Signaler un problème
+Settings_ReportIssueNote: Signalez-nous un bug ou proposez une idée sur GitHub.
+Settings_Website: Site web
+Settings_Rate: Noter cette extension
+Settings_RateNote: Rédigez un avis sur la boutique d'extensions, $1.
+Settings_Star: Mettre une étoile sur GitHub
+Settings_StarNote: Si Better Tab Switcher vous plaît, mettez-lui une étoile sur GitHub.
 Dialog_Done: OK
 Dialog_Cancel: Annuler

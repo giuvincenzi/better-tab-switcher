@@ -180,6 +180,56 @@ Settings_Restore: Restore
 Settings_RestoreTitle: Restore default settings?
 Settings_RestoreText: Every setting goes back to how it was when you installed Better Tab Switcher. Your keyboard shortcuts stay as they are.
 
+# The search field in the settings page's header: its placeholder and accessible name, as Chrome's settings say it.
+Settings_Search: Search settings
+# The button that empties the search field, for screen readers.
+Settings_ClearSearch: Clear search
+# Instead of the sections when no setting matches the search, then a line under it.
+Settings_NoResults: No settings match your search.
+Settings_NoResultsNote: Try other words, or clear the search to see every setting.
+# The button that shows the sections' menu in a narrow window, for screen readers, as Chrome's settings name theirs.
+Settings_Menu: Main menu
+
+# Section: the extension's version, its updates and its links, last in the sidebar, as Chrome's "About Chrome".
+# "Better Tab Switcher" is the global name.
+Settings_About: About Better Tab Switcher
+# Under the extension's name in About. $1: the version installed, like 1.2.0.
+Settings_Version: Version $1
+# The button that asks the browser to check its store for a new version now.
+Settings_CheckUpdates: Check for updates
+# Under the version, while the check runs and after it.
+Settings_Checking: Checking for updates…
+Settings_UpToDate: Better Tab Switcher is up to date.
+# A new version was found and downloaded. $1: its version, like 1.3.0. The Restart button (Settings_Restart) is next
+# to it; without restarting, the browser installs it by itself a little later.
+Settings_UpdateReady: Version $1 is ready. Restart Better Tab Switcher to use it now.
+# As Settings_UpdateReady, when the browser doesn't say the new version's number.
+Settings_UpdateReadyNoVersion: A new version is ready. Restart Better Tab Switcher to use it now.
+# The button that restarts the extension with the new version.
+Settings_Restart: Restart
+# The browser checked a moment ago and doesn't check again yet. $1: the browser's name (Browser_Chrome, Browser_Edge).
+Settings_UpdateLater: $1 checked for updates a moment ago. Try again in a few minutes.
+# The check couldn't be made.
+Settings_UpdateFailed: Better Tab Switcher couldn't check for updates. Try again later.
+# A link to the release notes of the version installed, and under it what it opens. $1: the version, like 1.2.0.
+Settings_WhatsNew: What's new
+Settings_WhatsNewNote: See what changed in version $1.
+# A link to the user guide on the website, and under it what it has.
+Settings_Guide: User guide
+Settings_GuideNote: How to use the switcher and what every setting does.
+# A link to report a bug or suggest an idea, and under it where. "GitHub" is a global name.
+Settings_ReportIssue: Report an issue
+Settings_ReportIssueNote: Tell us about a bug or suggest an idea on GitHub.
+# A link to the extension's website (its address is shown under it).
+Settings_Website: Website
+# A link to the extension's page in the store, to rate it, and under it where. $1: the store's name
+# (Browser_ChromeStore, Browser_EdgeStore), set apart so that no word around it depends on it.
+Settings_Rate: Rate this extension
+Settings_RateNote: Write a review on $1.
+# A link to the project on GitHub, where users give it a star, and under it why. "GitHub" is a global name.
+Settings_Star: Star on GitHub
+Settings_StarNote: If you like Better Tab Switcher, give it a star on GitHub.
+
 # A dialog's buttons: closing it once the user has done what it asks, closing it without doing what it asks.
 Dialog_Done: Done
 Dialog_Cancel: Cancel

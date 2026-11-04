@@ -93,5 +93,31 @@ Settings_RestoreDefaults: Restabilește setările la valorile inițiale
 Settings_Restore: Restabilește
 Settings_RestoreTitle: Restabilești setările la valorile inițiale?
 Settings_RestoreText: Toate setările revin la cum erau când ai instalat Better Tab Switcher. Comenzile rapide de la tastatură rămân neschimbate.
+Settings_Search: Caută în setări
+Settings_ClearSearch: Șterge căutarea
+Settings_NoResults: Nicio setare nu se potrivește cu căutarea.
+Settings_NoResultsNote: Încearcă alte cuvinte sau șterge căutarea ca să vezi toate setările.
+Settings_Menu: Meniul principal
+Settings_About: Despre Better Tab Switcher
+Settings_Version: Versiunea $1
+Settings_CheckUpdates: Caută actualizări
+Settings_Checking: Se caută actualizări…
+Settings_UpToDate: Better Tab Switcher este actualizat.
+Settings_UpdateReady: Versiunea $1 este gata. Repornește Better Tab Switcher ca s-o folosești acum.
+Settings_UpdateReadyNoVersion: O versiune nouă este gata. Repornește Better Tab Switcher ca s-o folosești acum.
+Settings_Restart: Repornește
+Settings_UpdateLater: $1 tocmai a căutat actualizări. Încearcă din nou peste câteva minute.
+Settings_UpdateFailed: Better Tab Switcher nu a putut căuta actualizări. Încearcă din nou mai târziu.
+Settings_WhatsNew: Noutăți
+Settings_WhatsNewNote: Vezi ce s-a schimbat în versiunea $1.
+Settings_Guide: Ghid de utilizare
+Settings_GuideNote: Cum folosești comutatorul și la ce folosește fiecare setare.
+Settings_ReportIssue: Raportează o problemă
+Settings_ReportIssueNote: Spune-ne despre o eroare sau propune o idee pe GitHub.
+Settings_Website: Site web
+Settings_Rate: Evaluează extensia
+Settings_RateNote: Scrie o recenzie în magazinul de extensii, $1.
+Settings_Star: Dă o stea pe GitHub
+Settings_StarNote: Dacă îți place Better Tab Switcher, dă-i o stea pe GitHub.
 Dialog_Done: Terminat
 Dialog_Cancel: Anulează

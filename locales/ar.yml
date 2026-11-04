@@ -93,5 +93,31 @@ Settings_RestoreDefaults: استعادة الإعدادات إلى القيم ا
 Settings_Restore: استعادة
 Settings_RestoreTitle: هل تريد استعادة الإعدادات التلقائية؟
 Settings_RestoreText: ستعود كل الإعدادات إلى ما كانت عليه عند تثبيت Better Tab Switcher، وستبقى اختصارات لوحة المفاتيح كما هي.
+Settings_Search: البحث في الإعدادات
+Settings_ClearSearch: محو البحث
+Settings_NoResults: لا يوجد إعداد يطابق بحثك.
+Settings_NoResultsNote: جرّب كلمات أخرى، أو امحُ البحث لعرض كل الإعدادات.
+Settings_Menu: القائمة الرئيسية
+Settings_About: لمحة عن Better Tab Switcher
+Settings_Version: الإصدار $1
+Settings_CheckUpdates: البحث عن تحديثات
+Settings_Checking: جارٍ البحث عن تحديثات…
+Settings_UpToDate: إصدار Better Tab Switcher محدَّث.
+Settings_UpdateReady: الإصدار $1 جاهز. أعِد تشغيل Better Tab Switcher لاستخدامه الآن.
+Settings_UpdateReadyNoVersion: يتوفر إصدار جديد جاهز. أعِد تشغيل Better Tab Switcher لاستخدامه الآن.
+Settings_Restart: إعادة التشغيل
+Settings_UpdateLater: بحث متصفّح $1 عن تحديثات قبل لحظات. أعِد المحاولة بعد بضع دقائق.
+Settings_UpdateFailed: تعذّر على Better Tab Switcher البحث عن تحديثات. أعِد المحاولة لاحقًا.
+Settings_WhatsNew: ما الجديد
+Settings_WhatsNewNote: اطّلع على ما تغيّر في الإصدار $1.
+Settings_Guide: دليل المستخدم
+Settings_GuideNote: كيفية استخدام مبدّل علامات التبويب وما يفعله كل إعداد.
+Settings_ReportIssue: الإبلاغ عن مشكلة
+Settings_ReportIssueNote: أخبرنا عن خطأ أو اقترح فكرة على GitHub.
+Settings_Website: الموقع الإلكتروني
+Settings_Rate: تقييم هذه الإضافة
+Settings_RateNote: اكتب مراجعة في متجر الإضافات، $1.
+Settings_Star: منح نجمة على GitHub
+Settings_StarNote: إذا أعجبك Better Tab Switcher، فامنحه نجمة على GitHub.
 Dialog_Done: تم
 Dialog_Cancel: إلغاء

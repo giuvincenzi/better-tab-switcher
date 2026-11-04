@@ -1,10 +1,17 @@
-import { createSignal, For, type JSX, onCleanup, onMount } from 'solid-js';
+import { createSignal, For, type JSX, onCleanup, onMount, Show } from 'solid-js';
 import { i18n } from '#i18n';
+import { searchTerm } from '../../lib/settings/search';
 import type { Settings } from '../../lib/settings/settings';
 import type { SettingsChange } from '../../lib/settings/store';
 import type { Shortcuts } from '../../lib/shortcuts';
+import { Drawer } from '../ui/Drawer';
+import { Icon } from '../ui/Icon';
+import { IconButton } from '../ui/IconButton';
+import { SearchBox } from '../ui/SearchBox';
 import styles from './SettingsPage.module.css';
 import {
+  AboutSection,
+  type AboutSectionProps,
   AppearanceSection,
   DetailsSection,
   ResetSection,
@@ -15,6 +22,7 @@ import {
   sectionIds,
   sectionTitle,
 } from './SettingsSections';
+import { createSearchScope, SearchProvider } from './search';
 
 export interface SettingsPageProps {
   settings: Settings;
@@ -26,105 +34,164 @@ export interface SettingsPageProps {
   language: string;
   /** Now, for the example of "last used", in milliseconds since 1970. */
   now: number;
-  /** The extension's icon, for the header. */
+  /** The extension's icon, for the header and About. */
   iconUrl: string;
   guideUrl: string;
+  /** The version installed. */
+  version: string;
+  /** Checking for a new version; none in a development build (AboutSection). */
+  updates?: AboutSectionProps['updates'];
   onChangeShortcut: () => void;
   onRestore: () => void;
 }
 
-/** How far down the window a section's top can be and still be the section at the top: its upper part. */
-const TOP_PART = 0.4;
-
-/**
- * The section at the top of the window: the last one whose top is in the window's upper part. Scrolled to its end,
- * the page's last section: the sections at the end are too short to reach the top.
- */
-function sectionAtTop(): SectionId {
-  const root = document.documentElement;
-  const last = sectionIds[sectionIds.length - 1] as SectionId;
-  if (window.scrollY > 0 && window.scrollY + window.innerHeight >= root.scrollHeight - 1) return last;
-  let found = sectionIds[0] as SectionId;
-  for (const id of sectionIds) {
-    const top = document.getElementById(id)?.getBoundingClientRect().top;
-    if (top !== undefined && top <= window.innerHeight * TOP_PART) found = id;
-  }
-  return found;
+/** The section the page's address names (#switching), so that Back and a reload keep it; the first one otherwise. */
+function sectionInAddress(): SectionId {
+  const id = location.hash.slice(1);
+  return (sectionIds as readonly string[]).includes(id) ? (id as SectionId) : 'appearance';
 }
 
-/** The settings page: it looks like Chrome's settings, with a sidebar to its sections. */
+/**
+ * The settings page, as Chrome's settings: a search in the header, the sections in a sidebar at the left (behind a
+ * menu button in a narrow window), and the section chosen there alone. A search shows every section with settings
+ * that match, whichever is chosen.
+ */
 export function SettingsPage(props: SettingsPageProps): JSX.Element {
-  const [current, setCurrent] = createSignal<SectionId>('appearance');
+  const [current, setCurrent] = createSignal<SectionId>(sectionInAddress());
+  const [query, setQuery] = createSignal('');
+  const [menuOpen, setMenuOpen] = createSignal(false);
   const [askingShortcuts, setAskingShortcuts] = createSignal(props.askShortcuts ?? false);
-  // A section chosen in the sidebar stays marked while the page goes to it, and after: the last sections can't reach
-  // the top of the window. Until the user scrolls the page.
-  let chosen = false;
+  const term = () => searchTerm(query(), props.language);
 
-  // The sidebar marks the section at the top of the window, as the user scrolls.
   onMount(() => {
-    const follow = () => {
-      if (!chosen) setCurrent(sectionAtTop());
-    };
-    const scrolledByTheUser = () => {
-      chosen = false;
-    };
-    window.addEventListener('scroll', follow, { passive: true });
-    // What scrolls the page (the mouse's wheel and buttons, the keys, a finger), before it scrolls it.
-    const inputs = ['wheel', 'mousedown', 'keydown', 'touchstart'] as const;
-    for (const input of inputs) window.addEventListener(input, scrolledByTheUser, { capture: true, passive: true });
-    onCleanup(() => {
-      window.removeEventListener('scroll', follow);
-      for (const input of inputs) window.removeEventListener(input, scrolledByTheUser, { capture: true });
-    });
+    const follow = () => setCurrent(sectionInAddress());
+    window.addEventListener('popstate', follow);
+    onCleanup(() => window.removeEventListener('popstate', follow));
   });
 
+  const choose = (id: SectionId, event: MouseEvent) => {
+    event.preventDefault();
+    if (location.hash !== `#${id}`) history.pushState(null, '', `#${id}`);
+    setCurrent(id);
+    setQuery('');
+    setMenuOpen(false);
+    window.scrollTo(0, 0);
+  };
+
+  const links = () => (
+    <ul class={styles.links}>
+      <For each={sectionIds}>
+        {(id) => (
+          <li classList={{ [styles.apart as string]: id === 'about' }}>
+            <a
+              href={`#${id}`}
+              class={styles.link}
+              aria-current={term() === '' && current() === id ? 'page' : undefined}
+              onClick={(event) => choose(id, event)}
+            >
+              {sectionTitle(id)}
+            </a>
+          </li>
+        )}
+      </For>
+    </ul>
+  );
+
   return (
-    <div class={styles.page}>
-      <header class={styles.header}>
-        <img class={styles.logo} src={props.iconUrl} alt="" width="28" height="28" />
-        <h1 class={styles.title}>{i18n.t('Settings_Title')}</h1>
-      </header>
-      <div class={styles.body}>
-        <nav class={styles.sidebar} aria-label={i18n.t('Settings_Sections')}>
-          <ul class={styles.links}>
-            <For each={sectionIds}>
-              {(id) => (
-                <li>
-                  <a
-                    href={`#${id}`}
-                    class={styles.link}
-                    aria-current={current() === id ? 'true' : undefined}
-                    onClick={() => {
-                      chosen = true;
-                      setCurrent(id);
-                    }}
-                  >
-                    {sectionTitle(id)}
-                  </a>
-                </li>
-              )}
-            </For>
-          </ul>
-        </nav>
-        <main class={styles.main}>
-          <AppearanceSection settings={props.settings} save={props.save} language={props.language} />
-          <SwitchingSection settings={props.settings} save={props.save} language={props.language} />
-          <DetailsSection settings={props.settings} save={props.save} language={props.language} now={props.now} />
-          <ShortcutsSection
-            shortcuts={props.shortcuts}
-            guideUrl={props.guideUrl}
-            onChangeShortcut={props.onChangeShortcut}
-          />
-          <ResetSection onRestore={props.onRestore} />
-        </main>
+    <SearchProvider value={{ term, language: props.language }}>
+      <div class={styles.page}>
+        <header class={styles.header}>
+          <div class={styles.brand}>
+            <IconButton
+              class={styles.menu}
+              icon="menu"
+              size="large"
+              label={i18n.t('Settings_Menu')}
+              onClick={() => setMenuOpen(true)}
+            />
+            <img class={styles.logo} src={props.iconUrl} alt="" width="28" height="28" />
+            <h1 class={styles.title}>{i18n.t('Settings_Title')}</h1>
+          </div>
+          <div class={styles.search}>
+            <SearchBox
+              value={query()}
+              label={i18n.t('Settings_Search')}
+              clearLabel={i18n.t('Settings_ClearSearch')}
+              onInput={setQuery}
+            />
+          </div>
+          <div class={styles.balance} />
+        </header>
+        <div class={styles.body}>
+          <nav class={styles.sidebar} aria-label={i18n.t('Settings_Sections')}>
+            {links()}
+          </nav>
+          <main class={styles.main}>
+            <Sections {...props} current={current()} />
+          </main>
+        </div>
+        <Drawer open={menuOpen()} label={i18n.t('Settings_Sections')} onClose={() => setMenuOpen(false)}>
+          <nav aria-label={i18n.t('Settings_Sections')}>{links()}</nav>
+        </Drawer>
+        <ShortcutsDialog
+          open={askingShortcuts()}
+          shortcuts={props.shortcuts}
+          guideUrl={props.guideUrl}
+          onChangeShortcut={props.onChangeShortcut}
+          onClose={() => setAskingShortcuts(false)}
+        />
       </div>
-      <ShortcutsDialog
-        open={askingShortcuts()}
-        shortcuts={props.shortcuts}
-        guideUrl={props.guideUrl}
-        onChangeShortcut={props.onChangeShortcut}
-        onClose={() => setAskingShortcuts(false)}
-      />
+    </SearchProvider>
+  );
+}
+
+/** Every section, the chosen one shown (or, during a search, the ones that match), and a note when none matches. */
+function Sections(props: SettingsPageProps & { current: SectionId }): JSX.Element {
+  const scope = createSearchScope();
+  const chosen = (id: SectionId) => props.current === id;
+  return (
+    <div class={styles.sections}>
+      <scope.Provider>
+        <AppearanceSection
+          settings={props.settings}
+          save={props.save}
+          language={props.language}
+          chosen={chosen('appearance')}
+        />
+        <SwitchingSection
+          settings={props.settings}
+          save={props.save}
+          language={props.language}
+          chosen={chosen('switching')}
+        />
+        <DetailsSection
+          settings={props.settings}
+          save={props.save}
+          language={props.language}
+          now={props.now}
+          chosen={chosen('details')}
+        />
+        <ShortcutsSection
+          shortcuts={props.shortcuts}
+          guideUrl={props.guideUrl}
+          onChangeShortcut={props.onChangeShortcut}
+          chosen={chosen('shortcuts')}
+        />
+        <ResetSection onRestore={props.onRestore} chosen={chosen('reset')} />
+        <AboutSection
+          version={props.version}
+          iconUrl={props.iconUrl}
+          updates={props.updates}
+          chosen={chosen('about')}
+        />
+      </scope.Provider>
+      <Show when={!scope.shown()}>
+        <div class={styles.none} role="status">
+          <Icon name="search" size={2.5} />
+          <p class={styles.noneTitle}>{i18n.t('Settings_NoResults')}</p>
+          <p class={styles.noneNote}>{i18n.t('Settings_NoResultsNote')}</p>
+        </div>
+      </Show>
     </div>
   );
 }
