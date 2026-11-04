@@ -69,7 +69,8 @@ or UI text:
 The plan given to the user before implementing (`working-rules.md`) lists every item of this
 checklist, each marked as needed or not needed with the reason: the guide file, the feature
 cards in `site/index.html`, the `CHANGELOG.md` line, the home's pictures, and the title, description and slogan
-(`discoverability.md`). The plan also lists the rule changes (`working-rules.md`).
+(`discoverability.md`). The plan also lists the rule changes (`working-rules.md`). The plan shows every new or changed
+translation, with the source checked for it (`i18n.md`), before it is written.
 
 ## Accuracy
 

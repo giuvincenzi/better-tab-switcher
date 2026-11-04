@@ -682,13 +682,6 @@ kbd {
 .privacy-text {
   color: var(--muted);
 }
-.privacy-text ul {
-  margin: 10px 0 0;
-  padding-inline-start: 20px;
-}
-.privacy-text :where(li + li) {
-  margin-top: 6px;
-}
 .privacy .privacy-label {
   margin-bottom: 6px;
   font-size: 14px;
