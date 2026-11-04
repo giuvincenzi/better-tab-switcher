@@ -840,11 +840,18 @@ describe('SettingsPage, About', () => {
 });
 
 describe('SettingsPage, System', () => {
-  it("opens the browser's page of the extension with Manage extension, a link with no note, before Restore", () => {
+  it("opens the browser's page of the extension with Manage extension, a link with no note, last after Restore", () => {
     const { host, handlers } = open();
     choose(host, 'System');
     const manage = host.querySelector<HTMLAnchorElement>('#system a') as HTMLAnchorElement;
     expect(manage.textContent).toBe('Manage extension');
+    // Last in System, after Restore default settings.
+    // Its rows: the confirmation's dialog, after them, is not one.
+    const rows = [...(host.querySelector('#system [class*="card"]') as Element).children].filter(
+      (element) => element.localName !== 'dialog',
+    );
+    expect(rows.at(-1)).toBe(manage);
+    expect(rows.at(-2)?.textContent).toContain('Restore default settings');
     expect(manage.getAttribute('href')).toBe('chrome://extensions/?id=abc');
     // The browser opens it (tabs.create): a page can't follow a link to chrome://.
     const click = new MouseEvent('click', { bubbles: true, cancelable: true });

@@ -332,7 +332,7 @@ export function ShortcutsDialog(props: ShortcutsSectionProps & { open: boolean; 
   );
 }
 
-/** System: the browser's page of the extension (Manage extension), and putting every setting back to its default. */
+/** System: putting every setting back to its default, and the browser's page of the extension (Manage extension). */
 export function SystemSection(props: {
   chosen?: boolean;
   /** The browser's page of the extension, its address (lib/browser.ts). */
@@ -344,7 +344,6 @@ export function SystemSection(props: {
   const [asking, setAsking] = createSignal(false);
   return (
     <SettingsSection id="system" title={sectionTitle('system')} chosen={props.chosen}>
-      <LinkRow label={i18n.t('Settings_ManageExtension')} href={props.extensionPage} onOpen={() => props.onManage()} />
       <SettingRow
         label={i18n.t('Settings_RestoreDefaults')}
         control={(ids) => (
@@ -353,6 +352,7 @@ export function SystemSection(props: {
           </Button>
         )}
       />
+      <LinkRow label={i18n.t('Settings_ManageExtension')} href={props.extensionPage} onOpen={() => props.onManage()} />
       <Dialog
         open={asking()}
         alert
