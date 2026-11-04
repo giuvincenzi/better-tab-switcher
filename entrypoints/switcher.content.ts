@@ -11,15 +11,12 @@ export default defineContentScript({
   registration: 'runtime',
   main(ctx) {
     // One copy of this script runs in a page, with one frame. The background puts the script in again when it doesn't
-    // know the page has it (the extension updated, or a page restored from the browser's cache): the copy already there
-    // stops first. Two copies both answered the background, each showing a frame of its own, the newest over the
-    // switcher and taking its clicks and keys. One left by an older version of the extension stops too: it no longer
-    // hears the extension, and WXT's signal to stop doesn't reach it (it names the extension, which that copy no longer
-    // knows).
-    const copies = globalThis as Record<symbol, RunningCopy | undefined>;
-    copies[HOLDER]?.stop();
+    // know the page has it (the extension updated, or a page restored from the browser's cache): WXT then stops the
+    // copy already there, also one of an older version of the extension, by invalidating its context. Everything a
+    // copy makes is its context's, so it all goes with it: its frame (createShadowRootUi), its listeners in the page
+    // (ctx.addEventListener) and its listeners of the background's messages (below). A copy that kept answering made a
+    // frame of its own again, the newest over the switcher, taking its clicks and keys.
     let holder: Promise<FrameHolder> | undefined;
-    let stopped = false;
 
     const listeners = [
       onMessage('showFrame', async () => {
@@ -32,54 +29,40 @@ export default defineContentScript({
         // A page that rebuilds itself can take the frame out: it is made again.
         let madeNow = false;
         if (!shown?.inPage()) {
-          if (stopped) throw new Error('This copy of the switcher script stopped: a newer one runs in the page.');
           shown?.remove();
           holder = holdFrame(ctx);
           shown = await holder;
           madeNow = true;
         }
+        // Stopped meanwhile (a newer copy started): its frame is gone, and the newer copy answers.
+        if (ctx.isInvalid) throw new Stopped();
         return { canSeeRelease, keys: await shown.show(), madeNow };
       }),
       onMessage('hideFrame', async () => (await holder)?.hide()),
       onMessage('pictureFresh', async () => (await holder)?.pictureFresh() ?? true),
     ];
+    ctx.onInvalidated(() => {
+      // A copy of an older version of the extension no longer has the extension's runtime, its listeners gone with it.
+      try {
+        for (const remove of listeners) remove();
+      } catch (error) {
+        console.info('The old copy of the switcher script could not remove its listeners:', error);
+      }
+    });
     // The page lost the focus while the switcher is shown in it: the background asks the browser whether the user went
     // to another window or program (focusLeft). Not when the focus only went into the switcher's frame, as each time it
     // shows: the page still has it then (document.hasFocus() counts its frames).
-    const onBlur = async () => {
+    ctx.addEventListener(window, 'blur', async () => {
       if ((await holder)?.shown() && !document.hasFocus()) void sendMessage('focusLeft');
-    };
-    addEventListener('blur', onBlur);
-
-    const running: RunningCopy = {
-      stop() {
-        if (stopped) return;
-        stopped = true;
-        // The frame first: it leaves the page also where the extension is gone, and its listeners with it.
-        const leaving = holder;
-        holder = undefined;
-        void leaving?.then((shown) => shown.remove());
-        removeEventListener('blur', onBlur);
-        if (copies[HOLDER] === running) copies[HOLDER] = undefined;
-        // A copy of an older version of the extension has lost the extension's runtime: its listeners went with it, and
-        // the newer copy that stops it must start all the same.
-        try {
-          for (const remove of listeners) remove();
-        } catch (error) {
-          console.info('The old copy of the switcher script could not remove its listeners:', error);
-        }
-      },
-    };
-    copies[HOLDER] = running;
-    // WXT stops this copy's context when a newer copy starts.
-    ctx.onInvalidated(() => running.stop());
+    });
   },
 });
 
-/** The copy of this script running in the page (HOLDER). */
-interface RunningCopy {
-  /** Takes its frame out of the page and stops answering the background. */
-  stop: () => void;
+/** This copy of the script was stopped by a newer one, which answers the background instead. */
+class Stopped extends Error {
+  constructor() {
+    super('This copy of the switcher script stopped: a newer one runs in the page.');
+  }
 }
 
 /**
@@ -88,9 +71,6 @@ interface RunningCopy {
  * frames: the limit is far above that. A switcher opened sooner keeps the tab's last picture.
  */
 const FRESH_AFTER_MS = 500;
-
-/** Where the copy of this script running in the page is kept: in the extension's own world, out of the page's sight. */
-const HOLDER = Symbol.for('better-tab-switcher.holder');
 
 /** The holder's own look: a dialog over the whole window, the frame filling it, and nothing of theirs to see. */
 const HOLDER_CSS = `
@@ -169,6 +149,9 @@ async function holdFrame(ctx: ContentScriptContext): Promise<FrameHolder> {
     anchor: 'html',
     onMount: (container) => container.append(dialog),
   });
+  // Stopped while the frame was being made: WXT takes out the frames of a context when it is invalidated, never one
+  // made after, which would stay in the page.
+  if (ctx.isInvalid) throw new Stopped();
   ui.mount();
   const keys = passKeysOn(ctx, dialog);
   // What Chrome shows of the page, which its picture copies, can still have the switcher for a moment after it is gone:

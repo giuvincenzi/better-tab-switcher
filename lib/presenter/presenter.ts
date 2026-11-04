@@ -180,9 +180,10 @@ export function listenToSwitcher(request: (switcher: SwitcherRequest) => Promise
   browser.tabs.onAttached.addListener(() => listAgain());
   // A new document in the tab, its holder gone with the page before. Not tabs.onUpdated's "loading": Chrome sends it
   // also when a page only changes its address (history.pushState, as Google Chat does), and the holder still there was
-  // then put in again.
-  browser.webNavigation.onCommitted.addListener(async ({ tabId, frameId }) => {
-    if (frameId === 0) await forgetHolder(tabId);
+  // then put in again. The tab's own document, not one of its frames, by frameType: a page Chrome loaded ahead
+  // (prerendered) has a frameId other than 0 (developer.chrome.com/blog/extension-instantnav).
+  browser.webNavigation.onCommitted.addListener(async ({ tabId, frameType }) => {
+    if (frameType === 'outermost_frame') await forgetHolder(tabId);
   });
   browser.tabs.onUpdated.addListener(async (_tabId, change) => {
     // The open switcher shows the tab as it is now: a tab just made gets its address and title a moment later.

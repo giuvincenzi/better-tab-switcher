@@ -625,7 +625,9 @@ test.describe('pages that get in the way @switcher', () => {
     await page.keyboard.press('Escape');
     await expect.poll(() => frameShown(page)).toBe(false);
     await showSwitcher(serviceWorker, 'next', 'icon');
-    await rows(page).filter({ hasText: 'alpha' }).click();
+    await switcher(page)
+      .getByRole('option', { name: named('alpha') })
+      .click();
     await expect.poll(() => activeTitle(serviceWorker)).toBe('alpha');
     await expect(page.locator('better-tab-switcher')).toHaveCount(1);
   });
@@ -641,6 +643,7 @@ test.describe('pages that get in the way @switcher', () => {
     await page.keyboard.press('Escape');
     await expect.poll(() => frameShown(page)).toBe(false);
     const frame = switcherFrame(page);
+    expect(frame).not.toBeNull();
     // As Google Chat does when another chat is chosen: the same page, at another address.
     await page.evaluate(() => history.pushState(null, '', '/gamma/another'));
     await expect
