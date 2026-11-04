@@ -45,12 +45,14 @@ cards and buttons grow.
       keyboard on the tabs.
   - **The settings page** (boards 31–34, the page "Settings redesign" of the same canvas, options A, and the Design
     canvas "Settings: sidebar icons and System"): Chrome's settings look, in the theme in use: a search field in the
-    header that finds settings in every section and marks what it found; header and body on the same three columns,
-    the search field and the sections as wide as each other in the middle one; the sidebar at the window's left edge,
-    an icon for each section, behind a menu button (a drawer) in a narrow window; only the section chosen in it shown,
+    header that finds settings in every section and marks what it found; the search field and the sections as wide as
+    each other, one above the other, in the middle of the window (right beside the sidebar where they would reach it);
+    the sidebar at the window's left edge, an icon for each section, behind a menu button (a drawer) in a window too
+    narrow for the sections beside it; only the section chosen in it shown,
     named in the page's address; System and About last, under a line. System: Restore default settings, then Manage
     extension (a link row to the browser's page of the extension). About: the version, and links in rows that open a
     new tab. A setting that depends on another one is indented under it, in the same block, and shown only while that
-    one is on (to a search, faded). The options of the list or the grid only for the view chosen. Keyboard shortcuts: next tab, previous tab and the toolbar icon, with a warning when one of the first two
-    has no keys; installed with a shortcut left without keys, the extension opens its settings on a dialog with that
-    section alone. Restore default settings asks to confirm, in the same dialog component.
+    one is on (to a search, faded). The options of the list or the grid only for the view chosen. Keyboard shortcuts:
+    next tab, previous tab and the toolbar icon, with a warning when one of the first two has no keys; installed with a
+    shortcut left without keys, the extension opens its settings on a dialog with that section alone. Restore default
+    settings asks to confirm, in the same dialog component.

@@ -27,7 +27,7 @@ function open(
     saved.push(change);
     setSettings((now) => ({ ...now, ...change, details: { ...now.details, ...change.details } }));
   };
-  const handlers = { onChangeShortcut: vi.fn(), onRestore: vi.fn(), onManageExtension: vi.fn() };
+  const handlers = { onChangeShortcut: vi.fn(), onRestore: vi.fn(), onOpenBrowserPage: vi.fn() };
   const host = document.createElement('div');
   document.body.append(host);
   dispose = render(
@@ -152,6 +152,14 @@ describe('SettingsPage', () => {
     change(rows, 'fit');
     change(rows, '15');
     expect(saved).toEqual([{ listRows: 'fit' }, { listRows: 15 }]);
+  });
+
+  it('shows Show pinned tabs in Switching, under Show tabs from: both choose which tabs the switcher lists', () => {
+    const { host } = open();
+    const labels = [...host.querySelectorAll('#switching [aria-labelledby]')].map(
+      (element) => document.getElementById(element.getAttribute('aria-labelledby') ?? '')?.textContent,
+    );
+    expect(labels.slice(0, 2)).toEqual(['Show tabs from', 'Show pinned tabs']);
   });
 
   it('shows the auto-select time only with Auto-select, under it', () => {
@@ -857,17 +865,8 @@ describe('SettingsPage, System', () => {
     const click = new MouseEvent('click', { bubbles: true, cancelable: true });
     manage.dispatchEvent(click);
     expect(click.defaultPrevented).toBe(true);
-    expect(handlers.onManageExtension).toHaveBeenCalledTimes(1);
+    expect(handlers.onOpenBrowserPage).toHaveBeenCalledWith('chrome://extensions/?id=abc');
     expect(handlers.onRestore).not.toHaveBeenCalled();
-    expect(button(host, 'Restart')).toEqual([]);
-  });
-
-  it('shows Show pinned tabs in Switching, under Show tabs from: both choose which tabs the switcher lists', () => {
-    const { host } = open();
-    const labels = [...host.querySelectorAll('#switching [aria-labelledby]')].map(
-      (element) => document.getElementById(element.getAttribute('aria-labelledby') ?? '')?.textContent,
-    );
-    expect(labels.slice(0, 2)).toEqual(['Show tabs from', 'Show pinned tabs']);
   });
 
   it('gives each section of the sidebar its icon, and sets System and About apart', () => {

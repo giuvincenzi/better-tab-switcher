@@ -337,7 +337,7 @@ export function SystemSection(props: {
   chosen?: boolean;
   /** The browser's page of the extension, its address (lib/browser.ts). */
   extensionPage: string;
-  onManage: () => void;
+  onOpenBrowserPage: (url: string) => void;
   onRestore: () => void;
 }): JSX.Element {
   // Every setting at once, with no way back: the user confirms it first.
@@ -352,7 +352,11 @@ export function SystemSection(props: {
           </Button>
         )}
       />
-      <LinkRow label={i18n.t('Settings_ManageExtension')} href={props.extensionPage} onOpen={() => props.onManage()} />
+      <LinkRow
+        label={i18n.t('Settings_ManageExtension')}
+        href={props.extensionPage}
+        onOpen={() => props.onOpenBrowserPage(props.extensionPage)}
+      />
       <Dialog
         open={asking()}
         alert

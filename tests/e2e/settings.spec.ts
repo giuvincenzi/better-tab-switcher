@@ -80,29 +80,45 @@ test.describe('settings page @settings', () => {
     serviceWorker,
   }) => {
     const page = await openSettings(context, extensionId);
-    await page.setViewportSize({ width: 1600, height: 900 });
     const sidebar = page.getByRole('navigation', { name: 'Settings sections' });
-    const link = await sidebar.getByRole('link', { name: 'Appearance' }).boundingBox();
-    expect(link?.x).toBe(0);
-    // The search field and the section's card: the same left edge and the same width, as in Chrome's settings.
-    const search = await page.getByRole('searchbox', { name: 'Search settings' }).locator('..').boundingBox();
-    const card = await page.getByRole('region', { name: 'Appearance' }).boundingBox();
-    expect(Math.abs((search?.x ?? 0) - (card?.x ?? 0))).toBeLessThanOrEqual(1);
-    expect(Math.abs((search?.width ?? 0) - (card?.width ?? 0))).toBeLessThanOrEqual(1);
-    // The line above System, in the border's color, and none above the other sections.
-    const above = async (name: string) => {
-      const box = (await sidebar.getByRole('link', { name, exact: true }).boundingBox()) as { x: number; y: number };
-      return box;
-    };
-    const system = await above('System');
-    const shortcuts = await above('Keyboard shortcuts');
-    // The line is the top border of System's item, a pixel high, its padding (0.5em) above the link.
+    const search = page.getByRole('searchbox', { name: 'Search settings' }).locator('..');
+    const section = page.getByRole('region', { name: 'Appearance' });
+    // A wide window, where they sit in the middle of it, and a medium one, where they sit beside the sidebar: as wide as
+    // each other, one above the other, the sections never narrower than their own width.
+    for (const width of [1600, 1100]) {
+      await page.setViewportSize({ width, height: 900 });
+      const link = await sidebar.getByRole('link', { name: 'Appearance' }).boundingBox();
+      expect(link?.x, `${width}`).toBe(0);
+      const [field, card] = (await Promise.all([search.boundingBox(), section.boundingBox()])) as {
+        x: number;
+        width: number;
+      }[];
+      expect(Math.abs((field?.x ?? 0) - (card?.x ?? 0)), `${width}`).toBeLessThanOrEqual(1);
+      expect(Math.abs((field?.width ?? 0) - (card?.width ?? 0)), `${width}`).toBeLessThanOrEqual(1);
+      const own = await section.evaluate((element) =>
+        Number.parseFloat(getComputedStyle(element.parentElement as Element).maxWidth),
+      );
+      expect(card?.width, `${width}`).toBeCloseTo(own, 0);
+      if (width === 1600) expect(Math.abs((card?.x ?? 0) + (card?.width ?? 0) / 2 - width / 2)).toBeLessThanOrEqual(1);
+    }
+    // The line above System: the top border of its item, in the border's color; none above the other items.
+    const item = (name: string) =>
+      sidebar.getByRole('listitem').filter({ has: page.getByRole('link', { name, exact: true }) });
+    const [system, shortcuts] = (await Promise.all([
+      item('System').boundingBox(),
+      item('Keyboard shortcuts').boundingBox(),
+    ])) as {
+      x: number;
+      y: number;
+    }[];
+    const border = await item('System').evaluate((element) => getComputedStyle(element).borderTopColor);
+    const background = await page.locator('body').evaluate((element) => getComputedStyle(element).backgroundColor);
     const [line, gap] = await colorsAt(page, serviceWorker, [
-      { x: 100, y: system.y - 9 },
-      { x: 100, y: shortcuts.y - 1 },
+      { x: (system?.x ?? 0) + 40, y: Math.ceil(system?.y ?? 0) },
+      { x: (shortcuts?.x ?? 0) + 40, y: Math.ceil(shortcuts?.y ?? 0) },
     ]);
-    expect(line).toBe('rgb(218, 220, 224)');
-    expect(gap).toBe('rgb(248, 249, 250)');
+    expect(line).toBe(border);
+    expect(gap).toBe(background);
   });
 
   test("opens the browser's page of the extension with System's Manage extension", async ({ context, extensionId }) => {

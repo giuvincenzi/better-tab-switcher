@@ -1,11 +1,13 @@
 /*
- * The header and the body share three columns, as Chrome's settings: the sidebar's, the middle one, and one as wide as
- * the sidebar. The search field and the sections are in the middle one, as wide as each other and one above the other,
- * in the middle of the window.
+ * As Chrome's settings: the header and the body share two columns, the sidebar's and the rest. The search field and the
+ * sections are as wide as each other, one above the other, in the middle of the window; where they would reach the
+ * sidebar, right beside it (--content-start, the same for both).
  */
 .page {
   --sidebar-width: calc(16 * var(--bts-em));
   --content-width: calc(42.5 * var(--bts-em));
+  --gutter: calc(1.5 * var(--bts-em));
+  --content-start: max(0px, calc((100vw - var(--content-width)) / 2 - var(--sidebar-width) - var(--gutter)));
   min-height: 100vh;
   background: var(--bts-settings-page);
   color: var(--bts-text);
@@ -15,7 +17,7 @@
 .header,
 .body {
   display: grid;
-  grid-template-columns: var(--sidebar-width) minmax(0, 1fr) var(--sidebar-width);
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
 }
 
 .header {
@@ -56,13 +58,15 @@
 
 .search {
   display: flex;
-  justify-content: center;
   min-width: 0;
-  padding-inline: calc(1.5 * var(--bts-em));
+  padding-inline: var(--gutter);
 }
 
-.search > * {
+/* The search field (components/ui/SearchBox), placed as the sections are. */
+.header .search > * {
+  width: 100%;
   max-width: var(--content-width);
+  margin-inline-start: var(--content-start);
 }
 
 .sidebar {
@@ -122,7 +126,7 @@
 
 .main {
   min-width: 0;
-  padding: calc(1.5 * var(--bts-em)) calc(1.5 * var(--bts-em)) calc(3 * var(--bts-em));
+  padding: var(--gutter) var(--gutter) calc(3 * var(--bts-em));
 }
 
 .sections {
@@ -130,7 +134,7 @@
   flex-direction: column;
   gap: calc(1.75 * var(--bts-em));
   max-width: var(--content-width);
-  margin: 0 auto;
+  margin-inline-start: var(--content-start);
 }
 
 .none {
@@ -156,10 +160,11 @@
 }
 
 /*
- * A narrow window, where the middle column would be narrower than the sections: the sidebar behind the menu button
- * (components/ui/Drawer), the title for screen readers only.
+ * A narrow window, where the sections would be narrower than their width beside the sidebar (16em + 1.5em + 42.5em +
+ * 1.5em): the sidebar behind the menu button (components/ui/Drawer), the title for screen readers only, the sections in
+ * the middle.
  */
-@media (width < 64em) {
+@media (width < 61.5em) {
   .header {
     grid-template-columns: auto minmax(0, 1fr);
   }
@@ -168,9 +173,16 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .sidebar,
-  .balance {
+  .sidebar {
     display: none;
+  }
+
+  .page {
+    --content-start: auto;
+  }
+
+  .sections {
+    margin-inline-end: auto;
   }
 
   .brand .menu {
@@ -187,6 +199,12 @@
 
   .search {
     padding-inline: 0 var(--bts-em);
+  }
+
+  /* The search field beside the menu button, in all the room left. */
+  .header .search > * {
+    max-width: none;
+    margin-inline-start: 0;
   }
 
   .main {

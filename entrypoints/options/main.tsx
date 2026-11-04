@@ -45,7 +45,7 @@ render(
       guideUrl={CTRL_TAB_GUIDE_URL}
       version={browser.runtime.getManifest().version}
       extensionPage={extensionPageUrl(browser.runtime.id)}
-      onManageExtension={() => void browser.tabs.create({ url: extensionPageUrl(browser.runtime.id) })}
+      onOpenBrowserPage={(url) => void browser.tabs.create({ url })}
       onChangeShortcut={() => void browser.tabs.create({ url: shortcutsPageUrl() })}
       onRestore={() => void sendMessage('restoreDefaultSettings')}
     />

@@ -40,8 +40,8 @@ export interface SettingsPageProps {
   version: string;
   /** The browser's page of the extension (Manage extension in System), its address. */
   extensionPage: string;
-  /** Opens that page in a new tab. */
-  onManageExtension: () => void;
+  /** Opens a browser's own page (chrome://), which a page can't open as a link, in a new tab. */
+  onOpenBrowserPage: (url: string) => void;
   onChangeShortcut: () => void;
   onRestore: () => void;
 }
@@ -132,7 +132,6 @@ export function SettingsPage(props: SettingsPageProps): JSX.Element {
               onInput={setQuery}
             />
           </div>
-          <div class={styles.balance} />
         </header>
         <div class={styles.body}>
           <nav class={styles.sidebar} aria-label={i18n.t('Settings_Sections')}>
@@ -191,7 +190,7 @@ function Sections(props: SettingsPageProps & { current: SectionId }): JSX.Elemen
         />
         <SystemSection
           extensionPage={props.extensionPage}
-          onManage={props.onManageExtension}
+          onOpenBrowserPage={props.onOpenBrowserPage}
           onRestore={props.onRestore}
           chosen={chosen('system')}
         />
