@@ -47,7 +47,7 @@
   "open_title": "免费开源",
   "open_text": "无需账号，没有广告。代码托管在 GitHub 上，采用 MIT 许可证。",
   "privacy_title": "从设计之初守护您的数据",
-  "privacy_text": "<p>Better Tab Switcher 只在浏览器中运行，从不连接互联网：无需账号，没有跟踪，也不会向任何地方发送任何数据。</p><ul><li>您的设置保存在这台电脑的浏览器中。</li><li>当网格显示<strong>预览</strong>时，标签页的图片只保存在内存中，从不写入磁盘。关闭标签页、选择<strong>图标</strong>或关闭浏览器时，这些图片会被删除。</li><li>您访问的网站无法看到您打开了哪些标签页。</li></ul>",
+  "privacy_text": "<p>Better Tab Switcher 只在浏览器中运行，从不连接互联网：无需账号，没有跟踪，也不会向任何地方发送任何数据。</p><ul><li>您的设置保存在这台电脑的浏览器中。</li><li>当网格显示<strong>预览</strong>时，标签页的图片只保存在内存中，从不写入磁盘。关闭标签页、选择<strong>图标</strong>或关闭浏览器时，这些图片会被删除。</li><li>为了在尚未打开的标签页上显示<strong>未读</strong>，只会在内存中保存这些标签页的编号，直到您打开或关闭它们，或关闭浏览器为止。</li><li>只有在您点击<strong>复制网址</strong>时，标签页的网址才会被复制到剪贴板。扩展程序从不读取剪贴板。</li><li>您访问的网站无法看到您打开了哪些标签页。</li></ul>",
   "ctrl_tab_title": "如何使用 Ctrl+Tab",
   "ctrl_tab_text": "Chrome 和 Microsoft Edge 不允许扩展程序使用 Ctrl+Tab，因此切换器通过 Alt+S（Mac 上为 Control+S） 打开。指南介绍了如何更改快捷键，以及如何借助按键映射工具使用 Ctrl+Tab。",
   "guide_button": "阅读指南",

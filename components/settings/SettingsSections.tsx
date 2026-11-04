@@ -207,6 +207,9 @@ export function DetailsSection(props: SectionProps & { now: number }): JSX.Eleme
       {detail('sleeping', i18n.t('Settings_Sleeping'), i18n.t('Settings_SleepingNote'))}
       {detail('groupColor', i18n.t('Settings_GroupColor'))}
       {detail('lastUsed', i18n.t('Settings_LastUsed'), i18n.t('Settings_LastUsedNote', [fifteenMinutesAgo()]))}
+      {detail('notOpened', i18n.t('Settings_NotOpened'), i18n.t('Settings_NotOpenedNote', [i18n.t('Switcher_New')]))}
+      {/* Not with the address's settings: without the address, the button sits at the end of the title. */}
+      {detail('copyAddress', i18n.t('Settings_CopyAddress'), i18n.t('Settings_CopyAddressNote'))}
       {/* The address last, with the two settings that apply to it: faded while it is off. */}
       {detail('address', i18n.t('Settings_Address'))}
       {detail(

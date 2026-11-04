@@ -117,6 +117,10 @@ async function holdFrame(ctx: ContentScriptContext): Promise<FrameHolder> {
   // isolates itself (Cross-Origin-Embedder-Policy: require-corp, like WhatsApp Web) accepts it; Chrome 110 and later.
   // An attribute: TypeScript's DOM types don't have the property yet.
   frame.setAttribute('credentialless', '');
+  // Copy address writes the clipboard from the frame: Chrome allows it to a frame of another origin only when the page
+  // says so (lib/clipboard.ts). Named by the extension's own origin: the frame's address has a dynamic one
+  // (use_dynamic_url, wxt.config.ts) that its page doesn't have, and allow without an origin means the address's.
+  frame.allow = `clipboard-write ${new URL(browser.runtime.getURL('/')).origin}`;
   frame.src = browser.runtime.getURL('/switcher-frame.html');
   const loaded = new Promise<void>((resolve) => frame.addEventListener('load', () => resolve(), { once: true }));
   dialog.append(frame);

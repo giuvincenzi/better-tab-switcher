@@ -37,7 +37,10 @@ cards and buttons grow.
       site's icon instead of the preview, never larger than its real size.
     - Optional details, all on by default: pinned, audio, sleeping (also greyed) and tab group icons; the website
       address, whole (Full address) and listed last, long ones scrolling on the selected tab and on the one under the
-      mouse, or cut with "…"; the last used time.
+      mouse, or cut with "…"; the last used time; "New" in its place on the tabs not opened yet; the Copy address
+      button under the mouse, over the end of the address's place (the title's without the address), taking no room,
+      "Address copied" in place of the address for a moment (approved: the Design canvas "Better Tab Switcher · Not
+      opened yet and Copy address", variant B and the Copy address page).
     - The toolbar: a button reached with Tab keeps the keyboard when pressed; a click of the mouse on it leaves the
       keyboard on the tabs.
   - **The settings page** (boards 31–34): Chrome's settings look with a sidebar, in the theme in use; the options of

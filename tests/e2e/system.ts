@@ -114,9 +114,10 @@ const KEYS = {
   Command: { x11: 'Super_L', windows: 0x5b, mac: 55, flag: 'command' },
   S: { x11: 's', windows: 0x53, mac: 1, flag: '' },
   L: { x11: 'l', windows: 0x4c, mac: 37, flag: '' },
+  T: { x11: 't', windows: 0x54, mac: 17, flag: '' },
 } as const;
 type Key = keyof typeof KEYS;
-type Letter = 'S' | 'L';
+type Letter = 'S' | 'L' | 'T';
 type Modifier = Exclude<Key, Letter>;
 
 /** The modifiers held now, on macOS: each key event says them (its flags). */

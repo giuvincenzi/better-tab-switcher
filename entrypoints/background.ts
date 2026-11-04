@@ -3,6 +3,7 @@ import { listenToSwitcher, requestSwitcher, type SwitcherRequest, showPreview } 
 import { keepPreviews } from '../lib/previews/service';
 import { listenToSettingsChanges } from '../lib/settings/service';
 import { askForMissingShortcuts } from '../lib/shortcuts';
+import { followNotOpenedTabs } from '../lib/tabs/not-opened';
 
 export default defineBackground(() => {
   const previews = keepPreviews((tabId, picture) => void showPreview(tabId, picture));
@@ -14,6 +15,7 @@ export default defineBackground(() => {
   browser.action.onClicked.addListener(() => void request({ direction: 'next', from: 'icon' }));
   listenToSwitcher(request);
   listenToSettingsChanges();
+  followNotOpenedTabs();
   // Installed while another extension had its keys: the user chooses others at once.
   browser.runtime.onInstalled.addListener(({ reason }) => {
     if (reason === 'install') void askForMissingShortcuts();

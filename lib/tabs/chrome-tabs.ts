@@ -1,4 +1,5 @@
 import { type Browser, browser } from '#imports';
+import { notOpenedTabs } from './not-opened';
 import type { GroupColor, TabInfo } from './tabs';
 
 /**
@@ -32,7 +33,12 @@ export async function readTabs(
       read.push({ ...tabInfo(current, colors), windowId: home });
     }
   }
-  return { tabs: read, windowIds: windows.flatMap((w) => (w.id === undefined ? [] : [w.id])), currentWindowId };
+  const notOpened = await notOpenedTabs(read.map((tab) => tab.id));
+  return {
+    tabs: read.map((tab) => (notOpened.has(tab.id) ? { ...tab, notOpened: true } : tab)),
+    windowIds: windows.flatMap((w) => (w.id === undefined ? [] : [w.id])),
+    currentWindowId,
+  };
 }
 
 /**

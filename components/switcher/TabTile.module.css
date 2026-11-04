@@ -7,6 +7,8 @@
   --tab-muted: var(--bts-text-muted);
   --tab-match: var(--bts-match);
   --tab-chip-border: var(--bts-border);
+  --tab-new-background: var(--bts-selected);
+  --tab-new-text: var(--bts-selected-text);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -114,6 +116,7 @@
   --tab-muted: var(--bts-selected-muted);
   --tab-match: var(--bts-selected-text);
   --tab-chip-border: var(--bts-selected-muted);
+  --tab-new-background: var(--bts-panel);
   border-color: var(--bts-accent-bright);
   background: var(--bts-selected);
   color: var(--bts-selected-text);

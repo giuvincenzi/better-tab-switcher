@@ -84,6 +84,8 @@ const notDefaults = {
     sleeping: false,
     groupColor: false,
     lastUsed: false,
+    notOpened: false,
+    copyAddress: false,
   },
 } as const;
 
@@ -145,6 +147,23 @@ describe('parseSettings with settings saved by another version', () => {
       longAddress: 'cut',
       lastUsed: false,
     });
+  });
+
+  it('turns on Tabs not opened yet and Copy address button in the tab details saved before they existed', () => {
+    // The tab details as version 1.0.0 saved them, every one off: the two new ones come on, as for a new install.
+    const older = {
+      details: {
+        address: false,
+        fullAddress: false,
+        longAddress: 'cut',
+        pinnedIcon: false,
+        audioIcon: false,
+        sleeping: false,
+        groupColor: false,
+        lastUsed: false,
+      },
+    };
+    expect(parseSettings(older).details).toEqual({ ...older.details, notOpened: true, copyAddress: true });
   });
 
   it('drops the settings a newer version added and keeps the known ones', () => {

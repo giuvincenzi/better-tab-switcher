@@ -14,6 +14,11 @@ Switcher_Pinned: Fissata
 Switcher_PlayingAudio: Audio in riproduzione
 Switcher_Sleeping: Non attiva
 Switcher_Window: Finestra $1
+Switcher_New: Nuova
+Switcher_NotOpened: Non ancora aperta
+Switcher_CopyAddress: Copia indirizzo
+Switcher_AddressCopied: Indirizzo copiato
+Switcher_CopyFailed: Impossibile copiare l'indirizzo
 Settings_Title: Impostazioni di Better Tab Switcher
 Settings_Sections: Sezioni delle impostazioni
 Settings_Appearance: Aspetto
@@ -65,6 +70,10 @@ Settings_SleepingNote: Le schede non attive hanno un'icona e appaiono in grigio.
 Settings_GroupColor: Colore del gruppo di schede
 Settings_LastUsed: Ultimo utilizzo
 Settings_LastUsedNote: Ad esempio, $1.
+Settings_NotOpened: Schede non ancora aperte
+Settings_NotOpenedNote: Le schede aperte in background mostrano “$1” finché non le apri.
+Settings_CopyAddress: Pulsante Copia indirizzo
+Settings_CopyAddressNote: Sulla scheda sotto il puntatore del mouse, un pulsante ne copia l'indirizzo del sito web.
 Settings_Shortcuts: Scorciatoie da tastiera
 Settings_ShortcutsNote: $1 non permette alle estensioni di usare Ctrl+Tab.
 Settings_ShortcutsGuide: Come usare Ctrl+Tab

@@ -7,6 +7,12 @@
 <p>The pictures of your tabs, shown in the grid with <strong>Previews</strong>, are kept only in the browser's memory, never written to your disk. A preview is deleted when its tab closes, when you choose <strong>Icons</strong> instead of <strong>Previews</strong>, or when you close the browser. Previews are never taken of incognito tabs. See <a href="list-and-grid.html#previews">How previews are taken</a>.</p>
 <p>Site icons come from the browser's own cache, so nothing is downloaded from the sites.</p>
 
+<h2 id="tabs-not-opened">Tabs not opened yet</h2>
+<p>To show <strong>New</strong> on the tabs you haven't opened yet, the extension keeps only their numbers, which the browser gives each tab, in the browser's memory, never on your disk: not their titles or addresses. A tab's number is deleted when you open or close the tab, or when you close the browser.</p>
+
+<h2 id="clipboard">Clipboard</h2>
+<p>The extension writes to the clipboard only when you click <strong>Copy address</strong> on a tab, and only that tab's address. It never reads the clipboard.</p>
+
 <h2 id="sites">Sites can't see your tabs</h2>
 <p>When the switcher shows over a web page, it runs in a page of the extension, inside a frame that the site can't look into. The site can't read your tabs' titles or addresses, or what you type in the search field.</p>
 
@@ -16,7 +22,7 @@
   <li><strong>Tabs</strong>: to read the titles and addresses of your tabs, show them in the switcher, and switch to or close the tab you choose.</li>
   <li><strong>Active tab</strong>: when you press the shortcut or click the toolbar icon, and only then, the extension gets access to the tab you are on. It uses it to show the switcher over that page and to take its preview.</li>
   <li><strong>Scripting</strong>: to put the switcher into the page you are on, when you open it there.</li>
-  <li><strong>Storage</strong>: to save your settings and keep the previews in memory.</li>
+  <li><strong>Storage</strong>: to save your settings, and keep in memory the previews and the tabs not opened yet.</li>
   <li><strong>Favicon</strong>: to show each site's icon from the browser's cache.</li>
   <li><strong>Tab groups</strong>: to show the color of each tab's group.</li>
 </ul>

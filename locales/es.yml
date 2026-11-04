@@ -14,6 +14,11 @@ Switcher_Pinned: Fijada
 Switcher_PlayingAudio: Reproduciendo audio
 Switcher_Sleeping: Inactiva
 Switcher_Window: Ventana $1
+Switcher_New: Nueva
+Switcher_NotOpened: Aún sin abrir
+Switcher_CopyAddress: Copiar dirección
+Switcher_AddressCopied: Dirección copiada
+Switcher_CopyFailed: No se ha podido copiar la dirección
 Settings_Title: Configuración de Better Tab Switcher
 Settings_Sections: Secciones de la configuración
 Settings_Appearance: Aspecto
@@ -65,6 +70,10 @@ Settings_SleepingNote: Las pestañas inactivas llevan un icono y se muestran en 
 Settings_GroupColor: Color del grupo de pestañas
 Settings_LastUsed: Último uso
 Settings_LastUsedNote: Por ejemplo, $1.
+Settings_NotOpened: Pestañas aún sin abrir
+Settings_NotOpenedNote: Las pestañas abiertas en segundo plano muestran «$1» hasta que las abres.
+Settings_CopyAddress: Botón Copiar dirección
+Settings_CopyAddressNote: Un botón en la pestaña que está bajo el cursor del ratón copia su dirección web.
 Settings_Shortcuts: Combinaciones de teclas
 Settings_ShortcutsNote: $1 no permite que las extensiones usen Ctrl+Tab.
 Settings_ShortcutsGuide: Cómo usar Ctrl+Tab

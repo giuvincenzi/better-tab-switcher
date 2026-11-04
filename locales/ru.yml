@@ -14,6 +14,11 @@ Switcher_Pinned: Закреплена
 Switcher_PlayingAudio: Воспроизводится аудио
 Switcher_Sleeping: Неактивна
 Switcher_Window: Окно $1
+Switcher_New: Новая
+Switcher_NotOpened: Ещё не открыта
+Switcher_CopyAddress: Копировать адрес
+Switcher_AddressCopied: Адрес скопирован
+Switcher_CopyFailed: Не удалось скопировать адрес
 Settings_Title: Настройки Better Tab Switcher
 Settings_Sections: Разделы настроек
 Settings_Appearance: Внешний вид
@@ -65,6 +70,10 @@ Settings_SleepingNote: Неактивные вкладки отмечаются 
 Settings_GroupColor: Цвет группы вкладок
 Settings_LastUsed: Последний просмотр
 Settings_LastUsedNote: Например, $1.
+Settings_NotOpened: Ещё не открытые вкладки
+Settings_NotOpenedNote: Вкладки, открытые в фоновом режиме, отмечаются «$1», пока вы их не откроете.
+Settings_CopyAddress: Кнопка «Копировать адрес»
+Settings_CopyAddressNote: Кнопка на вкладке под указателем мыши копирует адрес её сайта.
 Settings_Shortcuts: Быстрые клавиши
 Settings_ShortcutsNote: $1 не разрешает расширениям использовать Ctrl+Tab.
 Settings_ShortcutsGuide: Как использовать Ctrl+Tab

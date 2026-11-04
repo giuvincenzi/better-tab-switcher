@@ -14,6 +14,11 @@ Switcher_Pinned: Épinglé
 Switcher_PlayingAudio: Lecture audio en cours
 Switcher_Sleeping: Inactif
 Switcher_Window: Fenêtre $1
+Switcher_New: Nouveau
+Switcher_NotOpened: Pas encore ouvert
+Switcher_CopyAddress: Copier l'adresse
+Switcher_AddressCopied: Adresse copiée
+Switcher_CopyFailed: Impossible de copier l'adresse
 Settings_Title: Paramètres de Better Tab Switcher
 Settings_Sections: Sections des paramètres
 Settings_Appearance: Apparence
@@ -65,6 +70,10 @@ Settings_SleepingNote: Les onglets inactifs ont une icône et s'affichent en gri
 Settings_GroupColor: Couleur du groupe d'onglets
 Settings_LastUsed: Dernière utilisation
 Settings_LastUsedNote: Par exemple, $1.
+Settings_NotOpened: Onglets pas encore ouverts
+Settings_NotOpenedNote: Les onglets ouverts en arrière-plan affichent « $1 » jusqu'à ce que vous les ouvriez.
+Settings_CopyAddress: Bouton Copier l'adresse
+Settings_CopyAddressNote: Un bouton sur l'onglet situé sous le curseur de la souris copie l'adresse de son site web.
 Settings_Shortcuts: Raccourcis clavier
 Settings_ShortcutsNote: $1 ne permet pas aux extensions d'utiliser Ctrl+Tab.
 Settings_ShortcutsGuide: Comment utiliser Ctrl+Tab
