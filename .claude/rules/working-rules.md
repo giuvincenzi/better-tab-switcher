@@ -22,6 +22,12 @@
 - **Standard components only.** The switcher and the settings page use the components of the extension's library
   (`components/ui/`) as they are; a new one, or a change to how one looks or behaves, needs the user's approval
   (`ui.md`).
+- **Professional solutions only, for every change.** Every feature, fix or refactor fits the existing structure,
+  has no side effects and is no shortcut that only makes the request or a test pass. When the right way is not
+  obvious, research how Chrome and established practice do it (primary sources) and say in the plan what was checked.
+- **Think, don't just execute.** What the user asks or answers is not taken as right by default. Check it against the
+  project and, when something looks wrong, inconsistent or there is a better way, say so with the reason before
+  implementing, and propose the alternative. The user decides; once they have, follow the decision.
 - **Fix bugs at the root cause.** No workarounds or "patch" fixes. Explain the cause first. When the root cause is a bug
   in Chrome or in a dependency, say so with the evidence: the code works around it in one place, with a comment naming
   the bug and the version, and a test that shows when it is gone.

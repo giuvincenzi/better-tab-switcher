@@ -146,6 +146,12 @@ export function SwitchingSection(props: SectionProps): JSX.Element {
           />
         )}
       />
+      {/* Which tabs the switcher lists, as Show tabs from: not a detail of a row (Tab details). */}
+      <ToggleRow
+        label={i18n.t('Settings_ShowPinned')}
+        checked={props.settings.showPinned}
+        onChange={(showPinned) => props.save({ showPinned })}
+      />
       <SettingRow
         label={i18n.t('Settings_Delay')}
         note={i18n.t('Settings_DelayNote')}
@@ -215,11 +221,6 @@ export function DetailsSection(props: SectionProps & { now: number }): JSX.Eleme
   ];
   return (
     <SettingsSection id="details" title={sectionTitle('details')} chosen={props.chosen}>
-      <ToggleRow
-        label={i18n.t('Settings_ShowPinned')}
-        checked={props.settings.showPinned}
-        onChange={(showPinned) => props.save({ showPinned })}
-      />
       {detail('pinnedIcon', i18n.t('Settings_PinnedIcon'))}
       {detail('audioIcon', i18n.t('Settings_AudioIcon'))}
       {detail('sleeping', i18n.t('Settings_Sleeping'), i18n.t('Settings_SleepingNote'))}

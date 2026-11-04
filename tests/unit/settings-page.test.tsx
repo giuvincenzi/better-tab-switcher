@@ -195,13 +195,12 @@ describe('SettingsPage', () => {
     expect(getComputedStyle(seconds).borderTopStyle).toBe('none');
   });
 
-  it('lists the tab details in their order: the pinned tabs, the icons, the last used time, New, Copy address, then the address and its two settings', () => {
+  it('lists the tab details in their order: the icons, the last used time, New, Copy address, then the address and its two settings', () => {
     const { host } = open();
     const labels = [...host.querySelectorAll('#details [aria-labelledby]')].map(
       (element) => document.getElementById(element.getAttribute('aria-labelledby') ?? '')?.textContent,
     );
     expect(labels).toEqual([
-      'Show pinned tabs',
       'Pinned tab icon',
       'Playing audio icon',
       'Inactive tabs',
@@ -853,9 +852,12 @@ describe('SettingsPage, System', () => {
     expect(handlers.onRestore).not.toHaveBeenCalled();
   });
 
-  it('shows Show pinned tabs in Tab details, not in Switching', () => {
+  it('shows Show pinned tabs in Switching, under Show tabs from: both choose which tabs the switcher lists', () => {
     const { host } = open();
-    expect(toggle(host, 'Show pinned tabs').closest('section')?.id).toBe('details');
+    const labels = [...host.querySelectorAll('#switching [aria-labelledby]')].map(
+      (element) => document.getElementById(element.getAttribute('aria-labelledby') ?? '')?.textContent,
+    );
+    expect(labels.slice(0, 2)).toEqual(['Show tabs from', 'Show pinned tabs']);
   });
 
   it('gives each section of the sidebar its icon, and sets System and About apart', () => {

@@ -383,6 +383,10 @@ test.describe('each control of the settings page @settings', () => {
     await saves((s) => {
       s.scope = 'all';
     });
+    await toggle('Show pinned tabs');
+    await saves((s) => {
+      s.showPinned = false;
+    });
     await type('Delay before the switcher appears', 200);
     await saves((s) => {
       s.delayMs = 200;
@@ -412,10 +416,6 @@ test.describe('each control of the settings page @settings', () => {
 
     // Tab details: the address last, as it hides the two settings under it.
     await show('Tab details');
-    await toggle('Show pinned tabs');
-    await saves((s) => {
-      s.showPinned = false;
-    });
     for (const [name, key] of [
       ['Pinned tab icon', 'pinnedIcon'],
       ['Playing audio icon', 'audioIcon'],

@@ -20,7 +20,6 @@
   for each section, and the page shows only the section chosen in it (behind the Main menu button in a narrow window).
   The settings are as wide as the search field, right under it.
 - Reset is now System, with About after it under a line.
-- Show pinned tabs is in Tab details.
 - A setting that depends on another one is shown indented under it, and only while that one is on: Auto-select time
   under Auto-select, Full address and Long website addresses under Website address.
 
