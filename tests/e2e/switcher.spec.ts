@@ -606,6 +606,59 @@ test.describe('pages that get in the way @switcher', () => {
     await expect(rows(page)).toHaveCount(3);
   });
 
+  test('a page the switcher is put into again has one switcher, which closes with Esc and opens a tab with a click', async ({
+    context,
+    serviceWorker,
+  }) => {
+    const [, , current] = await openPages(context, ['alpha', 'beta', 'gamma']);
+    const page = current as Page;
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    await expect(rows(page)).toHaveCount(3);
+    await page.keyboard.press('Escape');
+    await expect.poll(() => frameShown(page)).toBe(false);
+    // The background no longer knows the page has the switcher's script (after an update of the extension, or a page
+    // it took for a new one): it puts the script in again, and the copy already there must give way to it.
+    await serviceWorker.evaluate(() => chrome.storage.session.set({ pagesWithHolder: [] }));
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    await expect(rows(page)).toHaveCount(3);
+    await expect(page.locator('better-tab-switcher')).toHaveCount(1);
+    await page.keyboard.press('Escape');
+    await expect.poll(() => frameShown(page)).toBe(false);
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    await rows(page).filter({ hasText: 'alpha' }).click();
+    await expect.poll(() => activeTitle(serviceWorker)).toBe('alpha');
+    await expect(page.locator('better-tab-switcher')).toHaveCount(1);
+  });
+
+  test('a page that changes its address without loading another (history.pushState) keeps its switcher', async ({
+    context,
+    serviceWorker,
+  }) => {
+    const [, , current] = await openPages(context, ['alpha', 'beta', 'gamma']);
+    const page = current as Page;
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    await expect(rows(page)).toHaveCount(3);
+    await page.keyboard.press('Escape');
+    await expect.poll(() => frameShown(page)).toBe(false);
+    const frame = switcherFrame(page);
+    // As Google Chat does when another chat is chosen: the same page, at another address.
+    await page.evaluate(() => history.pushState(null, '', '/gamma/another'));
+    await expect
+      .poll(() =>
+        serviceWorker.evaluate(async () => {
+          const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+          return tab?.status === 'complete' ? tab.url : undefined;
+        }),
+      )
+      .toBe('https://bts.test/gamma/another');
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    await expect(rows(page)).toHaveCount(3);
+    // The same frame, never loaded again: the switcher shows as at once as before.
+    expect(switcherFrame(page)).toBe(frame);
+    expect(frame?.isDetached()).toBe(false);
+    await expect(page.locator('better-tab-switcher')).toHaveCount(1);
+  });
+
   test("a page's CSS zoom leaves the switcher as large as on any page, whole, and so does resizing the window while it is open", async ({
     context,
     serviceWorker,
