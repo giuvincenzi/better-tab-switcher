@@ -1,5 +1,6 @@
 import { existsSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { setTimeout as delay } from 'node:timers/promises';
 import {
   type BrowserContext,
   test as base,
@@ -101,6 +102,9 @@ const BACKGROUND_MS = 120_000;
  */
 const BROWSER_MS = 300_000;
 
+/** How long the browser's trace may take to be handed over (startChromeTrace): a diagnostic never holds a test up. */
+const TRACE_STOP_MS = 30_000;
+
 /**
  * Whether a test keeps what helps understand why it failed (its trace, the browser's state, the background's console):
  * on GitHub every test, to compare a failed test with a passed one or with another system; on the PC the failed ones.
@@ -163,6 +167,56 @@ async function processStarts(processesNow: Map<string, number>, testStarted: num
       return `${key}: ${at === undefined ? 'not found' : Number(at) - testStarted}`;
     }),
   ];
+}
+
+/**
+ * What the browser itself did, for a test that failed or lost the browser (chrome-trace.json, opened in
+ * https://ui.perfetto.dev): on for Chromium on GitHub's Windows machines only, the case under study (testing.md), where
+ * Playwright now and then loses its connection to a browser still running (closed without a close frame). The browser's
+ * tasks on every thread, its DevTools server's among them (devtools_http_handler.cc, http_server.cc) and the socket
+ * event before a close: which side ended the connection, and how. Over the browser's own pipe, which stays when
+ * Playwright's connection goes. Returns how to stop it: with a path, the trace is saved there.
+ */
+async function startChromeTrace(pipe: BrowserPipe): Promise<(path?: string) => Promise<boolean>> {
+  await pipe.send('Tracing.start', {
+    transferMode: 'ReturnAsStream',
+    traceConfig: {
+      recordMode: 'recordContinuously',
+      includedCategories: ['toplevel', 'devtools', 'navigation', 'loading', 'ipc', 'mojom'],
+    },
+  });
+  return async (path) => {
+    const complete = new Promise<{ stream?: string }>((resolve) => {
+      const stop = pipe.on('Tracing.tracingComplete', (params) => {
+        stop();
+        resolve(params as { stream?: string });
+      });
+    });
+    await pipe.send('Tracing.end');
+    const { stream } = await complete;
+    if (!stream) return false;
+    if (path) {
+      const chunks: Buffer[] = [];
+      for (;;) {
+        const { data, eof, base64Encoded } = (await pipe.send('IO.read', { handle: stream })) as {
+          data: string;
+          eof: boolean;
+          base64Encoded?: boolean;
+        };
+        chunks.push(Buffer.from(data, base64Encoded ? 'base64' : 'utf8'));
+        if (eof) break;
+      }
+      writeFileSync(path, Buffer.concat(chunks));
+    }
+    await pipe.send('IO.close', { handle: stream });
+    return path !== undefined;
+  };
+}
+
+/** DevTools on the browser's own pipe (scripts/real-browser.mjs, browserPipe): it stays when Playwright's goes. */
+interface BrowserPipe {
+  send: (method: string, params?: object) => Promise<unknown>;
+  on: (method: string, listener: (params: unknown) => void) => () => void;
 }
 
 /**
@@ -424,6 +478,10 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }, WorkerFixt
       // one is reached with connectOverCDP inside this fixture, after the test started.
       await context.tracing.start({ screenshots: true, snapshots: true });
       const processesAtStart = await processes(browserSession);
+      const stopChromeTrace =
+        browser === 'chromium' && process.platform === 'win32' && process.env.CI
+          ? await startChromeTrace({ send: real.sendToBrowser, on: real.onBrowserEvent }).catch(() => undefined)
+          : undefined;
       // The browser leaving during the test (its process gone, or Playwright's connection to it): Playwright then closes
       // the context, and the trace can't be saved any more. Noted with when, and how the process ended.
       const testStarted = Date.now();
@@ -440,6 +498,18 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }, WorkerFixt
       const howItLeft = `Playwright lost the browser ${disconnectedAt} ms into the test; its process ${
         ended === undefined ? 'was still running' : `had ended (${ended})`
       }.`;
+
+      // Kept for a test that failed or lost the browser, within TRACE_STOP_MS or without it: the trace waits for every
+      // process of the browser, and after a test that closed the extension's service worker it waited for minutes.
+      if (stopChromeTrace) {
+        const failed = disconnected || testInfo.status !== testInfo.expectedStatus;
+        const path = testInfo.outputPath('chrome-trace.json');
+        const saved = await Promise.race([
+          stopChromeTrace(failed ? path : undefined).catch(() => false),
+          delay(TRACE_STOP_MS).then(() => false),
+        ]);
+        if (saved) await testInfo.attach('chrome-trace', { path, contentType: 'application/json' });
+      }
 
       if (keepsReport(testInfo) || disconnected) {
         const processesAtEnd = await processes(browserSession);
@@ -474,7 +544,7 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }, WorkerFixt
         await real.close();
         await keepNetLog();
         throw new Error(
-          `The browser left during the test, so its trace can't be saved: ${howItLeft} (attached: browser-output, browser-state).`,
+          `${howItLeft} The test couldn't go on without it, and its trace can't be saved (attached: browser-output, browser-state).`,
         );
       }
       if (keepsReport(testInfo)) {

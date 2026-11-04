@@ -299,6 +299,20 @@ test.describe('grid @grid', () => {
     expect((await others()).length).toBe(before);
   });
 
+  test("opens in a session's memory full to the last byte with no picture taken, the oldest pictures making room", async ({
+    context,
+    serviceWorker,
+  }) => {
+    // The list: no picture is taken as the switcher opens, so none makes room the way a new picture does.
+    const [, current] = (await openPages(context, ['alpha', 'beta'])) as [Page, Page];
+    const filled = await fillMemory(serviceWorker, 0);
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    await expect(rows(current)).toHaveCount(2);
+    const kept = await savedPictures(serviceWorker);
+    expect(kept).not.toContain('preview-100000');
+    expect(kept).toContain(`preview-${100000 + filled - 1}`);
+  });
+
   test("leaves room for the switcher in a session's memory full of pictures: it opens, in a page and in its own window", async ({
     context,
     serviceWorker,

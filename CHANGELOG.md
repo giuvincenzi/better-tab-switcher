@@ -10,6 +10,8 @@
   the toolbar's choice instead, such as switching from the grid back to the list.
 - A tab that changes while the switcher is open, such as its title or its icon, no longer makes every tab of the
   switcher start over: the selected tab's long address keeps scrolling from where it was.
+- The switcher always opens when the browser's memory for the extension is full of previews. It could stay closed when
+  the page's preview was taken too late to make room for it.
 
 ## 1.0.0
 

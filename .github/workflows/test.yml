@@ -610,6 +610,10 @@ jobs:
               netlog.json        Microsoft Edge only, a failed test only: the browser's NetLog, every request with the
                                  names it looked up, its connections, certificates and checks, and how long each
                                  waited. Open it in https://netlog-viewer.appspot.com (it stays in the browser).
+              chrome-trace.json  Chromium on Windows only, a test that failed or lost the browser: what the browser
+                                 itself did, its tasks on every thread, its DevTools server's among them. Open it in
+                                 https://ui.perfetto.dev (it stays in the browser): which side ended Playwright's
+                                 connection to the browser, and how.
               background-console.txt
                                  when the extension's background wrote in its console: what it wrote, in order (for
                                  example why the switcher couldn't show in a page and opened in its own window). The
