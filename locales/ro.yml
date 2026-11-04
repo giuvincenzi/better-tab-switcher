@@ -100,9 +100,7 @@ Settings_NoResultsNote: Încearcă alte cuvinte sau șterge căutarea ca să vez
 Settings_Menu: Meniul principal
 Settings_About: Despre
 Settings_Version: Versiunea $1
-Settings_Restart: Repornește
-Settings_RestartExtensionRow: Repornește Better Tab Switcher
-Settings_RestartExtensionNote: Better Tab Switcher repornește, iar această pagină se închide.
+Settings_ManageExtension: Gestionează extensia
 Settings_WhatsNew: Noutăți
 Settings_WhatsNewNote: Vezi ce s-a schimbat în versiunea $1.
 Settings_Guide: Ghid de utilizare

@@ -100,9 +100,7 @@ Settings_NoResultsNote: Versuchen Sie es mit anderen Wörtern oder löschen Sie 
 Settings_Menu: Hauptmenü
 Settings_About: Über
 Settings_Version: Version $1
-Settings_Restart: Neu starten
-Settings_RestartExtensionRow: Better Tab Switcher neu starten
-Settings_RestartExtensionNote: Startet Better Tab Switcher neu. Diese Seite wird geschlossen.
+Settings_ManageExtension: Erweiterung verwalten
 Settings_WhatsNew: Neuigkeiten
 Settings_WhatsNewNote: Sehen Sie, was sich in Version $1 geändert hat.
 Settings_Guide: Benutzerhandbuch

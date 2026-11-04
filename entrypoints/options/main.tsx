@@ -7,8 +7,7 @@ import { browser } from '#imports';
 import { SettingsPage } from '../../components/settings/SettingsPage';
 import { applyTheme } from '../../components/ui/applyTheme';
 import { registerEmUnit } from '../../components/ui/emUnit';
-import { shortcutsPageUrl } from '../../lib/browser';
-import { restartExtension } from '../../lib/extension';
+import { extensionPageUrl, shortcutsPageUrl } from '../../lib/browser';
 import { applyLanguage, languageInUse } from '../../lib/i18n/language';
 import { CTRL_TAB_GUIDE_URL } from '../../lib/links';
 import { sendMessage } from '../../lib/messages';
@@ -45,7 +44,8 @@ render(
       iconUrl={browser.runtime.getURL('/icon/128.png')}
       guideUrl={CTRL_TAB_GUIDE_URL}
       version={browser.runtime.getManifest().version}
-      onRestartExtension={restartExtension}
+      extensionPage={extensionPageUrl(browser.runtime.id)}
+      onManageExtension={() => void browser.tabs.create({ url: extensionPageUrl(browser.runtime.id) })}
       onChangeShortcut={() => void browser.tabs.create({ url: shortcutsPageUrl() })}
       onRestore={() => void sendMessage('restoreDefaultSettings')}
     />

@@ -100,9 +100,7 @@ Settings_NoResultsNote: 別の言葉で検索するか、検索をクリアし�
 Settings_Menu: メインメニュー
 Settings_About: 概要
 Settings_Version: バージョン $1
-Settings_Restart: 再起動
-Settings_RestartExtensionRow: Better Tab Switcher を再起動
-Settings_RestartExtensionNote: Better Tab Switcher を再起動します。このページは閉じます。
+Settings_ManageExtension: 拡張機能を管理
 Settings_WhatsNew: 新機能
 Settings_WhatsNewNote: バージョン $1 の変更内容を確認できます。
 Settings_Guide: ユーザーガイド

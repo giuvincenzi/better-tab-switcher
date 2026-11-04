@@ -48,10 +48,9 @@ cards and buttons grow.
     header that finds settings in every section and marks what it found; header and body on the same three columns,
     the search field and the sections as wide as each other in the middle one; the sidebar at the window's left edge,
     an icon for each section, behind a menu button (a drawer) in a narrow window; only the section chosen in it shown,
-    named in the page's address; System and About last, under a line. System: Restart Better Tab Switcher (it only
-    restarts the extension) and Restore default settings. About: the version, and links in rows that open a new tab. A
-    setting that depends on another one is indented under it, in the same block, and shown only while that one is on
-    (to a search, faded). The options of the list or the grid only for the view
-    chosen. Keyboard shortcuts: next tab, previous tab and the toolbar icon, with a warning when one of the first two
+    named in the page's address; System and About last, under a line. System: Manage extension (a link row to the
+    browser's page of the extension) and Restore default settings. About: the version, and links in rows that open a
+    new tab. A setting that depends on another one is indented under it, in the same block, and shown only while that
+    one is on (to a search, faded). The options of the list or the grid only for the view chosen. Keyboard shortcuts: next tab, previous tab and the toolbar icon, with a warning when one of the first two
     has no keys; installed with a shortcut left without keys, the extension opens its settings on a dialog with that
     section alone. Restore default settings asks to confirm, in the same dialog component.

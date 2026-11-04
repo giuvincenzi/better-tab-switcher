@@ -100,9 +100,7 @@ Settings_NoResultsNote: Попробуйте другие слова или оч
 Settings_Menu: Главное меню
 Settings_About: О расширении
 Settings_Version: Версия $1
-Settings_Restart: Перезапустить
-Settings_RestartExtensionRow: Перезапустить Better Tab Switcher
-Settings_RestartExtensionNote: Better Tab Switcher перезапустится, а эта страница закроется.
+Settings_ManageExtension: Управление расширением
 Settings_WhatsNew: Что нового
 Settings_WhatsNewNote: Посмотрите, что изменилось в версии $1.
 Settings_Guide: Руководство пользователя

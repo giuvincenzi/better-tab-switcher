@@ -1,5 +1,5 @@
 import type { BrowserContext, Page, Worker } from '@playwright/test';
-import { shortcutsPageUrl } from '../../lib/browser';
+import { extensionPageUrl, shortcutsPageUrl } from '../../lib/browser';
 import { defaultSettings, type Settings } from '../../lib/settings/settings';
 import { expect, test } from './fixtures';
 import {
@@ -105,18 +105,12 @@ test.describe('settings page @settings', () => {
     expect(gap).toBe('rgb(248, 249, 250)');
   });
 
-  test("restarts the extension with System's Restart: its settings page closes and it starts again", async ({
-    context,
-    extensionId,
-  }) => {
+  test("opens the browser's page of the extension with System's Manage extension", async ({ context, extensionId }) => {
     const page = await openSettings(context, extensionId);
     await choose(page, 'System');
-    const started = context.waitForEvent('serviceworker');
-    const closed = page.waitForEvent('close');
-    await page.getByRole('button', { name: 'Restart', exact: true }).click();
-    await closed;
-    const worker = await started;
-    expect(worker.url()).toBe(`chrome-extension://${extensionId}/background.js`);
+    const opened = context.waitForEvent('page', (tab) => tab.url() === extensionPageUrl(extensionId, testBrowser));
+    await page.getByRole('link', { name: 'Manage extension' }).click();
+    await opened;
   });
 
   test('finds settings in every section with its search, marked, and the sections come back once it is cleared', async ({

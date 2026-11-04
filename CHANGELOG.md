@@ -12,7 +12,7 @@
   their description or their choices, and highlights what it found.
 - About, a new section of the settings: the version installed, and links to What's new, the user guide, Report an
   issue, the website, Rate this extension and Star on GitHub.
-- Restart Better Tab Switcher, in System: restarts the extension.
+- Manage extension, in System: opens Better Tab Switcher's page in the browser's extensions page.
 
 ### Changed
 

@@ -100,9 +100,7 @@ Settings_NoResultsNote: 다른 단어로 검색하거나 검색어를 지워 모
 Settings_Menu: 기본 메뉴
 Settings_About: 정보
 Settings_Version: 버전 $1
-Settings_Restart: 다시 시작
-Settings_RestartExtensionRow: Better Tab Switcher 다시 시작
-Settings_RestartExtensionNote: Better Tab Switcher를 다시 시작합니다. 이 페이지는 닫힙니다.
+Settings_ManageExtension: 확장 프로그램 관리
 Settings_WhatsNew: 새로운 기능
 Settings_WhatsNewNote: 버전 $1에서 바뀐 내용을 확인하세요.
 Settings_Guide: 사용자 가이드

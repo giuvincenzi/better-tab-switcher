@@ -332,21 +332,19 @@ export function ShortcutsDialog(props: ShortcutsSectionProps & { open: boolean; 
   );
 }
 
-/** System: restarting the extension, and putting every setting back to its default. */
-export function SystemSection(props: { chosen?: boolean; onRestart: () => void; onRestore: () => void }): JSX.Element {
+/** System: the browser's page of the extension (Manage extension), and putting every setting back to its default. */
+export function SystemSection(props: {
+  chosen?: boolean;
+  /** The browser's page of the extension, its address (lib/browser.ts). */
+  extensionPage: string;
+  onManage: () => void;
+  onRestore: () => void;
+}): JSX.Element {
   // Every setting at once, with no way back: the user confirms it first.
   const [asking, setAsking] = createSignal(false);
   return (
     <SettingsSection id="system" title={sectionTitle('system')} chosen={props.chosen}>
-      <SettingRow
-        label={i18n.t('Settings_RestartExtensionRow')}
-        note={i18n.t('Settings_RestartExtensionNote')}
-        control={(ids) => (
-          <Button describedBy={ids.label} onClick={() => props.onRestart()}>
-            {i18n.t('Settings_Restart')}
-          </Button>
-        )}
-      />
+      <LinkRow label={i18n.t('Settings_ManageExtension')} href={props.extensionPage} onOpen={() => props.onManage()} />
       <SettingRow
         label={i18n.t('Settings_RestoreDefaults')}
         control={(ids) => (

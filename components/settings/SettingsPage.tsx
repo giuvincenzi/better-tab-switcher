@@ -38,8 +38,10 @@ export interface SettingsPageProps {
   guideUrl: string;
   /** The version installed. */
   version: string;
-  /** Restart in System: restarts the extension. */
-  onRestartExtension: () => void;
+  /** The browser's page of the extension (Manage extension in System), its address. */
+  extensionPage: string;
+  /** Opens that page in a new tab. */
+  onManageExtension: () => void;
   onChangeShortcut: () => void;
   onRestore: () => void;
 }
@@ -187,7 +189,12 @@ function Sections(props: SettingsPageProps & { current: SectionId }): JSX.Elemen
           onChangeShortcut={props.onChangeShortcut}
           chosen={chosen('shortcuts')}
         />
-        <SystemSection onRestart={props.onRestartExtension} onRestore={props.onRestore} chosen={chosen('system')} />
+        <SystemSection
+          extensionPage={props.extensionPage}
+          onManage={props.onManageExtension}
+          onRestore={props.onRestore}
+          chosen={chosen('system')}
+        />
         <AboutSection version={props.version} iconUrl={props.iconUrl} chosen={chosen('about')} />
       </scope.Provider>
       <Show when={!scope.shown()}>

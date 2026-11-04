@@ -25,6 +25,11 @@ export function storeReviewUrl(name: BrowserName = browserName()): string {
     : 'https://chromewebstore.google.com/detail/fkalmlegojojpcjdfndipmnakgakokei/reviews';
 }
 
+/** The browser's page of one extension (Manage extension): on and off, its permissions and site access, Remove. */
+export function extensionPageUrl(id: string, name: BrowserName = browserName()): string {
+  return `${name === 'edge' ? 'edge' : 'chrome'}://extensions/?id=${id}`;
+}
+
 /** The browser's page where the extensions' shortcuts are changed. */
 export function shortcutsPageUrl(name: BrowserName = browserName()): string {
   return name === 'edge' ? 'edge://extensions/shortcuts' : 'chrome://extensions/shortcuts';

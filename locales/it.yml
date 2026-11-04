@@ -100,9 +100,7 @@ Settings_NoResultsNote: Prova con altre parole, oppure cancella la ricerca per v
 Settings_Menu: Menu principale
 Settings_About: Informazioni
 Settings_Version: Versione $1
-Settings_Restart: Riavvia
-Settings_RestartExtensionRow: Riavvia Better Tab Switcher
-Settings_RestartExtensionNote: Better Tab Switcher viene riavviato e questa pagina si chiude.
+Settings_ManageExtension: Gestisci estensione
 Settings_WhatsNew: Novità
 Settings_WhatsNewNote: Scopri cosa è cambiato nella versione $1.
 Settings_Guide: Guida

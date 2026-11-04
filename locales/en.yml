@@ -171,8 +171,8 @@ Settings_ShortcutMissing: A shortcut has no keys, maybe because another extensio
 Settings_ShortcutsDialogTitle: Choose your keyboard shortcuts
 Settings_ShortcutsDialogText: Better Tab Switcher is installed. Choose the keys that open it.
 
-# Section, apart with About at the end of the sidebar, as Chrome's "System": restarting the extension and going back to
-# the default settings.
+# Section, apart with About at the end of the sidebar, as Chrome's "System": the browser's page of the extension and
+# going back to the default settings.
 Settings_System: System
 Settings_RestoreDefaults: Restore default settings
 # The button of Settings_RestoreDefaults, and of its confirmation.
@@ -196,12 +196,9 @@ Settings_Menu: Main menu
 Settings_About: About
 # Under the extension's name in About. $1: the version installed, like 1.2.0.
 Settings_Version: Version $1
-# The button in System that restarts the extension (Settings_RestartExtensionRow).
-Settings_Restart: Restart
-# A row of System, and under it what its Restart button does: the extension starts again, and its settings page
-# closes. "Better Tab Switcher" is the global name.
-Settings_RestartExtensionRow: Restart Better Tab Switcher
-Settings_RestartExtensionNote: Starts Better Tab Switcher again. This page closes.
+# A row of System that opens the browser's page of the extension (chrome://extensions/?id=…), as Chrome's own
+# "Manage extension" in the extensions menu: the same words as Chrome's in each language.
+Settings_ManageExtension: Manage extension
 # A link to the release notes of the version installed, and under it what it opens. $1: the version, like 1.2.0.
 Settings_WhatsNew: What's new
 Settings_WhatsNewNote: See what changed in version $1.

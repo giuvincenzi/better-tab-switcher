@@ -27,7 +27,7 @@ function open(
     saved.push(change);
     setSettings((now) => ({ ...now, ...change, details: { ...now.details, ...change.details } }));
   };
-  const handlers = { onChangeShortcut: vi.fn(), onRestore: vi.fn(), onRestartExtension: vi.fn() };
+  const handlers = { onChangeShortcut: vi.fn(), onRestore: vi.fn(), onManageExtension: vi.fn() };
   const host = document.createElement('div');
   document.body.append(host);
   dispose = render(
@@ -42,6 +42,7 @@ function open(
         iconUrl=""
         guideUrl="https://example.com/guide"
         version="1.2.0"
+        extensionPage="chrome://extensions/?id=abc"
         {...handlers}
         {...more}
       />
@@ -605,7 +606,7 @@ describe('SettingsPage, with the keyboard', () => {
     expect(details.reached).not.toContain(select(details.host, 'Long website addresses'));
     dispose?.();
     const system = await reachedIn('System');
-    expect(system.reached).toContain(button(system.host, 'Restart')[0]);
+    expect(system.reached).toContain(system.host.querySelector('#system a'));
     expect(system.reached).toContain(button(system.host, 'Restore')[0]);
   });
 });
@@ -839,17 +840,19 @@ describe('SettingsPage, About', () => {
 });
 
 describe('SettingsPage, System', () => {
-  it('restarts the extension with Restart, named by its row, and asks nothing first', () => {
+  it("opens the browser's page of the extension with Manage extension, a link with no note, before Restore", () => {
     const { host, handlers } = open();
     choose(host, 'System');
-    const [restartButton, ...others] = button(host, 'Restart');
-    expect(others).toEqual([]);
-    expect(describedBy(restartButton as Element)).toBe('Restart Better Tab Switcher');
-    expect(host.querySelector('#system')?.textContent).toContain('Starts Better Tab Switcher again. This page closes.');
-    restartButton?.click();
-    expect(handlers.onRestartExtension).toHaveBeenCalledTimes(1);
-    expect(host.querySelector('dialog[open]')).toBeNull();
+    const manage = host.querySelector<HTMLAnchorElement>('#system a') as HTMLAnchorElement;
+    expect(manage.textContent).toBe('Manage extension');
+    expect(manage.getAttribute('href')).toBe('chrome://extensions/?id=abc');
+    // The browser opens it (tabs.create): a page can't follow a link to chrome://.
+    const click = new MouseEvent('click', { bubbles: true, cancelable: true });
+    manage.dispatchEvent(click);
+    expect(click.defaultPrevented).toBe(true);
+    expect(handlers.onManageExtension).toHaveBeenCalledTimes(1);
     expect(handlers.onRestore).not.toHaveBeenCalled();
+    expect(button(host, 'Restart')).toEqual([]);
   });
 
   it('shows Show pinned tabs in Switching, under Show tabs from: both choose which tabs the switcher lists', () => {

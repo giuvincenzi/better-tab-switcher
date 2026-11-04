@@ -100,9 +100,7 @@ Settings_NoResultsNote: 请尝试其他字词，或清除搜索以查看所有�
 Settings_Menu: 主菜单
 Settings_About: 关于
 Settings_Version: 版本 $1
-Settings_Restart: 重启
-Settings_RestartExtensionRow: 重启 Better Tab Switcher
-Settings_RestartExtensionNote: 将重启 Better Tab Switcher，此页面会随之关闭。
+Settings_ManageExtension: 管理扩展程序
 Settings_WhatsNew: 新功能
 Settings_WhatsNewNote: 查看版本 $1 中的变化。
 Settings_Guide: 用户指南
