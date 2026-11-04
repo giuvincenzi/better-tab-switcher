@@ -249,7 +249,7 @@ test.describe('settings page @settings', () => {
     await opened;
   });
 
-  test('restores the default settings', async ({ context, extensionId }) => {
+  test('restores the default settings', async ({ context, extensionId, serviceWorker }) => {
     const settings = await openSettings(context, extensionId);
     const compact = settings.getByRole('switch', { name: 'Compact' });
     await compact.click();
@@ -260,13 +260,16 @@ test.describe('settings page @settings', () => {
     await settings.getByRole('button', { name: 'Restore' }).click();
     await confirmation.getByRole('button', { name: 'Cancel' }).click();
     await expect(confirmation).toBeHidden();
+    await choose(settings, 'Appearance');
     await expect(compact).toBeChecked();
+    await choose(settings, 'Reset');
     await settings.getByRole('button', { name: 'Restore' }).click();
-    // Nothing yet: the user confirms it first.
+    // Nothing yet: the user confirms it first. The page behind the confirmation can't be used: what is saved says it.
     await expect(confirmation).toBeVisible();
-    await expect(compact).toBeChecked();
+    expect((await savedSettings(serviceWorker))?.compact).toBe(true);
     await confirmation.getByRole('button', { name: 'Restore' }).click();
     await expect(confirmation).toBeHidden();
+    await choose(settings, 'Appearance');
     await expect(compact).not.toBeChecked();
   });
 
@@ -537,9 +540,11 @@ test.describe('settings changed in two pages at once @settings', () => {
       await chrome.storage.local.set({ settings: { ...(settings as object), compact: 'yes', delayMs: 'soon' } });
     });
     for (const page of [first, second]) {
+      await choose(page, 'Switching');
       await expect(page.getByRole('spinbutton', { name: 'Delay before the switcher appears' })).toHaveValue(
         String(defaultSettings.delayMs),
       );
+      await choose(page, 'Appearance');
       await expect(page.getByRole('switch', { name: 'Compact' })).toBeChecked({ checked: defaultSettings.compact });
       await expect(page.getByRole('switch', { name: 'Show toolbar' })).not.toBeChecked();
     }
