@@ -78,6 +78,30 @@ async function makeRoom(key: string, saved: SavedPreview): Promise<void> {
   if (gone.length > 0) await storage.removeItems(gone.map((other) => `session:${other}` as const));
 }
 
+/** Whether Chrome refused to write in the session's memory because it is full (not another limit, like pictures'). */
+export function isMemoryFull(error: unknown): boolean {
+  return /quota bytes/i.test((error as Error | undefined)?.message ?? '');
+}
+
+/**
+ * Writes the switcher's own state in the session's memory (`write`), making room for it when the memory is full: the
+ * oldest previews go until the room the previews leave for the state is free again, then it writes once more. The
+ * previews make that room as they are saved (savePreview); a picture taken too late is not saved, and the switcher
+ * must open all the same (.claude/rules/architecture.md: heavy work never holds the switcher up).
+ */
+export async function withRoomForState(write: () => Promise<void>): Promise<void> {
+  try {
+    await write();
+  } catch (error) {
+    if (!isMemoryFull(error)) throw error;
+    const session = browser.storage.session;
+    const missing = (await session.getBytesInUse(null)) + STATE_ROOM_BYTES - session.QUOTA_BYTES;
+    const gone = previewsToDelete(await storage.snapshot('session'), '', missing);
+    if (gone.length > 0) await storage.removeItems(gone.map((other) => `session:${other}` as const));
+    await write();
+  }
+}
+
 /** The previews there are of these tabs, by tab id. */
 export async function loadPreviews(tabIds: readonly number[]): Promise<Record<number, string>> {
   if (tabIds.length === 0) return {};

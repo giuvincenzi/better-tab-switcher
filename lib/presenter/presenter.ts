@@ -10,7 +10,7 @@ import {
   type TabText,
 } from '../messages';
 import { type Previews, wantsPreviews } from '../previews/service';
-import { loadPreviews } from '../previews/store';
+import { loadPreviews, withRoomForState } from '../previews/store';
 import { loadSettings } from '../settings/store';
 import { firstWindowSize } from '../switcher/sizes';
 import { readTabs, tabText } from '../tabs/chrome-tabs';
@@ -100,7 +100,9 @@ async function handleRequest(request: SwitcherRequest, previews: Previews): Prom
   if (open?.in === 'window' && request.from === 'shortcut') {
     const waiting = await windowSnapshot.getValue();
     if (waiting) {
-      await windowSnapshot.setValue({ ...waiting, moves: [...(waiting.moves ?? []), request.direction] });
+      await withRoomForState(() =>
+        windowSnapshot.setValue({ ...waiting, moves: [...(waiting.moves ?? []), request.direction] }),
+      );
       return;
     }
   }
@@ -361,7 +363,7 @@ async function showInPage(current: Browser.tabs.Tab, snapshot: SwitcherSnapshot,
     (window) => window.focused,
     () => false,
   );
-  await openSwitcher.setValue({ in: 'page', tabId, windowId: current.windowId, windowFocused });
+  await withRoomForState(() => openSwitcher.setValue({ in: 'page', tabId, windowId: current.windowId, windowFocused }));
   step('window read and switcher saved');
   if (!(await sendSnapshot(tabId, snapshot))) {
     await openSwitcher.setValue(null);
@@ -428,7 +430,8 @@ async function showFrame(tabId: number): Promise<FrameShown> {
   );
   step("frame's script in the page");
   const shown = await show(FIRST_TIME_MS);
-  await pagesWithHolder.setValue([...new Set([...(await pagesWithHolder.getValue()), tabId])]);
+  const pages = [...new Set([...(await pagesWithHolder.getValue()), tabId])];
+  await withRoomForState(() => pagesWithHolder.setValue(pages));
   return shown;
 }
 
@@ -450,7 +453,7 @@ async function showInWindow(fromWindowId: number, snapshot: SwitcherSnapshot): P
     width: from.width ?? 0,
     height: from.height ?? 0,
   };
-  await windowSnapshot.setValue({ ...snapshot, centeredOn });
+  await withRoomForState(() => windowSnapshot.setValue({ ...snapshot, centeredOn }));
   const created = await browser.windows.create({
     url: browser.runtime.getURL(SWITCHER_WINDOW),
     type: 'popup',
@@ -458,8 +461,9 @@ async function showInWindow(fromWindowId: number, snapshot: SwitcherSnapshot): P
     ...centerOn(centeredOn, firstWindowSize(snapshot.settings, snapshot.tabs.length, centeredOn)),
   });
   const tabId = created?.tabs?.[0]?.id;
-  if (created?.id !== undefined && tabId !== undefined)
-    await openSwitcher.setValue({ in: 'window', windowId: created.id, tabId, fromWindowId });
+  const windowId = created?.id;
+  if (windowId !== undefined && tabId !== undefined)
+    await withRoomForState(() => openSwitcher.setValue({ in: 'window', windowId, tabId, fromWindowId }));
 }
 
 /**
