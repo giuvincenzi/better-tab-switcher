@@ -68,10 +68,9 @@ function textOf(home, code, key) {
   if (typeof value !== 'string' || !value) throw new Error(`site/home/${code}.json has no ${key}.`);
   return value;
 }
-/** The text of the home's HTML values (the privacy list), for a plain text field. @param {string} html */
+/** The text of the home's HTML values (the privacy text), for a plain text field. @param {string} html */
 const plain = (html) =>
   html
-    .replace(/<li>/g, '\n• ')
     .replace(/<\/p>/g, '\n')
     .replace(/<[^>]+>/g, '')
     .replace(/\n{3,}/g, '\n\n')
