@@ -14,8 +14,6 @@ export interface SwitcherSnapshot {
   direction: Direction;
   /** Opened from the toolbar icon: no key is held, so it stays open until a tab is chosen. */
   fromIcon: boolean;
-  /** The page's picture is being taken: the switcher stays hidden until pictureTaken, so it isn't in the picture. */
-  waitForPicture: boolean;
   /**
    * In a page: the page had the focus as the switcher opened, so the switcher sees the keys let go, in its frame or
    * passed on by the page (keyInPage). Not set in its own window, which knows it itself.
@@ -91,6 +89,11 @@ interface Messages {
   showFrame(): FrameShown | null;
   /** Background → holder: hide the switcher's frame; it stays in the page, ready for the next time. */
   hideFrame(): void;
+  /**
+   * Background → holder, before the page's picture: false a moment after the switcher left the page's sight (it closed,
+   * or the page came back into sight after leaving it with the switcher), when Chrome may still show it there.
+   */
+  pictureFresh(): boolean;
   /** Holder → background: a key the page got while the switcher's frame was shown without the focus. */
   keyInPage(key: Key): void;
   /** Background → switcher: a key the page got for it (keyInPage). */
@@ -133,8 +136,6 @@ interface Messages {
    * another window elsewhere): the tabs to show now, as it would list them if it opened now.
    */
   tabsListed(tabs: SwitcherTab[]): void;
-  /** Background → switcher: the page's picture is taken, the switcher can show. */
-  pictureTaken(): void;
 }
 
 export const { sendMessage, onMessage } = defineExtensionMessaging<Messages>();

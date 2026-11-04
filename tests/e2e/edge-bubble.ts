@@ -7,6 +7,6 @@ import { windowsInput } from './windows-input';
  * does, with Windows' own accessibility (UI Automation): found among Edge's windows, clicked with the system's mouse
  * (tests/e2e/windows-input.cs). Waits a few seconds for it; nothing when it doesn't come.
  */
-export function dismissEdgeDeveloperModeBubble() {
-  windowsInput('edge-bubble');
+export async function dismissEdgeDeveloperModeBubble() {
+  await windowsInput('edge-bubble');
 }

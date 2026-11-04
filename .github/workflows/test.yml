@@ -440,6 +440,16 @@ jobs:
           if [ "$E2E_BROWSER" = chromium ]; then set -- --no-shell chromium; else set -- msedge; fi
           npx playwright install ${{ runner.os == 'Linux' && '--with-deps' || '' }} "$@"
 
+      # On Windows Chrome's sandboxed processes (its network service among them) must be able to read the browser's
+      # files, a permission Chrome's installer gives and Playwright's download doesn't: without it the browser writes
+      # "Sandbox cannot access executable … Access is denied" and its network service crashes as it starts: Chrome
+      # restarts it, and a page loading then is aborted (net::ERR_ABORTED). The same permission Chromium's own tests
+      # give (testing/scripts/common.py): ALL RESTRICTED APPLICATION PACKAGES may read.
+      - name: let_sandbox_read_chromium
+        if: runner.os == 'Windows' && matrix.browser == 'chromium'
+        shell: pwsh
+        run: icacls "$env:LOCALAPPDATA\ms-playwright" /grant '*S-1-15-2-2:(OI)(CI)(RX)' /q
+
       - name: get_builds
         uses: actions/download-artifact@v8
         with:
@@ -452,16 +462,77 @@ jobs:
           mkdir -p e2e_results
           npx playwright test --list --reporter=json > e2e_results/all_tests.json
 
+      # The runner's own windows (its agent's console) stay in front of the browser on Windows (screen.png of a failed
+      # test: the console over the whole screen, the browser behind it, without the focus): the tests start from a clear
+      # desktop, as on a contributor's PC. The windows still shown (visible, not minimized) are written to the log.
+      # On Windows the machine's state while the tests run: the browser's work that reads or writes its files (the
+      # extension's start, chrome.storage, the extension's pages, the cookies) once waited 10 to 70 s with its CPU
+      # idle, and a connection to the tests' sites once failed with the system's error 10055 (WSAENOBUFS: no buffer
+      # space, its local ports or its memory for connections used up). Every second the disk, the CPU, the TCP
+      # connections and the kernel's memory for them (system.csv); every 2 s the TCP connections by state and the
+      # programs holding the most (connections.txt). Hidden: no window over the browser's.
+      - name: record_system
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force e2e_results | Out-Null
+          Start-Process typeperf -WindowStyle Hidden -ArgumentList @(
+            '"\PhysicalDisk(_Total)\Avg. Disk sec/Read"', '"\PhysicalDisk(_Total)\Avg. Disk sec/Write"',
+            '"\PhysicalDisk(_Total)\Current Disk Queue Length"', '"\Processor(_Total)\% Processor Time"',
+            '"\TCPv4\Connections Established"', '"\TCPv4\Connection Failures"', '"\TCPv4\Connections Reset"',
+            '"\Memory\Pool Nonpaged Bytes"', '-si', '1', '-f', 'CSV', '-o', 'e2e_results\system.csv', '-y')
+          $connections = Join-Path (Resolve-Path e2e_results) 'connections.txt'
+          $loop = @"
+          while (`$true) {
+            `$all = Get-NetTCPConnection -ErrorAction SilentlyContinue
+            `$states = (`$all | Group-Object State | ForEach-Object { "`$(`$_.Name)=`$(`$_.Count)" }) -join ' '
+            `$owners = (`$all | Group-Object OwningProcess | Sort-Object Count -Descending | Select-Object -First 3 |
+              ForEach-Object { "`$((Get-Process -Id `$_.Name -ErrorAction SilentlyContinue).ProcessName) `$(`$_.Name)=`$(`$_.Count)" }) -join ', '
+            "`$((Get-Date).ToUniversalTime().ToString('HH:mm:ss')) total=`$(`$all.Count) `$states | `$owners" |
+              Add-Content '$connections'
+            Start-Sleep -Seconds 2
+          }
+          "@
+          # From a file: on the command line the script's double quotes would end its argument.
+          $script = "$env:RUNNER_TEMP\record-connections.ps1"
+          Set-Content $script $loop
+          Start-Process pwsh -WindowStyle Hidden -ArgumentList '-NoProfile', '-File', $script -PassThru |
+            ForEach-Object { $_.Id } | Set-Content "$env:RUNNER_TEMP\connections-pid.txt"
+
+      - name: minimize_other_windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Add-Type -Namespace Win32 -Name Window -MemberDefinition '
+            [DllImport("user32.dll")] public static extern bool IsWindowVisible(System.IntPtr hWnd);
+            [DllImport("user32.dll")] public static extern bool IsIconic(System.IntPtr hWnd);'
+          (New-Object -ComObject Shell.Application).MinimizeAll()
+          Start-Sleep -Seconds 2
+          Get-Process | Where-Object { $_.MainWindowHandle -ne 0 -and [Win32.Window]::IsWindowVisible($_.MainWindowHandle) -and
+              -not [Win32.Window]::IsIconic($_.MainWindowHandle) } |
+            ForEach-Object { Write-Host "Window still shown: $($_.ProcessName): $($_.MainWindowTitle)" }
+
       - name: run_group_tests
         env:
           PLAYWRIGHT_JSON_OUTPUT_NAME: e2e_results/group_${{ matrix.group }}.json
           PLAYWRIGHT_HTML_OUTPUT_DIR: e2e_results/report
           PLAYWRIGHT_HTML_OPEN: never
+          # Playwright's own account of its connection to each browser (three lines a test): when it loses one, the
+          # line '<ws disconnected> … code=… reason=…' or '<closing ws> …' says who closed it and why.
+          DEBUG: pw:browser
         # On Linux the tests that use the desktop (tests/e2e/system.ts) need one: a virtual screen (xvfb-run). Windows
         # and macOS machines have theirs.
         run: >-
           ${{ runner.os == 'Linux' && 'xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24"' || '' }}
           npx playwright test --shard="$GROUP/$E2E_GROUPS" --reporter=list,json,html --output=e2e_results/tests
+
+      - name: stop_recording_system
+        if: always() && runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Stop-Process -Name typeperf -ErrorAction SilentlyContinue
+          $loop = Get-Content "$env:RUNNER_TEMP\connections-pid.txt" -ErrorAction SilentlyContinue
+          if ($loop) { Stop-Process -Id $loop -ErrorAction SilentlyContinue }
 
       # README.txt: what each file of the artifact is and how it helps investigate a failed test. The one description
       # of the artifact: testing.md points here.
@@ -497,6 +568,18 @@ jobs:
             The test report of this group (Playwright's JSON reporter): every test that ran, with its status, duration
             and errors. Missing: the tests did not run.
 
+          system.csv
+            Windows only: every second while the tests ran, with the machine's time (UTC): the disk's average time to
+            read and to write (seconds) and its queue of requests waiting, the CPU in use (%), the TCP connections
+            established, failed and reset (the last two counted since the machine started), and the kernel's memory
+            that connections use (Pool Nonpaged Bytes). Lines up with the times in a test's files: whether the browser
+            waited for the disk, or a connection failed for want of the system's resources.
+
+          connections.txt
+            Windows only: every 2 s while the tests ran (UTC), the machine's TCP connections by state (TimeWait: closed,
+            their local port still held) and the three programs holding the most. A connection that failed with the
+            system's error 10055 (WSAENOBUFS, in a test's netlog.json) points here: the local ports used up.
+
           report/
             The same results as a web page (Playwright's HTML report). Every test shows its steps, its screenshot and its
             trace; a failed one also its error. Extract the artifact first, then serve the page: opened as a file
@@ -507,24 +590,43 @@ jobs:
           tests/
             Playwright's output as plain files, a folder for each test that ran:
               test-finished-1.png / test-failed-1.png  the page at the end of the test (passed / failed).
-              trace.zip          every step of the test. A zip of text files: the actions and their timing as JSON
-                                 lines, the network requests, and the pictures of the page at each step (resources/).
-                                 Read it unzipped, or look at it with `npx playwright show-trace trace.zip` or by
-                                 dropping it on https://trace.playwright.dev (it stays in the browser, nothing is
-                                 uploaded).
-              error-context.md   a failed test only: the error and what the page held at that moment, in text.
+              trace.zip          every step of the test in the browser it ran in: the actions and their timing, each
+                                 page's snapshot at every step (the switcher's frame in it too), a film of the screen,
+                                 the pages' network requests and consoles. Look at it with
+                                 `npx playwright show-trace trace.zip` or by dropping it on https://trace.playwright.dev
+                                 (it stays in the browser, nothing is uploaded), or read it unzipped: JSON lines
+                                 (trace.trace, trace.network) and pictures (resources/).
+              browser-targets.txt
+                                 what the browser made, changed and closed from its start (pages, frames, the
+                                 extensions' workers), each with the milliseconds since the browser started: when the
+                                 switcher's frame was made in a page, when its window opened.
+              browser-state.txt  the browser as the test ended: each page's frames and how far each has loaded
+                                 (document.readyState, or no answer: the frame or its process stuck), and the CPU time
+                                 each of the browser's processes used during the test, the busiest first; on Windows,
+                                 for a failed test, when the system started each process. When the
+                                 browser left during the test, its first line says when, and how its process ended:
+                                 then there is no trace.zip (Playwright can't save the trace of a browser that's gone).
+              browser-output.txt what the browser itself wrote (its errors, a crash) from its start.
+              netlog.json        Microsoft Edge only, a failed test only: the browser's NetLog, every request with the
+                                 names it looked up, its connections, certificates and checks, and how long each
+                                 waited. Open it in https://netlog-viewer.appspot.com (it stays in the browser).
               background-console.txt
-                                 a failed test only, when the extension's background wrote in its console: what it
-                                 wrote, in order (for example why the switcher couldn't show in a page and opened in
-                                 its own window).
+                                 when the extension's background wrote in its console: what it wrote, in order (for
+                                 example why the switcher couldn't show in a page and opened in its own window). The
+                                 trace has the pages' consoles, not the background's.
+              error-context.md   a failed test only: the error and what the page held at that moment, in text.
 
           Investigating a failed test
           ---------------------------
           Start from the test itself: its code (tests/e2e/<file>.spec.ts), what it does and what it expects, and the
           line that failed (in the job's log, step run_group_tests, in e2e_test's summary or in group_<n>.json). Then
           error-context.md and the trace show what the browser did at each step, and the screenshot what was on the page
-          when it failed. A test that fails on one system or in one browser only: compare with the same test's
-          screenshot and trace on another system or in the other browser. Fix the cause, not the wait.
+          when it failed. When something took too long: browser-targets.txt says when each frame and window appeared,
+          browser-state.txt whether a frame was still loading and which process was busy, background-console.txt why the
+          extension did what it did. When Playwright lost the browser, this group's job log (step run_group_tests) has
+          its line 'pw:browser <ws disconnected> … code=… reason=…', or '<closing ws> …' when Playwright closed it. Every
+          test keeps all of these, the passed ones too: a test that fails on one system
+          or in one browser only, or once in a while, is compared with the same test passed. Fix the cause, not the wait.
           EOF
 
       # Also when tests failed: e2e_test needs every group's list and report. The name has the run's attempt: after a

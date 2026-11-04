@@ -50,7 +50,6 @@ onMessage('closeSwitcher', close);
 onMessage('pressKey', ({ data: key }) => void toSwitcher((switcher) => switcher.pressKey(key)));
 onMessage('previewReady', ({ data: preview }) => void toSwitcher((switcher) => switcher.showPreview(preview)));
 onMessage('tabsListed', ({ data: tabs }) => void toSwitcher((switcher) => switcher.listTabs(tabs)));
-onMessage('pictureTaken', () => void toSwitcher((switcher) => switcher.pictureTaken()));
 // The frame lost the focus: to the page (a site can take it while it loads), to the browser's address bar, or to
 // another window or program. The background asks the browser which (focusLeft).
 addEventListener('blur', () => {

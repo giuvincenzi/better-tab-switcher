@@ -10,11 +10,17 @@ export function wantsPreviews(settings: Settings): boolean {
   return settings.view === 'grid' && settings.gridShow === 'previews';
 }
 
+/**
+ * How long the switcher waits for the page's picture before it shows: a picture Chrome takes later is not kept, as the
+ * switcher could be in it.
+ */
+export const PICTURE_WAIT_MS = 1000;
+
 export interface Previews {
   /**
    * Takes the current tab's picture as the switcher opens there (the shortcut or the toolbar icon gave the extension
-   * that tab: activeTab). Resolves once Chrome has taken it, or couldn't: from then on the switcher can show without
-   * being in the picture. The picture is made small and saved after that.
+   * that tab: activeTab). Resolves once Chrome has taken it, or couldn't, or after PICTURE_WAIT_MS: from then on the
+   * switcher can show without being in the picture. The picture is made small and saved after that.
    */
   takeForSwitcher: (tab: { id: number; windowId: number }) => Promise<void>;
 }
@@ -41,12 +47,21 @@ export function keepPreviews(onPreview: (tabId: number, picture: string) => void
 
   return {
     takeForSwitcher(tab) {
+      let late = false;
       const taking = browser.tabs.captureVisibleTab(tab.windowId, { format: 'jpeg', quality: 85 });
-      void taking.then((picture) => keep(tab.id, picture)).catch(() => undefined);
-      return taking.then(
-        () => undefined,
-        () => undefined,
-      );
+      void taking.then((picture) => (late ? undefined : keep(tab.id, picture))).catch(() => undefined);
+      return Promise.race([
+        taking.then(
+          () => undefined,
+          () => undefined,
+        ),
+        new Promise<void>((over) =>
+          setTimeout(() => {
+            late = true;
+            over();
+          }, PICTURE_WAIT_MS),
+        ),
+      ]);
     },
   };
 }

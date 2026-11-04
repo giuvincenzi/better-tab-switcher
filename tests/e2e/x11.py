@@ -66,13 +66,18 @@ root = x.XDefaultRootWindow(display)
 
 command = sys.argv[1:]
 if command[:1] == ['windows'] and len(command) <= 2:
+    # A window can close between the list and the reading of its attributes (BadWindow): Xlib's own error handler
+    # would end the script then. That window is left out instead: XGetWindowAttributes returns 0 for it.
+    ignore_errors = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p)(lambda _display, _error: 0)
+    x.XSetErrorHandler(ignore_errors)
     root_return, parent = ctypes.c_ulong(), ctypes.c_ulong()
     children, count = ctypes.POINTER(ctypes.c_ulong)(), ctypes.c_uint()
     x.XQueryTree(display, root, ctypes.byref(root_return), ctypes.byref(parent), ctypes.byref(children),
                  ctypes.byref(count))
     for i in range(count.value):
         attributes = XWindowAttributes()
-        x.XGetWindowAttributes(display, children[i], ctypes.byref(attributes))
+        if not x.XGetWindowAttributes(display, children[i], ctypes.byref(attributes)):
+            continue
         if attributes.map_state == IS_VIEWABLE and (len(command) == 1 or pid_of(children[i]) == int(command[1])):
             print(hex(children[i]))
 elif len(command) == 2 and command[0] == 'focus':

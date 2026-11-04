@@ -13,6 +13,7 @@ import {
   option,
   options,
   panel,
+  selectedName,
   tab,
   tabs,
   typeInSearch,
@@ -57,6 +58,39 @@ describe('Switcher frame', () => {
     const opened = size(panel(host));
     typeInSearch(host, 'passport');
     expect(size(panel(host))).toEqual(opened);
+  });
+});
+
+describe('Switcher rows while the tabs change', () => {
+  it("keeps every row when a tab's title changes, the new title in its own row", () => {
+    const { host, listTabs } = openSwitcher();
+    const before = options(host);
+    listTabs(tabs.map((each) => (each.id === 3 ? { ...each, title: 'Q4 planning (edited)' } : { ...each })));
+    const after = options(host);
+    expect(after).toHaveLength(before.length);
+    for (const [index, row] of after.entries()) expect(row).toBe(before[index]);
+    expect(after[2]?.textContent).toContain('Q4 planning (edited)');
+  });
+
+  it('keeps the selection on its tab when the tab before it closes and a new one comes', () => {
+    const { host, listTabs } = openSwitcher();
+    expect(selectedName(host)).toBe('Inbox (3), example.com/2');
+    // Its place in the list changes: second before, first now.
+    listTabs([...tabs.filter((each) => each.id !== 1).map((each) => ({ ...each })), tab(9, 'New tab')]);
+    expect(selectedName(host)).toBe('Inbox (3), example.com/2');
+  });
+
+  it('keeps the rows of the tabs still there when one closes, and when a search leaves out some', () => {
+    const { host, listTabs } = openSwitcher();
+    const [first, , third, fourth] = options(host);
+    listTabs(tabs.filter((each) => each.id !== 2).map((each) => ({ ...each })));
+    const afterClose = options(host);
+    expect(afterClose).toHaveLength(3);
+    for (const [index, row] of afterClose.entries()) expect(row).toBe([first, third, fourth][index]);
+    typeInSearch(host, 'plan');
+    const afterSearch = options(host);
+    expect(afterSearch).toHaveLength(2);
+    for (const [index, row] of afterSearch.entries()) expect(row).toBe([third, fourth][index]);
   });
 });
 

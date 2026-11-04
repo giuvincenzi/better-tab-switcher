@@ -34,13 +34,11 @@ function open(settings: Partial<Settings> = {}, more: Partial<SwitcherSnapshot &
     settings: { ...defaultSettings, delayMs: 0, ...settings },
     direction: 'next',
     fromIcon: false,
-    waitForPicture: false,
     ...more,
   };
   const [moves] = createSignal<{ direction: Direction; count: number }>({ direction: 'next', count: 0 });
   const [pageKeys] = createSignal<{ key: Key; count: number }>();
   const [previews, setPreviews] = createSignal<Record<number, string>>({});
-  const [pictureTaken] = createSignal(false);
   const handlers = {
     onOpen: vi.fn(),
     onClose: vi.fn(),
@@ -58,7 +56,6 @@ function open(settings: Partial<Settings> = {}, more: Partial<SwitcherSnapshot &
         pageKeys={pageKeys}
         canSeeRelease={more.canSeeRelease ?? true}
         previews={previews}
-        pictureTaken={pictureTaken}
         listedTabs={() => undefined}
         {...handlers}
       />

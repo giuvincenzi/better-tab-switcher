@@ -2,10 +2,13 @@ import type { BrowserContext, Page, Worker } from '@playwright/test';
 import { contextOf, expect, test } from './fixtures';
 import {
   activeTitle,
+  boxOf,
+  closeItsOwnTab,
   colorsAt,
   mouseOn,
   named,
   openPages,
+  openTabs,
   openWindow,
   rowNames,
   rows,
@@ -22,6 +25,9 @@ function tabIdOf(worker: Worker, title: string): Promise<number> {
 
 const openTitles = (worker: Worker) =>
   worker.evaluate(async () => (await chrome.tabs.query({})).map((tab) => tab.title).sort());
+
+/** The tabs open for the list longer than the switcher: more than fit in it, so it scrolls. */
+const TABS = 30;
 
 test.describe('which tabs the switcher lists @tabs', () => {
   test("lists only the current window's tabs by default, and stays open when the other window changes or closes", async ({
@@ -96,6 +102,7 @@ test.describe('which tabs the switcher lists @tabs', () => {
   test('names a tab still loading its first page by the address it is loading, and asks for no icon of nothing', async ({
     context,
     serviceWorker,
+    site,
   }) => {
     const [, current] = await openPages(context, ['alpha', 'beta']);
     const page = current as Page;
@@ -104,9 +111,9 @@ test.describe('which tabs the switcher lists @tabs', () => {
     const answered = new Promise<void>((resolve) => {
       answer = resolve;
     });
-    await context.route('https://slow.test/**', async (route) => {
+    site.serve('slow.test', async () => {
       await answered;
-      await route.fulfill({ contentType: 'text/html', body: '<title>slow</title>' }).catch(() => {});
+      return { body: '<title>slow</title>' };
     });
     const slow = await serviceWorker.evaluate(
       async () => (await chrome.tabs.create({ url: 'https://slow.test/page', active: false })).id as number,
@@ -152,12 +159,15 @@ test.describe('which tabs the switcher lists @tabs', () => {
     const page = current as Page;
     await showSwitcher(serviceWorker, 'next', 'icon');
     await expect.poll(() => rowNames(page)).toEqual([named('gamma'), named('beta'), named('alpha')]);
+    // The rows on screen now: a change of one tab updates its own row, and every row stays in the list as it was.
+    const before = await rows(page).elementHandles();
     await alpha?.evaluate(() => {
       document.title = 'alpha (2 new messages)';
     });
     await expect
       .poll(() => rowNames(page))
       .toEqual([named('gamma'), named('beta'), 'alpha (2 new messages), bts.test/alpha']);
+    for (const row of before) expect(await row.evaluate((element) => element.isConnected)).toBe(true);
   });
 
   test('leaves out the tabs closed or moved to another window while it is open, and lists the ones opened', async ({
@@ -188,26 +198,43 @@ test.describe('which tabs the switcher lists @tabs', () => {
     await expect.poll(() => activeTitle(serviceWorker)).toBe('gamma');
   });
 
-  test('lists 60 tabs, the selection scrolled into sight', async ({ context, serviceWorker }) => {
-    // Opening 60 pages takes most of a test's time on a slow machine (macOS on GitHub).
-    test.slow();
-    const names = Array.from({ length: 60 }, (_, i) => `tab${String(i + 1).padStart(2, '0')}`);
-    const pages = await openPages(context, names);
-    const page = pages[59] as Page;
-    // Going back: the least recently used tab, at the bottom of the list.
+  test('lists more tabs than fit, the selection scrolled into sight', async ({ context, serviceWorker }) => {
+    // The page the switcher opens in, and more tabs in the background, unloaded (as the performance tests open them):
+    // more loaded pages only kept the machine and Playwright busy (on GitHub's Windows machines Playwright lost the
+    // browser while it took a screenshot of each of 60 pages).
+    const [page] = (await openPages(context, ['current'])) as [Page];
+    await openTabs(serviceWorker, TABS - 1);
+    await page.bringToFront();
+    // Going back: the least recently used tab, the last row.
     await showSwitcher(serviceWorker, 'previous', 'icon');
-    await expect(rows(page)).toHaveCount(60);
-    await expect(selected(page)).toHaveAccessibleName(named('tab01'));
+    await expect(rows(page)).toHaveCount(TABS);
+    const last = (await rows(page).last().getAttribute('aria-label')) as string;
+    const first = (await rows(page).first().getAttribute('aria-label')) as string;
+    await expect(selected(page)).toHaveAccessibleName(last);
     const list = switcher(page).locator('[role="listbox"]');
     expect(await list.evaluate((l) => l.scrollHeight > l.clientHeight)).toBe(true);
     await expect(selected(page)).toBeInViewport();
     await expect(rows(page).first()).not.toBeInViewport();
+    // On past the last row, to the first.
     await page.keyboard.press('ArrowDown');
-    await expect(selected(page)).toHaveAccessibleName(named('tab60'));
+    await expect(selected(page)).toHaveAccessibleName(first);
     await expect(selected(page)).toBeInViewport();
     await page.keyboard.press('ArrowUp');
+    await expect(selected(page)).toHaveAccessibleName(last);
+    // Enter opens it: the tab used longest ago, as Chrome says, the current one apart (the switcher lists it first).
+    // Known by its id: unloaded, its title can be its address until it has loaded again (macOS Microsoft Edge).
+    const leastUsed = await serviceWorker.evaluate(
+      async () =>
+        (await chrome.tabs.query({ currentWindow: true, active: false })).sort(
+          (a, b) => (a.lastAccessed ?? 0) - (b.lastAccessed ?? 0),
+        )[0]?.id,
+    );
     await page.keyboard.press('Enter');
-    await expect.poll(() => activeTitle(serviceWorker)).toBe('tab01');
+    await expect
+      .poll(() =>
+        serviceWorker.evaluate(async () => (await chrome.tabs.query({ active: true, currentWindow: true }))[0]?.id),
+      )
+      .toBe(leastUsed);
   });
 });
 
@@ -225,8 +252,7 @@ test.describe('the details of each tab @tabs', () => {
     }, beta);
     await showSwitcher(serviceWorker, 'next', 'icon');
     const dot = rows(page).filter({ hasText: 'beta' }).locator('[style*="--bts-group-"]');
-    const box = await dot.boundingBox();
-    if (!box) throw new Error('No group color on beta.');
+    const box = await boxOf(dot);
     // Chrome's red for tab groups, in the light theme (styles/theme.css).
     await expect
       .poll(() => colorsAt(page, serviceWorker, [{ x: box.x + box.width / 2, y: box.y + box.height / 2 }]))
@@ -286,17 +312,16 @@ test.describe('the details of each tab @tabs', () => {
     const page = current as Page;
     await serviceWorker.evaluate(async (id) => chrome.tabs.discard(id), await tabIdOf(serviceWorker, 'alpha'));
     await showSwitcher(serviceWorker, 'next', 'icon');
-    const opacity = (title: string) =>
-      rows(page)
-        .filter({ hasText: title })
-        .evaluate((row) => getComputedStyle(row).opacity);
-    expect(await opacity('alpha')).toBe('0.55');
-    expect(await opacity('beta')).toBe('1');
+    // Waited for, never read once: the switcher draws its rows again as the browser tells it of the tab it unloaded, and
+    // a row read the moment it is replaced has no style (macOS Microsoft Edge read "").
+    const row = (title: string) => rows(page).filter({ hasText: title });
+    await expect(row('alpha')).toHaveCSS('opacity', '0.55');
+    await expect(row('beta')).toHaveCSS('opacity', '1');
     await page.keyboard.press('Escape');
     await useSettings(serviceWorker, { details: { sleeping: false } as never });
     await showSwitcher(serviceWorker, 'next', 'icon');
     await expect(rows(page)).toHaveCount(3);
-    expect(await opacity('alpha')).toBe('1');
+    await expect(row('alpha')).toHaveCSS('opacity', '1');
   });
 });
 
@@ -372,8 +397,8 @@ test.describe("a site's popup window @tabs", () => {
     const home = await serviceWorker.evaluate(async () => (await chrome.tabs.query({ title: 'alpha' }))[0]?.windowId);
     await serviceWorker.evaluate((id) => chrome.windows.update(id as number, { focused: true }), home);
     await expect.poll(() => serviceWorker.evaluate(async () => (await chrome.windows.getLastFocused()).id)).toBe(home);
-    // An app's window: opened by the browser, not by a tab (no opener). Blank first, then the site: Playwright serves
-    // the site only to the pages it already knows.
+    // An app's window: opened by the browser, not by a tab (no opener). Blank first, then the site: the test holds its
+    // page from the start.
     const opened = context.waitForEvent('page');
     await serviceWorker.evaluate(() => chrome.windows.create({ type: 'popup', url: 'about:blank', focused: true }));
     const app = await opened;
@@ -509,7 +534,7 @@ test.describe('closing tabs from the switcher @tabs', () => {
     await expect(selected(page)).toHaveAccessibleName(named('beta'));
     const delta = rows(page).filter({ hasText: 'delta' });
     await delta.hover();
-    await delta.getByRole('button', { name: 'Close tab' }).click();
+    await closeItsOwnTab(page, delta);
     // The browser chose the tab to show instead of delta; the switcher opened there and changed nothing else.
     const instead = await shownInstead(serviceWorker, 'delta');
     await expect.poll(() => rowNames(instead.page)).toHaveLength(3);
@@ -534,7 +559,7 @@ test.describe('closing tabs from the switcher @tabs', () => {
     await expect.poll(() => rowNames(page)).toEqual([named('delta'), named('alpha')]);
     const delta = rows(page).filter({ hasText: 'delta' });
     await delta.hover();
-    await delta.getByRole('button', { name: 'Close tab' }).click();
+    await closeItsOwnTab(page, delta);
     const instead = await shownInstead(serviceWorker, 'delta');
     await expect(switcher(instead.page).getByRole('searchbox')).toHaveValue('l');
     await expect.poll(() => rowNames(instead.page)).toEqual([named('alpha')]);
@@ -553,7 +578,7 @@ test.describe('closing tabs from the switcher @tabs', () => {
     await expect(selected(page)).toHaveAccessibleName(named('beta'));
     const delta = rows(page).filter({ hasText: 'delta' });
     await delta.hover();
-    await delta.getByRole('button', { name: 'Close tab' }).click();
+    await closeItsOwnTab(page, delta);
     const instead = await shownInstead(serviceWorker, 'delta');
     await expect(selected(instead.page)).toHaveAccessibleName(named('beta'));
     // The key held since the switcher opened, let go in the page the switcher is in now.
@@ -564,20 +589,24 @@ test.describe('closing tabs from the switcher @tabs', () => {
 
 /**
  * The tab the browser shows instead of the one just closed (it chooses it itself), with its page, once the switcher
- * shows there.
+ * shows there. Its page is found by its address, which Playwright knows without asking the page: a tab behind, asked
+ * its title, answered 8.5 s later on GitHub's macOS machines (Chrome runs the pages of tabs out of sight slower).
  */
 async function shownInstead(worker: Worker, closed: string): Promise<{ title: string; page: Page }> {
   await expect.poll(() => openTitles(worker)).not.toContain(closed);
-  const title = (await activeTitle(worker)) as string;
+  const active = await worker.evaluate(async () => {
+    const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+    return { title: tab?.title ?? '', url: tab?.url ?? '' };
+  });
   const context = contextOf.get(worker) as BrowserContext;
   let page: Page | undefined;
   await expect
     .poll(async () => {
-      for (const open of context.pages()) if ((await open.title().catch(() => '')) === title) page = open;
+      page = context.pages().find((open) => open.url() === active.url);
       return page !== undefined && (await rows(page).count()) > 0;
     })
     .toBe(true);
-  return { title, page: page as Page };
+  return { title: active.title, page: page as Page };
 }
 
 /** Opens one more tab of the test site in the window of `page`, behind it. */
@@ -587,8 +616,9 @@ async function openWindowTab(page: Page, worker: Worker, title: string): Promise
     async (t) => (await chrome.tabs.query({ title: t }))[0]?.windowId as number,
     await page.title(),
   );
-  // A blank tab first, then the site: Playwright serves the site only to the pages it already knows.
+  // A blank tab first, then the site: the test holds its page from the start. About:blank, not the New Tab page
+  // Microsoft Edge prepares in advance (openWindow).
   const opened = context.waitForEvent('page');
-  await worker.evaluate((id) => chrome.tabs.create({ windowId: id, active: false }), windowId);
+  await worker.evaluate((id) => chrome.tabs.create({ windowId: id, active: false, url: 'about:blank' }), windowId);
   await (await opened).goto(`https://bts.test/${title}`);
 }

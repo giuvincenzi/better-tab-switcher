@@ -9,6 +9,8 @@ import { TabRow, tabOptionId } from './TabRow';
 import { TabTile } from './TabTile';
 
 export interface ShownTab {
+  /** The tab's id: the same tab keeps its row while the list changes (Switcher's reconcile). */
+  id: number;
   tab: SwitcherTab;
   title: TitleParts;
 }

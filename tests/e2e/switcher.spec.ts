@@ -1,7 +1,8 @@
 import type { BrowserContext, Locator, Page, Worker } from '@playwright/test';
-import { expect, test } from './fixtures';
+import { expect, type TestSite, test } from './fixtures';
 import {
   activeTitle,
+  boxOf,
   closeBy,
   closeWithEscape,
   colorsAt,
@@ -172,14 +173,11 @@ const PAGE = 'rgb(0, 0, 255)';
  * A page of its own color, saying it supports dark or not (a color-scheme meta, as Google, GitHub and Microsoft's
  * pages do), shown as the current tab after alpha.
  */
-async function coloredPage(context: BrowserContext, saysDark: boolean): Promise<Page> {
+async function coloredPage(context: BrowserContext, site: TestSite, saysDark: boolean): Promise<Page> {
   await openPages(context, ['alpha']);
-  await context.route('https://colors.test/**', (route) =>
-    route.fulfill({
-      contentType: 'text/html',
-      body: `<title>colors</title>${saysDark ? '<meta name="color-scheme" content="light dark">' : ''}<body style="margin:0;background:${PAGE}"></body>`,
-    }),
-  );
+  site.serve('colors.test', () => ({
+    body: `<title>colors</title>${saysDark ? '<meta name="color-scheme" content="light dark">' : ''}<body style="margin:0;background:${PAGE}"></body>`,
+  }));
   const page = await context.newPage();
   await page.goto('https://colors.test/');
   await page.bringToFront();
@@ -199,8 +197,9 @@ for (const systemDark of [false, true]) {
       test(`gives the switcher the device's theme, the page around it in sight, on a page that ${saysDark ? 'says it supports dark' : 'says nothing of its colors'}`, async ({
         context,
         serviceWorker,
+        site,
       }) => {
-        const page = await coloredPage(context, saysDark);
+        const page = await coloredPage(context, site, saysDark);
         await showSwitcher(serviceWorker);
         await expect(rows(page)).toHaveCount(2);
         await expect
@@ -222,16 +221,17 @@ for (const systemDark of [false, true]) {
       const switcherWindow = await opened;
       await expect(switcherWindow.getByRole('option')).toHaveCount(3);
       // The window's edges, away from its corners (macOS rounds them, the window isn't there), and the panel's
-      // padding: the whole window is the panel.
-      const size = await switcherWindow.evaluate(() => ({ width: innerWidth, height: innerHeight }));
+      // padding: the whole window is the panel. Its size read on each try: the window fits itself to the switcher once
+      // open, and a size read before (macOS: 1280 by 632, then 512 by 214) puts the points outside the picture.
       await expect
-        .poll(() =>
-          colorsAt(switcherWindow, serviceWorker, [
+        .poll(async () => {
+          const size = await switcherWindow.evaluate(() => ({ width: innerWidth, height: innerHeight }));
+          return colorsAt(switcherWindow, serviceWorker, [
             { x: size.width / 2, y: 2 },
             { x: 4, y: size.height / 2 },
             { x: size.width - 3, y: size.height / 2 },
-          ]),
-        )
+          ]);
+        })
         .toEqual(Array(3).fill(systemDark ? PANEL.dark : PANEL.light));
     });
 
@@ -249,9 +249,10 @@ for (const systemDark of [false, true]) {
     test(`shows the switcher in the ${chosen} theme when it is chosen in the settings, the page around it in sight`, async ({
       context,
       serviceWorker,
+      site,
     }) => {
       await useSettings(serviceWorker, { theme: chosen });
-      const page = await coloredPage(context, true);
+      const page = await coloredPage(context, site, true);
       await showSwitcher(serviceWorker);
       await expect(rows(page)).toHaveCount(2);
       await expect
@@ -366,8 +367,7 @@ test.describe("Chrome's own pages @switcher", () => {
       )
       .toBe(true);
     // A click on a tab closes the window: the mouse's click, which waits for nothing in the window after it.
-    const alpha = await switcherWindow.getByRole('option', { name: /^alpha/ }).boundingBox();
-    if (!alpha) throw new Error('No alpha in the switcher.');
+    const alpha = await boxOf(switcherWindow.getByRole('option', { name: /^alpha/ }));
     await closeBy(switcherWindow, () =>
       switcherWindow.mouse.click(alpha.x + alpha.width / 2, alpha.y + alpha.height / 2),
     );
@@ -463,15 +463,13 @@ test.describe('pages that isolate themselves @switcher', () => {
   test('shows in a page that takes only frames allowed to it (Cross-Origin-Embedder-Policy: require-corp)', async ({
     context,
     serviceWorker,
+    site,
   }) => {
     await openPages(context, ['alpha']);
-    await context.route('https://isolated.test/**', (route) =>
-      route.fulfill({
-        contentType: 'text/html',
-        headers: { 'Cross-Origin-Embedder-Policy': 'require-corp', 'Cross-Origin-Opener-Policy': 'same-origin' },
-        body: '<title>isolated</title><h1>isolated</h1>',
-      }),
-    );
+    site.serve('isolated.test', () => ({
+      headers: { 'Cross-Origin-Embedder-Policy': 'require-corp', 'Cross-Origin-Opener-Policy': 'same-origin' },
+      body: '<title>isolated</title><h1>isolated</h1>',
+    }));
     const page = await context.newPage();
     await page.goto('https://isolated.test/');
     expect(await page.evaluate(() => crossOriginIsolated)).toBe(true);
@@ -508,16 +506,17 @@ test.describe('what the page sees of the switcher @switcher', () => {
     expect(await find('mybank')).toBe(false);
   });
 
-  test('opens in its own window on a page that keeps scripts out of its frames', async ({ context, serviceWorker }) => {
+  test('opens in its own window on a page that keeps scripts out of its frames', async ({
+    context,
+    serviceWorker,
+    site,
+  }) => {
     await openPages(context, ['alpha', 'beta']);
     // The rule raw.githubusercontent.com sends: the page's frames run no script, the switcher's frame neither.
-    await context.route('https://sandboxed.test/**', (route) =>
-      route.fulfill({
-        contentType: 'text/html',
-        headers: { 'content-security-policy': "default-src 'none'; sandbox" },
-        body: '<title>sandboxed</title><h1>sandboxed</h1>',
-      }),
-    );
+    site.serve('sandboxed.test', () => ({
+      headers: { 'content-security-policy': "default-src 'none'; sandbox" },
+      body: '<title>sandboxed</title><h1>sandboxed</h1>',
+    }));
     const page = await context.newPage();
     await page.goto('https://sandboxed.test/file');
     await page.bringToFront();
@@ -572,11 +571,10 @@ test.describe('what the page sees of the switcher @switcher', () => {
 });
 
 /**
- * A web page the browser shows its own error page in (the site can't be reached): no extension's script goes there,
- * though its address is the site's. As the current tab.
+ * A web page the browser shows its own error page in (the site can't be found: down.test, scripts/real-browser.mjs):
+ * no extension's script goes there, though its address is the site's. As the current tab.
  */
 async function errorPage(context: BrowserContext): Promise<Page> {
-  await context.route('https://down.test/**', (route) => route.abort());
   const page = await context.newPage();
   await page.goto('https://down.test/').catch(() => {});
   await expect.poll(() => page.url()).toMatch(/^chrome-error:/);
@@ -615,7 +613,7 @@ test.describe('pages that get in the way @switcher', () => {
     const [, , current] = await openPages(context, ['alpha', 'beta', 'gamma']);
     const page = current as Page;
     await showSwitcher(serviceWorker, 'next', 'icon');
-    const normal = await switcher(page).getByRole('listbox').boundingBox();
+    const normal = await boxOf(switcher(page).getByRole('listbox'));
     await page.keyboard.press('Escape');
     await expect(rows(page)).toHaveCount(0);
     await page.evaluate(() => {
@@ -623,7 +621,7 @@ test.describe('pages that get in the way @switcher', () => {
     });
     await showSwitcher(serviceWorker, 'next', 'icon');
     await expect(rows(page)).toHaveCount(3);
-    const zoomed = await switcher(page).getByRole('listbox').boundingBox();
+    const zoomed = await boxOf(switcher(page).getByRole('listbox'));
     expect(zoomed).toEqual(normal);
     // The user makes the window smaller while the switcher is open: it keeps the size it took (opened in a window that
     // small, the list would be narrower: its share of the page is under its least width there).
@@ -634,7 +632,7 @@ test.describe('pages that get in the way @switcher', () => {
     });
     await expect.poll(() => page.evaluate(() => ({ width: innerWidth, height: innerHeight }))).not.toEqual(before);
     await expect(rows(page)).toHaveCount(3);
-    const resized = await switcher(page).getByRole('listbox').boundingBox();
+    const resized = await boxOf(switcher(page).getByRole('listbox'));
     expect({ width: resized?.width, height: resized?.height }).toEqual({
       width: normal?.width,
       height: normal?.height,
@@ -664,10 +662,10 @@ test.describe('tabs of other windows @switcher', () => {
   test('opens a tab of another window', async ({ context, serviceWorker }) => {
     await useSettings(serviceWorker, { scope: 'all' });
     await openPages(context, ['alpha', 'beta']);
-    // A new window, the last focused one, with a blank tab; then its page goes to the site (Playwright serves the
-    // site's pages it knows).
+    // A new window, the last focused one, with a blank tab; then its page goes to the site, the test holding it from
+    // the start. About:blank, not the New Tab page Microsoft Edge prepares in advance (openWindow).
     const opened = context.waitForEvent('page');
-    await serviceWorker.evaluate(() => chrome.windows.create({}));
+    await serviceWorker.evaluate(() => chrome.windows.create({ url: 'about:blank' }));
     const delta = await opened;
     await delta.goto('https://bts.test/delta');
     const firstWindow = await serviceWorker.evaluate(

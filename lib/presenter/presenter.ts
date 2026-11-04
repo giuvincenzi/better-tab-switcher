@@ -61,7 +61,17 @@ const SWITCHER_WINDOW = '/switcher-window.html';
  * quickly) would both find no switcher open and both open one.
  */
 export function requestSwitcher(request: SwitcherRequest, previews: Previews): Promise<void> {
+  step('request received');
   return inTurn(() => handleRequest(request, previews));
+}
+
+/**
+ * In the end-to-end tests' build only: when each step of opening the switcher ends, in the background's console, which
+ * the tests keep (a toolbar click once brought the switcher 5 s late on macOS Microsoft Edge, the extension's own time).
+ * In every other build `import.meta.env.MODE` is not 'e2e' as the code is built, and this does nothing.
+ */
+function step(name: string): void {
+  if (import.meta.env.MODE === 'e2e') console.info(`(test build) ${name} at ${Date.now()}`);
 }
 
 /** The request being handled, or the last one: the next request waits for it. */
@@ -78,10 +88,12 @@ function inTurn<T>(work: () => Promise<T>): Promise<T> {
 }
 
 async function handleRequest(request: SwitcherRequest, previews: Previews): Promise<void> {
+  step('request handled');
   const [[current], open] = await Promise.all([
     browser.tabs.query({ active: true, lastFocusedWindow: true }),
     openSwitcher.getValue(),
   ]);
+  step('current tab read');
   if (open && request.from === 'shortcut' && isWhereTheUserIs(open, current) && (await move(open, request.direction)))
     return;
   // The switcher's window just opened, its page not there yet to hear the shortcut: it makes the move as it shows.
@@ -96,6 +108,7 @@ async function handleRequest(request: SwitcherRequest, previews: Previews): Prom
   if (current?.id === undefined) return;
 
   const snapshot = await takeSnapshot(current, request);
+  step('tabs and settings read');
   if (canShowInPage(current.url) && (await showInPage(current, snapshot, previews))) return;
   if (snapshot.settings.chromePagesWindow) await showInWindow(current.windowId, snapshot);
 }
@@ -298,19 +311,13 @@ function answered<T>(sent: Promise<T>, limitMs = PAGE_ANSWER_MS, what = 'a messa
 }
 
 /**
- * Resolves once the page has drawn a frame in sight: the second requestAnimationFrame runs after the frame the first
- * one came before was drawn, and none runs while the tab is out of sight. A page that doesn't answer (it hangs, or
- * keeps scripts out) gets its picture taken all the same after PAGE_ANSWER_MS.
+ * Whether the page's picture can be taken now: not a moment after the switcher left the page's sight, when Chrome may
+ * still show it there (Messages.pictureFresh); its old picture is kept then. A page without the switcher's holder never
+ * had it; one that doesn't answer gets its picture as before.
  */
-function pageDrawn(tabId: number): Promise<void> {
-  const drawn = browser.scripting.executeScript({
-    target: { tabId },
-    func: () => new Promise<void>((done) => requestAnimationFrame(() => requestAnimationFrame(() => done()))),
-  });
-  return answered(drawn, PAGE_ANSWER_MS, 'a frame drawn').then(
-    () => undefined,
-    () => undefined,
-  );
+async function pictureFresh(tabId: number): Promise<boolean> {
+  if (!(await pagesWithHolder.getValue()).includes(tabId)) return true;
+  return answered(sendMessage('pictureFresh', undefined, tabId)).catch(() => true);
 }
 
 /** Moves the open switcher's selection. False when it is not there any more (its page closed, reloaded or hangs). */
@@ -334,7 +341,6 @@ async function takeSnapshot(current: Browser.tabs.Tab, request: SwitcherRequest)
     settings,
     direction: request.direction,
     fromIcon: request.from === 'icon',
-    waitForPicture: false,
     ...(request.resume ? { resume: request.resume } : {}),
   };
 }
@@ -342,12 +348,13 @@ async function takeSnapshot(current: Browser.tabs.Tab, request: SwitcherRequest)
 /** Shows the switcher in the current tab's page. False when Chrome doesn't let it in. */
 async function showInPage(current: Browser.tabs.Tab, snapshot: SwitcherSnapshot, previews: Previews): Promise<boolean> {
   const tabId = current.id as number;
-  // The page's picture is taken first: the switcher, shown in the page, would be in it. And once the page has drawn
-  // itself in sight: a tab just come back into sight shows its last frame until then, the switcher it was left with too.
-  const picture =
-    wantsPreviews(snapshot.settings) && !current.incognito
-      ? pageDrawn(tabId).then(() => previews.takeForSwitcher({ id: tabId, windowId: current.windowId }))
-      : undefined;
+  // The page's picture is taken first, before the switcher's frame is shown at all: hidden, the frame draws nothing, and
+  // shown again it shows its last frame (the switcher of the time before, however long ago) until it draws again, which
+  // a picture taken meanwhile would have (GitHub's Windows machines). Not when the page may still show the switcher it
+  // was left with (pictureFresh): its old picture stays.
+  const fresh = wantsPreviews(snapshot.settings) && !current.incognito && (await pictureFresh(tabId));
+  if (fresh) await previews.takeForSwitcher({ id: tabId, windowId: current.windowId });
+  step('picture taken or not needed');
   // Known before the switcher shows: a preview that arrives meanwhile goes to it.
   // Whether its window has the focus as it opens: the switcher closes when the window loses it (closeWhenWindowLeft).
   const windowFocused = await browser.windows.get(current.windowId).then(
@@ -355,17 +362,14 @@ async function showInPage(current: Browser.tabs.Tab, snapshot: SwitcherSnapshot,
     () => false,
   );
   await openSwitcher.setValue({ in: 'page', tabId, windowId: current.windowId, windowFocused });
-  if (!(await sendSnapshot(tabId, { ...snapshot, waitForPicture: picture !== undefined }))) {
+  step('window read and switcher saved');
+  if (!(await sendSnapshot(tabId, snapshot))) {
     await openSwitcher.setValue(null);
     return false;
   }
   // The tabs as they are now, once the switcher is there to hear of them: a tab made a moment ago may have had no
   // address nor title yet as they were read (macOS). Not waited for: the switcher is there already.
   void listAgain();
-  if (picture) {
-    await picture;
-    await answered(sendMessage('pictureTaken', undefined, tabId)).catch(() => undefined);
-  }
   return true;
 }
 
@@ -379,7 +383,9 @@ async function sendSnapshot(tabId: number, snapshot: SwitcherSnapshot): Promise<
     const { canSeeRelease, keys, madeNow } = await showFrame(tabId);
     // In a frame just made, the switcher shows for the first time: it has the time of a first opening.
     const limitMs = madeNow ? FIRST_TIME_MS : PAGE_ANSWER_MS;
+    step('frame shown');
     await answered(sendMessage('showSwitcher', { ...snapshot, canSeeRelease }, tabId), limitMs, 'showSwitcher');
+    step('switcher shown');
     for (const key of keys) await answered(sendMessage('pressKey', key, tabId), limitMs, 'pressKey');
     return true;
   } catch (error) {
@@ -414,11 +420,13 @@ async function showFrame(tabId: number): Promise<FrameShown> {
       if (error instanceof NoAnswer || error instanceof Sandboxed) throw error;
     }
   }
+  step("putting the frame's script in the page");
   await answered(
     browser.scripting.executeScript({ target: { tabId }, files: [SWITCHER_SCRIPT] }),
     FIRST_TIME_MS,
     'the script of the frame',
   );
+  step("frame's script in the page");
   const shown = await show(FIRST_TIME_MS);
   await pagesWithHolder.setValue([...new Set([...(await pagesWithHolder.getValue()), tabId])]);
   return shown;

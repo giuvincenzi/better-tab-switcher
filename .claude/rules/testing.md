@@ -15,6 +15,13 @@
 - `tests/e2e`: Playwright on the real browser (`scripts/real-browser.mjs`), Chromium or Microsoft Edge
   (`make e2e browser=msedge`), with the extension's e2e build, a fresh profile, in English. Nothing is emulated: no fake
   focus, color scheme or motion; the system's dark mode or reduced motion is a launch option, only where a test needs it.
+- **The tested browser runs as a user's browser does.** Playwright's Chromium is a build for testing and differs from
+  the Chrome users have; when a test fails only there, look first for that difference (its own experiments, its
+  sandbox, its processes' priority), not for a wait in the test.
+- The test sites (`bts.test` and the pages a test makes, `*.test`) are served over HTTPS by the tests' own server on
+  the machine (`tests/e2e/site.ts`, its certificate made with `openssl` before the tests), which the browser reaches
+  through its host rules and whose certificate alone it trusts besides the usual ones. Never Playwright's request
+  interception (`route`): it holds every request of every page, the extension's own files too.
 - The tests that use the desktop (real keys, mouse, focus, another program: `tests/e2e/system.ts`) act only on the
   tested browser or on a window the test opened itself. On Linux they run on a virtual screen (`xvfb-run`), on Windows
   and macOS on the PC's own.
@@ -44,9 +51,18 @@
   the workflow with `paths`: a workflow that doesn't start leaves its required check pending and blocks the merge.
 - `site_test` builds the whole site and checks the README (`docs.md`); `build_extension` checks `third-party.json`
   against the build.
-- **When an end-to-end test fails on GitHub**, start from the test's code and the line that failed. Its group's
-  artifact holds the screenshots, traces and report; its `README.txt`, written by the step `describe_group_result` of
-  `test.yml`, says what each file is (change it there when the artifact changes).
+- On Windows the runner's own windows (its agent's console) stay in front of the browser and keep the focus, unlike on
+  a user's PC: `minimize_other_windows` minimizes them before the tests and logs the ones still shown.
+- **Every end-to-end test on GitHub keeps what helps understand why it failed**, the passed ones too (to compare): its
+  screenshot, its trace with the browser's pages (snapshots, network, consoles), the background's console and the
+  browser's state (its frames and how far each loaded, the CPU each process used). The fixture records the trace
+  itself: Playwright's `trace` option doesn't reach the browser it connects to. A file that should help but holds
+  nothing of the browser is a bug of the tests.
+- **A diagnostic that loads the machine is on only for the case under study**, and removed after it: the browser's own
+  trace, kept on in every test, cost about 1 s of CPU a test and slowed GitHub's machines down by itself.
+- **When an end-to-end test fails on GitHub**, start from the test's code and the line that failed, then its group's
+  artifact; its `README.txt`, written by the step `describe_group_result` of `test.yml`, says what each file is and
+  how it helps (change it there when the artifact changes).
 
 ## When a test fails
 

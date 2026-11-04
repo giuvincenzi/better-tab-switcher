@@ -1,8 +1,8 @@
 import { readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import type { Page, Worker } from '@playwright/test';
+import type { Page } from '@playwright/test';
 import { expect, extensionDir, test } from './fixtures';
-import { openPages, rows, showSwitcher, useSettings } from './helpers';
+import { openPages, openTabs, rows, showSwitcher, useSettings } from './helpers';
 
 // How fast the switcher opens and how much code it loads. The sizes are the same on every machine: their limits are
 // tight. The times change with the machine, and a busy machine makes any opening slower, never quicker: what is
@@ -13,10 +13,10 @@ import { openPages, rows, showSwitcher, useSettings } from './helpers';
 const SIZE_LIMITS = { holder: 32 * 1024, frame: 128 * 1024 };
 
 /**
- * The tabs open while the switcher is measured. At most 50 in every test: hundreds of tabs kept GitHub's Windows
- * machines busy for minutes, so the pages and the next tests' browsers answered late.
+ * The tabs open while the switcher is measured (the user's decision): more kept GitHub's machines busy opening them, so
+ * the pages and the next tests' browsers answered late.
  */
-const TABS = 50;
+const TABS = 30;
 
 /**
  * The most the quickest opening may take, in milliseconds. About 4 times the slowest of the quickest openings on
@@ -45,7 +45,7 @@ test.describe('performance @performance', () => {
     test(`opens quickly with ${TABS} tabs, in the ${view}`, async ({ context, serviceWorker }) => {
       await useSettings(serviceWorker, { view, gridShow: 'icons' });
       const [current] = (await openPages(context, ['current'])) as [Page];
-      await openTabs(serviceWorker, 1, TABS);
+      await openTabs(serviceWorker, TABS - 1);
       await current.bringToFront();
       const times: number[] = [];
       for (let run = 0; run <= OPENINGS; run++) {
@@ -62,24 +62,3 @@ test.describe('performance @performance', () => {
     });
   }
 });
-
-/**
- * More tabs of the test site, from `from` to `to`, in the background and unloaded: they take no memory. Chrome unloads
- * no tab still loading: once none is, those left loaded are unloaded, so the switcher is measured with the tabs open,
- * not while the machine loads hundreds of pages (the page it opens in would answer late).
- */
-function openTabs(worker: Worker, from: number, to: number) {
-  return worker.evaluate(
-    async ({ from, to }) => {
-      for (let i = from; i < to; i++) {
-        const tab = await chrome.tabs.create({ url: `https://bts.test/tab-${i}`, active: false });
-        await chrome.tabs.discard(tab.id as number).catch(() => undefined);
-      }
-      while ((await chrome.tabs.query({ status: 'loading' })).length > 0)
-        await new Promise((resolve) => setTimeout(resolve, 100));
-      for (const tab of await chrome.tabs.query({ active: false, discarded: false }))
-        await chrome.tabs.discard(tab.id as number).catch(() => undefined);
-    },
-    { from, to },
-  );
-}

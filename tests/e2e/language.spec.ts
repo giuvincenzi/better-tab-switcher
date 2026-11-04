@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Locator, Page } from '@playwright/test';
 import { expect, extensionDir, test } from './fixtures';
-import { openPages, showSwitcher, switcher, testBrowser } from './helpers';
+import { boxOf, openPages, showSwitcher, switcher, testBrowser } from './helpers';
 
 // On macOS the browser's language is written in its app's preferences (scripts/real-browser.mjs, macLanguage): Microsoft
 // Edge's only on GitHub's machines, as on a developer's Mac it is their own browser.
@@ -134,8 +134,7 @@ for (const [chromeLanguage, locale] of [
         if (view === 'grid') {
           // The second tab is selected; the first one is beside it, on its right when the grid runs right to left.
           await expect(tiles.nth(1)).toHaveAttribute('aria-selected', 'true');
-          const [first, second] = await Promise.all([tiles.nth(0).boundingBox(), tiles.nth(1).boundingBox()]);
-          if (!first || !second) throw new Error('The tiles are not on screen.');
+          const [first, second] = await Promise.all([boxOf(tiles.nth(0)), boxOf(tiles.nth(1))]);
           expect(first.y).toBe(second.y);
           expect(first.x > second.x).toBe(dir === 'rtl');
           // The arrow that points at the first tab selects it, the other one goes back.

@@ -1,3 +1,10 @@
+---
+paths:
+  - "lib/settings/**"
+  - "lib/previews/**"
+  - "lib/presenter/**"
+---
+
 # Data and compatibility
 
 - The settings are saved with WXT's storage (`storage.defineItem` with a version), which **migrates** them, and

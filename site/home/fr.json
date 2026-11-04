@@ -41,7 +41,7 @@
   "details_title": "Choisissez ce que chaque onglet affiche",
   "details_text": "Affichez seulement ce qui vous sert : audio, onglets épinglés, groupes d'onglets, adresse du site web et plus encore.",
   "pages_title": "Sur toutes les pages",
-  "pages_text": "Même sur les pages du navigateur, interdites aux extensions, dans une petite fenêtre à part.",
+  "pages_text": "Sur les sites, dans les PDF, les documents et tous les autres fichiers. Même sur les pages du navigateur, interdites aux extensions, dans une petite fenêtre à part.",
   "language_title": "Dans votre langue",
   "language_text": "En 12 langues, dont celles qui s'écrivent de droite à gauche, selon la langue de votre navigateur.",
   "open_title": "Gratuit et open source",

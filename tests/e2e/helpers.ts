@@ -4,14 +4,10 @@ import type { Settings } from '../../lib/settings/settings';
 import { contextOf, expect } from './fixtures';
 
 /**
- * Pages of a site that exists only in the tests (Playwright serves them, nothing goes to the network), as the only
+ * Pages of a site that exists only in the tests (bts.test, served on this machine: tests/e2e/site.ts), as the only
  * tabs: the blank tab Chromium starts with is closed.
  */
 export async function openPages(context: BrowserContext, titles: string[]): Promise<Page[]> {
-  await context.route('https://bts.test/**', (route) => {
-    const name = new URL(route.request().url()).pathname.slice(1);
-    return route.fulfill({ contentType: 'text/html', body: `<title>${name}</title><h1>${name}</h1>` });
-  });
   const blank = context.pages();
   const pages: Page[] = [];
   for (const title of titles) {
@@ -51,7 +47,14 @@ export async function showSwitcher(
         ?.pages()
         .find((open) => open.url() === shownIn)
     : undefined;
-  if (page) await expect.poll(() => switcherFrame(page) !== null).toBe(true);
+  if (!page) return;
+  await expect.poll(() => switcherFrame(page) !== null).toBe(true);
+  // Until the switcher is on screen, as a user sees it before clicking: its frame drawn once (two animation frames: the
+  // first runs before the next drawing, the second after it). On GitHub's macOS machines Microsoft Edge drew it after
+  // Playwright had found its search field visible and stable in the page, and a click then went to the page below.
+  await switcherFrame(page)?.evaluate(
+    () => new Promise((drawn) => requestAnimationFrame(() => requestAnimationFrame(drawn))),
+  );
 }
 
 export function activeTitle(worker: Worker) {
@@ -122,10 +125,14 @@ export function useSettings(worker: Worker, settings: Partial<Settings>) {
   return worker.evaluate((saved) => chrome.storage.local.set({ settings: saved }), settings);
 }
 
-/** A new browser window, the last focused one, with one page of the test site in it. */
+/**
+ * A new browser window, the last focused one, with one page of the test site in it. Opened on about:blank: without an
+ * address it would show the New Tab page, which Microsoft Edge prepares in advance and then puts in the window as a page
+ * Playwright never hears of (a target of type "other": seen on GitHub's macOS machines).
+ */
 export async function openWindow(context: BrowserContext, worker: Worker, title: string): Promise<Page> {
   const opened = context.waitForEvent('page');
-  await worker.evaluate(() => chrome.windows.create({}));
+  await worker.evaluate(() => chrome.windows.create({ url: 'about:blank' }));
   const page = await opened;
   await page.goto(`https://bts.test/${title}`);
   return page;
@@ -178,8 +185,7 @@ export async function colorsAt(page: Page, worker: Worker, points: { x: number; 
 
 /** A point of the switcher's panel that shows only its background: inside its padding, halfway down its left side. */
 export async function panelPoint(page: Page): Promise<{ x: number; y: number }> {
-  const box = await switcher(page).locator('[style*="--panel-width"]').boundingBox();
-  if (!box) throw new Error('No switcher panel in the page.');
+  const box = await boxOf(switcher(page).locator('[style*="--panel-width"]'));
   return { x: box.x + 4, y: box.y + box.height / 2 };
 }
 
@@ -193,4 +199,63 @@ export async function mouseOn(row: Locator) {
     await row.hover();
     await expect(row.getByRole('button', { name: 'Close tab' })).toBeVisible({ timeout: 500 });
   }).toPass();
+}
+
+/**
+ * Clicks a row's Close tab in the page that click closes (the tab the switcher is shown in), until the page is gone:
+ * the page may close before Playwright sees the click end, which it reports as an error that is the result expected.
+ */
+export async function closeItsOwnTab(page: Page, row: Locator) {
+  const closed = page.waitForEvent('close');
+  await row
+    .getByRole('button', { name: 'Close tab' })
+    .click()
+    .catch((error) => {
+      if (!page.isClosed()) throw error;
+    });
+  await closed;
+}
+
+/**
+ * Where an element is on the page, once it is there: the switcher draws its rows again as the tabs change, and an element
+ * read the moment it is replaced has no box yet.
+ */
+export async function boxOf(locator: Locator): Promise<{ x: number; y: number; width: number; height: number }> {
+  let box: { x: number; y: number; width: number; height: number } | null = null;
+  await expect
+    .poll(async () => (box = await locator.boundingBox()), { message: `${locator} on the page` })
+    .not.toBeNull();
+  return box as unknown as { x: number; y: number; width: number; height: number };
+}
+
+/**
+ * `count` more tabs of the test site, in the background and unloaded: they take no memory, so the switcher is measured
+ * with the tabs open, not while the machine loads pages (the page it opens in would answer late). Chrome unloads no tab
+ * still loading: a tab Chrome didn't unload at once is unloaded once it has loaded. One that never loads fails the
+ * test, named, instead of the test running out of time.
+ */
+export async function openTabs(worker: Worker, count: number) {
+  const ids = await worker.evaluate(async (count) => {
+    const ids: number[] = [];
+    for (let i = 1; i <= count; i++) {
+      const tab = await chrome.tabs.create({ url: `https://bts.test/tab-${i}`, active: false });
+      ids.push(tab.id as number);
+      // Refused while the tab is loading: done below, once it has loaded.
+      await chrome.tabs.discard(tab.id as number).catch(() => undefined);
+    }
+    return ids;
+  }, count);
+  const stillLoading = () =>
+    worker.evaluate(
+      async (ids) =>
+        (await chrome.tabs.query({ status: 'loading' }))
+          .filter((tab) => ids.includes(tab.id as number))
+          .map((tab) => tab.url),
+      ids,
+    );
+  await expect.poll(stillLoading, { message: 'tabs that never finished loading', timeout: 20_000 }).toEqual([]);
+  await worker.evaluate(async (ids) => {
+    for (const tab of await chrome.tabs.query({ active: false, discarded: false }))
+      if (ids.includes(tab.id as number)) await chrome.tabs.discard(tab.id as number).catch(() => undefined);
+  }, ids);
 }

@@ -1,5 +1,6 @@
 import {
   type Accessor,
+  createComputed,
   createEffect,
   createMemo,
   createSignal,
@@ -9,6 +10,7 @@ import {
   onMount,
   Show,
 } from 'solid-js';
+import { createStore, reconcile } from 'solid-js/store';
 import { i18n } from '#i18n';
 import { languageInUse } from '../../lib/i18n/language';
 import { type Key, keyEvent } from '../../lib/keys/keys';
@@ -43,8 +45,6 @@ export interface SwitcherProps {
   canSeeRelease: boolean;
   /** The tabs' pictures by tab id, as they arrive. */
   previews: Accessor<Record<number, string>>;
-  /** The page's picture is taken (snapshot.waitForPicture): the switcher can show. */
-  pictureTaken: Accessor<boolean>;
   /** The tabs to show now, when tabs changed while the switcher is open (tabsListed). */
   listedTabs: Accessor<SwitcherTab[] | undefined>;
   onOpen: (tab: SwitcherTab) => void;
@@ -77,9 +77,6 @@ function indexOf(shown: ShownTab[], tabId: number | undefined): number | undefin
   return index === -1 ? undefined : index;
 }
 
-/** The longest the switcher waits for the page's picture before it shows. */
-const PICTURE_WAIT_MS = 1000;
-
 /** The switcher: its rules are the state machine's (lib/switcher/machine.ts); here they meet the keys and the UI. */
 export function Switcher(props: SwitcherProps): JSX.Element {
   const { fromIcon, direction, centeredOn } = props.snapshot;
@@ -89,12 +86,21 @@ export function Switcher(props: SwitcherProps): JSX.Element {
   const [tabs, setTabs] = createSignal(props.snapshot.tabs);
   const resume = props.snapshot.resume;
   const [query, setQuery] = createSignal(resume?.query ?? '');
-  const shown = createMemo<ShownTab[]>(() =>
+  const matched = createMemo<ShownTab[]>(() =>
     tabs().flatMap((tab) => {
       const title = matchTab(query(), tab.title, tab.url);
-      return title ? [{ tab, title }] : [];
+      // A copy: the store below changes its own objects in place, never the snapshot's or the background's.
+      return title ? [{ id: tab.id, tab: { ...tab }, title }] : [];
     }),
   );
+  // The tabs drawn, each the same object (so the same row) for as long as its tab is listed: a change of the tabs or of
+  // the search updates what changed in the rows there are, and adds or removes only the rows of the tabs that come or
+  // go. Rebuilt each time, every row was made again on every change (a title, a favicon), losing what it was doing.
+  // Only for drawing: the store follows `matched` once the change is done, and the switcher's own logic (the selection,
+  // the counts) reads `matched` itself, up to date at once.
+  const [drawnTabs, setDrawnTabs] = createStore<ShownTab[]>([]);
+  createComputed(() => setDrawnTabs(reconcile(matched(), { key: 'id' })));
+  const shown = matched;
   const [state, setState] = createSignal(
     start({
       count: shown().length,
@@ -106,11 +112,10 @@ export function Switcher(props: SwitcherProps): JSX.Element {
       },
     }),
   );
-  // Shown after the delay: a quick tap opens the previous tab before the switcher ever appears. Also not before the
-  // page's picture is taken, or the switcher would be in it; never later than PICTURE_WAIT_MS all the same.
+  // Shown after the delay: a quick tap opens the previous tab before the switcher ever appears. (The page's picture is
+  // taken before the switcher's frame shows at all: lib/presenter/presenter.ts.)
   const [delayOver, setDelayOver] = createSignal(fromIcon || settings().delayMs === 0);
-  const [waitOver, setWaitOver] = createSignal(!props.snapshot.waitForPicture);
-  const visible = () => delayOver() && (waitOver() || props.pictureTaken());
+  const visible = delayOver;
   const layout = (): Layout => (settings().view === 'list' ? 'list' : settings().gridShow);
   // The panel's size and the grid's columns are taken once, as the switcher opens (or as the toolbar changes how it
   // shows the tabs): they never change while it is open, whatever is typed or closed, or however the page is resized.
@@ -209,6 +214,7 @@ export function Switcher(props: SwitcherProps): JSX.Element {
   }
 
   function onKey(event: KeyboardEvent) {
+    if (event.type === 'keydown') clickedInToolbar = false;
     if (inToolbarControls(event) && event.key !== 'Escape') return;
     const switcherEvent = eventFor(event);
     if (!switcherEvent) return;
@@ -224,19 +230,24 @@ export function Switcher(props: SwitcherProps): JSX.Element {
     return keyEvent(key, { columns: columns(), inField: state().selected === FIELD, direction });
   }
 
+  /** The mouse was last pressed on the toolbar's controls, and no key since. */
+  let clickedInToolbar = false;
+
   /** A click on the toolbar's buttons doesn't move the keyboard focus: the arrows and Enter keep working on the tabs. */
   function onMouseDown(event: MouseEvent) {
-    if (inToolbarControls(event)) event.preventDefault();
+    clickedInToolbar = inToolbarControls(event);
+    if (clickedInToolbar) event.preventDefault();
   }
 
   /**
-   * After a click of the mouse on the toolbar's controls, the keyboard is back on the tabs: a label clicked gives its
-   * radio the focus once the click is over, which onMouseDown can't stop. Not after Enter or Space on a control (a
-   * click with no mouse, detail 0): the keyboard stays where the user is.
+   * After a click of the mouse on the toolbar's controls the keyboard stays on the tabs: a label clicked gives its radio
+   * the focus as the click ends, which onMouseDown can't stop, and the focus goes back to the tabs the moment it
+   * arrives, before any key can reach the radio. Not after Tab, Enter or Space (a key since the click): the keyboard
+   * stays where the user put it.
    */
-  function onClick(event: MouseEvent) {
-    if (event.detail > 0 && inToolbarControls(event) && state().selected !== FIELD)
-      setTimeout(() => panel?.querySelector<HTMLElement>('[role="listbox"]')?.focus({ preventScroll: true }));
+  function onFocusIn(event: FocusEvent) {
+    if (clickedInToolbar && inToolbarControls(event) && state().selected !== FIELD)
+      panel?.querySelector<HTMLElement>('[role="listbox"]')?.focus({ preventScroll: true });
   }
 
   /** A click outside the panel closes the switcher, as Esc does. */
@@ -257,18 +268,16 @@ export function Switcher(props: SwitcherProps): JSX.Element {
     window.addEventListener('keyup', onKey, true);
     window.addEventListener('pointerdown', onPointerDown, true);
     window.addEventListener('mousedown', onMouseDown, true);
-    window.addEventListener('click', onClick, true);
+    window.addEventListener('focusin', onFocusIn, true);
     takeFrame();
     const delay = delayOver() ? undefined : setTimeout(() => setDelayOver(true), settings().delayMs);
-    const wait = waitOver() ? undefined : setTimeout(() => setWaitOver(true), PICTURE_WAIT_MS);
     onCleanup(() => {
       window.removeEventListener('keydown', onKey, true);
       window.removeEventListener('keyup', onKey, true);
       window.removeEventListener('pointerdown', onPointerDown, true);
       window.removeEventListener('mousedown', onMouseDown, true);
-      window.removeEventListener('click', onClick, true);
+      window.removeEventListener('focusin', onFocusIn, true);
       clearTimeout(delay);
-      clearTimeout(wait);
     });
   });
 
@@ -332,7 +341,7 @@ export function Switcher(props: SwitcherProps): JSX.Element {
         <div class={styles.results}>
           <TabList
             layout={layout()}
-            tabs={shown()}
+            tabs={drawnTabs}
             selected={state().selected}
             focused={state().selected !== FIELD}
             compact={compact()}
