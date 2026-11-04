@@ -74,15 +74,17 @@ const EDGE_QUIET_FEATURES = [
  * not given); `windowSize` the first window's size; `siteRules`, for the tests, the test sites' server (tests/e2e/site.ts):
  * every *.test site goes to its port on this machine, down.test is a site that can't be found, and the server's
  * certificate (the hash of its public key) is the one trusted besides the usual ones; `quietEdge`, for the tests,
- * Microsoft Edge without the services it runs by itself (EDGE_QUIET_SWITCHES); `netLog`, a file the browser writes
+ * Microsoft Edge without the services it runs by itself (EDGE_QUIET_SWITCHES); `foregroundProcesses`, for the tests,
+ * every process of the browser kept at the system's normal priority (--disable-renderer-backgrounding, below);
+ * `netLog`, a file the browser writes
  * its NetLog in (every request, and what each waited for), whole once it is closed; `profileFrom`, a profile the
  * browser has started in before (prepareProfile), copied as this one's start; `keepProfile`, the profile left in place
  * once closed (prepareProfile). Without `extensionDir`, no extension of ours. Returns its one browser context, close(),
  * its process (pid), sendToBrowser (browserPipe) and its profile's folder.
  * @param {{ browser?: string, extensionDir?: string, installedBefore?: string[], headless?: boolean, language?: string,
  *   dark?: boolean, reducedMotion?: boolean, windowSize?: string,
- *   siteRules?: { port: number, certificate: string }, quietEdge?: boolean, netLog?: string, profileFrom?: string,
- *   keepProfile?: boolean }} options
+ *   siteRules?: { port: number, certificate: string }, quietEdge?: boolean, foregroundProcesses?: boolean,
+ *   netLog?: string, profileFrom?: string, keepProfile?: boolean }} options
  * @returns {Promise<{ context: import('@playwright/test').BrowserContext, close: () => Promise<void>,
  *   closed: Promise<string>, pid: number, sendToBrowser: (method: string, params?: object) => Promise<any>,
  *   output: () => string, profile: string }>}
@@ -98,6 +100,7 @@ export async function launchRealBrowser({
   windowSize,
   siteRules,
   quietEdge = false,
+  foregroundProcesses = false,
   netLog,
   profileFrom,
   keepProfile = false,
@@ -146,6 +149,11 @@ export async function launchRealBrowser({
     // Chrome takes only the last --disable-features: one for all.
     ...(disabledFeatures.length > 0 ? [`--disable-features=${disabledFeatures.join(',')}`] : []),
     ...(quietEdge && browser === 'msedge' ? EDGE_QUIET_SWITCHES : []),
+    // The browser lowers to the system's background priority the processes with nothing on screen, the extension's
+    // service worker among them. On GitHub's macOS machines, which have few cores, macOS then left those threads
+    // waiting for the CPU 11 to 14 s at a time (Chromium's trace: tasks of 11 s that used 0.4 ms of CPU), and the
+    // switcher opened seconds late. As Playwright starts its browsers: what pages and the extension do stays the same.
+    ...(foregroundProcesses ? ['--disable-renderer-backgrounding'] : []),
     ...(netLog ? [`--log-net-log=${netLog}`, '--net-log-capture-mode=Default'] : []),
     ...(headless ? ['--headless'] : []),
     ...(language ? [`--lang=${language}`] : []),

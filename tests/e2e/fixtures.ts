@@ -307,6 +307,7 @@ export const test = base.extend<ExtensionFixtures & { ours: Worker }, WorkerFixt
         windowSize: '1280,720',
         siteRules: testSites.rules,
         quietEdge: true,
+        foregroundProcesses: true,
         netLog,
         profileFrom: preparedProfile,
       });
