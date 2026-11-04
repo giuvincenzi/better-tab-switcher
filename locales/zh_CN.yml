@@ -14,6 +14,11 @@ Switcher_Pinned: 已固定
 Switcher_PlayingAudio: 正在播放音频
 Switcher_Sleeping: 闲置
 Switcher_Window: 窗口 $1
+Switcher_New: 未读
+Switcher_NotOpened: 尚未打开
+Switcher_CopyAddress: 复制网址
+Switcher_AddressCopied: 已复制网址
+Switcher_CopyFailed: 无法复制网址
 Settings_Title: Better Tab Switcher 设置
 Settings_Sections: 设置分类
 Settings_Appearance: 外观
@@ -65,6 +70,10 @@ Settings_SleepingNote: 闲置标签页会显示一个图标，并以灰色显示
 Settings_GroupColor: 标签页组颜色
 Settings_LastUsed: 上次使用时间
 Settings_LastUsedNote: 例如：$1。
+Settings_NotOpened: 尚未打开的标签页
+Settings_NotOpenedNote: 在后台打开的标签页会显示“$1”，直到您打开它为止。
+Settings_CopyAddress: "“复制网址”按钮"
+Settings_CopyAddressNote: 鼠标指针所在的标签页上会显示一个按钮，用于复制其网址。
 Settings_Shortcuts: 键盘快捷键
 Settings_ShortcutsNote: $1 不允许扩展程序使用 Ctrl+Tab。
 Settings_ShortcutsGuide: 如何使用 Ctrl+Tab

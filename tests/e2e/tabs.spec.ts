@@ -1,5 +1,5 @@
 import type { BrowserContext, Page, Worker } from '@playwright/test';
-import { contextOf, expect, test } from './fixtures';
+import { contextOf, expect, type TestSite, test } from './fixtures';
 import {
   activeTitle,
   boxOf,
@@ -18,10 +18,18 @@ import {
   switcherFrame,
   useSettings,
 } from './helpers';
+import { focusBrowser, hold, press, release } from './system';
 
 function tabIdOf(worker: Worker, title: string): Promise<number> {
   return worker.evaluate(async (t) => (await chrome.tabs.query({ title: t }))[0]?.id as number, title);
 }
+
+/** The browser's window the test pages are in, on the screen (for the system's click that brings it forward). */
+const windowOf = (worker: Worker) =>
+  worker.evaluate(async () => {
+    const window = await chrome.windows.getLastFocused();
+    return { left: window.left ?? 0, top: window.top ?? 0, width: window.width ?? 0, height: window.height ?? 0 };
+  });
 
 const openTitles = (worker: Worker) =>
   worker.evaluate(async () => (await chrome.tabs.query({})).map((tab) => tab.title).sort());
@@ -38,8 +46,9 @@ test.describe('which tabs the switcher lists @tabs', () => {
     const delta = await openWindow(context, serviceWorker, 'delta');
     await openWindowTab(delta, serviceWorker, 'epsilon');
     await showSwitcher(serviceWorker, 'next', 'icon');
-    await expect.poll(() => rowNames(delta)).toEqual([named('delta'), named('epsilon')]);
-    await expect(selected(delta)).toHaveAccessibleName(named('epsilon'));
+    // Epsilon was opened in the background, and not since: New (Tabs not opened yet).
+    await expect.poll(() => rowNames(delta)).toEqual([named('delta'), `${named('epsilon')}, Not opened yet`]);
+    await expect(selected(delta)).toHaveAccessibleName(`${named('epsilon')}, Not opened yet`);
     // Another tab comes to the front of the other window (the user isn't there: a site, another extension).
     const [alpha, beta] = await Promise.all([tabIdOf(serviceWorker, 'alpha'), tabIdOf(serviceWorker, 'beta')]);
     await serviceWorker.evaluate((id) => chrome.tabs.update(id, { active: true }), alpha);
@@ -146,8 +155,10 @@ test.describe('which tabs the switcher lists @tabs', () => {
       contentType: 'application/json',
     });
     // Its title is the browser's while it loads (the address in Chrome, the site in Microsoft Edge); its address is the
-    // one it is loading.
-    await expect(rows(page).filter({ hasText: 'slow.test' })).toHaveAccessibleName(/, slow\.test\/page$/);
+    // one it is loading. Made in the background: not opened yet.
+    await expect(rows(page).filter({ hasText: 'slow.test' })).toHaveAccessibleName(
+      /, slow\.test\/page, Not opened yet$/,
+    );
     answer();
   });
 
@@ -188,9 +199,9 @@ test.describe('which tabs the switcher lists @tabs', () => {
       },
       { alpha, beta },
     );
-    // By their addresses: the new tab is still loading (its title the browser's until then).
+    // By their addresses, after their titles: the new tab is still loading (its title the browser's until then).
     await expect
-      .poll(async () => (await rowNames(page)).map((name) => name?.split(', ').pop()).sort())
+      .poll(async () => (await rowNames(page)).map((name) => name?.split(', ')[1]).sort())
       .toEqual(['bts.test/delta', 'bts.test/epsilon', 'bts.test/gamma']);
     // The selection stays on its tab, which opens.
     await expect(selected(page)).toHaveAccessibleName(named('gamma'));
@@ -322,6 +333,158 @@ test.describe('the details of each tab @tabs', () => {
     await showSwitcher(serviceWorker, 'next', 'icon');
     await expect(rows(page)).toHaveCount(3);
     await expect(row('alpha')).toHaveCSS('opacity', '1');
+  });
+});
+
+/** links.test: a page with a link to bts.test/later, to open it as a user does, with a click. */
+function serveLinks(site: TestSite) {
+  site.serve('links.test', () => ({ body: '<title>links</title><a href="https://bts.test/later">later</a>' }));
+}
+
+test.describe('the tabs not opened yet @tabs', () => {
+  test('shows New on a tab opened in the background, until it is opened, and never on one opened in front', async ({
+    context,
+    serviceWorker,
+    site,
+  }) => {
+    serveLinks(site);
+    const [page] = (await openPages(context, ['alpha'])) as [Page];
+    await page.goto('https://links.test/');
+    // Opened in the background, as Chrome opens a link clicked with Ctrl (⌘ on the Mac).
+    await page.getByRole('link', { name: 'later' }).click({ modifiers: ['ControlOrMeta'] });
+    await expect.poll(() => openTitles(serviceWorker)).toEqual(['later', 'links']);
+    // And one opened in front, then left.
+    await serviceWorker.evaluate(() => chrome.tabs.create({ url: 'https://bts.test/front', active: true }));
+    await expect.poll(() => openTitles(serviceWorker)).toEqual(['front', 'later', 'links']);
+    await page.bringToFront();
+    await expect.poll(() => activeTitle(serviceWorker)).toBe('links');
+
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    await expect(rows(page).filter({ hasText: 'later' })).toContainText('New');
+    await expect(rows(page).filter({ hasText: 'later' })).toHaveAccessibleName(`${named('later')}, Not opened yet`);
+    await expect(rows(page).filter({ hasText: 'front' })).not.toContainText('New');
+    await expect(rows(page).filter({ hasText: 'front' })).toHaveAccessibleName(named('front'));
+
+    // In the grid too.
+    await page.keyboard.press('Escape');
+    await useSettings(serviceWorker, { view: 'grid' });
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    await expect(rows(page).filter({ hasText: 'later' })).toContainText('New');
+
+    // Opened from the switcher, then the switcher again: a tab like the others.
+    await rows(page).filter({ hasText: 'later' }).click();
+    await expect.poll(() => activeTitle(serviceWorker)).toBe('later');
+    await page.bringToFront();
+    await expect.poll(() => activeTitle(serviceWorker)).toBe('links');
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    await expect(rows(page)).toHaveCount(3);
+    await expect(rows(page).filter({ hasText: 'later' })).not.toContainText('New');
+    await expect(rows(page).filter({ hasText: 'later' })).toHaveAccessibleName(named('later'));
+  });
+
+  test('shows nothing of it with Tabs not opened yet off', async ({ context, serviceWorker, site }) => {
+    serveLinks(site);
+    await useSettings(serviceWorker, { details: { notOpened: false } as never });
+    const [page] = (await openPages(context, ['alpha'])) as [Page];
+    await page.goto('https://links.test/');
+    await page.getByRole('link', { name: 'later' }).click({ modifiers: ['ControlOrMeta'] });
+    await expect.poll(() => openTitles(serviceWorker)).toEqual(['later', 'links']);
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    await expect(rows(page).filter({ hasText: 'later' })).toHaveAccessibleName(named('later'));
+    await expect(rows(page).filter({ hasText: 'later' })).not.toContainText('New');
+  });
+
+  test.describe('with the browser on screen', () => {
+    // Reopen closed window is the browser's own shortcut, pressed on the system's keyboard (tests/e2e/system.ts).
+    test.use({ headed: true });
+
+    test('shows no New on the tabs brought back by Reopen closed window', async ({ context, serviceWorker }) => {
+      await openPages(context, ['alpha']);
+      // A window of two tabs, the second made in the background: New, then the window closed.
+      const opened = await serviceWorker.evaluate(async () => {
+        const window = await chrome.windows.create({ url: ['https://bts.test/one', 'https://bts.test/two'] });
+        return window?.id as number;
+      });
+      await expect.poll(() => openTitles(serviceWorker)).toEqual(['alpha', 'one', 'two']);
+      await serviceWorker.evaluate((id) => chrome.windows.remove(id), opened);
+      await expect.poll(() => openTitles(serviceWorker)).toEqual(['alpha']);
+
+      const alpha = context.pages().find((open) => open.url().endsWith('/alpha')) as Page;
+      await focusBrowser(context, await windowOf(serviceWorker));
+      const back = context.waitForEvent('page', (open) => open.url().endsWith('/one'));
+      const modifier = process.platform === 'darwin' ? 'Command' : 'Control';
+      await hold(modifier);
+      await hold('Shift');
+      try {
+        await press('T');
+      } finally {
+        await release('Shift');
+        await release(modifier);
+      }
+      const one = await back;
+      await expect.poll(() => openTitles(serviceWorker)).toEqual(['alpha', 'one', 'two']);
+      expect(alpha.isClosed()).toBe(false);
+
+      await showSwitcher(serviceWorker, 'next', 'icon');
+      await expect(rows(one)).toHaveCount(2);
+      await expect(rows(one).filter({ hasText: 'two' })).toHaveAccessibleName(named('two'));
+      await expect(rows(one).filter({ hasText: 'two' })).not.toContainText('New');
+    });
+  });
+});
+
+/** The text on the browser's clipboard, read in a page of bts.test, which may read it. */
+async function clipboardText(context: BrowserContext, page: Page): Promise<string> {
+  await context.grantPermissions(['clipboard-read'], { origin: 'https://bts.test' });
+  await page.bringToFront();
+  return page.evaluate(() => navigator.clipboard.readText());
+}
+
+test.describe('Copy address @tabs', () => {
+  test('copies the whole address of the tab under the mouse, says so a moment, and changes nothing else', async ({
+    context,
+    serviceWorker,
+  }) => {
+    const [alpha, beta] = (await openPages(context, ['alpha', 'beta'])) as [Page, Page];
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    const row = rows(beta).filter({ hasText: 'alpha' });
+    const before = await boxOf(row);
+    await mouseOn(row);
+    const copy = row.getByRole('button', { name: 'Copy address' });
+    await expect(copy).toBeVisible();
+    // Over the end of the address's place: the row as wide and as high as without the mouse on it.
+    expect(await boxOf(row)).toEqual(before);
+    await copy.click();
+    await expect(row).toContainText('Address copied');
+    await expect(row).not.toContainText('bts.test/alpha');
+    await expect(row).toContainText('bts.test/alpha');
+    await expect(row).not.toContainText('Address copied');
+    // The switcher still open, on the tab it was: the click opened nothing.
+    await expect(switcher(beta)).toBeVisible();
+    expect(await activeTitle(serviceWorker)).toBe('beta');
+    await beta.keyboard.press('Escape');
+    expect(await clipboardText(context, alpha)).toBe('https://bts.test/alpha');
+  });
+
+  test('copies the address on a site that forbids its frames the clipboard', async ({
+    context,
+    serviceWorker,
+    site,
+  }) => {
+    site.serve('locked.test', () => ({
+      body: '<title>locked</title>',
+      headers: { 'permissions-policy': 'clipboard-write=()' },
+    }));
+    const [alpha] = (await openPages(context, ['alpha'])) as [Page];
+    const locked = await context.newPage();
+    await locked.goto('https://locked.test/');
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    const row = rows(locked).filter({ hasText: 'alpha' });
+    await mouseOn(row);
+    await row.getByRole('button', { name: 'Copy address' }).click();
+    await expect(row).toContainText('Address copied');
+    await locked.keyboard.press('Escape');
+    expect(await clipboardText(context, alpha)).toBe('https://bts.test/alpha');
   });
 });
 

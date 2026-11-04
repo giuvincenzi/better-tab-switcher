@@ -17,7 +17,9 @@ export type IconName =
   | 'compact'
   | 'address'
   | 'lastUsed'
-  | 'warning';
+  | 'warning'
+  | 'copy'
+  | 'check';
 
 interface IconProps {
   name: IconName;
@@ -103,6 +105,13 @@ export function Icon(props: IconProps): JSX.Element {
           <path d="M12 3l9.5 17h-19z" />
           <path d="M12 10v4" />
           <path d="M12 17.5v.01" />
+        </Match>
+        <Match when={props.name === 'copy'}>
+          <rect x="9" y="9" width="12" height="12" rx="2" />
+          <path d="M5 15H4a1 1 0 01-1-1V4a1 1 0 011-1h10a1 1 0 011 1v1" />
+        </Match>
+        <Match when={props.name === 'check'}>
+          <path d="M5 12l5 5 9-10" />
         </Match>
         <Match when={props.name === 'chevron'}>
           <path d="M6 9l6 6 6-6" />

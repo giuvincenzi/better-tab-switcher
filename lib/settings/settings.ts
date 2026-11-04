@@ -19,6 +19,10 @@ export interface TabDetails {
   sleeping: boolean;
   groupColor: boolean;
   lastUsed: boolean;
+  /** "New" on the tabs opened in the background and not opened since (lib/tabs/not-opened.ts). */
+  notOpened: boolean;
+  /** A button that copies the tab's address, under the mouse. */
+  copyAddress: boolean;
 }
 
 export interface Settings {
@@ -64,6 +68,8 @@ export const defaultSettings: Readonly<Settings> = Object.freeze({
     sleeping: true,
     groupColor: true,
     lastUsed: true,
+    notOpened: true,
+    copyAddress: true,
   }),
 });
 
@@ -129,6 +135,8 @@ export function parseSettings(value: unknown, fallback: Settings = defaultSettin
       sleeping: flag(details.sleeping, d.details.sleeping),
       groupColor: flag(details.groupColor, d.details.groupColor),
       lastUsed: flag(details.lastUsed, d.details.lastUsed),
+      notOpened: flag(details.notOpened, d.details.notOpened),
+      copyAddress: flag(details.copyAddress, d.details.copyAddress),
     },
   };
 }

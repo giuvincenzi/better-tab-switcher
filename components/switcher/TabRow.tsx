@@ -9,8 +9,10 @@ import {
   Address,
   AutoSelectLine,
   createAddressScroll,
+  createCopyAddress,
   LastUsed,
   MIDDLE_BUTTON,
+  NewLabel,
   preventMiddleClickScroll,
   TabIcons,
   TabTitle,
@@ -41,6 +43,9 @@ export interface TabRowProps {
 /** One tab in the switcher's list. */
 export function TabRow(props: TabRowProps): JSX.Element {
   const address = createAddressScroll(props);
+  const copy = createCopyAddress(() => props.tab.url);
+  const copyable = () => (props.details.copyAddress ? copy : undefined);
+  const isNew = () => props.details.notOpened && !!props.tab.notOpened;
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: the keys that open a tab (Enter, the arrows, Alt's release) belong to the list, which points to the selected row with aria-activedescendant (WAI-ARIA listbox pattern).
     <div
@@ -68,17 +73,43 @@ export function TabRow(props: TabRowProps): JSX.Element {
     >
       <img class={styles.favicon} src={faviconUrl(props.tab.url, props.compact ? 1 : 1.25)} alt="" />
       <div class={styles.text}>
-        <TabTitle tab={props.tab} title={props.title} details={props.details} />
+        <TabTitle
+          tab={props.tab}
+          title={props.title}
+          details={props.details}
+          copy={copyable()}
+          copyShown={address.hovered()}
+        />
         <Show when={props.details.address && !props.compact}>
-          <Address url={props.tab.url} full={props.details.fullAddress} scrolls={address.scrolls()} />
+          <Address
+            url={props.tab.url}
+            full={props.details.fullAddress}
+            scrolls={address.scrolls()}
+            copy={copyable()}
+            copyShown={address.hovered()}
+          />
         </Show>
       </div>
       <Show when={props.details.address && props.compact}>
-        <Address url={props.tab.url} full={props.details.fullAddress} scrolls={address.scrolls()} side />
+        <Address
+          url={props.tab.url}
+          full={props.details.fullAddress}
+          scrolls={address.scrolls()}
+          copy={copyable()}
+          copyShown={address.hovered()}
+          side
+        />
       </Show>
       <TabIcons tab={props.tab} details={props.details} />
-      <Show when={props.details.lastUsed}>
-        <LastUsed tab={props.tab} now={props.now} language={props.language} />
+      <Show
+        when={isNew()}
+        fallback={
+          <Show when={props.details.lastUsed}>
+            <LastUsed tab={props.tab} now={props.now} language={props.language} />
+          </Show>
+        }
+      >
+        <NewLabel />
       </Show>
       <IconButton
         icon="close"

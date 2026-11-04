@@ -289,3 +289,83 @@ describe('addressOf', () => {
     expect(addressOf('not an address', false)).toBe('not an address');
   });
 });
+
+describe('TabRow, a tab not opened yet', () => {
+  const notOpened: SwitcherTab = { ...tab, notOpened: true };
+
+  it('shows New in place of when it was used, and is named as not opened yet', () => {
+    const element = row({ tab: notOpened });
+    expect(element.textContent).toContain('New');
+    expect(element.textContent).not.toContain('ago');
+    expect(element.getAttribute('aria-label')).toBe(
+      'Q4 planning, mail.workspace.example-international-holdings.com/inbox, Not opened yet',
+    );
+  });
+
+  it('shows New with Last used off too, and nothing of it with Tabs not opened yet off', () => {
+    expect(row({ tab: notOpened, details: { ...defaultSettings.details, lastUsed: false } }).textContent).toContain(
+      'New',
+    );
+    dispose?.();
+    const element = row({ tab: notOpened, details: { ...defaultSettings.details, notOpened: false } });
+    expect(element.textContent).not.toContain('New');
+    expect(element.textContent).toContain('15 min. ago');
+    expect(element.getAttribute('aria-label')).not.toContain('Not opened yet');
+  });
+});
+
+describe('TabRow, Copy address', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const copyButton = (element: HTMLElement) =>
+    element.querySelector('button[aria-label="Copy address"]') as HTMLButtonElement | null;
+  const shown = (button: HTMLElement) => getComputedStyle(button).visibility === 'visible';
+
+  it('shows its button under the mouse only, over the end of the address', () => {
+    const element = row({ compact: false });
+    const button = copyButton(element) as HTMLButtonElement;
+    expect(shown(button)).toBe(false);
+    element.dispatchEvent(new PointerEvent('pointerenter'));
+    expect(shown(button)).toBe(true);
+    const place = (button.parentElement as HTMLElement).parentElement as HTMLElement;
+    expect(place.textContent).toContain('mail.workspace');
+    expect(button.getBoundingClientRect().right).toBeCloseTo(place.getBoundingClientRect().right, 0);
+    element.dispatchEvent(new PointerEvent('pointerleave'));
+    expect(shown(button)).toBe(false);
+  });
+
+  it('copies the whole address without opening the tab, then says so in place of the address for a moment', async () => {
+    const writeText = vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue();
+    const onChoose = vi.fn();
+    const element = row({ onChoose });
+    (copyButton(element) as HTMLButtonElement).click();
+    expect(onChoose).not.toHaveBeenCalled();
+    expect(writeText).toHaveBeenCalledWith(tab.url);
+    await vi.waitFor(() => expect(element.textContent).toContain('Address copied'));
+    expect(element.textContent).not.toContain('mail.workspace');
+    await vi.waitFor(() => expect(element.textContent).toContain('mail.workspace'), { timeout: 2000 });
+    expect(element.textContent).not.toContain('Address copied');
+  });
+
+  it("says it couldn't copy the address when the browser refuses both ways", async () => {
+    vi.spyOn(navigator.clipboard, 'writeText').mockRejectedValue(new DOMException('Blocked', 'NotAllowedError'));
+    vi.spyOn(document, 'execCommand').mockReturnValue(false);
+    vi.spyOn(console, 'info').mockImplementation(() => undefined);
+    const element = row();
+    (copyButton(element) as HTMLButtonElement).click();
+    await vi.waitFor(() => expect(element.textContent).toContain("Couldn't copy the address"));
+  });
+
+  it('has no button with Copy address button off', () => {
+    expect(copyButton(row({ details: { ...defaultSettings.details, copyAddress: false } }))).toBeNull();
+  });
+
+  it('puts its button at the end of the title with Website address off', () => {
+    const element = row({ details: { ...defaultSettings.details, address: false } });
+    const button = copyButton(element) as HTMLButtonElement;
+    const place = (button.parentElement as HTMLElement).parentElement as HTMLElement;
+    expect(place.textContent).toContain('Q4 planning');
+  });
+});

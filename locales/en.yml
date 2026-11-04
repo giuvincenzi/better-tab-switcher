@@ -55,6 +55,19 @@ Switcher_Sleeping: Inactive
 # A tab's badge with "All windows": the number of the window it is in. $1: the number (2, 3…).
 Switcher_Window: Window $1
 
+# A tab's label, in place of how long ago it was used: a tab opened in the background and not opened since (Tabs not
+# opened yet). Short: it sits at the end of the row.
+Switcher_New: New
+# The same tab's state for screen readers, in its accessible name.
+Switcher_NotOpened: Not opened yet
+
+# The button on a tab, shown under the mouse at the end of its website address, that copies the address.
+Switcher_CopyAddress: Copy address
+# Shown for a moment in place of the address once Switcher_CopyAddress copied it, and read by screen readers.
+Switcher_AddressCopied: Address copied
+# Shown for a moment in place of the address when Switcher_CopyAddress couldn't copy it, and read by screen readers.
+Switcher_CopyFailed: Couldn't copy the address
+
 # The settings page's title, in the browser tab and at the top of the page. "Better Tab Switcher" is the global name.
 Settings_Title: Better Tab Switcher settings
 
@@ -126,6 +139,13 @@ Settings_GroupColor: Tab group color
 Settings_LastUsed: Last used
 # $1: a time written as the switcher writes it, in the language in use ("15 min ago").
 Settings_LastUsedNote: For example, $1.
+# A setting: the label Switcher_New on the tabs opened in the background and not opened since.
+Settings_NotOpened: Tabs not opened yet
+# Under Settings_NotOpened. $1: the label as the switcher shows it (Switcher_New).
+Settings_NotOpenedNote: Tabs opened in the background show “$1” until you open them.
+# A setting: the button Switcher_CopyAddress on the tab under the mouse.
+Settings_CopyAddress: Copy address button
+Settings_CopyAddressNote: A button on the tab under the mouse copies its website address.
 
 # Section: the extension's shortcuts, changed in chrome://extensions/shortcuts.
 Settings_Shortcuts: Keyboard shortcuts

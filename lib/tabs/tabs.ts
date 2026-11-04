@@ -17,6 +17,8 @@ export interface TabInfo {
   /** When the tab was last active in its window (Chrome's lastAccessed), in milliseconds since 1970. */
   lastAccessed: number;
   groupColor?: GroupColor;
+  /** Opened in the background and not opened since (lib/tabs/not-opened.ts): shown with "New". */
+  notOpened?: boolean;
 }
 
 /** A tab as the switcher shows it. */

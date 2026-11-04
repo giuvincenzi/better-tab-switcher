@@ -1,4 +1,5 @@
 .titleLine {
+  position: relative;
   display: flex;
   align-items: center;
   gap: calc(0.5 * var(--bts-em));
@@ -28,6 +29,7 @@
 
 /* The address's place in the row or the tile, in the page's direction. */
 .address {
+  position: relative;
   display: block;
   min-width: 0;
   color: var(--tab-muted);
@@ -123,6 +125,62 @@
   to {
     width: 0;
   }
+}
+
+/*
+ * Copy address: the button over the end of the address's place (or the title's), shown under the mouse. While it shows,
+ * the text makes room for it inside that place: a long address is cut, or ends its scroll, before the button, and the
+ * row keeps its width.
+ */
+.copyShown {
+  padding-inline-end: calc(1.625 * var(--bts-em));
+}
+
+.copy {
+  position: absolute;
+  inset-inline-end: 0;
+  top: 50%;
+  display: flex;
+  transform: translateY(-50%);
+  visibility: hidden;
+}
+
+.copyVisible {
+  visibility: visible;
+}
+
+/* "Address copied" (or that it couldn't be), for a moment in place of the address. */
+.copyMessage {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--tab-match);
+  font-weight: 600;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* "New", in place of when the tab was used. Its colors come from the row or tile (--tab-new-*). */
+.newLabel {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  height: calc(1.125 * var(--bts-em));
+  padding: 0 calc(0.4375 * var(--bts-em));
+  border-radius: calc(0.5625 * var(--bts-em));
+  background: var(--tab-new-background);
+  color: var(--tab-new-text);
+  font-size: calc(0.6875 * var(--bts-em));
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 @media (prefers-reduced-motion: reduce) {

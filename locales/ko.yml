@@ -14,6 +14,11 @@ Switcher_Pinned: 고정됨
 Switcher_PlayingAudio: 오디오 재생 중
 Switcher_Sleeping: 비활성 탭
 Switcher_Window: 창 $1
+Switcher_New: 안 읽음
+Switcher_NotOpened: 아직 열지 않음
+Switcher_CopyAddress: 주소 복사
+Switcher_AddressCopied: 주소를 복사했습니다
+Switcher_CopyFailed: 주소를 복사하지 못했습니다
 Settings_Title: Better Tab Switcher 설정
 Settings_Sections: 설정 섹션
 Settings_Appearance: 디자인
@@ -65,6 +70,10 @@ Settings_SleepingNote: 비활성 탭에는 아이콘이 붙고 회색으로 표�
 Settings_GroupColor: 탭 그룹 색상
 Settings_LastUsed: 마지막 사용 시간
 Settings_LastUsedNote: 예를 들어 $1처럼 표시됩니다.
+Settings_NotOpened: 아직 열지 않은 탭
+Settings_NotOpenedNote: 백그라운드에서 연 탭에는 열기 전까지 "$1" 표시가 붙습니다.
+Settings_CopyAddress: 주소 복사 버튼
+Settings_CopyAddressNote: 마우스 커서가 놓인 탭에 웹사이트 주소를 복사하는 버튼이 표시됩니다.
 Settings_Shortcuts: 키보드 단축키
 Settings_ShortcutsNote: $1에서는 확장 프로그램이 Ctrl+Tab을 사용할 수 없습니다.
 Settings_ShortcutsGuide: Ctrl+Tab을 사용하는 방법

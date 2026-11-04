@@ -26,3 +26,4 @@ paths:
   | Settings | the extension's storage | until the user changes them or removes the extension |
   | Previews of the tabs | `storage.session`: in memory, never on disk | until the tab closes, the grid shows icons, or Chrome closes; they always leave room in that memory for the switcher's state |
   | The switcher's state (where it is open, the pages it is in) | `storage.session`: in memory, never on disk | until Chrome closes |
+  | The tabs not opened yet: only their ids | `storage.session`: in memory, never on disk | until the tab is opened or closed, or Chrome closes |

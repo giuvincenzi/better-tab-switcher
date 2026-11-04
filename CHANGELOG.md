@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Added
+
+- Tabs not opened yet: a tab opened in the background, like a link opened with Ctrl+click, shows “New” in the switcher
+  until you open it. On by default; turn it off in Tab details.
+- Copy address button: under the mouse, a button at the end of a tab's address copies it, and says “Address copied” for
+  a moment. It takes no room of its own. On by default; turn it off in Tab details.
+
 ### Fixed
 
 - A tab's preview in the grid never shows the switcher. Opening the switcher on a tab right after closing it there, or

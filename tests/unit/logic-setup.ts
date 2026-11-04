@@ -26,3 +26,21 @@ const attached = new Set<(...args: unknown[]) => unknown>();
   hasListener: (listener: (...args: unknown[]) => unknown) => attached.has(listener),
   hasListeners: () => attached.size > 0,
 };
+
+// Nor onReplaced, a tab given a new id (Chrome took it out of memory: tabs.discard). trigger() calls its listeners, as
+// the fake browser's own events do; reset() forgets them, as it does its own.
+type Replaced = (addedTabId: number, removedTabId: number) => unknown;
+const replaced = new Set<Replaced>();
+(fakeBrowser.tabs as { onReplaced: unknown }).onReplaced = {
+  addListener: (listener: Replaced) => replaced.add(listener),
+  removeListener: (listener: Replaced) => replaced.delete(listener),
+  hasListener: (listener: Replaced) => replaced.has(listener),
+  hasListeners: () => replaced.size > 0,
+  trigger: async (addedTabId: number, removedTabId: number) =>
+    Promise.all([...replaced].map((listener) => listener(addedTabId, removedTabId))),
+};
+const reset = fakeBrowser.reset.bind(fakeBrowser);
+fakeBrowser.reset = () => {
+  reset();
+  replaced.clear();
+};

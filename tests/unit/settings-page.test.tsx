@@ -151,7 +151,7 @@ describe('SettingsPage', () => {
     expect(select(host, 'Long website addresses').disabled).toBe(false);
   });
 
-  it('lists the tab details in their order: the icons, the last used time, then the address and its two settings', () => {
+  it('lists the tab details in their order: the icons, the last used time, New, Copy address, then the address and its two settings', () => {
     const { host } = open();
     const labels = [...host.querySelectorAll('#details [aria-labelledby]')].map(
       (element) => document.getElementById(element.getAttribute('aria-labelledby') ?? '')?.textContent,
@@ -162,10 +162,22 @@ describe('SettingsPage', () => {
       'Inactive tabs',
       'Tab group color',
       'Last used',
+      'Tabs not opened yet',
+      'Copy address button',
       'Website address',
       'Full address',
       'Long website addresses',
     ]);
+  });
+
+  it('explains Tabs not opened yet with the label the switcher shows, and Copy address button, under their names', () => {
+    const { host } = open();
+    expect(describedBy(toggle(host, 'Tabs not opened yet'))).toBe(
+      'Tabs opened in the background show “New” until you open them.',
+    );
+    expect(describedBy(toggle(host, 'Copy address button'))).toBe(
+      'A button on the tab under the mouse copies its website address.',
+    );
   });
 
   it('explains Full address and the long addresses choice under their names', () => {
@@ -253,6 +265,8 @@ const notDefaults: Settings = {
     sleeping: false,
     groupColor: false,
     lastUsed: false,
+    notOpened: false,
+    copyAddress: false,
   },
 };
 
@@ -275,6 +289,8 @@ const switches: [string, (settings: Settings) => boolean, (on: boolean) => Setti
   ['Inactive tabs', (s) => s.details.sleeping, (sleeping) => ({ details: { sleeping } })],
   ['Tab group color', (s) => s.details.groupColor, (groupColor) => ({ details: { groupColor } })],
   ['Last used', (s) => s.details.lastUsed, (lastUsed) => ({ details: { lastUsed } })],
+  ['Tabs not opened yet', (s) => s.details.notOpened, (notOpened) => ({ details: { notOpened } })],
+  ['Copy address button', (s) => s.details.copyAddress, (copyAddress) => ({ details: { copyAddress } })],
 ];
 
 const radio = (host: HTMLElement, value: string) => {

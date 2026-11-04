@@ -10,8 +10,10 @@ import {
   Address,
   AutoSelectLine,
   createAddressScroll,
+  createCopyAddress,
   LastUsed,
   MIDDLE_BUTTON,
+  NewLabel,
   preventMiddleClickScroll,
   TabIcons,
   TabTitle,
@@ -47,6 +49,9 @@ export interface TabTileProps {
 /** One tab in the switcher's grid: the title above, the preview below. */
 export function TabTile(props: TabTileProps): JSX.Element {
   const address = createAddressScroll(props);
+  const copy = createCopyAddress(() => props.tab.url);
+  const copyable = () => (props.details.copyAddress ? copy : undefined);
+  const isNew = () => props.details.notOpened && !!props.tab.notOpened;
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: the keys that open a tab (Enter, the arrows, Alt's release) belong to the grid, which points to the selected tile with aria-activedescendant (WAI-ARIA listbox pattern).
     <div
@@ -74,7 +79,13 @@ export function TabTile(props: TabTileProps): JSX.Element {
       <div class={styles.header}>
         <img class={styles.favicon} src={faviconUrl(props.tab.url, 1)} alt="" />
         <span class={styles.title}>
-          <TabTitle tab={props.tab} title={props.title} details={props.details} />
+          <TabTitle
+            tab={props.tab}
+            title={props.title}
+            details={props.details}
+            copy={copyable()}
+            copyShown={address.hovered()}
+          />
         </span>
         <TabIcons tab={props.tab} details={props.details} />
         <IconButton
@@ -94,6 +105,8 @@ export function TabTile(props: TabTileProps): JSX.Element {
           full={props.details.fullAddress}
           scrolls={address.scrolls()}
           class={styles.address}
+          copy={copyable()}
+          copyShown={address.hovered()}
         />
       </Show>
       <div class={styles.preview}>
@@ -111,9 +124,11 @@ export function TabTile(props: TabTileProps): JSX.Element {
           {(src) => <img class={styles.picture} src={src()} alt="" />}
         </Show>
       </div>
-      <Show when={props.details.lastUsed}>
+      <Show when={isNew() || props.details.lastUsed}>
         <span class={styles.line}>
-          <LastUsed tab={props.tab} now={props.now} language={props.language} />
+          <Show when={isNew()} fallback={<LastUsed tab={props.tab} now={props.now} language={props.language} />}>
+            <NewLabel />
+          </Show>
         </span>
       </Show>
       <Show when={props.selected && props.autoSelectSeconds}>
