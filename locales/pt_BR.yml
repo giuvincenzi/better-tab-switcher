@@ -88,7 +88,7 @@ Settings_IconShortcutNote: Abre o seletor como um clique no ícone da barra de f
 Settings_ShortcutMissing: Um atalho está sem teclas, talvez porque outra extensão já use essas teclas. Escolha as suas com o botão $1.
 Settings_ShortcutsDialogTitle: Escolha seus atalhos do teclado
 Settings_ShortcutsDialogText: O Better Tab Switcher foi instalado. Escolha as teclas para abri-lo.
-Settings_Reset: Redefinir
+Settings_System: Sistema
 Settings_RestoreDefaults: Restaurar configurações para os padrões originais
 Settings_Restore: Restaurar
 Settings_RestoreTitle: Restaurar configurações para os padrões originais?
@@ -98,7 +98,7 @@ Settings_ClearSearch: Limpar pesquisa
 Settings_NoResults: Nenhuma configuração corresponde à sua pesquisa.
 Settings_NoResultsNote: Tente outras palavras ou limpe a pesquisa para ver todas as configurações.
 Settings_Menu: Menu principal
-Settings_About: Sobre o Better Tab Switcher
+Settings_About: Sobre
 Settings_Version: Versão $1
 Settings_CheckUpdates: Verificar atualizações
 Settings_Checking: Verificando atualizações…
@@ -106,6 +106,9 @@ Settings_UpToDate: O Better Tab Switcher está atualizado.
 Settings_UpdateReady: A versão $1 está pronta. Reinicie o Better Tab Switcher para usá-la agora.
 Settings_UpdateReadyNoVersion: Uma nova versão está pronta. Reinicie o Better Tab Switcher para usá-la agora.
 Settings_Restart: Reiniciar
+Settings_RestartExtension: Reiniciar extensão
+Settings_RestartExtensionRow: Reiniciar o Better Tab Switcher
+Settings_RestartExtensionNote: O Better Tab Switcher será reiniciado e esta página será fechada.
 Settings_UpdateLater: O $1 acabou de verificar atualizações. Tente de novo em alguns minutos.
 Settings_UpdateFailed: O Better Tab Switcher não conseguiu verificar atualizações. Tente de novo mais tarde.
 Settings_WhatsNew: Novidades

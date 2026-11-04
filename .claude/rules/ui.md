@@ -43,13 +43,17 @@ cards and buttons grow.
       opened yet and Copy address", variant B and the Copy address page).
     - The toolbar: a button reached with Tab keeps the keyboard when pressed; a click of the mouse on it leaves the
       keyboard on the tabs.
-  - **The settings page** (boards 31–34, and the page "Settings redesign" of the same canvas, options A): Chrome's
-    settings look, in the theme in use: a search field in the header that finds settings in every section and marks
-    what it found; the sidebar at the window's left edge, behind a menu button (a drawer) in a narrow window; only the
-    section chosen in it shown, named in the page's address; About Better Tab Switcher last, apart: the version, Check
-    for updates (only when installed from a store) and links in rows that open a new tab. A setting that depends on
-    another one is indented under it, in the same block, and shown only while that one is on (to a search, faded).
-    The options of the list or the grid only for the view chosen. Keyboard shortcuts: next tab, previous tab and the
+  - **The settings page** (boards 31–34, the page "Settings redesign" of the same canvas, options A, and the Design
+    canvas "Settings: sidebar icons and System"): Chrome's settings look, in the theme in use: a search field in the
+    header that finds settings in every section and marks what it found; header and body on the same three columns,
+    the search field and the sections as wide as each other in the middle one; the sidebar at the window's left edge,
+    an icon for each section, behind a menu button (a drawer) in a narrow window; only the section chosen in it shown,
+    named in the page's address; System and About last, under a line. System: Restart Better Tab Switcher (it only
+    restarts the extension) and Restore default settings. About: the version, Check for updates, which becomes
+    Restart extension (as Restart in System) once a new version is ready, and links in rows that open a new tab. A
+    setting that depends on another one is indented under it, in the same block, and shown only while that one is on
+    (to a search, faded). Show pinned tabs is in Tab details. The options of the list or the grid only for the view
+    chosen. Keyboard shortcuts: next tab, previous tab and the
     toolbar icon, with a warning when one of the first two has no keys; installed with a shortcut left without keys,
     the extension opens its settings on a dialog with that section alone. Restore default settings asks to confirm, in
     the same dialog component.

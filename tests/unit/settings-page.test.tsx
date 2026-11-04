@@ -43,6 +43,7 @@ function open(
         iconUrl=""
         guideUrl="https://example.com/guide"
         version="1.2.0"
+        updates={{ check: async () => ({ kind: 'current' }), restart: () => {} }}
         {...handlers}
         {...more}
       />
@@ -98,8 +99,8 @@ describe('SettingsPage', () => {
       'Switching',
       'Tab details',
       'Keyboard shortcuts',
-      'Reset',
-      'About Better Tab Switcher',
+      'System',
+      'About',
     ]);
     expect(links[0]?.getAttribute('aria-current')).toBe('page');
   });
@@ -196,12 +197,13 @@ describe('SettingsPage', () => {
     expect(getComputedStyle(seconds).borderTopStyle).toBe('none');
   });
 
-  it('lists the tab details in their order: the icons, the last used time, New, Copy address, then the address and its two settings', () => {
+  it('lists the tab details in their order: the pinned tabs, the icons, the last used time, New, Copy address, then the address and its two settings', () => {
     const { host } = open();
     const labels = [...host.querySelectorAll('#details [aria-labelledby]')].map(
       (element) => document.getElementById(element.getAttribute('aria-labelledby') ?? '')?.textContent,
     );
     expect(labels).toEqual([
+      'Show pinned tabs',
       'Pinned tab icon',
       'Playing audio icon',
       'Inactive tabs',
@@ -605,8 +607,9 @@ describe('SettingsPage, with the keyboard', () => {
     expect(details.reached).not.toContain(toggle(details.host, 'Full address'));
     expect(details.reached).not.toContain(select(details.host, 'Long website addresses'));
     dispose?.();
-    const reset = await reachedIn('Reset');
-    expect(reset.reached).toContain(button(reset.host, 'Restore')[0]);
+    const system = await reachedIn('System');
+    expect(system.reached).toContain(button(system.host, 'Restart')[0]);
+    expect(system.reached).toContain(button(system.host, 'Restore')[0]);
   });
 });
 
@@ -685,14 +688,14 @@ describe('SettingsPage, shortcuts and restore', () => {
   it('marks the section chosen in the sidebar', () => {
     const { host } = open();
     const links = [...host.querySelectorAll<HTMLAnchorElement>('nav a')];
-    links.find((link) => link.textContent === 'Reset')?.click();
+    links.find((link) => link.textContent === 'System')?.click();
     expect(links.map((link) => link.getAttribute('aria-current'))).toEqual([null, null, null, null, 'page', null]);
     expect(links.map((link) => link.getAttribute('href'))).toEqual([
       '#appearance',
       '#switching',
       '#details',
       '#shortcuts',
-      '#reset',
+      '#system',
       '#about',
     ]);
     for (const link of links) expect(host.querySelector(link.getAttribute('href') as string)).not.toBeNull();
@@ -716,8 +719,8 @@ describe('SettingsPage, one section at a time', () => {
     history.replaceState(null, '', '#details');
     const { host } = open();
     expect(sectionsShown(host)).toEqual(['Tab details']);
-    choose(host, 'Reset');
-    expect(sectionsShown(host)).toEqual(['Reset']);
+    choose(host, 'System');
+    expect(sectionsShown(host)).toEqual(['System']);
     history.back();
     await vi.waitFor(() => expect(sectionsShown(host)).toEqual(['Tab details']));
   });
@@ -766,9 +769,9 @@ describe('SettingsPage, search', () => {
     const { host } = open();
     search(host, 'theme');
     expect(host.querySelector('nav a[aria-current]')).toBeNull();
-    choose(host, 'Reset');
+    choose(host, 'System');
     expect((host.querySelector('input[type="search"]') as HTMLInputElement).value).toBe('');
-    expect(sectionsShown(host)).toEqual(['Reset']);
+    expect(sectionsShown(host)).toEqual(['System']);
   });
 
   it('says so when no setting matches, and the chosen section comes back once the search is cleared', () => {
@@ -799,7 +802,7 @@ describe('SettingsPage, About', () => {
 
   it('shows the version, and links that open in a new tab', () => {
     const { host } = open();
-    choose(host, 'About Better Tab Switcher');
+    choose(host, 'About');
     expect(host.querySelector('#about')?.textContent).toContain('Version 1.2.0');
     const links: [string, string][] = [
       ["What's new", 'https://github.com/giuvincenzi/better-tab-switcher/releases/tag/v1.2.0'],
@@ -830,11 +833,6 @@ describe('SettingsPage, About', () => {
     userAgent.mockRestore();
   });
 
-  it('has no check for updates in a build not from a store', () => {
-    const { host } = open();
-    expect(button(host, 'Check for updates')).toEqual([]);
-  });
-
   it('checks for updates, and says what it found', async () => {
     let answer: (check: UpdateCheck) => void = () => {};
     const check = vi.fn(
@@ -845,7 +843,7 @@ describe('SettingsPage, About', () => {
     );
     const restart = vi.fn();
     const { host } = open({}, undefined, false, { updates: { check, restart } });
-    choose(host, 'About Better Tab Switcher');
+    choose(host, 'About');
     const status = () => host.querySelector('#about [role="status"]')?.textContent;
     const [checkButton] = button(host, 'Check for updates');
     expect(describedBy(checkButton as Element)).toBe('Better Tab Switcher');
@@ -866,9 +864,48 @@ describe('SettingsPage, About', () => {
       answer(found);
       await vi.waitFor(() => expect(status()).toBe(text));
     }
-    // Ready: Restart instead of the check.
+    // Ready: Restart extension in place of the check, which restarts as Restart in System does.
     expect(button(host, 'Check for updates')).toEqual([]);
-    button(host, 'Restart')[0]?.click();
+    const [restartExtension] = button(host, 'Restart extension');
+    expect(describedBy(restartExtension as Element)).toBe('Better Tab Switcher');
+    restartExtension?.click();
     expect(restart).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('SettingsPage, System', () => {
+  it('restarts the extension with Restart, named by its row, and asks nothing first', () => {
+    const restart = vi.fn();
+    const { host, handlers } = open({}, undefined, false, { updates: { check: vi.fn(), restart } });
+    choose(host, 'System');
+    const [restartButton, ...others] = button(host, 'Restart');
+    expect(others).toEqual([]);
+    expect(describedBy(restartButton as Element)).toBe('Restart Better Tab Switcher');
+    expect(host.querySelector('#system')?.textContent).toContain('Starts Better Tab Switcher again. This page closes.');
+    restartButton?.click();
+    expect(restart).toHaveBeenCalledTimes(1);
+    expect(host.querySelector('dialog[open]')).toBeNull();
+    expect(handlers.onRestore).not.toHaveBeenCalled();
+  });
+
+  it('shows Show pinned tabs in Tab details, not in Switching', () => {
+    const { host } = open();
+    expect(toggle(host, 'Show pinned tabs').closest('section')?.id).toBe('details');
+  });
+
+  it('gives each section of the sidebar its icon, and sets System and About apart', () => {
+    const { host } = open();
+    const links = [...host.querySelectorAll<HTMLAnchorElement>('nav a')];
+    expect(links.map((link) => link.querySelector('svg')?.dataset.icon)).toEqual([
+      'palette',
+      'swap',
+      'bullets',
+      'keyboard',
+      'settings',
+      'info',
+    ]);
+    // The line before System, on its item alone (the line itself, on screen: tests/e2e/settings.spec.ts).
+    const apart = links.map((link) => (link.parentElement as Element).className.includes('apart'));
+    expect(apart).toEqual([false, false, false, false, true, false]);
   });
 });

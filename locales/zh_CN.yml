@@ -88,7 +88,7 @@ Settings_IconShortcutNote: 打开切换器，效果与点击工具栏图标相�
 Settings_ShortcutMissing: 有快捷键未设置按键，可能是因为其他扩展程序已在使用这些按键。请点击“$1”自行设置按键。
 Settings_ShortcutsDialogTitle: 设置键盘快捷键
 Settings_ShortcutsDialogText: Better Tab Switcher 已安装。请选择用来打开它的按键。
-Settings_Reset: 重置
+Settings_System: 系统
 Settings_RestoreDefaults: 恢复默认设置
 Settings_Restore: 恢复
 Settings_RestoreTitle: 要恢复默认设置吗？
@@ -98,7 +98,7 @@ Settings_ClearSearch: 清除搜索
 Settings_NoResults: 没有与搜索内容匹配的设置。
 Settings_NoResultsNote: 请尝试其他字词，或清除搜索以查看所有设置。
 Settings_Menu: 主菜单
-Settings_About: 关于 Better Tab Switcher
+Settings_About: 关于
 Settings_Version: 版本 $1
 Settings_CheckUpdates: 检查更新
 Settings_Checking: 正在检查更新…
@@ -106,6 +106,9 @@ Settings_UpToDate: Better Tab Switcher 已是最新版本。
 Settings_UpdateReady: 版本 $1 已准备就绪。重启 Better Tab Switcher 即可立即使用。
 Settings_UpdateReadyNoVersion: 新版本已准备就绪。重启 Better Tab Switcher 即可立即使用。
 Settings_Restart: 重启
+Settings_RestartExtension: 重启扩展程序
+Settings_RestartExtensionRow: 重启 Better Tab Switcher
+Settings_RestartExtensionNote: 将重启 Better Tab Switcher，此页面会随之关闭。
 Settings_UpdateLater: $1 刚刚检查过更新。请过几分钟再试。
 Settings_UpdateFailed: Better Tab Switcher 无法检查更新。请稍后再试。
 Settings_WhatsNew: 新功能

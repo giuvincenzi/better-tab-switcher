@@ -65,26 +65,58 @@ test.describe('settings page @settings', () => {
     await choose(page, 'Keyboard shortcuts');
     await expect(marked).toHaveText('Keyboard shortcuts');
     await expect(sections.filter({ visible: true })).toHaveText(['Keyboard shortcuts']);
-    await choose(page, 'Reset');
+    await choose(page, 'System');
     await page.reload();
-    await expect(marked).toHaveText('Reset');
-    await expect(sections.filter({ visible: true })).toHaveText(['Reset']);
+    await expect(marked).toHaveText('System');
+    await expect(sections.filter({ visible: true })).toHaveText(['System']);
     await page.goBack();
     await expect(marked).toHaveText('Keyboard shortcuts');
     await expect(sections.filter({ visible: true })).toHaveText(['Keyboard shortcuts']);
   });
 
-  test('keeps its sidebar at the left edge of the window, with the sections beside it', async ({
+  test('keeps its sidebar at the left edge, System and About apart under a line, and the sections under the search field, as wide', async ({
+    context,
+    extensionId,
+    serviceWorker,
+  }) => {
+    const page = await openSettings(context, extensionId);
+    await page.setViewportSize({ width: 1600, height: 900 });
+    const sidebar = page.getByRole('navigation', { name: 'Settings sections' });
+    const link = await sidebar.getByRole('link', { name: 'Appearance' }).boundingBox();
+    expect(link?.x).toBe(0);
+    // The search field and the section's card: the same left edge and the same width, as in Chrome's settings.
+    const search = await page.getByRole('searchbox', { name: 'Search settings' }).locator('..').boundingBox();
+    const card = await page.getByRole('region', { name: 'Appearance' }).boundingBox();
+    expect(Math.abs((search?.x ?? 0) - (card?.x ?? 0))).toBeLessThanOrEqual(1);
+    expect(Math.abs((search?.width ?? 0) - (card?.width ?? 0))).toBeLessThanOrEqual(1);
+    // The line above System, in the border's color, and none above the other sections.
+    const above = async (name: string) => {
+      const box = (await sidebar.getByRole('link', { name, exact: true }).boundingBox()) as { x: number; y: number };
+      return box;
+    };
+    const system = await above('System');
+    const shortcuts = await above('Keyboard shortcuts');
+    // The line is the top border of System's item, a pixel high, its padding (0.5em) above the link.
+    const [line, gap] = await colorsAt(page, serviceWorker, [
+      { x: 100, y: system.y - 9 },
+      { x: 100, y: shortcuts.y - 1 },
+    ]);
+    expect(line).toBe('rgb(218, 220, 224)');
+    expect(gap).toBe('rgb(248, 249, 250)');
+  });
+
+  test("restarts the extension with System's Restart: its settings page closes and it starts again", async ({
     context,
     extensionId,
   }) => {
     const page = await openSettings(context, extensionId);
-    await page.setViewportSize({ width: 1600, height: 900 });
-    const link = page.getByRole('navigation', { name: 'Settings sections' }).getByRole('link', { name: 'Appearance' });
-    const box = await link.boundingBox();
-    expect(box?.x).toBe(0);
-    const card = await page.getByRole('heading', { name: 'Appearance', level: 2 }).boundingBox();
-    expect(card?.x).toBeGreaterThan((box?.x ?? 0) + (box?.width ?? 0));
+    await choose(page, 'System');
+    const started = context.waitForEvent('serviceworker');
+    const closed = page.waitForEvent('close');
+    await page.getByRole('button', { name: 'Restart', exact: true }).click();
+    await closed;
+    const worker = await started;
+    expect(worker.url()).toBe(`chrome-extension://${extensionId}/background.js`);
   });
 
   test('finds settings in every section with its search, marked, and the sections come back once it is cleared', async ({
@@ -157,16 +189,22 @@ test.describe('settings page @settings', () => {
     await expect(page.getByRole('heading', { name: 'Tab details', level: 2 })).toBeVisible();
   });
 
-  test('shows its version in About, without a check for updates in a build not from a store', async ({
+  test('shows its version in About, and checks for updates there, which the browser answers', async ({
     context,
     extensionId,
     serviceWorker,
   }) => {
     const page = await openSettings(context, extensionId);
-    await choose(page, 'About Better Tab Switcher');
+    await choose(page, 'About');
     const version = await serviceWorker.evaluate(() => chrome.runtime.getManifest().version);
     await expect(page.getByText(`Version ${version}`, { exact: true })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Check for updates' })).toHaveCount(0);
+    // A copy loaded from a folder, as the tests' one: the browser has no new version for it, then asks to wait.
+    const check = page.getByRole('button', { name: 'Check for updates' });
+    const status = page.getByRole('status');
+    await check.click();
+    await expect(status).toHaveText('Better Tab Switcher is up to date.');
+    await check.click();
+    await expect(status).toHaveText(`${BROWSER} checked for updates a moment ago. Try again in a few minutes.`);
     await expect(page.getByRole('link', { name: /^Report an issue/ })).toHaveAttribute(
       'href',
       'https://github.com/giuvincenzi/better-tab-switcher/issues/new/choose',
@@ -255,14 +293,14 @@ test.describe('settings page @settings', () => {
     await compact.click();
     await expect(compact).toBeChecked();
     const confirmation = settings.getByRole('alertdialog', { name: 'Restore default settings?' });
-    await choose(settings, 'Reset');
+    await choose(settings, 'System');
     // Cancelled: nothing changes.
     await settings.getByRole('button', { name: 'Restore' }).click();
     await confirmation.getByRole('button', { name: 'Cancel' }).click();
     await expect(confirmation).toBeHidden();
     await choose(settings, 'Appearance');
     await expect(compact).toBeChecked();
-    await choose(settings, 'Reset');
+    await choose(settings, 'System');
     await settings.getByRole('button', { name: 'Restore' }).click();
     // Nothing yet: the user confirms it first. The page behind the confirmation can't be used: what is saved says it.
     await expect(confirmation).toBeVisible();
@@ -356,10 +394,6 @@ test.describe('each control of the settings page @settings', () => {
     await saves((s) => {
       s.scope = 'all';
     });
-    await toggle('Show pinned tabs');
-    await saves((s) => {
-      s.showPinned = false;
-    });
     await type('Delay before the switcher appears', 200);
     await saves((s) => {
       s.delayMs = 200;
@@ -389,6 +423,10 @@ test.describe('each control of the settings page @settings', () => {
 
     // Tab details: the address last, as it hides the two settings under it.
     await show('Tab details');
+    await toggle('Show pinned tabs');
+    await saves((s) => {
+      s.showPinned = false;
+    });
     for (const [name, key] of [
       ['Pinned tab icon', 'pinnedIcon'],
       ['Playing audio icon', 'audioIcon'],

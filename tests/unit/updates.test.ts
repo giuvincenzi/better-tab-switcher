@@ -1,15 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
-import { checkForUpdate, updatesFromStore } from '../../lib/updates';
+import { checkForUpdate } from '../../lib/updates';
 
 // The browser's answer to a check, as its documentation gives it (runtime.requestUpdateCheck): a real store can't be
 // reached by the tests, so the answers are given here.
 describe('checking for a new version', () => {
-  it('can check only when installed from a store, whose manifest has its update address', () => {
-    expect(updatesFromStore({ update_url: 'https://clients2.google.com/service/update2/crx' })).toBe(true);
-    expect(updatesFromStore({})).toBe(false);
-    expect(updatesFromStore({ update_url: '' })).toBe(false);
-  });
-
   it('says what the browser found: up to date, a new version, or that it checked a moment ago', async () => {
     expect(await checkForUpdate(async () => ({ status: 'no_update' }))).toEqual({ kind: 'current' });
     expect(await checkForUpdate(async () => ({ status: 'update_available', version: '1.3.0' }))).toEqual({

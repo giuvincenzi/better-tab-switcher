@@ -88,7 +88,7 @@ Settings_IconShortcutNote: Apre il selettore come un clic sull'icona nella barra
 Settings_ShortcutMissing: Una scorciatoia non ha tasti, forse perché li usa già un'altra estensione. Scegli i tasti che preferisci con il pulsante $1.
 Settings_ShortcutsDialogTitle: Scegli le scorciatoie da tastiera
 Settings_ShortcutsDialogText: Better Tab Switcher è installato. Scegli i tasti con cui aprirlo.
-Settings_Reset: Reimposta
+Settings_System: Sistema
 Settings_RestoreDefaults: Ripristina le impostazioni predefinite
 Settings_Restore: Ripristina
 Settings_RestoreTitle: Ripristinare le impostazioni predefinite?
@@ -98,7 +98,7 @@ Settings_ClearSearch: Cancella la ricerca
 Settings_NoResults: Nessuna impostazione corrisponde alla ricerca.
 Settings_NoResultsNote: Prova con altre parole, oppure cancella la ricerca per vedere tutte le impostazioni.
 Settings_Menu: Menu principale
-Settings_About: Informazioni su Better Tab Switcher
+Settings_About: Informazioni
 Settings_Version: Versione $1
 Settings_CheckUpdates: Verifica aggiornamenti
 Settings_Checking: Verifica degli aggiornamenti in corso…
@@ -106,6 +106,9 @@ Settings_UpToDate: Better Tab Switcher è aggiornato.
 Settings_UpdateReady: La versione $1 è pronta. Riavvia Better Tab Switcher per usarla subito.
 Settings_UpdateReadyNoVersion: Una nuova versione è pronta. Riavvia Better Tab Switcher per usarla subito.
 Settings_Restart: Riavvia
+Settings_RestartExtension: Riavvia l'estensione
+Settings_RestartExtensionRow: Riavvia Better Tab Switcher
+Settings_RestartExtensionNote: Better Tab Switcher viene riavviato e questa pagina si chiude.
 Settings_UpdateLater: $1 ha appena controllato gli aggiornamenti. Riprova tra qualche minuto.
 Settings_UpdateFailed: Better Tab Switcher non è riuscito a verificare gli aggiornamenti. Riprova più tardi.
 Settings_WhatsNew: Novità

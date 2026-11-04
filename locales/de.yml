@@ -88,7 +88,7 @@ Settings_IconShortcutNote: Öffnet den Tab-Umschalter wie ein Klick auf das Symb
 Settings_ShortcutMissing: Für eine Tastenkombination sind keine Tasten festgelegt, vielleicht weil eine andere Erweiterung sie bereits verwendet. Legen Sie über „$1“ eigene Tasten fest.
 Settings_ShortcutsDialogTitle: Tastenkombinationen festlegen
 Settings_ShortcutsDialogText: Better Tab Switcher ist installiert. Legen Sie fest, mit welchen Tasten Sie es öffnen.
-Settings_Reset: Zurücksetzen
+Settings_System: System
 Settings_RestoreDefaults: Standardeinstellungen wiederherstellen
 Settings_Restore: Wiederherstellen
 Settings_RestoreTitle: Standardeinstellungen wiederherstellen?
@@ -98,7 +98,7 @@ Settings_ClearSearch: Suche löschen
 Settings_NoResults: Keine Einstellung passt zu Ihrer Suche.
 Settings_NoResultsNote: Versuchen Sie es mit anderen Wörtern oder löschen Sie die Suche, um alle Einstellungen zu sehen.
 Settings_Menu: Hauptmenü
-Settings_About: Über Better Tab Switcher
+Settings_About: Über
 Settings_Version: Version $1
 Settings_CheckUpdates: Nach Updates suchen
 Settings_Checking: Es wird nach Updates gesucht…
@@ -106,6 +106,9 @@ Settings_UpToDate: Better Tab Switcher ist auf dem neuesten Stand.
 Settings_UpdateReady: Version $1 ist bereit. Starten Sie Better Tab Switcher neu, um sie sofort zu verwenden.
 Settings_UpdateReadyNoVersion: Eine neue Version ist bereit. Starten Sie Better Tab Switcher neu, um sie sofort zu verwenden.
 Settings_Restart: Neu starten
+Settings_RestartExtension: Erweiterung neu starten
+Settings_RestartExtensionRow: Better Tab Switcher neu starten
+Settings_RestartExtensionNote: Startet Better Tab Switcher neu. Diese Seite wird geschlossen.
 Settings_UpdateLater: $1 hat gerade erst nach Updates gesucht. Versuchen Sie es in ein paar Minuten noch einmal.
 Settings_UpdateFailed: Better Tab Switcher konnte nicht nach Updates suchen. Versuchen Sie es später noch einmal.
 Settings_WhatsNew: Neuigkeiten

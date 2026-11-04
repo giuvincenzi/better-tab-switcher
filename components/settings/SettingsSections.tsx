@@ -31,7 +31,7 @@ export interface SectionProps {
 }
 
 /** The sections, in the order of the page and of its sidebar. */
-export const sectionIds = ['appearance', 'switching', 'details', 'shortcuts', 'reset', 'about'] as const;
+export const sectionIds = ['appearance', 'switching', 'details', 'shortcuts', 'system', 'about'] as const;
 export type SectionId = (typeof sectionIds)[number];
 
 export function sectionTitle(id: SectionId): string {
@@ -40,7 +40,7 @@ export function sectionTitle(id: SectionId): string {
     switching: i18n.t('Settings_Switching'),
     details: i18n.t('Settings_TabDetails'),
     shortcuts: i18n.t('Settings_Shortcuts'),
-    reset: i18n.t('Settings_Reset'),
+    system: i18n.t('Settings_System'),
     about: i18n.t('Settings_About'),
   }[id];
 }
@@ -147,11 +147,6 @@ export function SwitchingSection(props: SectionProps): JSX.Element {
           />
         )}
       />
-      <ToggleRow
-        label={i18n.t('Settings_ShowPinned')}
-        checked={props.settings.showPinned}
-        onChange={(showPinned) => props.save({ showPinned })}
-      />
       <SettingRow
         label={i18n.t('Settings_Delay')}
         note={i18n.t('Settings_DelayNote')}
@@ -221,6 +216,11 @@ export function DetailsSection(props: SectionProps & { now: number }): JSX.Eleme
   ];
   return (
     <SettingsSection id="details" title={sectionTitle('details')} chosen={props.chosen}>
+      <ToggleRow
+        label={i18n.t('Settings_ShowPinned')}
+        checked={props.settings.showPinned}
+        onChange={(showPinned) => props.save({ showPinned })}
+      />
       {detail('pinnedIcon', i18n.t('Settings_PinnedIcon'))}
       {detail('audioIcon', i18n.t('Settings_AudioIcon'))}
       {detail('sleeping', i18n.t('Settings_Sleeping'), i18n.t('Settings_SleepingNote'))}
@@ -332,11 +332,21 @@ export function ShortcutsDialog(props: ShortcutsSectionProps & { open: boolean; 
   );
 }
 
-export function ResetSection(props: { chosen?: boolean; onRestore: () => void }): JSX.Element {
+/** System: restarting the extension, and putting every setting back to its default. */
+export function SystemSection(props: { chosen?: boolean; onRestart: () => void; onRestore: () => void }): JSX.Element {
   // Every setting at once, with no way back: the user confirms it first.
   const [asking, setAsking] = createSignal(false);
   return (
-    <SettingsSection id="reset" title={sectionTitle('reset')} chosen={props.chosen}>
+    <SettingsSection id="system" title={sectionTitle('system')} chosen={props.chosen}>
+      <SettingRow
+        label={i18n.t('Settings_RestartExtensionRow')}
+        note={i18n.t('Settings_RestartExtensionNote')}
+        control={(ids) => (
+          <Button describedBy={ids.label} onClick={() => props.onRestart()}>
+            {i18n.t('Settings_Restart')}
+          </Button>
+        )}
+      />
       <SettingRow
         label={i18n.t('Settings_RestoreDefaults')}
         control={(ids) => (
@@ -436,15 +446,18 @@ export interface AboutSectionProps {
   version: string;
   /** The extension's icon. */
   iconUrl: string;
-  /** Checking for a new version (lib/updates.ts); none when the extension isn't from a store (a development build). */
-  updates?: { check: () => Promise<UpdateCheck>; restart: () => void };
+  /**
+   * Checking for a new version (lib/updates.ts), and restarting the extension once one is ready, as Restart in System
+   * does. Also in a copy loaded from a folder, which the browser answers too: no new version, or to try again later.
+   */
+  updates: { check: () => Promise<UpdateCheck>; restart: () => void };
 }
 
 /** What the last check for updates found, or that one is running; none before the first check. */
 type UpdateState = UpdateCheck | { kind: 'checking' };
 
 /**
- * About Better Tab Switcher: its version, a check for a new one, and the links to its release notes, its guide, its
+ * About: the extension's version, a check for a new one (Restart extension once one is ready), and the links to its release notes, its guide, its
  * issues, its website, its store page (to rate it) and its repository (to star it).
  */
 export function AboutSection(props: AboutSectionProps): JSX.Element {
@@ -483,22 +496,18 @@ export function AboutSection(props: AboutSectionProps): JSX.Element {
           </div>
         }
         control={(ids) => (
-          <Show when={props.updates}>
-            {(updates) => (
-              <Switch>
-                <Match when={update()?.kind === 'ready'}>
-                  <Button primary describedBy={ids.label} onClick={() => updates().restart()}>
-                    {i18n.t('Settings_Restart')}
-                  </Button>
-                </Match>
-                <Match when={update()?.kind !== 'ready'}>
-                  <Button describedBy={ids.label} onClick={() => void check(updates())}>
-                    {i18n.t('Settings_CheckUpdates')}
-                  </Button>
-                </Match>
-              </Switch>
-            )}
-          </Show>
+          <Switch>
+            <Match when={update()?.kind === 'ready'}>
+              <Button describedBy={ids.label} onClick={() => props.updates.restart()}>
+                {i18n.t('Settings_RestartExtension')}
+              </Button>
+            </Match>
+            <Match when={update()?.kind !== 'ready'}>
+              <Button describedBy={ids.label} onClick={() => void check(props.updates)}>
+                {i18n.t('Settings_CheckUpdates')}
+              </Button>
+            </Match>
+          </Switch>
         )}
       />
       <LinkRow

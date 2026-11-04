@@ -15,14 +15,6 @@ export type UpdateCheck =
   | { kind: 'later' }
   | { kind: 'failed' };
 
-/**
- * Whether the extension can be updated from a store: installed from one, its manifest has the store's update address.
- * A development build, loaded from a folder, has none and is never updated.
- */
-export function updatesFromStore(manifest: { update_url?: string } = browser.runtime.getManifest()): boolean {
-  return typeof manifest.update_url === 'string' && manifest.update_url !== '';
-}
-
 /** Asks the browser to check its store for a new version now. */
 export async function checkForUpdate(
   request: () => Promise<{ status: string; version?: string }> = () => browser.runtime.requestUpdateCheck(),
@@ -40,7 +32,7 @@ export async function checkForUpdate(
   }
 }
 
-/** Restarts the extension, which then runs the new version the browser downloaded. */
-export function restartWithUpdate(): void {
+/** Restarts the extension (Restart in System, Restart extension in About): a new version downloaded runs then. Its pages close. */
+export function restartExtension(): void {
   browser.runtime.reload();
 }

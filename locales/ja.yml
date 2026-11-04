@@ -88,7 +88,7 @@ Settings_IconShortcutNote: ツールバーのアイコンをクリックした�
 Settings_ShortcutMissing: キーが設定されていないショートカットがあります。別の拡張機能がすでにそのキーを使用している可能性があります。「$1」で好きなキーを設定してください。
 Settings_ShortcutsDialogTitle: キーボード ショートカットの設定
 Settings_ShortcutsDialogText: Better Tab Switcher がインストールされました。開くときに使うキーを選んでください。
-Settings_Reset: リセット
+Settings_System: システム
 Settings_RestoreDefaults: 設定を元の既定値に戻す
 Settings_Restore: リセット
 Settings_RestoreTitle: 設定を元の既定値に戻しますか？
@@ -98,7 +98,7 @@ Settings_ClearSearch: 検索をクリア
 Settings_NoResults: 検索に一致する設定はありません。
 Settings_NoResultsNote: 別の言葉で検索するか、検索をクリアしてすべての設定を表示してください。
 Settings_Menu: メインメニュー
-Settings_About: Better Tab Switcher について
+Settings_About: 概要
 Settings_Version: バージョン $1
 Settings_CheckUpdates: アップデートを確認
 Settings_Checking: アップデートを確認しています…
@@ -106,6 +106,9 @@ Settings_UpToDate: Better Tab Switcher は最新版です。
 Settings_UpdateReady: バージョン $1 の準備ができました。今すぐ使うには Better Tab Switcher を再起動してください。
 Settings_UpdateReadyNoVersion: 新しいバージョンの準備ができました。今すぐ使うには Better Tab Switcher を再起動してください。
 Settings_Restart: 再起動
+Settings_RestartExtension: 拡張機能を再起動
+Settings_RestartExtensionRow: Better Tab Switcher を再起動
+Settings_RestartExtensionNote: Better Tab Switcher を再起動します。このページは閉じます。
 Settings_UpdateLater: $1 はたった今アップデートを確認しました。数分後にもう一度お試しください。
 Settings_UpdateFailed: Better Tab Switcher はアップデートを確認できませんでした。しばらくしてからもう一度お試しください。
 Settings_WhatsNew: 新機能
