@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.1.0
+
 ### Added
 
 - Tabs not opened yet: a tab opened in the background, like a link opened with Ctrl+click, shows “New” in the switcher
