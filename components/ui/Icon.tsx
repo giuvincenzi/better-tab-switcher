@@ -21,7 +21,12 @@ export type IconName =
   | 'copy'
   | 'check'
   | 'menu'
-  | 'external';
+  | 'external'
+  | 'palette'
+  | 'swap'
+  | 'bullets'
+  | 'keyboard'
+  | 'info';
 
 interface IconProps {
   name: IconName;
@@ -121,6 +126,25 @@ export function Icon(props: IconProps): JSX.Element {
         <Match when={props.name === 'window'}>
           <rect x="3" y="4" width="18" height="16" rx="2" />
           <path d="M3 9h18" />
+        </Match>
+        {/* The settings page's sidebar: its sections (Settings redesign, approved). */}
+        <Match when={props.name === 'palette'}>
+          <path d="M12 3a9 9 0 100 18c1 0 1.6-.8 1.6-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.8-1.7 1.7-1.7H16a5 5 0 005-5c0-4-4-7.4-9-7.4z" />
+          <path d="M7.5 11.5h.01M10 7.5h.01M14.5 7.5h.01M17 11h.01" />
+        </Match>
+        <Match when={props.name === 'swap'}>
+          <path d="M4 8h14l-3.5-3.5M20 16H6l3.5 3.5" />
+        </Match>
+        <Match when={props.name === 'bullets'}>
+          <path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01" />
+        </Match>
+        <Match when={props.name === 'keyboard'}>
+          <rect x="2.5" y="6" width="19" height="12" rx="1.5" />
+          <path d="M6.5 10h.01M10 10h.01M14 10h.01M17.5 10h.01M8 14h8" />
+        </Match>
+        <Match when={props.name === 'info'}>
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 11v5.5M12 7.5h.01" />
         </Match>
         <Match when={props.name === 'menu'}>
           <path d="M4 6h16M4 12h16M4 18h16" />

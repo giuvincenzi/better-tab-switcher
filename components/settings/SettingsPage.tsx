@@ -5,20 +5,19 @@ import type { Settings } from '../../lib/settings/settings';
 import type { SettingsChange } from '../../lib/settings/store';
 import type { Shortcuts } from '../../lib/shortcuts';
 import { Drawer } from '../ui/Drawer';
-import { Icon } from '../ui/Icon';
+import { Icon, type IconName } from '../ui/Icon';
 import { IconButton } from '../ui/IconButton';
 import { SearchBox } from '../ui/SearchBox';
 import styles from './SettingsPage.module.css';
 import {
   AboutSection,
-  type AboutSectionProps,
   AppearanceSection,
   DetailsSection,
-  ResetSection,
   type SectionId,
   ShortcutsDialog,
   ShortcutsSection,
   SwitchingSection,
+  SystemSection,
   sectionIds,
   sectionTitle,
 } from './SettingsSections';
@@ -39,11 +38,23 @@ export interface SettingsPageProps {
   guideUrl: string;
   /** The version installed. */
   version: string;
-  /** Checking for a new version; none in a development build (AboutSection). */
-  updates?: AboutSectionProps['updates'];
+  /** The browser's page of the extension (Manage extension in System), its address. */
+  extensionPage: string;
+  /** Opens a browser's own page (chrome://), which a page can't open as a link, in a new tab. */
+  onOpenBrowserPage: (url: string) => void;
   onChangeShortcut: () => void;
   onRestore: () => void;
 }
+
+/** Each section's icon in the sidebar, as Chrome's settings have them. */
+const SECTION_ICON: Record<SectionId, IconName> = {
+  appearance: 'palette',
+  switching: 'swap',
+  details: 'bullets',
+  shortcuts: 'keyboard',
+  system: 'settings',
+  about: 'info',
+};
 
 /** The section the page's address names (#switching), so that Back and a reload keep it; the first one otherwise. */
 function sectionInAddress(): SectionId {
@@ -82,14 +93,15 @@ export function SettingsPage(props: SettingsPageProps): JSX.Element {
     <ul class={styles.links}>
       <For each={sectionIds}>
         {(id) => (
-          <li classList={{ [styles.apart as string]: id === 'about' }}>
+          <li classList={{ [styles.apart as string]: id === 'system' }}>
             <a
               href={`#${id}`}
               class={styles.link}
               aria-current={term() === '' && current() === id ? 'page' : undefined}
               onClick={(event) => choose(id, event)}
             >
-              {sectionTitle(id)}
+              <Icon name={SECTION_ICON[id]} size={1.25} />
+              <span>{sectionTitle(id)}</span>
             </a>
           </li>
         )}
@@ -120,7 +132,6 @@ export function SettingsPage(props: SettingsPageProps): JSX.Element {
               onInput={setQuery}
             />
           </div>
-          <div class={styles.balance} />
         </header>
         <div class={styles.body}>
           <nav class={styles.sidebar} aria-label={i18n.t('Settings_Sections')}>
@@ -177,13 +188,13 @@ function Sections(props: SettingsPageProps & { current: SectionId }): JSX.Elemen
           onChangeShortcut={props.onChangeShortcut}
           chosen={chosen('shortcuts')}
         />
-        <ResetSection onRestore={props.onRestore} chosen={chosen('reset')} />
-        <AboutSection
-          version={props.version}
-          iconUrl={props.iconUrl}
-          updates={props.updates}
-          chosen={chosen('about')}
+        <SystemSection
+          extensionPage={props.extensionPage}
+          onOpenBrowserPage={props.onOpenBrowserPage}
+          onRestore={props.onRestore}
+          chosen={chosen('system')}
         />
+        <AboutSection version={props.version} iconUrl={props.iconUrl} chosen={chosen('about')} />
       </scope.Provider>
       <Show when={!scope.shown()}>
         <div class={styles.none} role="status">
