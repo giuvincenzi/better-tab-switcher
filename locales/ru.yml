@@ -88,7 +88,7 @@ Settings_IconShortcutNote: Открывает переключатель, как
 Settings_ShortcutMissing: Для одного из сочетаний не заданы клавиши – возможно, их уже использует другое расширение. Задайте свои клавиши кнопкой «$1».
 Settings_ShortcutsDialogTitle: Выберите быстрые клавиши
 Settings_ShortcutsDialogText: Расширение Better Tab Switcher установлено. Выберите клавиши, которыми оно будет открываться.
-Settings_Reset: Сброс настроек
+Settings_System: Система
 Settings_RestoreDefaults: Восстановить настройки по умолчанию
 Settings_Restore: Восстановить
 Settings_RestoreTitle: Восстановить настройки по умолчанию?
@@ -98,16 +98,9 @@ Settings_ClearSearch: Очистить поиск
 Settings_NoResults: По вашему запросу настройки не найдены.
 Settings_NoResultsNote: Попробуйте другие слова или очистите поиск, чтобы увидеть все настройки.
 Settings_Menu: Главное меню
-Settings_About: О расширении Better Tab Switcher
+Settings_About: О расширении
 Settings_Version: Версия $1
-Settings_CheckUpdates: Проверить наличие обновлений
-Settings_Checking: Проверка обновлений…
-Settings_UpToDate: Установлена последняя версия Better Tab Switcher.
-Settings_UpdateReady: Версия $1 готова. Перезапустите Better Tab Switcher, чтобы начать пользоваться ею сейчас.
-Settings_UpdateReadyNoVersion: Новая версия готова. Перезапустите Better Tab Switcher, чтобы начать пользоваться ею сейчас.
-Settings_Restart: Перезапустить
-Settings_UpdateLater: $1 только что проверил наличие обновлений. Повторите попытку через несколько минут.
-Settings_UpdateFailed: Better Tab Switcher не удалось проверить наличие обновлений. Повторите попытку позже.
+Settings_ManageExtension: Управление расширением
 Settings_WhatsNew: Что нового
 Settings_WhatsNewNote: Посмотрите, что изменилось в версии $1.
 Settings_Guide: Руководство пользователя

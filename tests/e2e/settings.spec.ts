@@ -1,5 +1,5 @@
 import type { BrowserContext, Page, Worker } from '@playwright/test';
-import { shortcutsPageUrl } from '../../lib/browser';
+import { extensionPageUrl, shortcutsPageUrl } from '../../lib/browser';
 import { defaultSettings, type Settings } from '../../lib/settings/settings';
 import { expect, test } from './fixtures';
 import {
@@ -65,26 +65,68 @@ test.describe('settings page @settings', () => {
     await choose(page, 'Keyboard shortcuts');
     await expect(marked).toHaveText('Keyboard shortcuts');
     await expect(sections.filter({ visible: true })).toHaveText(['Keyboard shortcuts']);
-    await choose(page, 'Reset');
+    await choose(page, 'System');
     await page.reload();
-    await expect(marked).toHaveText('Reset');
-    await expect(sections.filter({ visible: true })).toHaveText(['Reset']);
+    await expect(marked).toHaveText('System');
+    await expect(sections.filter({ visible: true })).toHaveText(['System']);
     await page.goBack();
     await expect(marked).toHaveText('Keyboard shortcuts');
     await expect(sections.filter({ visible: true })).toHaveText(['Keyboard shortcuts']);
   });
 
-  test('keeps its sidebar at the left edge of the window, with the sections beside it', async ({
+  test('keeps its sidebar at the left edge, System and About apart under a line, and the sections under the search field, as wide', async ({
     context,
     extensionId,
+    serviceWorker,
   }) => {
     const page = await openSettings(context, extensionId);
-    await page.setViewportSize({ width: 1600, height: 900 });
-    const link = page.getByRole('navigation', { name: 'Settings sections' }).getByRole('link', { name: 'Appearance' });
-    const box = await link.boundingBox();
-    expect(box?.x).toBe(0);
-    const card = await page.getByRole('heading', { name: 'Appearance', level: 2 }).boundingBox();
-    expect(card?.x).toBeGreaterThan((box?.x ?? 0) + (box?.width ?? 0));
+    const sidebar = page.getByRole('navigation', { name: 'Settings sections' });
+    const search = page.getByRole('searchbox', { name: 'Search settings' }).locator('..');
+    const section = page.getByRole('region', { name: 'Appearance' });
+    // A wide window, where they sit in the middle of it, and a medium one, where they sit beside the sidebar: as wide as
+    // each other, one above the other, the sections never narrower than their own width.
+    for (const width of [1600, 1100]) {
+      await page.setViewportSize({ width, height: 900 });
+      const link = await sidebar.getByRole('link', { name: 'Appearance' }).boundingBox();
+      expect(link?.x, `${width}`).toBe(0);
+      const [field, card] = (await Promise.all([search.boundingBox(), section.boundingBox()])) as {
+        x: number;
+        width: number;
+      }[];
+      expect(Math.abs((field?.x ?? 0) - (card?.x ?? 0)), `${width}`).toBeLessThanOrEqual(1);
+      expect(Math.abs((field?.width ?? 0) - (card?.width ?? 0)), `${width}`).toBeLessThanOrEqual(1);
+      const own = await section.evaluate((element) =>
+        Number.parseFloat(getComputedStyle(element.parentElement as Element).maxWidth),
+      );
+      expect(card?.width, `${width}`).toBeCloseTo(own, 0);
+      if (width === 1600) expect(Math.abs((card?.x ?? 0) + (card?.width ?? 0) / 2 - width / 2)).toBeLessThanOrEqual(1);
+    }
+    // The line above System: the top border of its item, in the border's color; none above the other items.
+    const item = (name: string) =>
+      sidebar.getByRole('listitem').filter({ has: page.getByRole('link', { name, exact: true }) });
+    const [system, shortcuts] = (await Promise.all([
+      item('System').boundingBox(),
+      item('Keyboard shortcuts').boundingBox(),
+    ])) as {
+      x: number;
+      y: number;
+    }[];
+    const border = await item('System').evaluate((element) => getComputedStyle(element).borderTopColor);
+    const background = await page.locator('body').evaluate((element) => getComputedStyle(element).backgroundColor);
+    const [line, gap] = await colorsAt(page, serviceWorker, [
+      { x: (system?.x ?? 0) + 40, y: Math.ceil(system?.y ?? 0) },
+      { x: (shortcuts?.x ?? 0) + 40, y: Math.ceil(shortcuts?.y ?? 0) },
+    ]);
+    expect(line).toBe(border);
+    expect(gap).toBe(background);
+  });
+
+  test("opens the browser's page of the extension with System's Manage extension", async ({ context, extensionId }) => {
+    const page = await openSettings(context, extensionId);
+    await choose(page, 'System');
+    const opened = context.waitForEvent('page', (tab) => tab.url() === extensionPageUrl(extensionId, testBrowser));
+    await page.getByRole('link', { name: 'Manage extension' }).click();
+    await opened;
   });
 
   test('finds settings in every section with its search, marked, and the sections come back once it is cleared', async ({
@@ -157,16 +199,11 @@ test.describe('settings page @settings', () => {
     await expect(page.getByRole('heading', { name: 'Tab details', level: 2 })).toBeVisible();
   });
 
-  test('shows its version in About, without a check for updates in a build not from a store', async ({
-    context,
-    extensionId,
-    serviceWorker,
-  }) => {
+  test('shows its version in About, and its links', async ({ context, extensionId, serviceWorker }) => {
     const page = await openSettings(context, extensionId);
-    await choose(page, 'About Better Tab Switcher');
+    await choose(page, 'About');
     const version = await serviceWorker.evaluate(() => chrome.runtime.getManifest().version);
     await expect(page.getByText(`Version ${version}`, { exact: true })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Check for updates' })).toHaveCount(0);
     await expect(page.getByRole('link', { name: /^Report an issue/ })).toHaveAttribute(
       'href',
       'https://github.com/giuvincenzi/better-tab-switcher/issues/new/choose',
@@ -255,14 +292,14 @@ test.describe('settings page @settings', () => {
     await compact.click();
     await expect(compact).toBeChecked();
     const confirmation = settings.getByRole('alertdialog', { name: 'Restore default settings?' });
-    await choose(settings, 'Reset');
+    await choose(settings, 'System');
     // Cancelled: nothing changes.
     await settings.getByRole('button', { name: 'Restore' }).click();
     await confirmation.getByRole('button', { name: 'Cancel' }).click();
     await expect(confirmation).toBeHidden();
     await choose(settings, 'Appearance');
     await expect(compact).toBeChecked();
-    await choose(settings, 'Reset');
+    await choose(settings, 'System');
     await settings.getByRole('button', { name: 'Restore' }).click();
     // Nothing yet: the user confirms it first. The page behind the confirmation can't be used: what is saved says it.
     await expect(confirmation).toBeVisible();

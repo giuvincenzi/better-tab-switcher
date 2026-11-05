@@ -88,7 +88,7 @@ Settings_IconShortcutNote: Deschide comutatorul la fel ca un clic pe pictograma 
 Settings_ShortcutMissing: O comandă rapidă nu are taste, poate pentru că le folosește deja altă extensie. Alege-ți propriile taste cu „$1”.
 Settings_ShortcutsDialogTitle: Alege-ți comenzile rapide de la tastatură
 Settings_ShortcutsDialogText: Better Tab Switcher este instalat. Alege tastele cu care îl deschizi.
-Settings_Reset: Resetare
+Settings_System: Sistem
 Settings_RestoreDefaults: Restabilește setările la valorile inițiale
 Settings_Restore: Restabilește
 Settings_RestoreTitle: Restabilești setările la valorile inițiale?
@@ -98,16 +98,9 @@ Settings_ClearSearch: Șterge căutarea
 Settings_NoResults: Nicio setare nu se potrivește cu căutarea.
 Settings_NoResultsNote: Încearcă alte cuvinte sau șterge căutarea ca să vezi toate setările.
 Settings_Menu: Meniul principal
-Settings_About: Despre Better Tab Switcher
+Settings_About: Despre
 Settings_Version: Versiunea $1
-Settings_CheckUpdates: Caută actualizări
-Settings_Checking: Se caută actualizări…
-Settings_UpToDate: Better Tab Switcher este actualizat.
-Settings_UpdateReady: Versiunea $1 este gata. Repornește Better Tab Switcher ca s-o folosești acum.
-Settings_UpdateReadyNoVersion: O versiune nouă este gata. Repornește Better Tab Switcher ca s-o folosești acum.
-Settings_Restart: Repornește
-Settings_UpdateLater: $1 tocmai a căutat actualizări. Încearcă din nou peste câteva minute.
-Settings_UpdateFailed: Better Tab Switcher nu a putut căuta actualizări. Încearcă din nou mai târziu.
+Settings_ManageExtension: Gestionează extensia
 Settings_WhatsNew: Noutăți
 Settings_WhatsNewNote: Vezi ce s-a schimbat în versiunea $1.
 Settings_Guide: Ghid de utilizare

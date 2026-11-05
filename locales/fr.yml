@@ -88,7 +88,7 @@ Settings_IconShortcutNote: Ouvre le sélecteur comme un clic sur l'icône dans l
 Settings_ShortcutMissing: Un raccourci n'a aucune touche, peut-être parce qu'une autre extension les utilise déjà. Choisissez vos propres touches avec le bouton $1.
 Settings_ShortcutsDialogTitle: Choisissez vos raccourcis clavier
 Settings_ShortcutsDialogText: Better Tab Switcher est installé. Choisissez les touches qui l'ouvrent.
-Settings_Reset: Réinitialiser
+Settings_System: Système
 Settings_RestoreDefaults: Restaurer les paramètres par défaut
 Settings_Restore: Restaurer
 Settings_RestoreTitle: Restaurer les paramètres par défaut ?
@@ -98,16 +98,9 @@ Settings_ClearSearch: Effacer la recherche
 Settings_NoResults: Aucun paramètre ne correspond à votre recherche.
 Settings_NoResultsNote: Essayez d'autres mots, ou effacez la recherche pour voir tous les paramètres.
 Settings_Menu: Menu principal
-Settings_About: À propos de Better Tab Switcher
+Settings_About: À propos
 Settings_Version: Version $1
-Settings_CheckUpdates: Rechercher des mises à jour
-Settings_Checking: Recherche de mises à jour…
-Settings_UpToDate: Better Tab Switcher est à jour.
-Settings_UpdateReady: La version $1 est prête. Redémarrez Better Tab Switcher pour l'utiliser dès maintenant.
-Settings_UpdateReadyNoVersion: Une nouvelle version est prête. Redémarrez Better Tab Switcher pour l'utiliser dès maintenant.
-Settings_Restart: Redémarrer
-Settings_UpdateLater: $1 vient de rechercher des mises à jour. Réessayez dans quelques minutes.
-Settings_UpdateFailed: Better Tab Switcher n'a pas pu rechercher de mises à jour. Réessayez plus tard.
+Settings_ManageExtension: Gérer l'extension
 Settings_WhatsNew: Nouveautés
 Settings_WhatsNewNote: Découvrez ce qui a changé dans la version $1.
 Settings_Guide: Guide d'utilisation

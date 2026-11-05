@@ -1,4 +1,4 @@
-import { createSignal, type JSX, Match, Show, Switch } from 'solid-js';
+import { createSignal, type JSX, Show } from 'solid-js';
 import { i18n } from '#i18n';
 import { BROWSER_NAME_TEXT, browserName, STORE_NAME_TEXT, storeReviewUrl } from '../../lib/browser';
 import { timeAgo } from '../../lib/i18n/time';
@@ -6,7 +6,6 @@ import { GUIDE_URL, NEW_ISSUE_URL, REPOSITORY_URL, releaseUrl, SITE_URL } from '
 import { limits, ROW_CHOICES, type RowCount, type Settings, type TabDetails } from '../../lib/settings/settings';
 import type { SettingsChange } from '../../lib/settings/store';
 import { type Shortcuts, shortcutMissing } from '../../lib/shortcuts';
-import type { UpdateCheck } from '../../lib/updates';
 import { Button } from '../ui/Button';
 import { Dialog } from '../ui/Dialog';
 import { Notice } from '../ui/Notice';
@@ -31,7 +30,7 @@ export interface SectionProps {
 }
 
 /** The sections, in the order of the page and of its sidebar. */
-export const sectionIds = ['appearance', 'switching', 'details', 'shortcuts', 'reset', 'about'] as const;
+export const sectionIds = ['appearance', 'switching', 'details', 'shortcuts', 'system', 'about'] as const;
 export type SectionId = (typeof sectionIds)[number];
 
 export function sectionTitle(id: SectionId): string {
@@ -40,7 +39,7 @@ export function sectionTitle(id: SectionId): string {
     switching: i18n.t('Settings_Switching'),
     details: i18n.t('Settings_TabDetails'),
     shortcuts: i18n.t('Settings_Shortcuts'),
-    reset: i18n.t('Settings_Reset'),
+    system: i18n.t('Settings_System'),
     about: i18n.t('Settings_About'),
   }[id];
 }
@@ -147,6 +146,7 @@ export function SwitchingSection(props: SectionProps): JSX.Element {
           />
         )}
       />
+      {/* Which tabs the switcher lists, as Show tabs from: not a detail of a row (Tab details). */}
       <ToggleRow
         label={i18n.t('Settings_ShowPinned')}
         checked={props.settings.showPinned}
@@ -332,11 +332,18 @@ export function ShortcutsDialog(props: ShortcutsSectionProps & { open: boolean; 
   );
 }
 
-export function ResetSection(props: { chosen?: boolean; onRestore: () => void }): JSX.Element {
+/** System: putting every setting back to its default, and the browser's page of the extension (Manage extension). */
+export function SystemSection(props: {
+  chosen?: boolean;
+  /** The browser's page of the extension, its address (lib/browser.ts). */
+  extensionPage: string;
+  onOpenBrowserPage: (url: string) => void;
+  onRestore: () => void;
+}): JSX.Element {
   // Every setting at once, with no way back: the user confirms it first.
   const [asking, setAsking] = createSignal(false);
   return (
-    <SettingsSection id="reset" title={sectionTitle('reset')} chosen={props.chosen}>
+    <SettingsSection id="system" title={sectionTitle('system')} chosen={props.chosen}>
       <SettingRow
         label={i18n.t('Settings_RestoreDefaults')}
         control={(ids) => (
@@ -344,6 +351,11 @@ export function ResetSection(props: { chosen?: boolean; onRestore: () => void })
             {i18n.t('Settings_Restore')}
           </Button>
         )}
+      />
+      <LinkRow
+        label={i18n.t('Settings_ManageExtension')}
+        href={props.extensionPage}
+        onOpen={() => props.onOpenBrowserPage(props.extensionPage)}
       />
       <Dialog
         open={asking()}
@@ -436,70 +448,19 @@ export interface AboutSectionProps {
   version: string;
   /** The extension's icon. */
   iconUrl: string;
-  /** Checking for a new version (lib/updates.ts); none when the extension isn't from a store (a development build). */
-  updates?: { check: () => Promise<UpdateCheck>; restart: () => void };
 }
 
-/** What the last check for updates found, or that one is running; none before the first check. */
-type UpdateState = UpdateCheck | { kind: 'checking' };
-
 /**
- * About Better Tab Switcher: its version, a check for a new one, and the links to its release notes, its guide, its
- * issues, its website, its store page (to rate it) and its repository (to star it).
+ * About: the extension's version, and the links to its release notes, its guide, its issues, its website, its store
+ * page (to rate it) and its repository (to star it).
  */
 export function AboutSection(props: AboutSectionProps): JSX.Element {
-  const [update, setUpdate] = createSignal<UpdateState>();
-  const check = async (updates: NonNullable<AboutSectionProps['updates']>) => {
-    if (update()?.kind === 'checking') return;
-    setUpdate({ kind: 'checking' });
-    setUpdate(await updates.check());
-  };
-  const status = (): string | undefined => {
-    const now = update();
-    if (now === undefined) return undefined;
-    switch (now.kind) {
-      case 'checking':
-        return i18n.t('Settings_Checking');
-      case 'current':
-        return i18n.t('Settings_UpToDate');
-      case 'ready':
-        return now.version ? i18n.t('Settings_UpdateReady', [now.version]) : i18n.t('Settings_UpdateReadyNoVersion');
-      case 'later':
-        return i18n.t('Settings_UpdateLater', [browserTitle()]);
-      case 'failed':
-        return i18n.t('Settings_UpdateFailed');
-    }
-  };
   return (
     <SettingsSection id="about" title={sectionTitle('about')} chosen={props.chosen}>
       <SettingRow
         label={i18n.t('Extension_Name')}
         note={i18n.t('Settings_Version', [props.version])}
         icon={<img class={styles.aboutIcon} src={props.iconUrl} alt="" width="40" height="40" />}
-        status={
-          // Read by screen readers as it changes.
-          <div class={styles.status} role="status">
-            {status()}
-          </div>
-        }
-        control={(ids) => (
-          <Show when={props.updates}>
-            {(updates) => (
-              <Switch>
-                <Match when={update()?.kind === 'ready'}>
-                  <Button primary describedBy={ids.label} onClick={() => updates().restart()}>
-                    {i18n.t('Settings_Restart')}
-                  </Button>
-                </Match>
-                <Match when={update()?.kind !== 'ready'}>
-                  <Button describedBy={ids.label} onClick={() => void check(updates())}>
-                    {i18n.t('Settings_CheckUpdates')}
-                  </Button>
-                </Match>
-              </Switch>
-            )}
-          </Show>
-        )}
       />
       <LinkRow
         label={i18n.t('Settings_WhatsNew')}

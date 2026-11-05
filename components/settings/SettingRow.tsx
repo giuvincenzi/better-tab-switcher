@@ -20,9 +20,8 @@ interface SettingRowProps {
   child?: boolean;
   /** Before its texts. */
   icon?: JSX.Element;
-  /** Under its note: something the setting says now (the result of a check). */
-  status?: JSX.Element;
-  control: (ids: RowIds) => JSX.Element;
+  /** None for a row that only says something (About's version). */
+  control?: (ids: RowIds) => JSX.Element;
 }
 
 /** A group of linked settings: whether its main setting is on. */
@@ -61,9 +60,8 @@ export function SettingRow(props: SettingRowProps): JSX.Element {
             </div>
           )}
         </Show>
-        {props.status}
       </div>
-      {props.control({
+      {props.control?.({
         label,
         note: props.note ? note : undefined,
         // Read by the control where it uses it: the control is made once, and follows it.
