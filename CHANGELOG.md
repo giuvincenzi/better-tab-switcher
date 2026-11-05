@@ -33,6 +33,8 @@
   switcher start over: the selected tab's long address keeps scrolling from where it was.
 - The switcher always opens when the browser's memory for the extension is full of previews. It could stay closed when
   the page's preview was taken too late to make room for it.
+- On sites that change their address without loading a new page, like Google Chat, the switcher no longer flickers as
+  it opens or gets stuck on the page, ignoring Esc, clicks and the mouse until the toolbar icon was clicked.
 
 ## 1.0.0
 

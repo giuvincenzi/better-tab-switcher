@@ -38,7 +38,7 @@ const openSwitcher = storage.defineItem<OpenSwitcher | null>('session:openSwitch
 /** The tabs for the switcher's window, until the window asks for them (getSnapshot). */
 const windowSnapshot = storage.defineItem<SwitcherSnapshot | null>('session:windowSnapshot', { fallback: null });
 /**
- * The tabs whose page has the frame's holder: put in by the background, and the tab hasn't loaded another page since.
+ * The tabs whose page has the frame's holder: put in by the background, and no other document came in the tab since.
  * There the switcher is shown with a message, and a page that doesn't answer it within PAGE_ANSWER_MS hangs. In any
  * other tab the holder is put in first, without asking the page: on a busy machine a page can take over a second even to
  * tell that nobody listens, and would be taken for one that hangs. In storage.session, cleared like the holders
@@ -178,8 +178,14 @@ export function listenToSwitcher(request: (switcher: SwitcherRequest) => Promise
   // Tabs opened, or moved to another window, elsewhere (closed: above).
   browser.tabs.onCreated.addListener(() => listAgain());
   browser.tabs.onAttached.addListener(() => listAgain());
-  browser.tabs.onUpdated.addListener(async (tabId, change) => {
-    if (change.status === 'loading') await forgetHolder(tabId);
+  // A new document in the tab, its holder gone with the page before. Not tabs.onUpdated's "loading": Chrome sends it
+  // also when a page only changes its address (history.pushState, as Google Chat does), and the holder still there was
+  // then put in again. The tab's own document, not one of its frames, by frameType: a page Chrome loaded ahead
+  // (prerendered) has a frameId other than 0 (developer.chrome.com/blog/extension-instantnav).
+  browser.webNavigation.onCommitted.addListener(async ({ tabId, frameType }) => {
+    if (frameType === 'outermost_frame') await forgetHolder(tabId);
+  });
+  browser.tabs.onUpdated.addListener(async (_tabId, change) => {
     // The open switcher shows the tab as it is now: a tab just made gets its address and title a moment later.
     if (change.title === undefined && change.url === undefined && change.status === undefined) return;
     await listAgain();

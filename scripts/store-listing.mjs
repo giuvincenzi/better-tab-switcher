@@ -34,6 +34,8 @@ const PERMISSIONS = {
     'Saves your settings in the browser, and keeps the pictures of the tabs for the grid’s previews in memory only (storage.session), never on disk.',
   favicon: 'Shows each tab’s site icon from the browser’s own icon cache, so nothing is downloaded from the internet.',
   tabGroups: 'Shows the color of each tab’s group in the switcher.',
+  webNavigation:
+    'Knows when a tab loads a new page, so the switcher is put into a page only once and not again when a site only changes its address. It keeps no record of the pages visited.',
 };
 
 /** @param {string} code */

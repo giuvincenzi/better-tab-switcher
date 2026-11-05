@@ -30,7 +30,9 @@ export default defineConfig({
     description: '__MSG_Extension_Description__',
     // light-dark() in styles/theme.css needs Chrome 123.
     minimum_chrome_version: '123',
-    permissions: ['tabs', 'activeTab', 'scripting', 'storage', 'favicon', 'tabGroups'],
+    // webNavigation adds no warning to the one of tabs ("Read your browsing history"): Chromium's
+    // chrome_permission_message_rules.cc.
+    permissions: ['tabs', 'activeTab', 'scripting', 'storage', 'favicon', 'tabGroups', 'webNavigation'],
     // The end-to-end tests can't press the shortcut, which gives the extension the page (activeTab): their build has
     // the permission for all sites already, to take the pictures.
     ...(mode === 'e2e' ? { host_permissions: ['<all_urls>'] } : {}),

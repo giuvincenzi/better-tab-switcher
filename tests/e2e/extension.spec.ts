@@ -12,7 +12,7 @@ test.describe('extension @setup', () => {
     expect(manifest.content_scripts).toBeUndefined();
     expect(manifest.optional_host_permissions).toBeUndefined();
     expect(manifest.permissions.sort()).toEqual(
-      ['activeTab', 'favicon', 'scripting', 'storage', 'tabGroups', 'tabs'].sort(),
+      ['activeTab', 'favicon', 'scripting', 'storage', 'tabGroups', 'tabs', 'webNavigation'].sort(),
     );
   });
 
