@@ -64,11 +64,15 @@ or UI text:
   how it works; a new or changed text of the home goes in `site/home/en.json` and every translation in the same change;
 - when what Better Tab Switcher does changes, check that the title and description still say it (`discoverability.md`);
 - add a line under `## Unreleased` in `CHANGELOG.md`, in the right subsection (see
-  `build-and-release.md`).
+  `build-and-release.md`);
+- when a permission is added or used for something else, write or change its justification for the stores' Privacy
+  page in `scripts/store-privacy.mjs`; the release asks for it to be pasted into both dashboards (`build-and-release.md`,
+  "The stores").
 
 The plan given to the user before implementing (`working-rules.md`) lists every item of this
 checklist, each marked as needed or not needed with the reason: the guide file, the feature
-cards in `site/index.html`, the `CHANGELOG.md` line, the home's pictures, and the title, description and slogan
+cards in `site/index.html`, the `CHANGELOG.md` line, the home's pictures, the stores' Privacy justifications, and the
+title, description and slogan
 (`discoverability.md`). The plan also lists the rule changes (`working-rules.md`). The plan shows every new or changed
 translation, with the source checked for it (`i18n.md`), before it is written.
 

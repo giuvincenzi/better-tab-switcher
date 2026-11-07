@@ -61,17 +61,24 @@ Releases are deterministic: never edit the version number or move CHANGELOG entr
    only (1.0.0 for the first release); the Unreleased entries move under `## X.Y.Z` (an empty `## Unreleased` stays
    above), X.Y.Z goes in `package.json`, and it opens the branch `release/X.Y.Z` with the pull request "Release X.Y.Z".
    The functions are in `scripts/release.mjs`. It needs the repository setting "Allow GitHub Actions to create and
-   approve pull requests" (Settings > Actions > General).
+   approve pull requests" (Settings > Actions > General). When the release asks for a permission the last release
+   didn't, the pull request says so, with the justification to paste in the stores (step 4).
 2. **The pull request's tests wait for a maintainer's approval.** It was opened by `github-actions[bot]` (the
    workflow's token), and GitHub holds the workflows of such a pull request: a maintainer presses **Approve workflows to
    run** in the pull request. Tests started another way (`gh workflow run test.yml`) do not count: GitHub links to a
    pull request only the runs of its own events.
 3. The user checks the pull request (version, CHANGELOG) and approves the merge.
 4. **`publish_release`** starts with the merge, when the version in `package.json` changed. It runs the tests, builds
-   the zip and signs it as a CRX, uploads each store's package and submits it for review (published as soon as it is
-   approved), publishes the GitHub Release (GitHub creates the tag `vX.Y.Z` on the merge commit), then the site
-   (`docs.md`). On the first release the Edge package only goes into the draft: Partner Center publishes a new
-   extension by hand.
+   the zip and signs it as a CRX, uploads each store's package as its draft, then submits each draft for review
+   (published as soon as it is approved), publishes the GitHub Release (GitHub creates the tag `vX.Y.Z` on the merge
+   commit), then the site (`docs.md`). On the first release the Edge package only goes into the draft: Partner Center
+   publishes a new extension by hand.
+   - **A release that asks for a permission the previous release didn't waits before the submissions**: the job
+     `confirm_privacy_answers` waits for its approval (the environment `store-privacy`, the user as its required
+     reviewer). Once the drafts are uploaded, the user pastes the justifications, from the run's summary, into the
+     Privacy page of both dashboards, saves, and approves the job (**Review deployments**); the submissions follow.
+     Claude approves it only when the user says the justifications are pasted.
+   - Without anything new, the submissions follow the uploads by themselves.
 
 A failed job is retried with **Re-run failed jobs** on its run.
 
@@ -85,6 +92,15 @@ A failed job is retried with **Re-run failed jobs** on its run.
   so the store takes only CRX files signed with `CHROME_CRX_PRIVATE_KEY`. Its public half is
   `.github/chrome-crx-public-key.pem`, and `publish_release` stops before uploading when the key doesn't match it.
   WXT's `wxt submit` uploads zips only, so `scripts/chrome-store.mjs` uploads the CRX; Edge uses `wxt submit`.
+- **The Privacy page of both stores asks a justification for each permission of the uploaded package**, its field made
+  from that package's manifest (Chrome: developer.chrome.com/docs/webstore/cws-dashboard-privacy; Edge: Microsoft
+  Learn, "Publish an extension", step 6), and neither store's API writes it. So a new permission's justification is
+  pasted after the upload and before the submission (step 4). The justifications are written once, in
+  `scripts/store-privacy.mjs`. Without it:
+  - the Chrome Web Store refuses the submission with `INVALID_ITEM_METADATA` ("Your submission does not meet the
+    requirements…"), which names no field: complete the Privacy page, then **Re-run** `submit_chrome_web_store`;
+  - Microsoft Edge Add-ons takes the submission with the old answers: cancel it in Partner Center, complete the
+    Privacy page, then **Re-run** `submit_edge_add_ons`.
 
 ### When the user asks Claude for the release pull request
 

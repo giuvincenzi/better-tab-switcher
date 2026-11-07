@@ -1,7 +1,11 @@
-// Uploads the signed CRX to the Chrome Web Store and submits it for review, published as soon as it is approved
-// (build-and-release.md, "Releases"). Run by the publish_release workflow:
+// The Chrome Web Store's two steps of a release, each a job of the publish_release workflow (build-and-release.md,
+// "Releases"):
 //
-//   node scripts/chrome-store.mjs <file.crx>
+//   node scripts/chrome-store.mjs upload <file.crx>   the signed CRX becomes the item's draft
+//   node scripts/chrome-store.mjs submit              the draft is sent for review, published as soon as it is approved
+//
+// Apart, because a release that asks for a new permission waits between them for its justification in the dashboard's
+// Privacy page, whose field comes from the uploaded draft (scripts/store-privacy.mjs).
 //
 // The item takes only CRX files signed with the key of its Verified CRX uploads, so WXT's `wxt submit`, which uploads
 // a zip, can't publish it: the CRX goes with the headers of Chrome's guide (developer.chrome.com/docs/webstore/update).
@@ -68,34 +72,48 @@ async function call(what, url, init) {
   return text ? JSON.parse(text) : {};
 }
 
-const [crx] = process.argv.slice(2);
-if (!crx?.endsWith('.crx')) throw new Error('Usage: node scripts/chrome-store.mjs <file.crx>');
+const USAGE = 'Usage: node scripts/chrome-store.mjs upload <file.crx> | submit';
+const [command, crx] = process.argv.slice(2);
+if (command !== 'upload' && command !== 'submit') throw new Error(USAGE);
 
 const item = `${API}/v2/publishers/${env('CHROME_PUBLISHER_ID')}/items/${env('CHROME_EXTENSION_ID')}`;
-const upload = `${API}/upload/v2/publishers/${env('CHROME_PUBLISHER_ID')}/items/${env('CHROME_EXTENSION_ID')}:upload`;
 const token = await accessToken(JSON.parse(env('CHROME_SERVICE_ACCOUNT_JSON')));
 const auth = { Authorization: `Bearer ${token}` };
 
-console.log(`Uploading ${basename(crx)}`);
-const uploaded = await call('The upload', upload, {
-  method: 'POST',
-  headers: { ...auth, 'X-Goog-Upload-Protocol': 'raw', 'X-Goog-Upload-File-Name': basename(crx) },
-  body: readFileSync(crx),
-});
-let state = uploaded.uploadState;
-for (const end = Date.now() + UPLOAD_WAIT_MS; state === 'IN_PROGRESS' && Date.now() < end; ) {
-  await sleep(5000);
-  state = (await call('Reading the upload', `${item}:fetchStatus`, { headers: auth })).lastAsyncUploadState;
+if (command === 'upload') {
+  if (!crx?.endsWith('.crx')) throw new Error(USAGE);
+  const upload = `${API}/upload/v2/publishers/${env('CHROME_PUBLISHER_ID')}/items/${env('CHROME_EXTENSION_ID')}:upload`;
+  console.log(`Uploading ${basename(crx)}`);
+  const uploaded = await call('The upload', upload, {
+    method: 'POST',
+    headers: { ...auth, 'X-Goog-Upload-Protocol': 'raw', 'X-Goog-Upload-File-Name': basename(crx) },
+    body: readFileSync(crx),
+  });
+  let state = uploaded.uploadState;
+  for (const end = Date.now() + UPLOAD_WAIT_MS; state === 'IN_PROGRESS' && Date.now() < end; ) {
+    await sleep(5000);
+    state = (await call('Reading the upload', `${item}:fetchStatus`, { headers: auth })).lastAsyncUploadState;
+  }
+  if (state !== 'SUCCEEDED')
+    throw new Error(`The Chrome Web Store didn't take the package (${state}): ${JSON.stringify(uploaded)}`);
+  console.log(`Uploaded version ${uploaded.crxVersion ?? ''} as the draft`);
+} else {
+  // No publishType: the default publishes the version as soon as the review approves it.
+  const response = await fetch(`${item}:publish`, {
+    method: 'POST',
+    headers: { ...auth, 'Content-Type': 'application/json' },
+    body: '{}',
+  });
+  const text = await response.text();
+  // The store refuses a draft whose dashboard misses something it asks for, most often the Privacy page's justification
+  // of a new permission; the answer names no field (build-and-release.md, "The stores").
+  if (!response.ok && text.includes('INVALID_ITEM_METADATA'))
+    throw new Error(
+      `The Chrome Web Store refused to send the draft for review: its dashboard misses something it asks for, most often the justification of a new permission in the Privacy page (node scripts/store-privacy.mjs prints them). Complete it, save, and run this job again. The answer: ${text}`,
+    );
+  if (!response.ok) throw new Error(`The submission for review failed: ${response.status} ${text}`);
+  const published = JSON.parse(text);
+  for (const warning of published.warningInfo?.warnings ?? [])
+    console.warn(`${warning.reason}: ${warning.description}`);
+  console.log(`Submitted for review: ${published.state ?? 'pending'}`);
 }
-if (state !== 'SUCCEEDED')
-  throw new Error(`The Chrome Web Store didn't take the package (${state}): ${JSON.stringify(uploaded)}`);
-console.log(`Uploaded version ${uploaded.crxVersion ?? ''}`);
-
-// No publishType: the default publishes the version as soon as the review approves it.
-const published = await call('The submission for review', `${item}:publish`, {
-  method: 'POST',
-  headers: { ...auth, 'Content-Type': 'application/json' },
-  body: '{}',
-});
-for (const warning of published.warningInfo?.warnings ?? []) console.warn(`${warning.reason}: ${warning.description}`);
-console.log(`Submitted for review: ${published.state ?? 'pending'}`);

@@ -14,6 +14,7 @@ import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'no
 import { dirname, join, resolve } from 'node:path';
 import { chromium } from '@playwright/test';
 import { HOME_LANGUAGES, readExtensionTexts, SITE_URL } from './languages.mjs';
+import { PERMISSION_REASONS, reasonOf } from './store-privacy.mjs';
 
 const root = resolve(dirname(new URL(import.meta.url).pathname), '..');
 process.chdir(root);
@@ -22,21 +23,6 @@ const out = '.output/store-listing';
 const EDGE_MINIMUM = 250;
 /** Edge's limits on the search terms: how many, the characters of each, the words of all. */
 const SEARCH_TERMS = { terms: 7, characters: 30, words: 21 };
-
-/** Why the extension needs each permission of its manifest (wxt.config.ts), in the stores' Privacy page. */
-const PERMISSIONS = {
-  tabs: 'Reads the titles, addresses and icons of your open tabs to show them in the switcher, and switches to or closes the tab you choose.',
-  activeTab:
-    'When you press the shortcut or click the toolbar icon, shows the switcher over the page you are on. It gets no access to any other page, and none before you ask for the switcher.',
-  scripting:
-    'Puts the switcher into the page you are on when you open it there, with the access activeTab gives for that page.',
-  storage:
-    'Saves your settings in the browser, and keeps the pictures of the tabs for the grid’s previews in memory only (storage.session), never on disk.',
-  favicon: 'Shows each tab’s site icon from the browser’s own icon cache, so nothing is downloaded from the internet.',
-  tabGroups: 'Shows the color of each tab’s group in the switcher.',
-  webNavigation:
-    'Knows when a tab loads a new page, so the switcher is put into a page only once and not again when a site only changes its address. It keeps no record of the pages visited.',
-};
 
 /** @param {string} code */
 const homeTexts = (code) => JSON.parse(readFileSync(`site/home/${code}.json`, 'utf8'));
@@ -120,7 +106,7 @@ for (const language of HOME_LANGUAGES) {
 // The Privacy page: a reason for each permission the manifest asks for, no more and no fewer.
 const config = readFileSync('wxt.config.ts', 'utf8');
 const asked = JSON.parse((/permissions: (\[[^\]]*\])/.exec(config)?.[1] ?? '[]').replaceAll("'", '"'));
-const reasons = Object.keys(PERMISSIONS);
+const reasons = Object.keys(PERMISSION_REASONS);
 const unexplained = asked.filter((/** @type {string} */ name) => !reasons.includes(name));
 const unused = reasons.filter((name) => !asked.includes(name));
 if (unexplained.length || unused.length)
@@ -135,7 +121,7 @@ Single purpose
 ${textOf(homeTexts('en'), 'en', 'title')}. ${(await readExtensionTexts('en')).description}
 
 Permission justification
-${asked.map((/** @type {keyof typeof PERMISSIONS} */ name) => `${name}: ${PERMISSIONS[name]}`).join('\n')}
+${asked.map((/** @type {string} */ name) => `${name}: ${reasonOf(name)}`).join('\n')}
 
 Remote code
 No, I am not using remote code.

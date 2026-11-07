@@ -476,6 +476,28 @@ test.describe("the switcher's toolbar @settings", () => {
     await expect(address).toHaveAttribute('aria-pressed', 'true');
   });
 
+  // DIAGNOSTIC, removed before the merge: where Tab takes the focus from the tabs, in each browser.
+  test('DIAGNOSTIC where Tab goes from the tabs', async ({ context, serviceWorker }) => {
+    const [, current] = await openPages(context, ['alpha', 'beta']);
+    const page = current as Page;
+    await showSwitcher(serviceWorker, 'next', 'icon');
+    await expect(selected(page)).toHaveAccessibleName(named('alpha'));
+    const where = async () => {
+      const frame = await switcherFrame(page)?.evaluate(() => ({
+        frameHasFocus: document.hasFocus(),
+        active: document.activeElement?.getAttribute('aria-label') ?? document.activeElement?.tagName,
+      }));
+      const pageHasFocus = await page.evaluate(() => document.hasFocus());
+      return JSON.stringify({ ...frame, pageHasFocus });
+    };
+    console.log(`TABDIAG ${test.info().project.name} start ${await where()}`);
+    for (let press = 1; press <= 4; press++) {
+      await page.keyboard.press('Tab');
+      await page.waitForTimeout(300);
+      console.log(`TABDIAG ${test.info().project.name} tab${press} ${await where()}`);
+    }
+  });
+
   test('leaves the arrows and Enter to a button reached with Tab, the keyboard staying there, and closes on Esc from it', async ({
     context,
     serviceWorker,

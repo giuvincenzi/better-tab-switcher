@@ -55,6 +55,23 @@ jobs:
           node scripts/release.mjs move "$VERSION" > "$RUNNER_TEMP/entries.md"
           npm version "$VERSION" --no-git-tag-version
 
+      - name: install_dependencies
+        run: npm ci
+
+      # What the release asks for that the last release's package didn't, for the stores' Privacy page: the pull request
+      # says it, so the justifications are ready when publish_release waits for them (confirm_privacy_answers).
+      - name: compare_with_last_release
+        run: |
+          npx wxt build
+          last=$(git tag --list 'v*' --sort=-v:refname | head -n 1)
+          previous=""
+          if [ -n "$last" ]; then
+            gh release download "$last" --pattern '*.zip' --dir "$RUNNER_TEMP/last"
+            unzip -p "$RUNNER_TEMP"/last/*.zip manifest.json > "$RUNNER_TEMP/last-manifest.json"
+            previous="$RUNNER_TEMP/last-manifest.json"
+          fi
+          node scripts/store-privacy.mjs .output/chrome-mv3/manifest.json $previous > "$RUNNER_TEMP/privacy.md"
+
       - name: commit_and_open_pr
         env:
           VERSION: ${{ steps.next.outputs.version }}
@@ -74,6 +91,13 @@ jobs:
             echo "The tests wait for a maintainer: this pull request was opened by github-actions[bot], so press"
             echo "\"Approve workflows to run\" below (or ask Claude, which approves them through the API)."
             echo
+            if [ -s "$RUNNER_TEMP/privacy.md" ]; then
+              echo "The stores' Privacy page: publish_release uploads the drafts, then waits for the job"
+              echo "confirm_privacy_answers to be approved before sending them for review."
+              echo
+              cat "$RUNNER_TEMP/privacy.md"
+              echo
+            fi
             cat "$RUNNER_TEMP/entries.md"
           } > "$RUNNER_TEMP/message.md"
           git commit --quiet --file "$RUNNER_TEMP/message.md"
