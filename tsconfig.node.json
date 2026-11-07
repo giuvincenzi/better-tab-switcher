@@ -18,5 +18,11 @@
     "noEmit": true,
     "skipLibCheck": true
   },
-  "include": ["tests/e2e/**/*.ts", "tests/unit/release.test.ts", "scripts/**/*.mjs", "*.config.ts"]
+  "include": [
+    "tests/e2e/**/*.ts",
+    "tests/unit/release.test.ts",
+    "tests/unit/store-privacy.test.ts",
+    "scripts/**/*.mjs",
+    "*.config.ts"
+  ]
 }

@@ -30,7 +30,8 @@ paths:
   (`scripts/store-listing.mjs`): the descriptions in every language, Edge's search terms (`store_search_terms` in
   `site/home/<code>.json`), the pictures and the Privacy answers, all read from the site's and the extension's texts.
   The stores have no API for them, so a change to what they say is pasted into both dashboards, in every language it
-  changes, in the same work as the pull request.
+  changes, in the same work as the pull request; a new permission's justification during the release, once its package
+  is uploaded (`build-and-release.md`, "The stores").
 - The slogan is not the title: it stays in English in every language (only `en.json` has it, `site.mjs` stops when a
   translation adds it).
 

@@ -1,5 +1,9 @@
 # Publishes a release: the tests, the packages (the zip, and the CRX signed for the Chrome Web Store's Verified CRX
-# uploads), each store's submission for review, the GitHub Release with its tag vX.Y.Z, then the website.
+# uploads), each store's draft, then its submission for review, the GitHub Release with its tag vX.Y.Z, then the website.
+# A release that asks for a permission the previous one didn't waits between the drafts and the submissions: the stores'
+# Privacy page asks a justification for it, whose field comes from the uploaded draft and which no API writes. The job
+# confirm_privacy_answers (environment store-privacy, the maintainer as its required reviewer) is approved once they are
+# pasted (build-and-release.md, "The stores").
 # Starts on a push to main that changes package.json; decide_release goes on only when the version in it changed, which
 # only the merge of the release pull request does (create_release_pr; the test workflow's block_version_change fails
 # any other pull request that changes it). A failed job is retried with "Re-run failed jobs" on its run.
@@ -30,6 +34,7 @@ jobs:
       release: ${{ steps.decide.outputs.release }}
       version: ${{ steps.decide.outputs.version }}
       first: ${{ steps.decide.outputs.first }}
+      previous: ${{ steps.decide.outputs.previous }}
     steps:
       - name: checkout_code
         uses: actions/checkout@v7
@@ -54,10 +59,13 @@ jobs:
           fi
           # The first release: Microsoft Edge Add-ons publishes a new extension only from Partner Center.
           if [ -z "$(git tag --list 'v*')" ]; then first=true; else first=false; fi
+          # The release before this one, whose package's manifest says what the stores already have a justification for.
+          previous=$(git tag --list 'v*' --sort=-v:refname | head -n 1)
           {
             echo "release=true"
             echo "version=$current"
             echo "first=$first"
+            echo "previous=$previous"
           } >> "$GITHUB_OUTPUT"
           echo "Release $current (first release: $first)." >> "$GITHUB_STEP_SUMMARY"
 
@@ -74,6 +82,8 @@ jobs:
     needs: [decide_release, run_tests]
     runs-on: ubuntu-latest
     environment: production # the signing key, for main only (build-and-release.md)
+    outputs:
+      privacy_review: ${{ steps.asks.outputs.review }}
     env:
       VERSION: ${{ needs.decide_release.outputs.version }}
     steps:
@@ -98,6 +108,30 @@ jobs:
           npx wxt zip
           mkdir -p packages
           cp ".output/better-tab-switcher-$VERSION-chrome.zip" "packages/better-tab-switcher-$VERSION.zip"
+
+      # What this release asks for that the previous release's package didn't (everything, on the first release): the
+      # stores' Privacy page asks a justification for it, pasted by hand before the submissions (confirm_privacy_answers).
+      - name: compare_with_previous_release
+        id: asks
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PREVIOUS: ${{ needs.decide_release.outputs.previous }}
+        run: |
+          previous=""
+          if [ -n "$PREVIOUS" ]; then
+            gh release download "$PREVIOUS" --pattern '*.zip' --dir "$RUNNER_TEMP/previous"
+            unzip -p "$RUNNER_TEMP"/previous/*.zip manifest.json > "$RUNNER_TEMP/previous-manifest.json"
+            previous="$RUNNER_TEMP/previous-manifest.json"
+          fi
+          guide=$(node scripts/store-privacy.mjs .output/chrome-mv3/manifest.json $previous)
+          if [ -z "$guide" ]; then
+            echo "review=false" >> "$GITHUB_OUTPUT"
+            echo "Nothing new for the stores' Privacy page since ${PREVIOUS:-the start}: the submissions go on by themselves." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          echo "review=true" >> "$GITHUB_OUTPUT"
+          printf '## The stores'"'"' Privacy page\n\n%s\n' "$guide" >> "$GITHUB_STEP_SUMMARY"
+          echo "::warning title=Privacy answers to paste::This release asks for something new: paste its justification in both stores' Privacy page once the drafts are uploaded, then approve confirm_privacy_answers. The run's summary has the text."
 
       # The key in any format 1Password copies it (OpenSSH, PKCS#1, PKCS#8), turned into the PKCS#8 Chromium reads. A key
       # whose public half is not the dashboard's would make the store refuse the package, so it stops here.
@@ -125,7 +159,8 @@ jobs:
           name: packages
           path: packages/
 
-  publish_chrome_web_store:
+  # Each store's draft: the package uploaded, not sent for review yet (submit_chrome_web_store, submit_edge_add_ons).
+  upload_chrome_web_store:
     needs: [decide_release, build_packages]
     runs-on: ubuntu-latest
     environment: production # the service account's key, for main only
@@ -144,14 +179,12 @@ jobs:
           name: packages
           path: packages
 
-      - name: upload_and_submit_for_review
+      - name: upload_draft
         env:
           CHROME_SERVICE_ACCOUNT_JSON: ${{ secrets.CHROME_SERVICE_ACCOUNT_JSON }}
-        run: node scripts/chrome-store.mjs "packages/better-tab-switcher-${{ needs.decide_release.outputs.version }}.crx"
+        run: node scripts/chrome-store.mjs upload "packages/better-tab-switcher-${{ needs.decide_release.outputs.version }}.crx"
 
-  # On the first release the package only goes into the draft: Partner Center publishes a new extension, by hand
-  # (build-and-release.md). From the second release on it is submitted for review here.
-  publish_edge_add_ons:
+  upload_edge_add_ons:
     needs: [decide_release, build_packages]
     runs-on: ubuntu-latest
     environment: production # the API key, for main only
@@ -174,11 +207,79 @@ jobs:
           name: packages
           path: packages
 
-      - name: upload_and_submit_for_review
+      - name: upload_draft
         env:
           EDGE_CLIENT_ID: ${{ secrets.EDGE_CLIENT_ID }}
           EDGE_API_KEY: ${{ secrets.EDGE_API_KEY }}
-          EDGE_SKIP_SUBMIT_REVIEW: ${{ needs.decide_release.outputs.first }}
+          EDGE_SKIP_SUBMIT_REVIEW: true
+        run: npx wxt submit --edge-zip "packages/better-tab-switcher-${{ needs.decide_release.outputs.version }}.zip"
+
+  # Only when the release asks for something new: waits for the maintainer, the environment store-privacy's required
+  # reviewer, to paste the justifications (the run's summary, compare_with_previous_release) into both stores' Privacy
+  # page and approve it. No secrets: it only holds the submissions.
+  confirm_privacy_answers:
+    needs: [build_packages, upload_chrome_web_store, upload_edge_add_ons]
+    if: needs.build_packages.outputs.privacy_review == 'true'
+    runs-on: ubuntu-latest
+    environment: store-privacy
+    steps:
+      - name: confirm
+        run: echo "The justifications are in both stores' Privacy page." >> "$GITHUB_STEP_SUMMARY"
+
+  # The draft sent for review, published as soon as it is approved: at once, or once confirm_privacy_answers is approved.
+  submit_chrome_web_store:
+    needs: [upload_chrome_web_store, confirm_privacy_answers]
+    if: >-
+      always() && needs.upload_chrome_web_store.result == 'success' &&
+      contains(fromJSON('["success","skipped"]'), needs.confirm_privacy_answers.result)
+    runs-on: ubuntu-latest
+    environment: production # the service account's key, for main only
+    steps:
+      - name: checkout_code
+        uses: actions/checkout@v7
+
+      - name: install_node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .tool-versions
+
+      - name: submit_for_review
+        env:
+          CHROME_SERVICE_ACCOUNT_JSON: ${{ secrets.CHROME_SERVICE_ACCOUNT_JSON }}
+        run: node scripts/chrome-store.mjs submit
+
+  # Not on the first release: Partner Center publishes a new extension, by hand (build-and-release.md). wxt submit can't
+  # send a draft without uploading it: it uploads the same zip again and submits it.
+  submit_edge_add_ons:
+    needs: [decide_release, upload_edge_add_ons, confirm_privacy_answers]
+    if: >-
+      always() && needs.decide_release.outputs.first != 'true' && needs.upload_edge_add_ons.result == 'success' &&
+      contains(fromJSON('["success","skipped"]'), needs.confirm_privacy_answers.result)
+    runs-on: ubuntu-latest
+    environment: production # the API key, for main only
+    steps:
+      - name: checkout_code
+        uses: actions/checkout@v7
+
+      - name: install_node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .tool-versions
+          cache: npm
+
+      - name: install_dependencies
+        run: npm ci
+
+      - name: get_packages
+        uses: actions/download-artifact@v8
+        with:
+          name: packages
+          path: packages
+
+      - name: submit_for_review
+        env:
+          EDGE_CLIENT_ID: ${{ secrets.EDGE_CLIENT_ID }}
+          EDGE_API_KEY: ${{ secrets.EDGE_API_KEY }}
         run: npx wxt submit --edge-zip "packages/better-tab-switcher-${{ needs.decide_release.outputs.version }}.zip"
 
   # The GitHub Release with the zip; GitHub creates the tag vX.Y.Z on this commit.
